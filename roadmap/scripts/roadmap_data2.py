@@ -11,6 +11,55 @@ the plan is one system built properly rather than thirty built once.
 # ---------------------------------------------------------------------------
 
 M02 = [
+    # The surface material foundation runs first, ahead of the LOD work.
+    #
+    # Two reasons, and the second is the real one. The visible one: every
+    # texture on screen today is noise generated at load, and that is the whole
+    # of why the world does not look real. The structural one: a material
+    # architecture designed against procedural noise and then handed real
+    # texture sets is a material architecture that gets rebuilt. Triplanar
+    # projection, height blending, channel packing and mip policy are all
+    # decisions that depend on what the source data actually is.
+    #
+    # It is also not obviously a cost. The current triplanar takes twelve
+    # texture samples per pixel from textures with hand-built mip chains;
+    # authored sets composited through a virtual texture are sampled once.
+    dict(title="Source a PBR surface library and audit its licences",
+         detail="Twelve to sixteen ground surfaces spanning the biomes the climate model "
+                "will produce: sand, gravel, scree, granite, sandstone, grass, moss, snow, "
+                "mud, clay. Every set records its source and licence in a manifest as it "
+                "arrives. A project that audits licences later is a project that discovers "
+                "at ship time that it cannot.",
+         acceptance="A manifest lists every surface set with source and licence, and a "
+                    "validator fails the build on any texture present without an entry.",
+         days=1, refs=["SS14"]),
+    dict(title="Texture import pipeline for surface sets",
+         detail="Pulled forward from M12, because sixteen sets imported by hand is sixteen "
+                "chances to get a normal map's colour space wrong and one afternoon "
+                "wondering why the lighting is inside out. Channel packing — roughness, "
+                "ambient occlusion and height into one texture — compression settings per "
+                "map type, sRGB flags, mip and streaming policy.",
+         acceptance="A surface set dropped into the source directory is import-ready with "
+                    "no manual step, and a validator rejects wrong channel layout or "
+                    "colour space with a message naming the file.",
+         days=2, refs=["SS14"]),
+    dict(title="Real surface sets in the triplanar material",
+         detail="Replace the runtime-generated noise with authored albedo, normal, "
+                "roughness and height. Height blending rather than alpha blending, so "
+                "gravel interlocks with sand instead of dissolving into it. Detail "
+                "normals at a second scale, distance-faded before they can alias.",
+         acceptance="One biome at three distances and two lighting conditions, captured "
+                    "beside the noise version and beside reference photography, with the "
+                    "frame cost measured rather than assumed.",
+         days=2.5, refs=["SS6.8"]),
+    dict(title="Runtime Virtual Texture for surface composition",
+         detail="Compose the blended surface into an RVT so the expensive blend happens "
+                "once per texel rather than once per pixel, and so decals and roads have "
+                "something to write into. Moved up beside the material work: it is what "
+                "makes layered authored sets affordable at all.",
+         acceptance="Terrain material cost falls measurably against the direct-blend "
+                    "version with no visual difference.",
+         days=2, refs=["SS6.8"]),
     dict(title="Geomorphing across LOD transitions",
          detail="Vertices interpolate toward their coarser position as the transition "
                 "approaches, so a split is a blend rather than a jump. The current pop is "
@@ -44,20 +93,16 @@ M02 = [
                 "colour response and slope behaviour. Data, not code.",
          acceptance="Adding a biome is one data file and requires no recompile.",
          days=3, refs=["ARCH Rule 7"]),
-    dict(title="Biome-blended triplanar materials with real texture sets",
-         detail="Replace generated noise textures with authored albedo, normal, roughness "
-                "and height sets, blended by height rather than by alpha so transitions "
-                "interlock instead of dissolving.",
-         acceptance="Three biomes meet on one slope with no visible blend band and no "
-                    "tiling at any distance.",
+    dict(title="Biome-driven surface composition",
+         detail="The climate field selects and weights the surface sets already in the "
+                "material, so a slope crossing three biomes reads as three grounds meeting "
+                "rather than as a gradient between three colours. Macro variation at "
+                "kilometre scale on top, because uniform ground at any scale is the "
+                "tell that it was generated.",
+         acceptance="Three biomes meet on one slope with no visible blend band, no "
+                    "repetition at any distance, and the boundary explained by the "
+                    "climate field.",
          days=4, refs=["SS6.8"]),
-    dict(title="Runtime Virtual Texture for surface composition",
-         detail="Compose the blended surface into an RVT so the expensive blend happens "
-                "once per texel rather than once per pixel, and so decals and roads have "
-                "something to write into.",
-         acceptance="Frame cost of the terrain material falls measurably and the visual "
-                    "result is unchanged.",
-         days=3, refs=["SS6.8"]),
     dict(title="Cliff and scree treatment by slope",
          detail="Slope drives material, not just colour: exposed rock strata on steep "
                 "faces, scree accumulating at the angle of repose below them.",
