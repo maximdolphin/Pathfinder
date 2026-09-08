@@ -10,7 +10,10 @@
 #if WITH_EDITOR
 #include "MaterialDomain.h"
 #include "Materials/MaterialExpressionConstant.h"
+#include "Materials/MaterialExpressionMultiply.h"
+#include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionVertexColor.h"
+#include "Materials/MaterialExpressionWorldPosition.h"
 #endif
 
 namespace
@@ -57,17 +60,15 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		Atmosphere->BottomRadius = RadiusKm;
 		Atmosphere->AtmosphereHeight = AtmosphereHeightKm;
 
-		// Scale heights, and the setting that decides whether you can see across
-		// a valley.
+		// At Earth's radius these are simply Earth's numbers, and Sky Atmosphere
+		// is a Bruneton model tuned for exactly them. Every previous round of
+		// fighting these values was a consequence of a 60 km planet carrying a
+		// proportionally impossible 5 km atmosphere — the physics had no
+		// self-consistent setting, so there was nothing to find.
 		//
-		// Earth's Rayleigh scale height is 13% of its atmosphere, and copying
-		// that ratio onto a 5 km shell puts nearly all the air in the bottom
-		// 650 m. Standing in it, everything past a couple of kilometres washed
-		// out to flat pale green — which read as a broken material and was in
-		// fact a correctly-rendered soup. Spreading the same air over half the
-		// shell restores ground visibility and keeps the sky blue.
-		Atmosphere->RayleighExponentialDistribution = AtmosphereHeightKm * 0.5f;
-		Atmosphere->MieExponentialDistribution = AtmosphereHeightKm * 0.12f;
+		// Rayleigh scale height 8 km, Mie 1.2 km: the real ones.
+		Atmosphere->RayleighExponentialDistribution = 8.0f;
+		Atmosphere->MieExponentialDistribution = 1.2f;
 
 		// Optical depth is coefficient times path length, and the path through
 		// this atmosphere is a twelfth of Earth's — so the coefficient has to go
@@ -78,9 +79,18 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		// and looked like an unlit material. At 0.012 the sky went black at
 		// ground level. The fog was most of the first problem; this is the
 		// setting for the second.
-		Atmosphere->RayleighScatteringScale = 0.045f;
-		Atmosphere->MieScatteringScale = 0.002f;
-		Atmosphere->MultiScatteringFactor = 0.75f;
+		Atmosphere->RayleighScatteringScale = 0.0331f;
+		Atmosphere->MieScatteringScale = 0.003996f;
+		Atmosphere->MieAbsorptionScale = 0.000444f;
+		Atmosphere->MieAnisotropy = 0.8f;
+		// Ozone. It is why the sky goes deep blue at the zenith and why the
+		// twilight band above the limb is violet rather than grey — the layer
+		// absorbs where Rayleigh does not, and leaving it out gives an
+		// atmosphere that is technically scattering and visually flat.
+		Atmosphere->OtherAbsorptionScale = 0.001881f;
+		Atmosphere->MultiScatteringFactor = 1.0f;
+		Atmosphere->AerialPespectiveViewDistanceScale = 1.0f;
+		Atmosphere->HeightFogContribution = 1.0f;
 		Atmosphere->MarkRenderStateDirty();
 	}
 
@@ -91,10 +101,17 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		const float TerrainTopKm = static_cast<float>(MaxElevationCm / CentimetresPerKilometre);
 		Clouds->LayerBottomAltitude = FMath::Max(CloudBaseAltitudeKm, TerrainTopKm * 1.1f);
 		Clouds->LayerHeight = CloudLayerHeightKm;
+		// Thinner coverage than the engine default, which is near-overcast. A
+		// solid deck puts the whole landscape in shadow, and the terrain is the
+		// thing being looked at.
+		Clouds->ViewSampleCountScale = 2.0f;
+		Clouds->ShadowViewSampleCountScale = 2.0f;
 		Clouds->PlanetRadius = RadiusKm;
 		// Tracing distance has to cover the horizon or the cloud deck visibly
 		// ends in mid-air on the approach.
-		Clouds->TracingMaxDistance = FMath::Max(50.0f, RadiusKm * 0.8f);
+		// Earth's cloud deck is visible to the horizon; 400 km covers it from
+		// altitude without tracing halfway round the planet.
+		Clouds->TracingMaxDistance = 400.0f;
 		Clouds->MarkRenderStateDirty();
 	}
 
@@ -103,12 +120,22 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		// Aerial perspective near the ground. Volumetric so the sun shafts
 		// through the cloud deck on the way down, which is most of what sells
 		// the descent.
-		// Light: the sky atmosphere already supplies aerial perspective, and
-		// stacking a dense height fog on top of it is what buried the terrain.
-		Fog->SetFogDensity(0.0012f);
-		Fog->SetFogHeightFalloff(0.9f);
-		Fog->SetVolumetricFog(true);
-		Fog->SetVolumetricFogDistance(60000.0f);
+		// Very light. Sky Atmosphere already supplies aerial perspective at this
+		// scale; the fog is here only for volumetric shafts through the cloud
+		// deck, and stacking a dense one on top is what buried the terrain
+		// before.
+		// **Off.** Exponential height fog is a flat-world approximation: its
+		// density is a function of absolute Z against an infinite horizontal
+		// plane. On a sphere that plane cuts through the planet, and from orbit
+		// it fills space itself — which is why the sky outside the atmosphere
+		// came back navy instead of black.
+		//
+		// Sky Atmosphere already provides aerial perspective, and unlike the fog
+		// it is spherical and knows where the ground is. The component is kept so
+		// the shape of the decision is visible rather than mysteriously absent.
+		Fog->SetFogDensity(0.0f);
+		Fog->SetVolumetricFog(false);
+		Fog->SetVisibility(false);
 		Fog->MarkRenderStateDirty();
 	}
 
@@ -135,12 +162,49 @@ namespace LedgerMaterials
 		Material->SetShadingModel(MSM_DefaultLit);
 
 		UMaterialExpressionVertexColor* VertexColour = NewObject<UMaterialExpressionVertexColor>(Material);
+
+		// Close-up variation. Vertex colour alone is constant across a quad, and
+		// at 5 m quads that reads as flat plastic from anywhere near the ground.
+		// A noise term breaks it up without needing a texture.
+		//
+		// Camera-relative world position, not absolute: absolute world position
+		// on a 6.37e8 cm planet loses all its precision to the exponent, and the
+		// noise degenerates into banding. Camera-relative keeps full precision
+		// exactly where the detail is visible.
+		UMaterialExpressionWorldPosition* WorldPosition =
+			NewObject<UMaterialExpressionWorldPosition>(Material);
+		WorldPosition->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
+
+		UMaterialExpressionNoise* Detail = NewObject<UMaterialExpressionNoise>(Material);
+		Detail->Position.Expression = WorldPosition;
+		// ~40 m features at low contrast.
+		//
+		// At six metres and 0.72–1.20 this aliased savagely: a pattern that fine
+		// is sub-pixel across most of a 100 km view, and the whole landscape came
+		// back looking like pumice. Detail shading with no distance fade has to
+		// be large and quiet, or it has to be a proper LOD-aware material —
+		// which is a texture-and-mip problem, not a noise-node one.
+		Detail->Scale = 0.000025f;
+		Detail->Quality = 2;
+		Detail->NoiseFunction = NOISEFUNCTION_SimplexTex;
+		Detail->Levels = 2;
+		Detail->OutputMin = 0.90f;
+		Detail->OutputMax = 1.10f;
+		Detail->bTurbulence = false;
+
+		UMaterialExpressionMultiply* BaseColour = NewObject<UMaterialExpressionMultiply>(Material);
+		BaseColour->A.Expression = VertexColour;
+		BaseColour->B.Expression = Detail;
+
 		UMaterialExpressionConstant* Roughness = NewObject<UMaterialExpressionConstant>(Material);
-		Roughness->R = 0.92f;
+		Roughness->R = 0.94f;
 		UMaterialExpressionConstant* Specular = NewObject<UMaterialExpressionConstant>(Material);
-		Specular->R = 0.08f;
+		Specular->R = 0.05f;
 
 		Material->GetExpressionCollection().AddExpression(VertexColour);
+		Material->GetExpressionCollection().AddExpression(WorldPosition);
+		Material->GetExpressionCollection().AddExpression(Detail);
+		Material->GetExpressionCollection().AddExpression(BaseColour);
 		Material->GetExpressionCollection().AddExpression(Roughness);
 		Material->GetExpressionCollection().AddExpression(Specular);
 
@@ -149,7 +213,7 @@ namespace LedgerMaterials
 		{
 			return nullptr;
 		}
-		EditorData->BaseColor.Expression = VertexColour;
+		EditorData->BaseColor.Expression = BaseColour;
 		EditorData->Roughness.Expression = Roughness;
 		EditorData->Specular.Expression = Specular;
 

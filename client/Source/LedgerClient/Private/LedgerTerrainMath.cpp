@@ -4,7 +4,7 @@ namespace
 {
 	/// Integer hash. Cheap, well-mixed, and identical on every platform — which
 	/// a `FMath::RandInit`-style generator would not be.
-	uint32 Hash(uint32 X)
+	FORCEINLINE uint32 Hash(uint32 X)
 	{
 		X ^= X >> 16;
 		X *= 0x7FEB352Du;
@@ -14,21 +14,41 @@ namespace
 		return X;
 	}
 
-	uint32 Hash3(int32 X, int32 Y, int32 Z, uint32 Seed)
+	FORCEINLINE uint32 Hash3(int32 X, int32 Y, int32 Z, uint32 Seed)
 	{
 		return Hash(static_cast<uint32>(X) * 0x9E3779B9u
 			^ Hash(static_cast<uint32>(Y) * 0x85EBCA6Bu
 				^ Hash(static_cast<uint32>(Z) * 0xC2B2AE35u ^ Seed)));
 	}
 
-	double UnitFromHash(uint32 H)
+	/// One of twelve edge-midpoint gradients, selected by hash. The classic
+	/// Perlin set — evenly distributed, and each dot product is two adds.
+	FORCEINLINE double GradientDot(uint32 H, double X, double Y, double Z)
 	{
-		return static_cast<double>(H & 0x00FFFFFFu) / static_cast<double>(0x00FFFFFF);
+		switch (H & 15u)
+		{
+		case 0:  return  X + Y;
+		case 1:  return -X + Y;
+		case 2:  return  X - Y;
+		case 3:  return -X - Y;
+		case 4:  return  X + Z;
+		case 5:  return -X + Z;
+		case 6:  return  X - Z;
+		case 7:  return -X - Z;
+		case 8:  return  Y + Z;
+		case 9:  return -Y + Z;
+		case 10: return  Y - Z;
+		case 11: return -Y - Z;
+		case 12: return  X + Y;
+		case 13: return -Y + Z;
+		case 14: return -X + Y;
+		default: return -Y - Z;
+		}
 	}
 
-	/// Quintic smoothstep. C2 continuous, so the normals derived from this do
-	/// not band the way cubic smoothstep's do.
-	double Fade(double T)
+	/// Quintic smoothstep. C2 continuous, so normals derived from this do not
+	/// band the way cubic smoothstep's do.
+	FORCEINLINE double Fade(double T)
 	{
 		return T * T * T * (T * (T * 6.0 - 15.0) + 10.0);
 	}
@@ -66,7 +86,7 @@ namespace LedgerTerrain
 			OnCube.Z * FMath::Sqrt(1.0 - (X2 + Y2) * 0.5 + (X2 * Y2) / 3.0));
 	}
 
-	double ValueNoise(const FVector3d& Position, uint32 Seed)
+	double GradientNoise(const FVector3d& Position, uint32 Seed)
 	{
 		const double Fx = FMath::Floor(Position.X);
 		const double Fy = FMath::Floor(Position.Y);
@@ -76,9 +96,13 @@ namespace LedgerTerrain
 		const int32 Iy = static_cast<int32>(Fy);
 		const int32 Iz = static_cast<int32>(Fz);
 
-		const double Tx = Fade(Position.X - Fx);
-		const double Ty = Fade(Position.Y - Fy);
-		const double Tz = Fade(Position.Z - Fz);
+		const double Rx = Position.X - Fx;
+		const double Ry = Position.Y - Fy;
+		const double Rz = Position.Z - Fz;
+
+		const double Tx = Fade(Rx);
+		const double Ty = Fade(Ry);
+		const double Tz = Fade(Rz);
 
 		double Accumulated = 0.0;
 		for (int32 Dz = 0; Dz < 2; ++Dz)
@@ -90,13 +114,16 @@ namespace LedgerTerrain
 				for (int32 Dx = 0; Dx < 2; ++Dx)
 				{
 					const double Wx = Dx ? Tx : 1.0 - Tx;
-					const double Corner = UnitFromHash(Hash3(Ix + Dx, Iy + Dy, Iz + Dz, Seed));
-					Accumulated += Corner * Wx * Wy * Wz;
+					const uint32 H = Hash3(Ix + Dx, Iy + Dy, Iz + Dz, Seed);
+					// Gradient dotted with the offset from *that* corner.
+					const double Contribution = GradientDot(H, Rx - Dx, Ry - Dy, Rz - Dz);
+					Accumulated += Contribution * Wx * Wy * Wz;
 				}
 			}
 		}
 
-		return Accumulated * 2.0 - 1.0;
+		// Gradient noise over the 12 edge gradients lands within about ±0.7.
+		return FMath::Clamp(Accumulated * 1.4, -1.0, 1.0);
 	}
 
 	double FractalNoise(
@@ -113,7 +140,7 @@ namespace LedgerTerrain
 
 		for (int32 Octave = 0; Octave < Octaves; ++Octave)
 		{
-			Sum += ValueNoise(Position * Frequency, Seed + static_cast<uint32>(Octave) * 7919u) * Amplitude;
+			Sum += GradientNoise(Position * Frequency, Seed + static_cast<uint32>(Octave) * 7919u) * Amplitude;
 			Normalisation += Amplitude;
 			Amplitude *= Gain;
 			Frequency *= Lacunarity;
@@ -122,32 +149,116 @@ namespace LedgerTerrain
 		return Normalisation > 0.0 ? Sum / Normalisation : 0.0;
 	}
 
-	double Elevation(const FVector3d& UnitSphere, uint32 Seed, double MaxElevation)
+	double RidgedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double Lacunarity,
+		double Gain)
 	{
-		// Continents: low frequency, high amplitude. This is what makes the
-		// planet read as a planet from orbit rather than as uniform crumple.
-		const double Continents = FractalNoise(UnitSphere * 1.6, Seed, 5);
+		double Sum = 0.0;
+		double Amplitude = 0.5;
+		double Frequency = 1.0;
+		double Normalisation = 0.0;
+		// Carries the previous octave's ridge forward, so detail only appears
+		// where a ridge already is. This is what connects peaks into ranges
+		// instead of scattering them evenly across the continent.
+		double Weight = 1.0;
 
-		// Ridges: fold the noise about zero so the creases point up. Weighted by
-		// continent height so ocean floors stay smooth and the mountains sit on
-		// the landmasses instead of everywhere.
-		const double Ridged = 1.0 - FMath::Abs(FractalNoise(UnitSphere * 7.0, Seed ^ 0x5A5Au, 5));
-		const double LandMask = FMath::Clamp(Continents * 2.0, 0.0, 1.0);
+		for (int32 Octave = 0; Octave < Octaves; ++Octave)
+		{
+			double Signal = GradientNoise(Position * Frequency, Seed + static_cast<uint32>(Octave) * 6151u);
+			Signal = 1.0 - FMath::Abs(Signal);
+			Signal *= Signal;
+			Signal *= Weight;
 
-		// Sea level flattens everything below it, so coastlines are legible.
-		const double Combined = Continents * 0.7 + Ridged * Ridged * LandMask * 0.45;
-		const double Shaped = Combined < 0.0 ? Combined * 0.35 : Combined;
+			Weight = FMath::Clamp(Signal * 2.2, 0.0, 1.0);
 
-		return Shaped * MaxElevation;
+			Sum += Signal * Amplitude;
+			Normalisation += Amplitude;
+			Amplitude *= Gain;
+			Frequency *= Lacunarity;
+		}
+
+		return Normalisation > 0.0 ? (Sum / Normalisation) * 2.0 - 1.0 : 0.0;
 	}
 
-	FVector3d SurfacePoint(
-		const FVector3d& UnitSphere,
-		double Radius,
-		uint32 Seed,
-		double MaxElevation)
+	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
 	{
-		return UnitSphere * (Radius + Elevation(UnitSphere, Seed, MaxElevation));
+		const uint32 Seed = Params.Seed;
+
+		// **Frequencies are chosen against the planet's actual circumference.**
+		//
+		// A frequency of `f` on the unit sphere has a wavelength of
+		// `2*pi*R / f`. On a 6,371 km planet that makes f=1 a 40,000 km feature
+		// and f=400 a 100 km one. The first version of this function used f=90
+		// as its *highest* band — a 440 km wavelength — so from a kilometre up
+		// every visible thing was one smooth gradient and the terrain read as a
+		// painted sphere. The bands below run from continents down to 70 m.
+		//
+		// The same numbers on a 60 km planet gave visible mountains, which is
+		// exactly why they survived so long: they were right for a world that no
+		// longer exists.
+
+		// Domain warp. Sampling the noise at a position that has itself been
+		// displaced by noise is the single cheapest thing that stops terrain
+		// looking procedural: it bends coastlines and drags ranges into curves
+		// instead of leaving everything isotropic and blobby.
+		const FVector3d Warp(
+			FractalNoise(UnitSphere * 2.1 + FVector3d(19.3, 7.1, 3.7), Seed ^ 0xA1u, 3),
+			FractalNoise(UnitSphere * 2.1 + FVector3d(5.2, 23.9, 11.4), Seed ^ 0xB2u, 3),
+			FractalNoise(UnitSphere * 2.1 + FVector3d(31.7, 2.8, 17.5), Seed ^ 0xC3u, 3));
+		const FVector3d Warped = UnitSphere + Warp * 0.26;
+
+		// Continents — 40,000 km down to about 1,200 km. Decides where land is,
+		// and nothing else should.
+		const double Continent = FractalNoise(Warped * 1.25, Seed, 6);
+
+		// How far above sea level, in [0,1]. Everything below is ocean floor.
+		const double Land = FMath::Clamp((Continent - Params.SeaLevel) / (1.0 - Params.SeaLevel), 0.0, 1.0);
+
+		if (Continent < Params.SeaLevel)
+		{
+			// Ocean floor. Deepens away from the coast and stays smooth — an
+			// eroded seabed has no ridges on it.
+			const double Depth = (Params.SeaLevel - Continent) / FMath::Max(0.05, Params.SeaLevel + 1.0);
+			const double Seabed = FractalNoise(Warped * 60.0, Seed ^ 0x2B2Bu, 3);
+			return (-FMath::Pow(Depth, 0.75) * 0.55 + Seabed * 0.012) * Params.MaxElevation;
+		}
+
+		// Where the ranges are — 3,300 km provinces, so a continent has orogenic
+		// belts and stable interiors rather than uniform crumple everywhere.
+		const double Province = FMath::Clamp(
+			FractalNoise(Warped * 12.0, Seed ^ 0x7E7Eu, 3) * 1.4 + 0.35, 0.0, 1.0);
+		const double RangeMask = FMath::Pow(Land, 1.4) * Province;
+
+		// Mountains — 130 km ranges resolving to about 500 m. This is the band
+		// that was missing entirely, and it is the one the eye reads as terrain.
+		const double Ridges = FMath::Max(0.0, RidgedNoise(Warped * 310.0, Seed ^ 0x5A5Au, 8));
+		const double Mountains = Ridges * RangeMask;
+
+		// Foothills and valleys — 3 km down to 400 m. Present everywhere on land
+		// so plains still roll, stronger where the mountains are.
+		const double Mid = FractalNoise(Warped * 5200.0, Seed ^ 0x3C3Cu, 4);
+
+		// Rock and gully detail — 270 m down to about 70 m. Weighted onto slopes
+		// so it roughens mountainsides without pebbling the plains.
+		const double Micro = FractalNoise(UnitSphere * 150000.0, Seed ^ 0x1F1Fu, 3);
+
+		// Amplitudes fall off hard with frequency.
+		//
+		// Real landscapes are dominated by their largest features; the small
+		// ones ride on top. Giving the 3 km and 270 m bands amplitudes anywhere
+		// near the mountain band's turned the whole surface into uniform
+		// crumpled foil — busy everywhere, structured nowhere. Each band here is
+		// roughly a fifth of the one above it.
+		const double Height =
+			Land * 0.26
+			+ Mountains * 0.64
+			+ Mid * (0.010 + Mountains * 0.028)
+			+ Micro * (0.0006 + Mountains * 0.0022);
+
+		return Height * Params.MaxElevation;
 	}
 
 	double ScreenSpaceError(

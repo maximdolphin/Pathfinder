@@ -1,8 +1,8 @@
 // Cube-sphere mapping and terrain height. Design §6.8.
 //
-// Pure functions, no engine state, no allocation. Everything the quadtree does
-// geometrically lives here so it can be reasoned about — and tested — without a
-// world, an actor, or a frame.
+// Pure functions, no engine state, no allocation, no globals. Everything the
+// quadtree does geometrically lives here so it can be reasoned about — and run
+// off the game thread — without a world, an actor, or a frame.
 //
 // Floats throughout: this is the presentation layer, and §5.2 only forbids
 // floating point in *authoritative* state. The planet's shape is derived from a
@@ -26,6 +26,19 @@ enum class ELedgerCubeFace : uint8
 	Count
 };
 
+/// Everything the height function needs, gathered so a worker thread can be
+/// handed a copy rather than a pointer back into an actor.
+struct FLedgerTerrainParams
+{
+	uint32 Seed = 0;
+	/// Reference sphere radius, centimetres.
+	double Radius = 0.0;
+	/// Peak elevation above the reference sphere, centimetres.
+	double MaxElevation = 0.0;
+	/// Fraction of `MaxElevation` that counts as sea level, from the bottom.
+	double SeaLevel = 0.0;
+};
+
 namespace LedgerTerrain
 {
 	/// Maps a face and a `[0,1]^2` coordinate on it to a point on the unit cube.
@@ -37,30 +50,36 @@ namespace LedgerTerrain
 	/// for the cost of three multiplies.
 	LEDGERCLIENT_API FVector3d CubeToSphere(const FVector3d& OnCube);
 
-	/// Deterministic value noise in 3d. Hash-based, so the same seed and
+	/// Deterministic gradient noise in 3d. Hash-based, so the same seed and
 	/// position give the same height on every machine — which matters because
 	/// the sim will eventually place things on this surface by coordinate.
-	LEDGERCLIENT_API double ValueNoise(const FVector3d& Position, uint32 Seed);
+	///
+	/// Gradient rather than value noise: value noise has visible axis-aligned
+	/// structure that survives every amount of octave stacking, and on a planet
+	/// it reads as a grid pressed into the continents.
+	LEDGERCLIENT_API double GradientNoise(const FVector3d& Position, uint32 Seed);
 
-	/// Fractal Brownian motion over `ValueNoise`. Returns roughly `[-1, 1]`.
+	/// Fractal Brownian motion. Returns roughly `[-1, 1]`.
 	LEDGERCLIENT_API double FractalNoise(
 		const FVector3d& Position,
 		uint32 Seed,
 		int32 Octaves,
-		double Lacunarity = 2.0,
+		double Lacunarity = 2.02,
+		double Gain = 0.5);
+
+	/// Ridged multifractal: folds each octave about zero and weights the next by
+	/// the last, so ridges reinforce into connected ranges instead of scattering
+	/// into isolated bumps. This is what makes mountains look like mountains.
+	LEDGERCLIENT_API double RidgedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double Lacunarity = 2.03,
 		double Gain = 0.5);
 
 	/// Terrain elevation in centimetres above the reference sphere, for a point
-	/// on the unit sphere. Continents from low-frequency noise, ridges from the
-	/// absolute value of a higher-frequency band.
-	LEDGERCLIENT_API double Elevation(const FVector3d& UnitSphere, uint32 Seed, double MaxElevation);
-
-	/// Surface position in planet-local space.
-	LEDGERCLIENT_API FVector3d SurfacePoint(
-		const FVector3d& UnitSphere,
-		double Radius,
-		uint32 Seed,
-		double MaxElevation);
+	/// on the unit sphere.
+	LEDGERCLIENT_API double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
 
 	/// Screen-space error for a node, in pixels.
 	///

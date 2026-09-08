@@ -89,7 +89,10 @@ AActor* ALedgerGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	const ALedgerPlanet* PlanetDefaults = GetDefault<ALedgerPlanet>();
 	const double PlanetRadius = PlanetDefaults != nullptr ? PlanetDefaults->Radius : 6000000.0;
 
-	const FVector Start(0.0, 0.0, PlanetRadius * 2.4);
+	// Start over the lit hemisphere, so the first frame is a planet rather than
+	// an eclipse.
+	const FVector3d SunSide = FVector3d(0.55, 0.35, 0.78).GetSafeNormal();
+	const FVector Start = FVector(SunSide * (PlanetRadius * 2.0));
 	const FRotator LookDown = (FVector::ZeroVector - Start).Rotation();
 
 	// APlayerStart, not a bare AActor: an actor with no root component cannot
@@ -145,14 +148,15 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 
 	// A star, angled to light the side of the planet the descent comes down on.
 	// A sun aimed anywhere else leaves the approach in its own shadow.
-	const FRotator SunRotation = (-FVector(0.55, 0.35, 0.78).GetSafeNormal()).Rotation();
+	SunFacing = FVector3d(0.55, 0.35, 0.78).GetSafeNormal();
+	const FRotator SunRotation = (-FVector(SunFacing)).Rotation();
 	if (ADirectionalLight* Sun = InWorld.SpawnActor<ADirectionalLight>(
 		ADirectionalLight::StaticClass(), FVector::ZeroVector, SunRotation, Params))
 	{
 		Sun->SetMobility(EComponentMobility::Movable);
 		if (UDirectionalLightComponent* Component = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			Component->SetIntensity(8.0f);
+			Component->SetIntensity(11.0f);
 			Component->SetAtmosphereSunLight(true);
 			Component->SetDynamicShadowDistanceMovableLight(400000.0f);
 		}
@@ -186,7 +190,7 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		Settings.bOverride_AutoExposureMaxBrightness = true;
 		Settings.AutoExposureMaxBrightness = 8.0f;
 		Settings.bOverride_AutoExposureBias = true;
-		Settings.AutoExposureBias = -1.0f;
+		Settings.AutoExposureBias = -0.45f;
 
 		Settings.bOverride_AutoExposureSpeedUp = true;
 		Settings.AutoExposureSpeedUp = 1.2f;
@@ -222,13 +226,13 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	// along the way. One continuous world, one continuous camera, no seam.
 	FTimerManager& Timers = InWorld.GetTimerManager();
 	Timers.SetTimer(CaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureAndReport), 10.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureAndReport), 14.0f, false);
 	Timers.SetTimer(DescendTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginDescent), 12.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginDescent), 18.0f, false);
 	Timers.SetTimer(MidCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureAndReport), 24.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureAndReport), 42.0f, false);
 	Timers.SetTimer(SurfaceCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureSurface), 38.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureSurface), 72.0f, false);
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, sun, sky light, region markers"));
 }
@@ -265,15 +269,78 @@ void ULedgerWorldBuilder::BeginDescent()
 		return;
 	}
 
-	// Come down somewhere off-axis so the approach is over terrain rather than
-	// straight down a pole.
+	// Find somewhere worth landing.
+	//
+	// Most of a real planet is flat — that is what makes it real, and it is also
+	// why an arbitrary descent vector puts the camera on a featureless plain and
+	// proves nothing about the terrain. Sample the sphere and go where the
+	// relief is, the same way you would choose a shot.
+	const FLedgerTerrainParams Params = Planet->TerrainParams();
+	double BestScore = -MAX_dbl;
 	DescentDirection = FVector3d(0.35, 0.25, 1.0).GetSafeNormal();
+
+	constexpr int32 Samples = 4096;
+	const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
+	for (int32 Index = 0; Index < Samples; ++Index)
+	{
+		const double Y = 1.0 - (static_cast<double>(Index) / (Samples - 1)) * 2.0;
+		const double RadiusAtY = FMath::Sqrt(FMath::Max(0.0, 1.0 - Y * Y));
+		const double Theta = GoldenAngle * static_cast<double>(Index);
+		const FVector3d Candidate = FVector3d(
+			FMath::Cos(Theta) * RadiusAtY, Y, FMath::Sin(Theta) * RadiusAtY).GetSafeNormal();
+
+		// Daylight first. Relief is worth nothing in the dark, and half the
+		// planet is dark at any moment.
+		const double SunAlignment = FVector3d::DotProduct(Candidate, SunFacing);
+		if (SunAlignment < 0.45)
+		{
+			continue;
+		}
+
+		const double Height = LedgerTerrain::Elevation(Candidate, Params);
+		if (Height <= 0.0)
+		{
+			continue;
+		}
+
+		// Score on height *and* local variation: a high plateau is no more
+		// interesting to look at than a low one. Four probes a few kilometres
+		// out give the local range for the cost of four noise evaluations.
+		const FVector3d Tangent = FVector3d::CrossProduct(Candidate, FVector3d::UpVector).GetSafeNormal();
+		const FVector3d Bitangent = FVector3d::CrossProduct(Candidate, Tangent);
+		const double Step = 0.0009; // ~5.7 km on this planet
+		double Lowest = Height;
+		double Highest = Height;
+		for (int32 Probe = 0; Probe < 4; ++Probe)
+		{
+			const FVector3d Offset = (Probe < 2 ? Tangent : Bitangent) * ((Probe & 1) ? Step : -Step);
+			const double Near = LedgerTerrain::Elevation((Candidate + Offset).GetSafeNormal(), Params);
+			Lowest = FMath::Min(Lowest, Near);
+			Highest = FMath::Max(Highest, Near);
+		}
+
+		// Prefer sites a little off the sub-solar point: light straight down
+		// flattens everything, and a lower sun rakes the relief.
+		const double LightingBonus = (1.0 - FMath::Abs(SunAlignment - 0.7)) * Params.MaxElevation * 0.25;
+		const double Score = Height + (Highest - Lowest) * 2.5 + LightingBonus;
+		if (Score > BestScore)
+		{
+			BestScore = Score;
+			DescentDirection = Candidate;
+		}
+	}
+
+	UE_LOG(LogLedger, Log, TEXT("landing site: %.2f km above sea level, sun alignment %.2f"),
+		LedgerTerrain::Elevation(DescentDirection, Params) / 100000.0,
+		FVector3d::DotProduct(DescentDirection, SunFacing));
 
 	const FVector3d Current = FVector3d(Pawn->GetActorLocation() - Planet->GetActorLocation());
 	DescentStartAltitude = Current.Length();
 	// Two kilometres up: above the relief, low enough that collision is being
 	// cooked and the LOD has refined several levels.
-	DescentEndAltitude = Planet->SurfaceRadiusAt(DescentDirection) + 200000.0;
+	// 1.2 km above the local ground. High enough to see across the range, low
+	// enough that relief still reads as relief rather than as texture.
+	DescentEndAltitude = Planet->SurfaceRadiusAt(DescentDirection) + 120000.0;
 	DescentElapsed = 0.0;
 
 	World->GetTimerManager().SetTimer(
@@ -302,18 +369,37 @@ void ULedgerWorldBuilder::StepDescent()
 	// Ease in and out. A linear descent arrives at the ground at full speed and
 	// reads as a camera being dragged; easing reads as flying.
 	const double Alpha = RawAlpha * RawAlpha * (3.0 - 2.0 * RawAlpha);
-	const double Altitude = FMath::Lerp(DescentStartAltitude, DescentEndAltitude, Alpha);
+
+	// Interpolate the *logarithm* of the altitude, not the altitude. Linear
+	// interpolation from 6,000 km down to 3 km spends almost the whole descent
+	// in empty space and then crosses the entire atmosphere in the last half
+	// second. Log space gives a constant relative rate — the altitude halves
+	// every so many seconds — which is both what an approach looks like and
+	// what gives the LOD time to refine.
+	const double Altitude = FMath::Exp(FMath::Lerp(
+		FMath::Loge(DescentStartAltitude), FMath::Loge(DescentEndAltitude), Alpha));
 
 	const FVector Location = Planet->GetActorLocation() + FVector(DescentDirection * Altitude);
 	Pawn->SetActorLocation(Location);
 
-	// Pitch from straight-down at the start to near-level at the end, so the
-	// horizon rises into frame the way it does on a real approach. The camera
-	// follows the *controller's* rotation, not the pawn's.
+	// Pitch from straight-down at the start to a shallow descent angle at the
+	// end, so the horizon rises into frame the way it does on a real approach.
+	// The camera follows the *controller's* rotation, not the pawn's.
 	const FVector Up(DescentDirection);
-	const FVector Forward = FVector::CrossProduct(Up, FVector(0.0, 1.0, 0.0)).GetSafeNormal();
-	const FVector Look = FMath::Lerp(FVector(-Up), Forward - Up * 0.16, Alpha).GetSafeNormal();
-	Controller->SetControlRotation(Look.Rotation());
+	FVector Forward = FVector::CrossProduct(Up, FVector(0.0, 1.0, 0.0)).GetSafeNormal();
+	if (Forward.IsNearlyZero())
+	{
+		Forward = FVector::CrossProduct(Up, FVector(1.0, 0.0, 0.0)).GetSafeNormal();
+	}
+
+	const FVector Look = FMath::Lerp(FVector(-Up), Forward - Up * 0.34, Alpha).GetSafeNormal();
+
+	// `MakeFromXZ`, not `Look.Rotation()`. A rotation built from a direction
+	// alone has no opinion about roll and resolves it against *world* Z — which
+	// on a sphere is only vertical at one point, so the horizon came out tilted
+	// everywhere else. Passing the local up as the Z reference is what makes it
+	// level.
+	Controller->SetControlRotation(FRotationMatrix::MakeFromXZ(Look, Up).Rotator());
 
 	if (RawAlpha >= 1.0)
 	{
@@ -367,7 +453,7 @@ void ULedgerWorldBuilder::PlaceRegionMarkers(UWorld& InWorld)
 			FMath::Cos(Theta) * RadiusAtY, Y, FMath::Sin(Theta) * RadiusAtY).GetSafeNormal();
 
 		const double SurfaceRadius = Planet->SurfaceRadiusAt(Direction);
-		const FVector Location = Planet->GetActorLocation() + FVector(Direction * (SurfaceRadius + 20000.0));
+		const FVector Location = Planet->GetActorLocation() + FVector(Direction * (SurfaceRadius + 100000.0));
 
 		// No explicit name: the actor's outer is the level, not the world, so a
 		// name made unique against the world collides on the second spawn. Let
@@ -390,7 +476,9 @@ void ULedgerWorldBuilder::PlaceRegionMarkers(UWorld& InWorld)
 		{
 			Component->SetStaticMesh(Marker);
 			// Tall and thin, so it reads as a beacon from altitude.
-			Component->SetWorldScale3D(FVector(60.0f, 60.0f, 400.0f));
+			// 40 m across, 2 km tall. On a 6,371 km planet anything human-sized
+			// is smaller than a pixel from any altitude worth flying at.
+			Component->SetWorldScale3D(FVector(400.0f, 400.0f, 20000.0f));
 		}
 #if WITH_EDITOR
 		Actor->SetActorLabel(Snapshot.Regions[Index].Name);

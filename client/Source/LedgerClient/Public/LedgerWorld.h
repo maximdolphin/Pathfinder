@@ -36,8 +36,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
 	float MinSpeed = 2000.0f;
 
+	/// 5,000 km/s at the top end. Crossing to orbit at anything less takes
+	/// longer than anyone will sit through.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
-	float MaxSpeed = 900000.0f;
+	float MaxSpeed = 500000000.0f;
 
 	/// Fraction of altitude covered per second at full throttle.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
@@ -98,8 +100,13 @@ private:
 	double DescentElapsed = 0.0;
 	FVector3d DescentDirection = FVector3d::UnitZ();
 
+	/// Direction from the planet's centre toward the sun. Half the planet is in
+	/// darkness at any moment — a landing site chosen on relief alone lands on
+	/// whichever half, and the first time it did, the shot was black.
+	FVector3d SunFacing = FVector3d::UnitZ();
+
 	UPROPERTY(EditAnywhere, Category = "Ledger|Descent")
-	double DescentDuration = 22.0;
+	double DescentDuration = 46.0;
 
 	void Capture(const TCHAR* Name);
 	void CaptureAndReport();

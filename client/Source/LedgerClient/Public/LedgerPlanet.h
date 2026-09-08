@@ -4,12 +4,13 @@
 // relative to camera altitude. Crack prevention by edge-index stitching, not
 // skirts. Collision cooked only near the player, async, off the game thread.
 //
-// **The schedule risk lives in the collision.** §6.8 is explicit that Chaos
-// heightfield cooking is the hitch source in every implementation of this, and
-// that the cure is a budgeted, *predictive* system that cooks ahead along the
-// velocity vector rather than on demand. That is what `CollisionLeadSeconds`
-// and the per-frame build budget below are for, and `Ledger.Terrain.Stats`
-// reports whether it is working.
+// **Geometry is generated on worker threads.** ADR-0002 measured a 33x33 patch
+// at 5–8 ms of game-thread time and concluded that was the ceiling on the whole
+// implementation — the budget could buy smooth frames or a filled horizon, not
+// both. Moving generation to the task graph removes the choice: the game thread
+// now only uploads finished vertex buffers, and the machine's other cores do the
+// sampling. That is also what makes a real-scale planet and a seven-octave
+// ridged multifractal affordable at all.
 //
 // Nanite is deliberately absent: its clusters are built offline, so a
 // runtime-generated streamed quadtree cannot use it (design §6.8, amended v1.1).
@@ -19,6 +20,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "LedgerTerrainMath.h"
+#include "ProceduralMeshComponent.h"
+#include <atomic>
 #include "LedgerPlanet.generated.h"
 
 class UProceduralMeshComponent;
@@ -36,8 +39,8 @@ struct FLedgerQuadNode
 
 	/// Centre of the node on the reference sphere, in planet-local space. Mesh
 	/// vertices are built relative to this so float precision stays local —
-	/// which is what lets the same code run at 60 km or at planetary scale
-	/// without the vertices falling apart.
+	/// which is what lets the same code run at 60 km or at 6,371 km without the
+	/// vertices falling apart.
 	FVector3d Centre = FVector3d::ZeroVector;
 
 	/// Approximate world-space extent of the node in centimetres.
@@ -47,16 +50,62 @@ struct FLedgerQuadNode
 	bool bHasChildren = false;
 
 	/// Set each frame by the LOD pass. A node on the far side of the planet is
-	/// neither drawn nor subdivided — without this, half the quadtree is spent
-	/// on geometry the horizon hides.
+	/// neither drawn nor subdivided.
 	bool bVisible = true;
 
 	bool IsLeaf() const { return !bHasChildren; }
 };
 
-/// What the terrain is doing, for the §15.1 build/buy decision. These numbers
-/// are the deliverable of the spike — an ADR that says "we build it" or "we buy
-/// it" needs a cook-time trace attached, not an opinion.
+/// One patch of geometry being generated on a worker thread.
+///
+/// Every input is copied in at launch so the worker never touches the actor, the
+/// quadtree, or anything else the game thread may be mutating. That is the whole
+/// thread-safety argument, and it is why the inputs are values rather than
+/// pointers.
+struct FLedgerPatchJob
+{
+	// ---- inputs, immutable once launched --------------------------------
+	uint64 Key = 0;
+	int32 SectionIndex = INDEX_NONE;
+	bool bWithCollision = false;
+
+	ELedgerCubeFace Face = ELedgerCubeFace::PositiveX;
+	double U = 0.0;
+	double V = 0.0;
+	double Extent = 1.0;
+	FVector3d Centre = FVector3d::ZeroVector;
+
+	FLedgerTerrainParams Params;
+	int32 Side = 33;
+
+	/// Edges that border a coarser neighbour and therefore need stitching.
+	bool bStitchLeft = false;
+	bool bStitchRight = false;
+	bool bStitchBottom = false;
+	bool bStitchTop = false;
+
+	// ---- outputs --------------------------------------------------------
+	TArray<FVector> Vertices;
+	TArray<int32> Triangles;
+	TArray<FVector> Normals;
+	TArray<FVector2D> UVs;
+	TArray<FColor> Colors;
+	TArray<FProcMeshTangent> Tangents;
+
+	double GenerationMs = 0.0;
+
+	/// Written last by the worker, read by the game thread. Release/acquire, so
+	/// the buffers above are guaranteed visible once this reads true.
+	std::atomic<bool> bComplete{false};
+
+	/// Set by the game thread when the patch is no longer wanted — the LOD moved
+	/// on while it was in flight. The result is dropped rather than uploaded.
+	std::atomic<bool> bAbandoned{false};
+};
+
+using FLedgerPatchJobRef = TSharedPtr<FLedgerPatchJob, ESPMode::ThreadSafe>;
+
+/// What the terrain is doing, for the §15.1 build/buy decision.
 USTRUCT()
 struct FLedgerTerrainStats
 {
@@ -69,7 +118,7 @@ struct FLedgerTerrainStats
 	int32 NodesWithCollision = 0;
 
 	UPROPERTY()
-	int32 BuildsThisFrame = 0;
+	int32 JobsInFlight = 0;
 
 	UPROPERTY()
 	int32 PendingBuilds = 0;
@@ -77,20 +126,21 @@ struct FLedgerTerrainStats
 	UPROPERTY()
 	int64 TotalBuilds = 0;
 
-	/// Milliseconds spent generating vertex data on the game thread last frame.
 	UPROPERTY()
-	double LastFrameBuildMs = 0.0;
+	int32 DeepestVisibleDepth = 0;
 
-	/// Worst single-frame build cost seen. If this creeps up under motion, the
-	/// budget is not holding and the architecture is wrong (§6.8).
+	/// Game-thread milliseconds spent uploading finished patches last frame.
+	/// This is now the *only* terrain cost on the game thread.
 	UPROPERTY()
-	double WorstFrameBuildMs = 0.0;
+	double LastFrameUploadMs = 0.0;
 
-	/// Milliseconds of collision cook requested last frame. Async, so this is
-	/// the request cost rather than the cook itself — the cook lands on a task
-	/// thread and the mesh section picks it up when it is ready.
 	UPROPERTY()
-	double LastFrameCollisionMs = 0.0;
+	double WorstFrameUploadMs = 0.0;
+
+	/// Worker-thread milliseconds for a single patch. Off the critical path, so
+	/// this can be large without costing a frame — it only bounds throughput.
+	UPROPERTY()
+	double LastPatchGenerationMs = 0.0;
 
 	UPROPERTY()
 	double WorstFrameCollisionMs = 0.0;
@@ -105,63 +155,64 @@ public:
 	ALedgerPlanet();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void Tick(float DeltaSeconds) override;
 
-	/// Reference sphere radius in centimetres.
+	/// Reference sphere radius in centimetres. Earth: 6,371 km.
 	///
-	/// 60 km by default rather than a real planet's 6,000 km. LWC handles the
-	/// larger figure — 6e8 cm is well inside a double's envelope (§6.8) — and
-	/// nothing in this class assumes otherwise, since vertices are already
-	/// built relative to each node's own centre. The smaller number simply
-	/// means a shorter flight from orbit to ground while measuring, which is
-	/// what the spike is for.
+	/// LWC carries this without complaint — 6.37e8 cm is well inside a double's
+	/// envelope (§6.8) — and the mesh does not care either, because vertices are
+	/// built relative to each node's own centre and never leave float range.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
-	double Radius = 6000000.0;
+	double Radius = 637100000.0;
 
-	/// Peak elevation above the reference sphere, in centimetres. 2.5 km on a
-	/// 60 km planet — proportionally far more dramatic than Earth, and
-	/// deliberately so: the point of the spike is to see the LOD work, and
-	/// Earth's relief is invisible from orbit without vertical exaggeration.
+	/// Peak elevation above the reference sphere. Earth's is about 9 km, which
+	/// is 0.14% of its radius — invisible from orbit, and correctly so. What
+	/// makes a planet read from space is the coastline, not the relief.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
-	double MaxElevation = 250000.0;
+	double MaxElevation = 900000.0;
+
+	/// Where the waterline sits in the continent noise, in [-1, 1]. Higher means
+	/// less land; Earth is about 71% ocean.
+	/// 0.14 puts roughly two thirds of the surface under water, which is close
+	/// to Earth and, more to the point, gives coastlines something to be a coast
+	/// *of*. At 0.06 the planet was one supercontinent with ponds.
+	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
+	double SeaLevel = 0.14;
 
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
 	int32 Seed = 20260908;
 
 	/// Vertices along one edge of a node's grid. Must be odd so edge stitching
 	/// has a midpoint to collapse.
+	/// 65 rather than 33: a patch with twice the vertices per side covers four
+	/// times the ground at the same screen-space error, so the same triangle
+	/// count arrives in a quarter of the draw calls. At 33 the visible set hit
+	/// eighteen thousand components and the pool starved into a checkerboard of
+	/// holes.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
-	int32 GridResolution = 33;
+	int32 GridResolution = 65;
 
-	/// Depth 8 gives ~370 m nodes and ~11 m quads at a 60 km radius.
-	///
-	/// Depth 10 is what the error metric asks for near the ground, and it is
-	/// also what buries this: the visible set climbs past eight thousand nodes
-	/// and the per-node build cost (below) cannot keep up, so the terrain
-	/// renders with holes. Capping the depth is a *ceiling*, not a fix — see
-	/// the note on `BuildBudgetPerFrame`.
+	/// 15 levels of 64-quad patches over a 6,371 km planet: ~4.8 m quads.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
-	int32 MaxDepth = 8;
+	int32 MaxDepth = 15;
 
 	/// Subdivide when a node's projected error exceeds this many pixels.
+	/// Paired with the patch resolution above: together they set how many
+	/// components the visible set needs. 150 px with 65-vertex patches lands
+	/// near a thousand, which the pool can actually serve.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
-	double ErrorThresholdPixels = 96.0;
+	double ErrorThresholdPixels = 150.0;
 
-	/// Milliseconds per frame the terrain may spend generating geometry.
-	///
-	/// A *time* budget, not a node count. A count cannot know that eight nodes
-	/// cost 53 ms this frame and two cost 12 ms the next, and the count version
-	/// of this produced exactly that spread.
-	///
-	/// Measured: a 33x33 patch costs roughly 5-8 ms on the game thread, almost
-	/// all of it in height sampling and tangent calculation. That is the real
-	/// ceiling on this implementation — the budget can buy smooth frames or a
-	/// filled-in horizon, not both. The fix is not a bigger number here: it is
-	/// generating the heightfield on the GPU (§6.8's "GPU compute pass over
-	/// layered noise") or buying a plugin that already has. **This measurement
-	/// is the deliverable of the §15.1 spike.**
+	/// Patches allowed in flight at once. Bounded so a fast turn cannot queue
+	/// thousands of jobs whose results are stale before they land.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
-	double BuildBudgetMs = 6.0;
+	int32 MaxJobsInFlight = 64;
+
+	/// Milliseconds per frame the game thread may spend uploading finished
+	/// patches. Generation is no longer on this budget — only the upload is.
+	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
+	double UploadBudgetMs = 6.0;
 
 	/// Cook collision within this distance of the camera.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Collision")
@@ -177,13 +228,12 @@ public:
 	/// Height of the surface above the reference sphere at a direction.
 	double SurfaceRadiusAt(const FVector3d& UnitDirection) const;
 
+	FLedgerTerrainParams TerrainParams() const;
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
 
-	/// A pool of mesh components, one per visible leaf. Components are recycled
-	/// rather than destroyed: churning `UProceduralMeshComponent`s under a
-	/// moving camera costs more than keeping a few dozen idle.
 	UPROPERTY()
 	TArray<TObjectPtr<UProceduralMeshComponent>> MeshPool;
 
@@ -192,8 +242,10 @@ private:
 
 	TArray<TUniquePtr<FLedgerQuadNode>> Roots;
 
-	/// Leaf key -> index into `MeshPool`.
+	/// Leaf key -> index into `MeshPool`, for patches whose geometry is live.
 	TMap<uint64, int32> ActiveSections;
+	/// Leaf key -> job, for patches currently being generated.
+	TMap<uint64, FLedgerPatchJobRef> InFlight;
 	TArray<int32> FreeSections;
 
 	FLedgerTerrainStats Stats;
@@ -201,29 +253,35 @@ private:
 
 	FVector3d LastCameraLocal = FVector3d::ZeroVector;
 	FVector3d CameraVelocityLocal = FVector3d::ZeroVector;
+	double NextTraceAt = 0.0;
 
 	void BuildRoots();
 	void UpdateTree(FLedgerQuadNode& Node, const FVector3d& CameraLocal, double ViewportWidth, double FovRadians);
 	void CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out) const;
-
-	/// True when the node's cap is entirely beyond the horizon from the camera.
-	bool IsBeyondHorizon(const FLedgerQuadNode& Node, const FVector3d& CameraLocal) const;
 	void Split(FLedgerQuadNode& Node);
 	void Collapse(FLedgerQuadNode& Node);
+	bool IsBeyondHorizon(const FLedgerQuadNode& Node, const FVector3d& CameraLocal) const;
 
-	/// Depth of the leaf containing a direction. Used for edge stitching, and
-	/// it crosses cube faces for free because it starts from the direction
-	/// rather than from a face-local coordinate.
+	/// Depth of the leaf containing a direction. Used for edge stitching, and it
+	/// crosses cube faces for free because it starts from the direction rather
+	/// than from a face-local coordinate.
 	int32 LeafDepthAt(const FVector3d& UnitDirection) const;
 
-	void BuildSection(const FLedgerQuadNode& Node, int32 SectionIndex, bool bWithCollision);
+	/// Launches generation on a worker thread. Returns false if the pool or the
+	/// in-flight cap is exhausted.
+	bool LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision);
+
+	/// Uploads whatever finished since last frame, within the budget.
+	void HarvestCompletedPatches();
+
 	void ReleaseSection(uint64 Key);
+	void AbandonJob(uint64 Key);
 
 	FVector3d UnitSphereAt(const FLedgerQuadNode& Node, double LocalU, double LocalV) const;
 
 	void LogStats() const;
-
-	/// Seconds until the next automatic stats line. A trace over time is what
-	/// the build/buy ADR needs; a single snapshot says nothing about hitching.
-	double NextTraceAt = 0.0;
 };
+
+/// Generates a patch's geometry. Free function, no engine state, safe to call
+/// from any thread — which is the point.
+LEDGERCLIENT_API void LedgerGeneratePatch(FLedgerPatchJob& Job);

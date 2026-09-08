@@ -1,6 +1,6 @@
 # ADR-0002 — Terrain: build vs buy
 
-**Status:** Proposed — the spike is done, the decision is not
+**Status:** Accepted — **build**. See the resolution at the end.
 **Date:** 2026-09-08
 **Resolves:** design §15.1 (the highest-value unresolved decision in the plan)
 **Related:** design §6.8, §14 R3
@@ -129,3 +129,72 @@ milestone.
 **Risk.** §14 R3 rated terrain collision hitching as the high risk. This spike
 says the real risk is elsewhere — in per-node generation cost — which means the
 mitigation the plan had budgeted for was aimed at the wrong target.
+
+
+---
+
+## Resolution — build, and the fix was threads rather than the GPU
+
+The recommendation above was to spend a week porting height generation to a
+compute shader and re-measure. That turned out to be the wrong first move.
+
+**Generation moved to the task graph instead**, as free functions over copied
+inputs that never touch the actor or the quadtree. The game thread now only
+uploads finished vertex buffers.
+
+| | before (game thread) | after (worker threads) |
+|---|---|---|
+| per-patch generation | 5–8 ms of frame time | 4–8 ms of *no* frame time |
+| worst game-thread cost | 53 ms | 6.6 ms (upload only) |
+| patches starved at low altitude | 862–15,383 | 0 |
+| planet radius | 60 km | **6,371 km** |
+| finest quad | 11 m | **4.8 m** |
+| noise per vertex | 20 samples | 33 samples, 8-octave ridged |
+
+A compute shader would still be faster, but it would also need a GPU→CPU
+readback for every patch that carries collision, because Chaos cooks on the CPU.
+Threads avoid that entirely and cost about eighty lines. **Revisit the GPU only
+if patch throughput becomes the limit again**; it is not the limit now.
+
+Two structural fixes landed with it, both of which had been showing up as
+"the renderer is broken":
+
+- **A parent keeps its geometry until all four children have theirs.** Releasing
+  at split time meant a starved pool punched black holes through the planet.
+  Now a starved budget costs detail, which is what a budget is supposed to cost.
+- **Patch resolution matters more than the error threshold.** 65×65 patches
+  cover four times the ground of 33×33 at the same screen error, so the same
+  triangle count arrives in a quarter of the draw calls. At 33 the visible set
+  was eighteen thousand components; at 65 it is about 2,500.
+
+### What real scale changed, and what it fixed for free
+
+Most of the atmosphere tuning recorded in the addendum above was chasing a
+problem that did not exist. A 60 km planet with a 5 km atmosphere is 8% air by
+radius where Earth is 1%: there was no self-consistent set of scattering
+parameters, so every fix traded a black sky for a washed-out ground. At 6,371 km
+the settings are simply Earth's — Rayleigh 8 km scale height, Mie 1.2 km, and
+the ozone layer that gives the deep zenith and the violet twilight band.
+
+Exponential height fog was **removed**. Its density is a function of absolute Z
+against an infinite horizontal plane; on a sphere that plane cuts through the
+planet, and from orbit it fills space itself. That was why the sky outside the
+atmosphere came back navy instead of black. Sky Atmosphere is spherical and
+already supplies aerial perspective.
+
+**And the terrain's noise frequencies had to be rescaled with the planet.** A
+frequency of `f` on the unit sphere has wavelength `2*pi*R/f`; at 6,371 km the
+old highest band was a 440 km feature, so from a kilometre up the entire visible
+world was one smooth gradient. The bands now run from continents to 70 m. This
+was invisible at 60 km — the same numbers gave visible mountains there — which
+is exactly why it survived so long.
+
+### Still open
+
+- No erosion model. Ridged multifractal gives ranges; it does not give drainage,
+  and the absence reads as uniform crumple at the small end.
+- Detail shading is a noise node with no distance fade, so it aliases. Real
+  close-up fidelity needs a triplanar material with mip-mapped textures.
+- The material is generated at runtime and is therefore editor-only. A packaged
+  build needs a real asset.
+- Collision is cooked but nothing has been dropped on it yet.

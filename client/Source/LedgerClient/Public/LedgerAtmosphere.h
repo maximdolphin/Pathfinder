@@ -43,21 +43,22 @@ public:
 	/// meaningful only relative to it.
 	void ConfigureForPlanet(double PlanetRadiusCm, double MaxElevationCm);
 
-	/// Atmosphere thickness in kilometres.
+	/// Atmosphere thickness in kilometres. Earth's is 60 km on a 6,371 km
+	/// radius — about 1%.
 	///
-	/// Earth's is about 1% of its radius. On a 60 km planet that would be 600 m
-	/// — physically consistent and visually nothing. This is deliberately
-	/// exaggerated, the same way the terrain's relief is, because the point of
-	/// the spike is to see whether reentry reads. Scale it back when the planet
-	/// scales up.
+	/// Every earlier round of fighting the scattering parameters came from a
+	/// 60 km planet carrying a proportionally impossible 5 km atmosphere. There
+	/// was no self-consistent setting to find, because the thing being modelled
+	/// did not exist. At real scale the numbers are just Earth's.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Atmosphere")
-	float AtmosphereHeightKm = 5.0f;
+	float AtmosphereHeightKm = 60.0f;
+
+	/// Cumulus base and depth, in kilometres above the ground.
+	UPROPERTY(EditAnywhere, Category = "Ledger|Clouds")
+	float CloudBaseAltitudeKm = 2.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Ledger|Clouds")
-	float CloudBaseAltitudeKm = 1.1f;
-
-	UPROPERTY(EditAnywhere, Category = "Ledger|Clouds")
-	float CloudLayerHeightKm = 1.6f;
+	float CloudLayerHeightKm = 6.0f;
 
 private:
 	UPROPERTY()
