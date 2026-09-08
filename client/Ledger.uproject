@@ -5,6 +5,21 @@
   "Description": "LEDGER client. C++ only - no Blueprint logic (design 9).",
   "Modules": [
     {
+      "Name": "LedgerCore",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "LedgerMaterial",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "LedgerTerrain",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
       "Name": "LedgerClient",
       "Type": "Runtime",
       "LoadingPhase": "Default"

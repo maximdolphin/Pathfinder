@@ -28,11 +28,11 @@ namespace LedgerSurface
 	/// `UTexture2D::CreateTransient` produces a single mip, which is exactly the
 	/// aliasing problem again. This builds every level down to 1x1 by box
 	/// filtering, so the GPU has something to select between.
-	LEDGERCLIENT_API UTexture2D* CreateDetailAlbedo(UObject* Outer, int32 Size, uint32 Seed);
+	LEDGERMATERIAL_API UTexture2D* CreateDetailAlbedo(UObject* Outer, int32 Size, uint32 Seed);
 
 	/// A tangent-space normal map derived from the same height field, so the
 	/// grain in the albedo and the grain in the lighting agree.
-	LEDGERCLIENT_API UTexture2D* CreateDetailNormal(UObject* Outer, int32 Size, uint32 Seed, double Strength);
+	LEDGERMATERIAL_API UTexture2D* CreateDetailNormal(UObject* Outer, int32 Size, uint32 Seed, double Strength);
 
 	/// The terrain material: vertex colour from the mesh, modulated by
 	/// triplanar detail at two scales, with a tangent-space normal that fades
@@ -40,10 +40,10 @@ namespace LedgerSurface
 	///
 	/// Editor-only — shaders compile at runtime only in an editor build. A
 	/// packaged game needs this saved as an asset.
-	LEDGERCLIENT_API UMaterialInterface* CreateTerrainMaterial(UObject* Outer, uint32 Seed);
+	LEDGERMATERIAL_API UMaterialInterface* CreateTerrainMaterial(UObject* Outer, uint32 Seed);
 
 	/// A plain lit material of a given colour, for the buildings and trees.
-	LEDGERCLIENT_API UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
+	LEDGERMATERIAL_API UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
 
 	/// The sea. Depth-tinted from vertex alpha, Fresnel toward a sky-facing
 	/// tint at grazing angles, and smooth enough that screen-space reflections
@@ -54,7 +54,7 @@ namespace LedgerSurface
 	/// an ocean read as water rather than as a blue plane. Depth-tinting the
 	/// albedo gets most of what transparency would have bought, and keeps the
 	/// reflection.
-	LEDGERCLIENT_API UMaterialInterface* CreateWaterMaterial(UObject* Outer);
+	LEDGERMATERIAL_API UMaterialInterface* CreateWaterMaterial(UObject* Outer);
 
 	/// Post-process murk, applied to the camera while it is below the sea.
 	///
@@ -64,5 +64,5 @@ namespace LedgerSurface
 	/// colour grading, bloom, exposure — every one of them a whole-screen
 	/// constant. Reaching scene depth means a material, and once there is a
 	/// material there is no reason left for the volume.
-	LEDGERCLIENT_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
+	LEDGERMATERIAL_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
 }

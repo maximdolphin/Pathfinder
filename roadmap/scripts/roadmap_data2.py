@@ -25,11 +25,14 @@ M02 = [
     # texture samples per pixel from textures with hand-built mip chains;
     # authored sets composited through a virtual texture are sampled once.
     dict(title="Source a PBR surface library and audit its licences",
-         detail="Twelve to sixteen ground surfaces spanning the biomes the climate model "
+         detail="Quixel Megascans through Fab, decided 2026-09-08: photogrammetry scans "
+                "are the highest realism ceiling available and are free for Unreal use. "
+                "Needs an Epic sign-in and the Fab plugin once, which is a manual step. "
+                "Twelve to sixteen ground surfaces spanning the biomes the climate model "
                 "will produce: sand, gravel, scree, granite, sandstone, grass, moss, snow, "
                 "mud, clay. Every set records its source and licence in a manifest as it "
-                "arrives. A project that audits licences later is a project that discovers "
-                "at ship time that it cannot.",
+                "arrives — a project that audits licences later is one that finds out at "
+                "ship time that it cannot.",
          acceptance="A manifest lists every surface set with source and licence, and a "
                     "validator fails the build on any texture present without an entry.",
          days=1, refs=["SS14"]),

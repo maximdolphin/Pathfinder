@@ -3,7 +3,7 @@
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
-#include "LedgerSimSubsystem.h"
+#include "LedgerLog.h"
 
 namespace
 {

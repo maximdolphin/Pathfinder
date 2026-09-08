@@ -24,6 +24,7 @@
 #include <atomic>
 #include "LedgerPlanet.generated.h"
 
+class UMaterialInterface;
 class UProceduralMeshComponent;
 
 /// A node of the quadtree. Plain data â€” the tree is walked, not dispatched to.
@@ -272,7 +273,7 @@ struct FLedgerTerrainStats
 };
 
 UCLASS()
-class LEDGERCLIENT_API ALedgerPlanet : public AActor
+class LEDGERTERRAIN_API ALedgerPlanet : public AActor
 {
 	GENERATED_BODY()
 
@@ -377,6 +378,14 @@ public:
 
 	FLedgerTerrainParams TerrainParams() const;
 
+	/// Set before BeginPlay by whoever spawns the planet. The quadtree's
+	/// business is geometry; what it is painted with is not its decision.
+	void SetMaterials(UMaterialInterface* Surface, UMaterialInterface* Water)
+	{
+		SurfaceMaterial = Surface;
+		WaterMaterial = Water;
+	}
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
@@ -450,4 +459,4 @@ private:
 
 /// Generates a patch's geometry. Free function, no engine state, safe to call
 /// from any thread â€” which is the point.
-LEDGERCLIENT_API void LedgerGeneratePatch(FLedgerPatchJob& Job);
+LEDGERTERRAIN_API void LedgerGeneratePatch(FLedgerPatchJob& Job);

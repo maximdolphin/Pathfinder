@@ -11,6 +11,7 @@
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
 #include "LedgerPerf.h"
+#include "LedgerSurface.h"
 #include "Misc/FileHelper.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAtmosphere.h"
@@ -95,6 +96,15 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 
 	Planet = InWorld.SpawnActor<ALedgerPlanet>(
 		ALedgerPlanet::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+
+	if (Planet != nullptr)
+	{
+		// Built here, not in the planet: the composition root is the only place
+		// that gets to know about both the terrain and the materials.
+		Planet->SetMaterials(
+			LedgerSurface::CreateTerrainMaterial(Planet, static_cast<uint32>(Planet->Seed)),
+			LedgerSurface::CreateWaterMaterial(Planet));
+	}
 	if (Planet == nullptr)
 	{
 		UE_LOG(LogLedger, Error, TEXT("failed to spawn the planet"));

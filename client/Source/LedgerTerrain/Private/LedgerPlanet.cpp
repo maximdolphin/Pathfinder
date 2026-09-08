@@ -5,8 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
-#include "LedgerSimSubsystem.h"
-#include "LedgerSurface.h"
+#include "LedgerLog.h"
 #include "Materials/MaterialInterface.h"
 #include "ProceduralMeshComponent.h"
 
@@ -391,13 +390,18 @@ void ALedgerPlanet::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SurfaceMaterial = LedgerSurface::CreateTerrainMaterial(this, static_cast<uint32>(Seed));
+	// Materials arrive from whoever spawned this actor rather than being built
+	// here. That is one line of wiring at the composition root against a module
+	// dependency for the whole terrain — and it is the right way round anyway:
+	// a quadtree's business is geometry, and what it is painted with is not its
+	// decision to make.
 	if (SurfaceMaterial == nullptr)
 	{
 		SurfaceMaterial = LoadObject<UMaterialInterface>(
 			nullptr, TEXT("/Engine/EngineDebugMaterials/VertexColorViewMode_ColorOnly"));
+		UE_LOG(LogLedger, Warning,
+			TEXT("planet spawned with no surface material; falling back to vertex colour"));
 	}
-	WaterMaterial = LedgerSurface::CreateWaterMaterial(this);
 
 	UE_LOG(LogLedger, Log, TEXT("materials: terrain %s, water %s"),
 		SurfaceMaterial != nullptr ? *SurfaceMaterial->GetName() : TEXT("<none>"),

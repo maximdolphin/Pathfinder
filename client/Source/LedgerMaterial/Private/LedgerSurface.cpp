@@ -1,8 +1,8 @@
 #include "LedgerSurface.h"
 
 #include "Engine/Texture2D.h"
-#include "LedgerSimSubsystem.h"
-#include "LedgerTerrainMath.h"
+#include "LedgerLog.h"
+#include "LedgerNoise.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
 
@@ -62,7 +62,7 @@ namespace
 			R2 * FMath::Sin(V * TwoPi));
 
 		const FVector3d Position = OnTorus + Second;
-		return LedgerTerrain::FractalNoise(Position * 1.7, Seed, 5) * 0.5 + 0.5;
+		return LedgerNoise::Fractal(Position * 1.7, Seed, 5) * 0.5 + 0.5;
 	}
 
 	/// Box-filters a level down by half. The whole point of the exercise: a mip

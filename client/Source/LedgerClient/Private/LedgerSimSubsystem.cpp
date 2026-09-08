@@ -4,7 +4,6 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
-DEFINE_LOG_CATEGORY(LogLedger);
 
 FString ULedgerSimSubsystem::SnapshotPath()
 {
