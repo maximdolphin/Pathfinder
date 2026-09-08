@@ -52,6 +52,37 @@ namespace
 	{
 		return T * T * T * (T * (T * 6.0 - 15.0) + 10.0);
 	}
+
+	/// d/dt of `Fade`: 30t^2(t-1)^2.
+	FORCEINLINE double FadeDerivative(double T)
+	{
+		const double TMinusOne = T - 1.0;
+		return 30.0 * T * T * TMinusOne * TMinusOne;
+	}
+
+	/// The same twelve gradients as `GradientDot`, as vectors.
+	FORCEINLINE FVector3d GradientVector(uint32 H)
+	{
+		switch (H & 15u)
+		{
+		case 0:  return FVector3d( 1,  1,  0);
+		case 1:  return FVector3d(-1,  1,  0);
+		case 2:  return FVector3d( 1, -1,  0);
+		case 3:  return FVector3d(-1, -1,  0);
+		case 4:  return FVector3d( 1,  0,  1);
+		case 5:  return FVector3d(-1,  0,  1);
+		case 6:  return FVector3d( 1,  0, -1);
+		case 7:  return FVector3d(-1,  0, -1);
+		case 8:  return FVector3d( 0,  1,  1);
+		case 9:  return FVector3d( 0, -1,  1);
+		case 10: return FVector3d( 0,  1, -1);
+		case 11: return FVector3d( 0, -1, -1);
+		case 12: return FVector3d( 1,  1,  0);
+		case 13: return FVector3d( 0, -1,  1);
+		case 14: return FVector3d(-1,  1,  0);
+		default: return FVector3d( 0, -1, -1);
+		}
+	}
 }
 
 namespace LedgerTerrain
@@ -183,6 +214,140 @@ namespace LedgerTerrain
 		return Normalisation > 0.0 ? (Sum / Normalisation) * 2.0 - 1.0 : 0.0;
 	}
 
+	FNoiseSample GradientNoiseWithDerivative(const FVector3d& Position, uint32 Seed)
+	{
+		const double Fx = FMath::Floor(Position.X);
+		const double Fy = FMath::Floor(Position.Y);
+		const double Fz = FMath::Floor(Position.Z);
+
+		const int32 Ix = static_cast<int32>(Fx);
+		const int32 Iy = static_cast<int32>(Fy);
+		const int32 Iz = static_cast<int32>(Fz);
+
+		const double Rx = Position.X - Fx;
+		const double Ry = Position.Y - Fy;
+		const double Rz = Position.Z - Fz;
+
+		const double Tx = Fade(Rx);
+		const double Ty = Fade(Ry);
+		const double Tz = Fade(Rz);
+		const double Dx = FadeDerivative(Rx);
+		const double Dy = FadeDerivative(Ry);
+		const double Dz = FadeDerivative(Rz);
+
+		FNoiseSample Sample;
+
+		for (int32 Cz = 0; Cz < 2; ++Cz)
+		{
+			const double Wz = Cz ? Tz : 1.0 - Tz;
+			const double DWz = Cz ? Dz : -Dz;
+			for (int32 Cy = 0; Cy < 2; ++Cy)
+			{
+				const double Wy = Cy ? Ty : 1.0 - Ty;
+				const double DWy = Cy ? Dy : -Dy;
+				for (int32 Cx = 0; Cx < 2; ++Cx)
+				{
+					const double Wx = Cx ? Tx : 1.0 - Tx;
+					const double DWx = Cx ? Dx : -Dx;
+
+					const FVector3d Gradient = GradientVector(Hash3(Ix + Cx, Iy + Cy, Iz + Cz, Seed));
+					const FVector3d Offset(Rx - Cx, Ry - Cy, Rz - Cz);
+					const double Dot = FVector3d::DotProduct(Gradient, Offset);
+
+					const double Weight = Wx * Wy * Wz;
+					Sample.Value += Dot * Weight;
+
+					// Product rule: the gradient contributes through the dot
+					// product, and the interpolation weights contribute through
+					// the fade curve.
+					Sample.Derivative.X += Gradient.X * Weight + Dot * DWx * Wy * Wz;
+					Sample.Derivative.Y += Gradient.Y * Weight + Dot * Wx * DWy * Wz;
+					Sample.Derivative.Z += Gradient.Z * Weight + Dot * Wx * Wy * DWz;
+				}
+			}
+		}
+
+		// Same normalisation as `GradientNoise`, applied to both.
+		Sample.Value *= 1.4;
+		Sample.Derivative *= 1.4;
+		return Sample;
+	}
+
+	double ErodedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double ErosionStrength,
+		double Lacunarity,
+		double Gain)
+	{
+		double Sum = 0.0;
+		double Amplitude = 1.0;
+		double Frequency = 1.0;
+		double Normalisation = 0.0;
+		// Accumulated slope of everything coarser than the current octave.
+		FVector3d Slope = FVector3d::ZeroVector;
+
+		for (int32 Octave = 0; Octave < Octaves; ++Octave)
+		{
+			const FNoiseSample Sample = GradientNoiseWithDerivative(
+				Position * Frequency, Seed + static_cast<uint32>(Octave) * 7919u);
+
+			Slope += Sample.Derivative * Frequency * Amplitude;
+
+			// Damping. Steep ground accumulates less detail — the same place
+			// water would have carried it away from.
+			const double Damping = 1.0 / (1.0 + ErosionStrength * Slope.SquaredLength());
+
+			Sum += Sample.Value * Amplitude * Damping;
+			Normalisation += Amplitude;
+			Amplitude *= Gain;
+			Frequency *= Lacunarity;
+		}
+
+		return Normalisation > 0.0 ? Sum / Normalisation : 0.0;
+	}
+
+	double ErodedRidgedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double ErosionStrength,
+		double Lacunarity,
+		double Gain)
+	{
+		double Sum = 0.0;
+		double Amplitude = 0.5;
+		double Frequency = 1.0;
+		double Normalisation = 0.0;
+		double Weight = 1.0;
+		FVector3d Slope = FVector3d::ZeroVector;
+
+		for (int32 Octave = 0; Octave < Octaves; ++Octave)
+		{
+			const FNoiseSample Sample = GradientNoiseWithDerivative(
+				Position * Frequency, Seed + static_cast<uint32>(Octave) * 6151u);
+
+			Slope += Sample.Derivative * Frequency * Amplitude;
+			const double Damping = 1.0 / (1.0 + ErosionStrength * Slope.SquaredLength());
+
+			double Signal = 1.0 - FMath::Abs(Sample.Value);
+			Signal *= Signal;
+			Signal *= Weight;
+
+			// The ridge continuity term, unchanged: detail only where a ridge
+			// already runs, so peaks connect into ranges.
+			Weight = FMath::Clamp(Signal * 2.2, 0.0, 1.0);
+
+			Sum += Signal * Amplitude * Damping;
+			Normalisation += Amplitude;
+			Amplitude *= Gain;
+			Frequency *= Lacunarity;
+		}
+
+		return Normalisation > 0.0 ? (Sum / Normalisation) * 2.0 - 1.0 : 0.0;
+	}
+
 	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
 	{
 		const uint32 Seed = Params.Seed;
@@ -232,18 +397,20 @@ namespace LedgerTerrain
 			FractalNoise(Warped * 12.0, Seed ^ 0x7E7Eu, 3) * 1.4 + 0.35, 0.0, 1.0);
 		const double RangeMask = FMath::Pow(Land, 1.4) * Province;
 
-		// Mountains — 130 km ranges resolving to about 500 m. This is the band
-		// that was missing entirely, and it is the one the eye reads as terrain.
-		const double Ridges = FMath::Max(0.0, RidgedNoise(Warped * 310.0, Seed ^ 0x5A5Au, 8));
+		// Mountains — 130 km ranges resolving to about 500 m, eroded. The slope
+		// damping is what turns a ridged multifractal from uniform crumple into
+		// something with drainage: valleys widen and smooth, ridges stay sharp.
+		const double Ridges = FMath::Max(0.0,
+			ErodedRidgedNoise(Warped * 310.0, Seed ^ 0x5A5Au, 8, 0.85));
 		const double Mountains = Ridges * RangeMask;
 
-		// Foothills and valleys — 3 km down to 400 m. Present everywhere on land
-		// so plains still roll, stronger where the mountains are.
-		const double Mid = FractalNoise(Warped * 5200.0, Seed ^ 0x3C3Cu, 4);
+		// Foothills and valleys — 8 km down to 1 km, eroded harder. This band
+		// carries most of what reads as catchment at flying altitude.
+		const double Mid = ErodedNoise(Warped * 5200.0, Seed ^ 0x3C3Cu, 5, 1.6);
 
-		// Rock and gully detail — 270 m down to about 70 m. Weighted onto slopes
-		// so it roughens mountainsides without pebbling the plains.
-		const double Micro = FractalNoise(UnitSphere * 150000.0, Seed ^ 0x1F1Fu, 3);
+		// Rock and gully detail — 270 m down to about 70 m, eroded hardest so it
+		// collects in gullies instead of pebbling every surface evenly.
+		const double Micro = ErodedNoise(UnitSphere * 150000.0, Seed ^ 0x1F1Fu, 4, 2.4);
 
 		// Amplitudes fall off hard with frequency.
 		//
@@ -255,8 +422,8 @@ namespace LedgerTerrain
 		const double Height =
 			Land * 0.26
 			+ Mountains * 0.64
-			+ Mid * (0.010 + Mountains * 0.028)
-			+ Micro * (0.0006 + Mountains * 0.0022);
+			+ Mid * (0.014 + Mountains * 0.034)
+			+ Micro * (0.0010 + Mountains * 0.0030);
 
 		return Height * Params.MaxElevation;
 	}

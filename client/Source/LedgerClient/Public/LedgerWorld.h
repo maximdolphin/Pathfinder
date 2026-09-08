@@ -10,41 +10,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/DefaultPawn.h"
 #include "GameFramework/GameModeBase.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "LedgerWorld.generated.h"
 
 class ALedgerAtmosphere;
 class ALedgerPlanet;
-
-/// Free flight for surveying the planet. Design §6.9 keeps ships out of scope
-/// for now, so this is a camera with a throttle, not a flight model.
-UCLASS()
-class LEDGERCLIENT_API ALedgerOrbiterPawn : public ADefaultPawn
-{
-	GENERATED_BODY()
-
-public:
-	ALedgerOrbiterPawn();
-
-	virtual void Tick(float DeltaSeconds) override;
-
-	/// Speed scales with altitude above the surface. Crossing 60 km at ground
-	/// speed is unusable, and descending at orbital speed is uncontrollable —
-	/// one control that works at both ends beats two that each work at one.
-	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
-	float MinSpeed = 2000.0f;
-
-	/// 5,000 km/s at the top end. Crossing to orbit at anything less takes
-	/// longer than anyone will sit through.
-	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
-	float MaxSpeed = 500000000.0f;
-
-	/// Fraction of altitude covered per second at full throttle.
-	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
-	float AltitudeSpeedFactor = 0.9f;
-};
+class ALedgerSettlement;
+class ALedgerShip;
 
 UCLASS()
 class LEDGERCLIENT_API ALedgerGameMode : public AGameModeBase
@@ -55,12 +28,11 @@ public:
 	ALedgerGameMode();
 
 	/// The map has no PlayerStart, so without this the pawn spawns at the world
-	/// origin — which is the centre of the planet. Start in high orbit instead,
-	/// looking down, because the first thing worth seeing is the curve.
+	/// origin — which is the centre of the planet. Start in high orbit instead.
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };
 
-/// Spawns the scene: planet, lighting, and a marker per simulated region.
+/// Spawns the scene: planet, atmosphere, lighting, a town, and the ship.
 UCLASS()
 class LEDGERCLIENT_API ULedgerWorldBuilder : public UWorldSubsystem
 {
@@ -71,6 +43,10 @@ public:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
 
 	ALedgerPlanet* GetPlanet() const { return Planet; }
+	ALedgerSettlement* GetSettlement() const { return Settlement; }
+
+	/// Direction from the planet's centre to the town. The reentry aims here.
+	FVector3d GetSiteDirection() const { return SiteDirection; }
 
 private:
 	UPROPERTY()
@@ -79,38 +55,64 @@ private:
 	UPROPERTY()
 	TObjectPtr<ALedgerAtmosphere> Atmosphere;
 
-	/// One marker per region in the sim snapshot, placed on the surface. The
-	/// point is not the geometry — it is that the world the player flies over
-	/// is the same world the ledger is about.
-	void PlaceRegionMarkers(UWorld& InWorld);
+	UPROPERTY()
+	TObjectPtr<ALedgerSettlement> Settlement;
 
-	/// Fires once, a few seconds in, to capture what the terrain actually looks
-	/// like. Verifying a renderer by reading its log is not verifying it.
-	FTimerHandle CaptureTimer;
+	/// Direction from the planet's centre toward the sun. Half the planet is in
+	/// darkness at any moment — a site chosen on relief alone lands on whichever
+	/// half, and the first time it did, the shot came back black.
+	FVector3d SunFacing = FVector3d::UnitZ();
+	FVector3d SiteDirection = FVector3d::UnitZ();
+
+	FTimerHandle OrbitCaptureTimer;
 	FTimerHandle DescendTimer;
 	FTimerHandle DescentStepTimer;
-	FTimerHandle MidCaptureTimer;
+	FTimerHandle EntryCaptureTimer;
 	FTimerHandle SurfaceCaptureTimer;
+	FTimerHandle TownCaptureTimer;
+	FTimerHandle AscentTimer;
+	FTimerHandle ClimbCaptureTimer;
+	FTimerHandle SpaceCaptureTimer;
 
-	/// Descent state. The camera is *flown* down rather than teleported: a
-	/// teleport proves nothing about whether the transition holds together, and
-	/// the whole claim being made here is that there is no seam to hide.
+	/// Descent state. The ship is *flown* down rather than teleported: a teleport
+	/// proves nothing about whether the transition holds together, and the whole
+	/// claim being made is that there is no seam to hide.
 	double DescentStartAltitude = 0.0;
 	double DescentEndAltitude = 0.0;
 	double DescentElapsed = 0.0;
-	FVector3d DescentDirection = FVector3d::UnitZ();
-
-	/// Direction from the planet's centre toward the sun. Half the planet is in
-	/// darkness at any moment — a landing site chosen on relief alone lands on
-	/// whichever half, and the first time it did, the shot was black.
-	FVector3d SunFacing = FVector3d::UnitZ();
 
 	UPROPERTY(EditAnywhere, Category = "Ledger|Descent")
 	double DescentDuration = 46.0;
 
+	/// Picks somewhere worth landing: high relief, in daylight. Earth is mostly
+	/// flat, so an arbitrary descent vector proves nothing about the terrain.
+	void ChooseSite();
+
+	void PlaceRegionMarkers(UWorld& InWorld);
+
 	void Capture(const TCHAR* Name);
-	void CaptureAndReport();
+	void CaptureOrbit();
+	void CaptureEntry();
+	void CaptureSurface();
+	void CaptureTown();
+
 	void BeginDescent();
 	void StepDescent();
-	void CaptureSurface();
+
+	/// Points the ship up and opens the throttle. Everything after this runs
+	/// through the ship's own flight model, so the climb is a demonstration that
+	/// gravity and thrust actually balance rather than a second animation.
+	void BeginAscent();
+
+	/// Moves the ship to a vantage point with the sun behind the camera. The
+	/// first town capture came back as silhouettes because the pad happens to
+	/// sit on the shadowed side of its own buildings.
+	void FrameTown();
+
+	/// Turns the ship to look back down at the planet before the last capture.
+	/// Climbing straight out leaves the camera pointed at empty sky, which
+	/// proves the ascent worked and shows nothing at all.
+	void FrameSpace();
+
+	ALedgerShip* GetShip() const;
 };

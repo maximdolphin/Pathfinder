@@ -4,17 +4,6 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
 #include "LedgerSimSubsystem.h"
-#include "Materials/Material.h"
-#include "Materials/MaterialInterface.h"
-
-#if WITH_EDITOR
-#include "MaterialDomain.h"
-#include "Materials/MaterialExpressionConstant.h"
-#include "Materials/MaterialExpressionMultiply.h"
-#include "Materials/MaterialExpressionNoise.h"
-#include "Materials/MaterialExpressionVertexColor.h"
-#include "Materials/MaterialExpressionWorldPosition.h"
-#endif
 
 namespace
 {
@@ -145,85 +134,4 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		AtmosphereHeightKm,
 		Clouds != nullptr ? Clouds->LayerBottomAltitude : 0.0f,
 		Clouds != nullptr ? Clouds->LayerBottomAltitude + Clouds->LayerHeight : 0.0f);
-}
-
-namespace LedgerMaterials
-{
-	UMaterialInterface* CreateTerrainMaterial(UObject* Outer)
-	{
-#if WITH_EDITOR
-		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
-		if (Material == nullptr)
-		{
-			return nullptr;
-		}
-
-		Material->MaterialDomain = MD_Surface;
-		Material->SetShadingModel(MSM_DefaultLit);
-
-		UMaterialExpressionVertexColor* VertexColour = NewObject<UMaterialExpressionVertexColor>(Material);
-
-		// Close-up variation. Vertex colour alone is constant across a quad, and
-		// at 5 m quads that reads as flat plastic from anywhere near the ground.
-		// A noise term breaks it up without needing a texture.
-		//
-		// Camera-relative world position, not absolute: absolute world position
-		// on a 6.37e8 cm planet loses all its precision to the exponent, and the
-		// noise degenerates into banding. Camera-relative keeps full precision
-		// exactly where the detail is visible.
-		UMaterialExpressionWorldPosition* WorldPosition =
-			NewObject<UMaterialExpressionWorldPosition>(Material);
-		WorldPosition->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
-
-		UMaterialExpressionNoise* Detail = NewObject<UMaterialExpressionNoise>(Material);
-		Detail->Position.Expression = WorldPosition;
-		// ~40 m features at low contrast.
-		//
-		// At six metres and 0.72–1.20 this aliased savagely: a pattern that fine
-		// is sub-pixel across most of a 100 km view, and the whole landscape came
-		// back looking like pumice. Detail shading with no distance fade has to
-		// be large and quiet, or it has to be a proper LOD-aware material —
-		// which is a texture-and-mip problem, not a noise-node one.
-		Detail->Scale = 0.000025f;
-		Detail->Quality = 2;
-		Detail->NoiseFunction = NOISEFUNCTION_SimplexTex;
-		Detail->Levels = 2;
-		Detail->OutputMin = 0.90f;
-		Detail->OutputMax = 1.10f;
-		Detail->bTurbulence = false;
-
-		UMaterialExpressionMultiply* BaseColour = NewObject<UMaterialExpressionMultiply>(Material);
-		BaseColour->A.Expression = VertexColour;
-		BaseColour->B.Expression = Detail;
-
-		UMaterialExpressionConstant* Roughness = NewObject<UMaterialExpressionConstant>(Material);
-		Roughness->R = 0.94f;
-		UMaterialExpressionConstant* Specular = NewObject<UMaterialExpressionConstant>(Material);
-		Specular->R = 0.05f;
-
-		Material->GetExpressionCollection().AddExpression(VertexColour);
-		Material->GetExpressionCollection().AddExpression(WorldPosition);
-		Material->GetExpressionCollection().AddExpression(Detail);
-		Material->GetExpressionCollection().AddExpression(BaseColour);
-		Material->GetExpressionCollection().AddExpression(Roughness);
-		Material->GetExpressionCollection().AddExpression(Specular);
-
-		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
-		if (EditorData == nullptr)
-		{
-			return nullptr;
-		}
-		EditorData->BaseColor.Expression = BaseColour;
-		EditorData->Roughness.Expression = Roughness;
-		EditorData->Specular.Expression = Specular;
-
-		Material->PostEditChange();
-		return Material;
-#else
-		// A cooked build cannot compile a shader at runtime. This needs a real
-		// asset before there is a packaged game.
-		(void)Outer;
-		return nullptr;
-#endif
-	}
 }

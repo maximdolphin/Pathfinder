@@ -5,8 +5,8 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
-#include "LedgerAtmosphere.h"
 #include "LedgerSimSubsystem.h"
+#include "LedgerSurface.h"
 #include "Materials/MaterialInterface.h"
 #include "ProceduralMeshComponent.h"
 
@@ -293,7 +293,7 @@ void ALedgerPlanet::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SurfaceMaterial = LedgerMaterials::CreateTerrainMaterial(this);
+	SurfaceMaterial = LedgerSurface::CreateTerrainMaterial(this, static_cast<uint32>(Seed));
 	if (SurfaceMaterial == nullptr)
 	{
 		SurfaceMaterial = LoadObject<UMaterialInterface>(

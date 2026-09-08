@@ -21,7 +21,6 @@
 class UExponentialHeightFogComponent;
 class USkyAtmosphereComponent;
 class UVolumetricCloudComponent;
-class UMaterialInterface;
 
 /// Everything that makes the planet look like it has air around it.
 ///
@@ -70,17 +69,3 @@ private:
 	UPROPERTY()
 	TObjectPtr<UExponentialHeightFogComponent> Fog;
 };
-
-namespace LedgerMaterials
-{
-	/// A lit surface material driven by vertex colour.
-	///
-	/// The debug vertex-colour material the terrain used before this is
-	/// **unlit**, which is why the planet read as a flat cut-out: the normals
-	/// the LOD works so hard to get right were not shading anything. This builds
-	/// the smallest material that fixes that.
-	///
-	/// Editor-only: shaders compile in an editor build, and a cooked game needs
-	/// a real asset instead. That is a known ceiling, not an oversight.
-	LEDGERCLIENT_API UMaterialInterface* CreateTerrainMaterial(UObject* Outer);
-}

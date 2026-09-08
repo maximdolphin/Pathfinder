@@ -77,6 +77,48 @@ namespace LedgerTerrain
 		double Lacunarity = 2.03,
 		double Gain = 0.5);
 
+	/// Noise value together with its analytic gradient.
+	struct FNoiseSample
+	{
+		double Value = 0.0;
+		FVector3d Derivative = FVector3d::ZeroVector;
+	};
+
+	/// Gradient noise and its exact derivative, from the same eight corners.
+	/// Finite differences would cost four evaluations and be wrong at the octave
+	/// boundaries; this is one evaluation and exact.
+	LEDGERCLIENT_API FNoiseSample GradientNoiseWithDerivative(const FVector3d& Position, uint32 Seed);
+
+	/// Erosion, done analytically.
+	///
+	/// Real hydraulic erosion is an iterative simulation over a heightfield, and
+	/// a quadtree cannot run one: patches are generated independently, at
+	/// different times, at different resolutions, so any regional simulation
+	/// produces seams at every LOD boundary. What it *can* do is the effect
+	/// erosion has on the shape.
+	///
+	/// Each octave is damped by the accumulated slope of the octaves above it.
+	/// Detail therefore collects in the flats and thins out on the steeps, which
+	/// is what water does: valleys widen and smooth, ridges stay sharp, and the
+	/// whole surface acquires drainage. It is a pure function of position, so it
+	/// costs nothing at a patch boundary and is identical at every LOD.
+	LEDGERCLIENT_API double ErodedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double ErosionStrength,
+		double Lacunarity = 2.01,
+		double Gain = 0.5);
+
+	/// Ridged multifractal with the same slope damping. Mountains that drain.
+	LEDGERCLIENT_API double ErodedRidgedNoise(
+		const FVector3d& Position,
+		uint32 Seed,
+		int32 Octaves,
+		double ErosionStrength,
+		double Lacunarity = 2.01,
+		double Gain = 0.5);
+
 	/// Terrain elevation in centimetres above the reference sphere, for a point
 	/// on the unit sphere.
 	LEDGERCLIENT_API double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
