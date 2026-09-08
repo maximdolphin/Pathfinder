@@ -1,0 +1,98 @@
+# ADR-0002 — Terrain: build vs buy
+
+**Status:** Proposed — the spike is done, the decision is not
+**Date:** 2026-09-08
+**Resolves:** design §15.1 (the highest-value unresolved decision in the plan)
+**Related:** design §6.8, §14 R3
+
+## Context
+
+§15.1 asks whether to build the cube-sphere quadtree terrain or adopt a plugin,
+and §6.8 says the answer must come from a spike that flies a continuous descent
+from orbit to ground and **measures collision cook time under motion** — not
+from an opinion.
+
+The v1.1 amendment to §6.8 also carved this spike out of the pre-gate Unreal
+freeze precisely so it could run early. This is that spike.
+
+## What was built
+
+A from-scratch implementation in `client/Source/LedgerClient`, roughly 700 lines:
+
+- six cube-sphere roots, subdivided against a screen-space error metric
+- horizon culling
+- crack prevention by edge-index stitching, not skirts
+- vertices generated relative to each node's own centre, so float precision is
+  local and the same code works at 60 km or at planetary scale
+- `UProceduralMeshComponent` pool with `bUseAsyncCooking`, collision cooked only
+  near the camera and predictively ahead along the velocity vector
+- `Ledger.Terrain.Stats`, and an automatic trace every five seconds
+
+It renders a planet with continents and coastlines from orbit, and a horizon
+with a shoreline from two kilometres up. The architecture works.
+
+## What it measured
+
+| | orbit (2.4 R) | 2 km altitude |
+|---|---|---|
+| visible leaf nodes | 496 | 1,886 |
+| nodes carrying collision | 0 | 94 |
+| builds still queued | 0 | 862 |
+| worst frame build cost | 16.4 ms | 20.9 ms |
+| worst collision cook request | 0.0 ms | 0.3 ms |
+
+Two findings, and the second is the one that matters.
+
+**Async collision cooking is not the bottleneck.** §6.8 predicted Chaos
+heightfield cooking would be the hitch source. With `bUseAsyncCooking` and a
+near-camera radius it costs a fraction of a millisecond per frame to request.
+The design's fear was well-founded in general and unfounded here, because the
+mitigation it prescribed works.
+
+**Vertex generation on the game thread is the bottleneck.** A 33x33 patch costs
+roughly 5–8 ms, almost all of it in height sampling and tangent calculation. At
+a budget of three per frame the visible set at low altitude takes several
+seconds to fill, and 862 nodes stay queued. Raising the budget trades holes for
+hitches; that is not a fix, it is a choice of symptom.
+
+The current settings — `MaxDepth 8`, a 96-pixel error threshold — are a
+**ceiling, not a solution**. They keep the node count inside what the builder
+can serve. The error metric asks for depth 10 near the ground, and at depth 10
+the visible set passes eight thousand nodes and the terrain renders with holes.
+
+## Decision
+
+**Not yet taken.** The spike has produced the trace §6.8 asked for; the choice
+between the two paths below needs one more measurement.
+
+**Option A — build, moving height generation to the GPU.** §6.8 already
+specifies "heightfield from a GPU compute pass over layered noise", and this
+implementation does it on the CPU. That is the whole gap. A compute pass writing
+to a render target, read back or sampled directly, removes the 5–8 ms and the
+node budget stops mattering. Estimated: the six weeks §6.8 warns about.
+
+**Option B — buy.** Evaluate a planetary terrain plugin against the same trace.
+The v1.1 amendment is explicit that this is not a drop-in: Voxel Plugin is
+SDF/voxel meshing, a *different* architecture that replaces this one, and
+adopting it is lock-in rather than a shortcut.
+
+**Recommended next step:** timebox one week to port height generation to a
+compute shader and re-run this trace. If the worst-frame build cost drops below
+2 ms, build. If it does not, buy — and accept the architectural lock-in with
+open eyes.
+
+## Consequences
+
+**Good.** The spike is cheap to keep either way: the LOD, horizon culling,
+stitching and collision scheduling are independent of where the heights come
+from, and Option A is a change to one function.
+
+**Bad.** The terrain currently on `main` is a working spike, not a shippable
+feature. It has no material beyond a debug vertex-colour shader, no atmosphere,
+no streaming of anything but the mesh, and its LOD ceiling is set by a constant
+rather than by the error metric. Nobody should mistake the screenshots for a
+milestone.
+
+**Risk.** §14 R3 rated terrain collision hitching as the high risk. This spike
+says the real risk is elsewhere — in per-node generation cost — which means the
+mitigation the plan had budgeted for was aimed at the wrong target.

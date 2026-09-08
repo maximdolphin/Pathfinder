@@ -15,7 +15,14 @@ public class LedgerClient : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"Json"
+			"InputCore",
+			"Json",
+			// §6.8 terrain: runtime-generated cube-sphere meshes with async
+			// collision cooking. ProceduralMeshComponent is the boring choice
+			// and it already does budgeted async cooks, which is the one thing
+			// the terrain architecture must get right.
+			"ProceduralMeshComponent",
+			"PhysicsCore"
 		});
 	}
 }
