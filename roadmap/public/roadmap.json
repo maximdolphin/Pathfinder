@@ -49,7 +49,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M02",
@@ -1480,11 +1480,39 @@
    "dependsOn": [
     "T031"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "LedgerPlanet.cpp 1,315 to 294 lines, as five files: the patch generator (a free function that never touches the actor), the quadtree and LOD policy, patch streaming, the cache, and diagnostics. Every file in LedgerTerrain is now under 500."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Only the cache became a real type. It has an invariant worth owning — the byte count it evicts against must equal the bytes it holds — and that bookkeeping had gone wrong twice, both times surfacing somewhere else entirely as patches that could not be filled. The quadtree stayed as ALedgerPlanet methods on purpose: what is left there is LOD policy, and the policy reads streaming state. Extracting it would mean handing the new type that state, which is the same coupling with more indirection in front of it."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "NodeKey was a file-local helper in the anonymous namespace. Splitting the file revealed it is the thing every part of the streaming system agrees on — so it, and the node type, now have their own header. A function that three files need was private to one translation unit purely because nothing had forced the question."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Found a regression I introduced in T026 and had not noticed: the ridge sweep fires at 82s and the town capture was due at exactly 82s, so the sweep took the ship first and both files came back showing the sweep. The town went unphotographed for two milestones because the image I checked was the one that was right. Timeline respaced; each step now finishes before the next takes the ship."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T032-2026-09-08T20-40-44-199.png",
+     "caption": "terrain-town.png",
+     "source": "../out/terrain-town.png",
+     "addedAt": "2026-09-08T20:40:44.201Z"
+    }
+   ],
    "plannedStartDay": 38,
    "plannedEndDay": 40,
    "plannedStart": "2026-10-29",
@@ -10503,5 +10531,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T20:27:30.564Z"
+ "updatedAt": "2026-09-08T20:40:44.265Z"
 }

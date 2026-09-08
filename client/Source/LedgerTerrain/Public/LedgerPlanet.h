@@ -19,6 +19,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "LedgerPatchCache.h"
+#include "LedgerQuadNode.h"
 #include "LedgerTerrainMath.h"
 #include "ProceduralMeshComponent.h"
 #include <atomic>
@@ -26,46 +28,6 @@
 
 class UMaterialInterface;
 class UProceduralMeshComponent;
-
-/// A node of the quadtree. Plain data â€” the tree is walked, not dispatched to.
-struct FLedgerQuadNode
-{
-	ELedgerCubeFace Face = ELedgerCubeFace::PositiveX;
-	int32 Depth = 0;
-
-	/// Position and extent within the face's `[0,1]^2` parameter space.
-	double U = 0.0;
-	double V = 0.0;
-	double Extent = 1.0;
-
-	/// Centre of the node on the reference sphere, in planet-local space. Mesh
-	/// vertices are built relative to this so float precision stays local â€”
-	/// which is what lets the same code run at 60 km or at 6,371 km without the
-	/// vertices falling apart.
-	FVector3d Centre = FVector3d::ZeroVector;
-
-	/// Approximate world-space extent of the node in centimetres.
-	double WorldSize = 0.0;
-
-	TStaticArray<TUniquePtr<FLedgerQuadNode>, 4> Children;
-	bool bHasChildren = false;
-
-	/// Set each frame by the LOD pass. A node on the far side of the planet is
-	/// neither drawn nor subdivided.
-	bool bVisible = true;
-
-	/// The metric wants this node collapsed and it has no geometry of its own
-	/// yet. Its children stay on screen until it does — collapsing first leaves
-	/// nothing at all drawing this ground.
-	bool bWantsCollapse = false;
-
-	/// Frames spent waiting for that geometry. Bounded, because the children
-	/// being held hold sections from the same pool the parent needs one from,
-	/// and an unbounded wait is a deadlock rather than a delay.
-	int32 CollapseWaitFrames = 0;
-
-	bool IsLeaf() const { return !bHasChildren; }
-};
 
 /// One patch of geometry being generated on a worker thread.
 ///
@@ -145,43 +107,6 @@ struct FLedgerSectionMeta
 	bool bStitchRight = false;
 	bool bStitchBottom = false;
 	bool bStitchTop = false;
-};
-
-/// A patch that has been on screen and is not on screen now.
-///
-/// Flying out over a ridge and back regenerates every patch on the way home,
-/// and the height function does not change between the two passes â€” the second
-/// generation is guaranteed to reproduce what the first one made. Holding the
-/// geometry costs memory and returns worker-thread seconds.
-///
-/// It holds the component's own section structs rather than the parallel arrays
-/// the generator produced. Taking a copy on release is one memcpy of an
-/// interleaved buffer, and putting it back is `SetProcMeshSection`, so nothing
-/// is converted in either direction. Caching at upload time instead would have
-/// meant a second copy of every patch currently drawn, which for a thousand
-/// visible patches is most of a gigabyte to hold what is already in memory.
-///
-/// The stitch flags live in the entry, not in the key. A patch whose coarser
-/// neighbour has since subdivided needs different edge geometry, and that is
-/// rare enough that checking on lookup and missing beats a wider key.
-struct FLedgerCachedPatch
-{
-	FVector3d Centre = FVector3d::ZeroVector;
-	bool bStitchLeft = false;
-	bool bStitchRight = false;
-	bool bStitchBottom = false;
-	bool bStitchTop = false;
-
-	FProcMeshSection Land;
-	FProcMeshSection Water;
-	bool bHasWater = false;
-
-	/// Monotonic counter, not a timestamp. Wall clock would make eviction
-	/// depend on frame rate; a serial makes it depend on use, which is what
-	/// least-recently-used is supposed to mean.
-	uint64 LastUsed = 0;
-
-	int64 Bytes() const;
 };
 
 /// What the terrain is doing, for the Â§15.1 build/buy decision.
@@ -409,12 +334,10 @@ private:
 	/// Per-section record of what is loaded there, parallel to `MeshPool`.
 	TArray<FLedgerSectionMeta> SectionMeta;
 
-	/// Leaf key -> geometry, for patches that were drawn and are not drawn now.
-	/// Nothing here is on screen; entries exist so that wanting the patch again
-	/// costs an upload instead of a generation.
-	TMap<uint64, TSharedPtr<FLedgerCachedPatch>> PatchCache;
-	int64 PatchCacheBytes = 0;
-	uint64 CacheClock = 0;
+	/// Geometry for patches that were drawn and are not drawn now. Nothing in
+	/// here is on screen; entries exist so that wanting a patch again costs an
+	/// upload rather than a generation.
+	FLedgerPatchCache PatchCache;
 	TArray<int32> FreeSections;
 
 	FLedgerTerrainStats Stats;
@@ -446,8 +369,6 @@ private:
 	/// Serves a leaf from the cache if the geometry is there and still correct.
 	bool UploadFromCache(const FLedgerQuadNode& Node, bool bWithCollision);
 
-	/// Adds an entry, evicting least-recently-used ones until the budget holds.
-	void CachePatch(TSharedPtr<FLedgerCachedPatch> Entry, uint64 Key);
 
 	void ReleaseSection(uint64 Key);
 	void AbandonJob(uint64 Key);

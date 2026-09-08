@@ -22,6 +22,66 @@ namespace LedgerTerrain
 		}
 	}
 
+	/// Which cube face a direction points at, and where on it.
+	void DirectionToFace(const FVector3d& Direction, ELedgerCubeFace& OutFace, double& OutU, double& OutV)
+	{
+		const double Ax = FMath::Abs(Direction.X);
+		const double Ay = FMath::Abs(Direction.Y);
+		const double Az = FMath::Abs(Direction.Z);
+
+		double A = 0.0;
+		double B = 0.0;
+
+		if (Ax >= Ay && Ax >= Az)
+		{
+			if (Direction.X > 0.0)
+			{
+				OutFace = ELedgerCubeFace::PositiveX;
+				A = Direction.Y / Ax;
+				B = Direction.Z / Ax;
+			}
+			else
+			{
+				OutFace = ELedgerCubeFace::NegativeX;
+				A = -Direction.Y / Ax;
+				B = Direction.Z / Ax;
+			}
+		}
+		else if (Ay >= Az)
+		{
+			if (Direction.Y > 0.0)
+			{
+				OutFace = ELedgerCubeFace::PositiveY;
+				A = -Direction.X / Ay;
+				B = Direction.Z / Ay;
+			}
+			else
+			{
+				OutFace = ELedgerCubeFace::NegativeY;
+				A = Direction.X / Ay;
+				B = Direction.Z / Ay;
+			}
+		}
+		else
+		{
+			if (Direction.Z > 0.0)
+			{
+				OutFace = ELedgerCubeFace::PositiveZ;
+				A = Direction.X / Az;
+				B = Direction.Y / Az;
+			}
+			else
+			{
+				OutFace = ELedgerCubeFace::NegativeZ;
+				A = Direction.X / Az;
+				B = -Direction.Y / Az;
+			}
+		}
+
+		OutU = FMath::Clamp((A + 1.0) * 0.5, 0.0, 1.0);
+		OutV = FMath::Clamp((B + 1.0) * 0.5, 0.0, 1.0);
+	}
+
 	FVector3d CubeToSphere(const FVector3d& OnCube)
 	{
 		const double X2 = OnCube.X * OnCube.X;

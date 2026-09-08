@@ -190,6 +190,13 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 
 	// A scripted reentry: settle in orbit, fly down to the town, and capture
 	// along the way. One continuous world, one continuous camera, no seam.
+	//
+	// **Each step must finish before the next one takes the ship.** A step that
+	// frames a shot and schedules the capture a few seconds later is still
+	// running during those seconds, and the ridge sweep was inserted at exactly
+	// the moment the town capture was due — so both files came back showing the
+	// sweep, and the town went unphotographed for two milestones without anyone
+	// noticing, because the image that was checked was the one that was right.
 	FTimerManager& Timers = InWorld.GetTimerManager();
 	Timers.SetTimer(OrbitCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::CaptureOrbit), 14.0f, false);
@@ -202,17 +209,17 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	Timers.SetTimer(TownCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameTown), 78.0f, false);
 	Timers.SetTimer(AscentTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 132.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 140.0f, false);
 	Timers.SetTimer(CoastCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 116.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 124.0f, false);
 	Timers.SetTimer(SweepTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginRidgeSweep), 82.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginRidgeSweep), 88.0f, false);
 	Timers.SetTimer(UnderwaterTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 124.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 132.0f, false);
 	Timers.SetTimer(SpaceCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 146.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 154.0f, false);
 	Timers.SetTimer(PerformanceTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::WritePerformanceReport), 152.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::WritePerformanceReport), 160.0f, false);
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, atmosphere, sun, town, ship"));
 }

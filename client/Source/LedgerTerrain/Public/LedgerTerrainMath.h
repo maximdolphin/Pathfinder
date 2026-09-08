@@ -50,6 +50,11 @@ namespace LedgerTerrain
 	/// for the cost of three multiplies.
 	LEDGERTERRAIN_API FVector3d CubeToSphere(const FVector3d& OnCube);
 
+	/// Which cube face a direction points at, and where on it. The inverse
+	/// of FaceToCube, and the way anything holding a direction finds the
+	/// node that contains it.
+	LEDGERTERRAIN_API void DirectionToFace(const FVector3d& Direction, ELedgerCubeFace& OutFace, double& OutU, double& OutV);
+
 
 	/// Terrain elevation in centimetres above the reference sphere, for a point
 	/// on the unit sphere.
