@@ -63,24 +63,33 @@ board. It exists to prove the sim→client contract, not to render anything.
 
 Console commands once running: `Ledger.Refresh`, `Ledger.Board`.
 
-### Known blocker
+### Running it
 
-The **editor** target does not build on this machine:
+The editor target builds once the .NET Framework 4.8 SDK is present — `UnrealEd`
+needs it, and VS Build Tools 2022 does not install it by default. If
+`Build.bat LedgerEditor` fails with *"Could not find NetFxSDK install dir"*, add
+`Microsoft.Net.Component.4.8.SDK` in the Visual Studio Installer.
 
+```bash
+# build the editor target
+"C:/Program Files/Epic Games/UE_5.8/Engine/Build/BatchFiles/Build.bat"   LedgerEditor Win64 Development -Project="D:\Ledger\client\Ledger.uproject"
+
+# open the project
+"C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe"   "D:\Ledger\client\Ledger.uproject"
 ```
-Unable to instantiate module 'SwarmInterface': Could not find NetFxSDK install dir
+
+`ULedgerSimSubsystem` is an engine subsystem, so it loads the snapshot at editor
+startup — no Play-In-Editor needed. It logs the contract board to `LogLedger`,
+and registers two console commands: `Ledger.Refresh` and `Ledger.Board`.
+
+Tier 6 tests, headless:
+
+```bash
+"C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor-Cmd.exe"   "D:\Ledger\client\Ledger.uproject" -nullrhi -unattended -nosplash -nopause   -ExecCmds="Automation RunTests Ledger.Snapshot" -TestExit="Automation Test Queue Empty"
 ```
 
-Unreal's `UnrealEd` module needs the .NET Framework 4.6+ SDK, which is not
-installed alongside VS Build Tools 2022. The **game** target builds and links
-fine (`client/Binaries/Win64/Ledger.exe`), but a standalone game target cannot
-run against uncooked content, so it cannot be launched without either the editor
-or a cook.
-
-Fix: install the .NET Framework 4.8 SDK — the "Microsoft.Net.Component.4.8.SDK"
-component in the Visual Studio Installer, or Microsoft's standalone Developer
-Pack. After that, `Build.bat LedgerEditor Win64 Development` and the editor
-opens the project.
+The standalone **game** target links but cannot be launched uncooked — a game
+build needs cooked content. Use the editor until there is something to cook.
 
 ## Standards
 
