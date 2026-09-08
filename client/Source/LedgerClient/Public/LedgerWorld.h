@@ -64,6 +64,11 @@ private:
 	FVector3d SunFacing = FVector3d::UnitZ();
 	FVector3d SiteDirection = FVector3d::UnitZ();
 
+	/// Where the coast search landed, kept so the underwater shot does not run
+	/// an 8192-sample sweep of the globe a second time for the same answer.
+	FVector3d CoastSite = FVector3d::ZeroVector;
+	FVector3d CoastSeaward = FVector3d::ZeroVector;
+
 	FTimerHandle OrbitCaptureTimer;
 	FTimerHandle DescendTimer;
 	FTimerHandle DescentStepTimer;
@@ -72,6 +77,7 @@ private:
 	FTimerHandle TownCaptureTimer;
 	FTimerHandle AscentTimer;
 	FTimerHandle ClimbCaptureTimer;
+	FTimerHandle UnderwaterTimer;
 	FTimerHandle SpaceCaptureTimer;
 	FTimerHandle CoastCaptureTimer;
 
@@ -122,6 +128,10 @@ private:
 	/// water: whether the waterline is a surface with a horizon or a change of
 	/// colour on the terrain.
 	void FrameCoast();
+
+	/// Drops the camera below the waterline at the same coast, so the crossing
+	/// has a captured before and after rather than only a code path.
+	void FrameUnderwater();
 
 	ALedgerShip* GetShip() const;
 };

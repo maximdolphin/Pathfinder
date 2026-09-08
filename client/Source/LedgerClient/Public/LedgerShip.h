@@ -20,6 +20,7 @@
 
 class ALedgerPlanet;
 class UCameraComponent;
+class UMaterialInterface;
 class UProceduralMeshComponent;
 class USpringArmComponent;
 
@@ -79,6 +80,13 @@ public:
 	void SetAutoThrottle(float Fraction) { AutoThrottle = FMath::Clamp(Fraction, 0.0f, 1.0f); }
 	FVector GetVelocity() const override { return Velocity; }
 
+	/// Moves the chase camera. A negative arm length puts it ahead of the nose.
+	///
+	/// The default boom holds the camera fifty metres back and fifteen up,
+	/// which is a good third-person view and useless in eight metres of water:
+	/// the hull submerges and the camera stays in the air above it.
+	void SetCameraBoom(float ArmLength, float HeightOffset);
+
 	/// Metres above the terrain directly below.
 	double AltitudeMetres() const;
 
@@ -100,6 +108,12 @@ private:
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;
 
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> Underwater;
+
+	/// How much of the underwater murk is currently applied, in [0,1].
+	float Submersion = 0.0f;
+
 	FVector Velocity = FVector::ZeroVector;
 	bool bFlightEnabled = true;
 	bool bLanded = false;
@@ -114,6 +128,7 @@ private:
 	float AutoThrottle = 0.0f;
 
 	void BuildHull();
+	void UpdateSubmersion(float DeltaSeconds);
 	void ApplyInput(float DeltaSeconds);
 	void Integrate(float DeltaSeconds);
 

@@ -193,6 +193,8 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 112.0f, false);
 	Timers.SetTimer(CoastCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 96.0f, false);
+	Timers.SetTimer(UnderwaterTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 104.0f, false);
 	Timers.SetTimer(SpaceCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 126.0f, false);
 
@@ -555,6 +557,9 @@ void ULedgerWorldBuilder::BeginAscent()
 		return;
 	}
 
+	// Back onto the chase boom, which the underwater shot pulled in to the nose.
+	Ship->SetCameraBoom(5200.0f, 1500.0f);
+
 	// Nose up, throttle open, and hand it to the flight model. Nothing after
 	// this line places the ship — gravity pulls, thrust pushes, drag bleeds, and
 	// whether it reaches orbit is a question about the numbers rather than about
@@ -707,10 +712,66 @@ void ULedgerWorldBuilder::FrameCoast()
 	UE_LOG(LogLedger, Log, TEXT("coast: shore at %.0f m elevation, water %.0f m deep nearby"),
 		LedgerTerrain::Elevation(Best, Params) / 100.0, -BestScore / 100.0);
 
+	CoastSite = Best;
+	CoastSeaward = BestSeaward.GetSafeNormal();
+
 	FTimerHandle Shot;
 	World->GetTimerManager().SetTimer(
 		Shot,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-coast.png")),
 		6.0f,
+		false);
+}
+
+void ULedgerWorldBuilder::FrameUnderwater()
+{
+	UWorld* World = GetWorld();
+	ALedgerShip* Ship = GetShip();
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	if (World == nullptr || Planet == nullptr || Ship == nullptr || Controller == nullptr
+		|| CoastSeaward.IsNearlyZero())
+	{
+		return;
+	}
+
+	// Six kilometres out from the beach, which is where the coast search found
+	// its deepest neighbour and therefore the only water nearby with room to
+	// put a camera in.
+	const FVector3d Offshore = (CoastSite + CoastSeaward * 0.00095).GetSafeNormal();
+	const FVector Up(Offshore);
+	const double Floor = Planet->SurfaceRadiusAt(Offshore);
+	const double Depth = Planet->Radius - Floor;
+
+	// Halfway down. This is a shelf a few metres deep, not an ocean trench,
+	// and there is no room to be fussy.
+	const double CameraDepth = FMath::Clamp(Depth * 0.5, 250.0, 2200.0);
+
+	// Out to the nose. The chase boom holds the camera fifteen metres above the
+	// hull, so with the ship on the sea floor the camera is still dry.
+	Ship->SetCameraBoom(-700.0f, 0.0f);
+
+	// Looking back at the shore and downward, so the frame is filled by the
+	// rising sea floor. Level with the surface it would be filled by the sky
+	// through the water's back faces, which are not drawn.
+	const FVector Look = (FVector(-CoastSeaward) - Up * 0.25).GetSafeNormal();
+	const FVector Location = Planet->GetActorLocation()
+		+ FVector(Offshore * (Planet->Radius - CameraDepth)) - Look * 700.0;
+
+	Ship->SetFlightEnabled(false);
+	Ship->SetVelocity(FVector::ZeroVector);
+	Ship->SetActorLocation(Location);
+
+	const FRotator Attitude = FRotationMatrix::MakeFromXZ(Look, Up).Rotator();
+	Ship->SetActorRotation(Attitude);
+	Controller->SetControlRotation(Attitude);
+
+	UE_LOG(LogLedger, Log, TEXT("underwater: camera %.1f m down over %.0f m of water"),
+		CameraDepth / 100.0, Depth / 100.0);
+
+	FTimerHandle Shot;
+	World->GetTimerManager().SetTimer(
+		Shot,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-underwater.png")),
+		4.0f,
 		false);
 }

@@ -68,6 +68,16 @@ void ALedgerShip::BeginPlay()
 	}
 
 	BuildHull();
+
+	Underwater = LedgerSurface::CreateUnderwaterMaterial(this);
+	if (Underwater != nullptr && Camera != nullptr)
+	{
+		// Added once at weight zero and re-weighted every frame. Adding and
+		// removing the blendable instead would drop the material out of the
+		// renderer's cache on every crossing, and the first frame back would
+		// stall compiling it again.
+		Camera->PostProcessSettings.AddBlendable(Underwater, 0.0f);
+	}
 }
 
 void ALedgerShip::BuildHull()
@@ -162,6 +172,15 @@ void ALedgerShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(TEXT("Roll"), this, &ALedgerShip::InputRoll);
 }
 
+void ALedgerShip::SetCameraBoom(float ArmLength, float HeightOffset)
+{
+	if (Boom != nullptr)
+	{
+		Boom->TargetArmLength = ArmLength;
+		Boom->SocketOffset = FVector(0.0f, 0.0f, HeightOffset);
+	}
+}
+
 FVector ALedgerShip::LocalUp() const
 {
 	if (Planet == nullptr)
@@ -185,6 +204,31 @@ double ALedgerShip::AltitudeMetres() const
 		return 0.0;
 	}
 	return (Distance - Planet->SurfaceRadiusAt(Radial / Distance)) / 100.0;
+}
+
+void ALedgerShip::UpdateSubmersion(float DeltaSeconds)
+{
+	if (Planet == nullptr || Camera == nullptr || Underwater == nullptr)
+	{
+		return;
+	}
+
+	// The camera decides, not the hull. On a boom several metres behind the
+	// ship the two cross the surface at visibly different moments, and the one
+	// the player notices is the one they are looking through.
+	const FVector3d Radial = FVector3d(Camera->GetComponentLocation() - Planet->GetActorLocation());
+	const bool bSubmerged = Radial.Length() < Planet->Radius;
+
+	// Eased rather than switched. A hard cut is a flash on the way out and a
+	// pop on the way in, and no crossing speed makes either of them acceptable;
+	// a fifth of a second of ramp reads as the surface passing the lens.
+	Submersion = FMath::FInterpTo(Submersion, bSubmerged ? 1.0f : 0.0f, DeltaSeconds, 9.0f);
+
+	FWeightedBlendables& Blendables = Camera->PostProcessSettings.WeightedBlendables;
+	if (Blendables.Array.Num() > 0)
+	{
+		Blendables.Array[0].Weight = Submersion;
+	}
 }
 
 void ALedgerShip::ApplyInput(float DeltaSeconds)
@@ -292,6 +336,13 @@ void ALedgerShip::Tick(float DeltaSeconds)
 				Planet = Builder->GetPlanet();
 			}
 		}
+	}
+
+	if (DeltaSeconds > KINDA_SMALL_NUMBER)
+	{
+		// Ahead of the flight-enabled test: the scripted sequence drives the
+		// transform directly, and the camera still has to know when it is wet.
+		UpdateSubmersion(DeltaSeconds);
 	}
 
 	if (!bFlightEnabled || DeltaSeconds <= KINDA_SMALL_NUMBER)

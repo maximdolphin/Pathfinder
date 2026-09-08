@@ -55,4 +55,14 @@ namespace LedgerSurface
 	/// albedo gets most of what transparency would have bought, and keeps the
 	/// reflection.
 	LEDGERCLIENT_API UMaterialInterface* CreateWaterMaterial(UObject* Outer);
+
+	/// Post-process murk, applied to the camera while it is below the sea.
+	///
+	/// A post-process **material** rather than a post-process volume: the
+	/// underwater look that matters is loss of contrast with distance, and
+	/// distance is exactly what `FPostProcessSettings` has no field for. It has
+	/// colour grading, bloom, exposure — every one of them a whole-screen
+	/// constant. Reaching scene depth means a material, and once there is a
+	/// material there is no reason left for the volume.
+	LEDGERCLIENT_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
 }

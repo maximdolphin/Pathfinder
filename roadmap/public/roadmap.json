@@ -83,7 +83,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 2
+   "doneCount": 3
   },
   {
    "id": "M2",
@@ -922,11 +922,40 @@
    "dependsOn": [
     "T023"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The post-process material failed to compile because SceneTexture outputs float4 and the murk constant is float3 — Lerp between them is not a legal expression. UE answers a failed material with one warning and the default material, and for a post-process blendable that means WorldGridMaterial gets drawn over the entire screen. Second time this failure mode has cost a debugging round; grep the log for 'Failed to compile Material' after every material change."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Murk is applied after tonemapping, so its constant is a final screen value, not a radiance. A physically sensible 0.018 blue rendered as a black screen — there is no exposure left at that point in the pipeline to lift it. 0.05/0.17/0.21 reads as water."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Underwater the sea floor is unlit: the water sheet is section 1 of the same procedural mesh as the terrain, the component casts shadows, and there is no per-section shadow control. Everything below the waterline sits in the water's own shadow. Splitting water into its own component per patch would fix it and also skip collision cooking for water. Blocks anything that wants a visible seabed."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T024-2026-09-08T16-29-58-245.png",
+     "caption": "terrain-underwater.png",
+     "source": "../out/terrain-underwater.png",
+     "addedAt": "2026-09-08T16:29:58.247Z"
+    },
+    {
+     "file": "evidence/T024-2026-09-08T16-29-58-309.png",
+     "caption": "terrain-space.png",
+     "source": "../out/terrain-space.png",
+     "addedAt": "2026-09-08T16:29:58.311Z"
+    }
+   ],
    "plannedStartDay": 38.5,
    "plannedEndDay": 39,
    "plannedStart": "2026-10-29",
@@ -6031,5 +6060,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T16:09:05.162Z"
+ "updatedAt": "2026-09-08T16:29:58.374Z"
 }
