@@ -51,36 +51,45 @@ dump is boring, the game is boring** — no amount of Unreal fixes that.
 
 ## The client
 
-`client/` is a UE 5.8 C++ project with no Blueprint logic and no content. It
-reads `out/snapshot.json` through a typed boundary and prints the contract
-board. It exists to prove the sim→client contract, not to render anything.
+`client/` is a UE 5.8 C++ project with **no Blueprint logic and no content**.
+There is no `.umap` with anything placed in it: a world subsystem spawns the
+planet, its atmosphere, the sun, a town and the ship on begin play, so the whole
+scene is source rather than assets.
+
+What runs:
+
+| | |
+|---|---|
+| Planet | 6,371 km radius, cube-sphere quadtree, 4.8 m quads at the finest LOD |
+| Terrain | domain-warped gradient noise, 8-octave ridged multifractal, analytic erosion |
+| Surface | triplanar detail from generated mip-mapped textures, two scales, depth-faded |
+| Atmosphere | Sky Atmosphere at Earth's own values, ozone included; volumetric cloud deck at 2–8 km |
+| Town | 32 buildings and 342 trees, laid out in a tangent basis and projected onto the sphere |
+| Ship | 6-DOF flight, inverse-square gravity, exponential drag, ground contact |
+| Generation | patches built on worker threads; the game thread only uploads |
+
+Launching the game runs a scripted sequence — orbit, reentry, landing, a look at
+the town, then a climb back to space — capturing to `out/` as it goes. The climb
+runs through the ship's own flight model, so whether it reaches orbit is a
+question about the numbers rather than about the animation.
 
 ```bash
-# from client/
-"C:/Program Files/Epic Games/UE_5.8/Engine/Build/BatchFiles/Build.bat" \
-  Ledger Win64 Development -Project="D:\Ledger\client\Ledger.uproject"
+"C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe"   "D:\Ledger\client\Ledger.uproject" -game -windowed -ResX=1600 -ResY=900
 ```
 
-Console commands once running: `Ledger.Refresh`, `Ledger.Board`.
+Controls after the scripted sequence hands over: `W`/`S` throttle, `A`/`D`
+strafe, `Q`/`E` roll, `Space`/`Ctrl` lift, mouse to pitch and yaw.
 
-### Running it
+### Building
 
-The editor target builds once the .NET Framework 4.8 SDK is present — `UnrealEd`
-needs it, and VS Build Tools 2022 does not install it by default. If
-`Build.bat LedgerEditor` fails with *"Could not find NetFxSDK install dir"*, add
-`Microsoft.Net.Component.4.8.SDK` in the Visual Studio Installer.
+The editor target needs the .NET Framework 4.8 SDK — `UnrealEd` requires it and
+VS Build Tools 2022 does not install it by default. If `Build.bat` fails with
+*"Could not find NetFxSDK install dir"*, add `Microsoft.Net.Component.4.8.SDK`
+in the Visual Studio Installer.
 
 ```bash
-# build the editor target
 "C:/Program Files/Epic Games/UE_5.8/Engine/Build/BatchFiles/Build.bat"   LedgerEditor Win64 Development -Project="D:\Ledger\client\Ledger.uproject"
-
-# open the project
-"C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor.exe"   "D:\Ledger\client\Ledger.uproject"
 ```
-
-`ULedgerSimSubsystem` is an engine subsystem, so it loads the snapshot at editor
-startup — no Play-In-Editor needed. It logs the contract board to `LogLedger`,
-and registers two console commands: `Ledger.Refresh` and `Ledger.Board`.
 
 Tier 6 tests, headless:
 
@@ -88,8 +97,13 @@ Tier 6 tests, headless:
 "C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor-Cmd.exe"   "D:\Ledger\client\Ledger.uproject" -nullrhi -unattended -nosplash -nopause   -ExecCmds="Automation RunTests Ledger.Snapshot" -TestExit="Automation Test Queue Empty"
 ```
 
-The standalone **game** target links but cannot be launched uncooked — a game
-build needs cooked content. Use the editor until there is something to cook.
+Console: `Ledger.Board`, `Ledger.Refresh`, `Ledger.Terrain.Stats`.
+
+### Known limits
+
+The terrain material is generated at runtime, so it exists only in an editor
+build; a packaged game needs it saved as an asset. Oceans are coloured terrain,
+not a water surface. Nothing walks around — the player is the ship.
 
 ## Standards
 
