@@ -1,0 +1,10 @@
+[package]
+name = "ledger"
+version = "0.1.0"
+edition = "2021"
+
+# ponytail: one crate, not the ten in design §10. Split when a module
+# actually needs its own dependency set or compile unit.
+[dependencies]
+
+[dev-dependencies]
