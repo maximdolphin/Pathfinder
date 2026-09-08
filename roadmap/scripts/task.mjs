@@ -21,7 +21,8 @@
 //   node scripts/task.mjs unblock T042
 //   node scripts/task.mjs note T042 "measured 4.2 ms per patch"
 //   node scripts/task.mjs evidence T042 ../out/terrain-orbit.png --caption "6,371 km"
-//   node scripts/task.mjs gate M1 --pass --note "transect at 60 fps"
+//   node scripts/task.mjs gate M1                     show the checks
+//   node scripts/task.mjs gate M1 --pass --checked 1,2,3 --note "..."
 
 import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { basename, dirname, extname, join, resolve } from 'node:path';
@@ -329,17 +330,54 @@ const commands = {
       if (!milestone.evidence?.length) {
         throw new Error(`${milestone.id} has no evidence attached. A gate without proof is an opinion.`);
       }
+
+      // Every check has to be answered, individually, in writing.
+      //
+      // The point of the checklist is that a gate cannot be passed on a general
+      // impression that things went well. `--checked` takes the indices that
+      // hold; anything unanswered is named here rather than being quietly
+      // included in a summary sentence.
+      const checks = milestone.gateChecks || [];
+      if (checks.length) {
+        const answered = String(flags.checked || '')
+          .split(',')
+          .map((n) => Number.parseInt(n.trim(), 10))
+          .filter((n) => Number.isInteger(n) && n >= 1 && n <= checks.length);
+        const unanswered = checks
+          .map((check, index) => ({ check, number: index + 1 }))
+          .filter((entry) => !answered.includes(entry.number));
+
+        if (unanswered.length) {
+          const lines = unanswered
+            .map((entry) => `    ${entry.number}. [${entry.check.how}] ${entry.check.check}`)
+            .join('\n');
+          throw new Error(
+            `${milestone.id}: ${unanswered.length} of ${checks.length} gate checks ` +
+            `are unanswered.\n\n${lines}\n\n` +
+            `  Each one is met or it is not. Pass the numbers that hold:\n` +
+            `    task gate ${milestone.id} --pass --checked 1,2,3,...\n\n` +
+            `  A check that cannot be met is a milestone that is not finished, ` +
+            `or a check that was wrong. Both are worth saying out loud.`
+          );
+        }
+        milestone.gateChecksAnsweredAt = today();
+      }
+
       milestone.gatePassedAt = today();
       milestone.status = 'done';
       if (flags.note) {
         milestone.gateNote = String(flags.note);
       }
       console.log(`gate passed: ${milestone.id} — ${milestone.title}`);
+      console.log(`  ${checks.length} checks answered, ${milestone.evidence.length} evidence items`);
       return true;
     }
 
     console.log(`\n${milestone.id} GATE\n\n  ${milestone.gate}\n`);
-    console.log(`  ${owned.length - outstanding.length}/${owned.length} tasks done`);
+    for (const [index, check] of (milestone.gateChecks || []).entries()) {
+      console.log(`  ${String(index + 1).padStart(2)}. [${check.how.padEnd(8)}] ${check.check}`);
+    }
+    console.log(`\n  ${owned.length - outstanding.length}/${owned.length} tasks done`);
     console.log(`  ${milestone.evidence?.length || 0} evidence items attached\n`);
     return false;
   },

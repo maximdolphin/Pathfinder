@@ -14,6 +14,24 @@
    "title": "Prototype spike (delivered)",
    "goal": "Answer the two questions that could have killed the project: can a deterministic belief simulation be made legible, and can one engineer render a real-scale planet you fly to and from without a loading screen.",
    "gate": "Both answered yes. out/world-dump.txt traces a corporate collapse back four causes and shows two NPCs disagreeing for legible reasons; the client flies orbit to ground to orbit continuously, with water, weather and a town.",
+   "gateChecks": [
+    {
+     "check": "A dump of the running world traces a corporate collapse back four causes.",
+     "how": "observed"
+    },
+    {
+     "check": "Two NPCs hold different beliefs about the same fact, for reasons the dump explains.",
+     "how": "observed"
+    },
+    {
+     "check": "The client flies orbit to ground to orbit with no loading screen.",
+     "how": "capture"
+    },
+    {
+     "check": "Water, weather and a settlement are present and rendered.",
+     "how": "capture"
+    }
+   ],
    "designRefs": [
     "SS13.1",
     "SS6.8",
@@ -35,6 +53,28 @@
    "title": "Architecture and the split",
    "goal": "Turn the spike into a structure before building anything complex on it. Cargo workspace, Unreal modules, the god-files split along real seams, and a build that refuses to compile a layering violation.",
    "gate": "No source file over 500 lines; every UE module declares three or fewer dependencies except LedgerGame; adding an illegal dependency fails CI with a named rule; the scripted flight renders identically to before the split.",
+   "gateChecks": [
+    {
+     "check": "No source file exceeds 500 lines.",
+     "how": "auto"
+    },
+    {
+     "check": "Every module declares three or fewer project dependencies, except the composition root.",
+     "how": "auto"
+    },
+    {
+     "check": "A dependency pointing up the layering fails the build, naming the rule.",
+     "how": "auto"
+    },
+    {
+     "check": "Captures match the committed reference within the perceptual tolerance.",
+     "how": "auto"
+    },
+    {
+     "check": "The flight model's tests pass with no world, actor or frame involved.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "ARCH SS2",
     "ARCH SS3",
@@ -62,14 +102,57 @@
      "addedAt": "2026-09-08T21:22:27.421Z"
     }
    ],
-   "doneCount": 16,
-   "gateNote": "Every clause checked rather than asserted. Largest file 421 lines (was 1,315). Six modules, every edge legal, and the rule verified by deliberately breaking it. Captures match the reference byte for byte. One caveat recorded rather than hidden: the CI job that builds Unreal and flies the scripted flight is gated off because no self-hosted runner exists — the cheap jobs (layering, file sizes, formatting, the frozen sim) do gate."
+   "gateChecksAnsweredAt": "2026-09-08",
+   "gateNote": "Every clause checked rather than asserted. Largest file 421 lines, down from 1,315. Six modules, all edges legal, and the rule verified by deliberately adding an illegal one. Captures match the reference byte for byte. Six flight-model tests pass in about a second with no world, actor or frame. One caveat recorded rather than hidden: the CI job that builds Unreal and flies the scripted flight is gated off because no self-hosted runner exists; the cheap jobs do gate.",
+   "doneCount": 16
   },
   {
    "id": "M02",
    "title": "Terrain to production standard",
    "goal": "The terrain stops being a spike. Stable LOD with no popping, collision wherever a body can be, caves and overhangs, biome-driven material blending, and a streaming budget that holds at speed.",
    "gate": "Fly a 200 km transect at 300 m and at 900 m/s: no holes, no popping that reads as a seam, no frame over 16 ms, and collision present under the ship at every point along it.",
+   "gateChecks": [
+    {
+     "check": "A 200 km transect at 300 m altitude reports zero unfilled patches.",
+     "how": "measured"
+    },
+    {
+     "check": "The same transect at 900 m/s reports zero unfilled patches.",
+     "how": "measured"
+    },
+    {
+     "check": "A downward trace hits terrain on every frame of that transect.",
+     "how": "auto"
+    },
+    {
+     "check": "No frame exceeds 16.7 ms during the transect.",
+     "how": "measured"
+    },
+    {
+     "check": "Walking a ridge at 2 m/s across four LOD boundaries shows no vertex movement.",
+     "how": "capture"
+    },
+    {
+     "check": "Three biomes meet on one slope with no visible blend band.",
+     "how": "capture"
+    },
+    {
+     "check": "No texture repetition is identifiable at any distance in the biome capture.",
+     "how": "observed"
+    },
+    {
+     "check": "Every river reaches the sea or a basin; none flows uphill.",
+     "how": "auto"
+    },
+    {
+     "check": "A cave is entered, traversed and exited with collision and lighting correct throughout.",
+     "how": "capture"
+    },
+    {
+     "check": "Ten thousand scatter instances render inside the frame budget, placed identically across runs.",
+     "how": "measured"
+    }
+   ],
    "designRefs": [
     "SS6.8"
    ],
@@ -89,6 +172,40 @@
    "title": "Planetary bodies and orbital mechanics",
    "goal": "A solar system that moves. Planets, moons, rings and stations on real orbits, axial tilt, rotation, day and night, seasons, eclipses — all deterministic from seed and all consistent between the map and the sky.",
    "gate": "Stand on a surface and watch a moon rise, transit and set on the schedule the orbital model predicts. Fly to it. The ephemeris and the sky agree to the arcminute.",
+   "gateChecks": [
+    {
+     "check": "A moon rises, transits and sets within one arcminute of the ephemeris prediction.",
+     "how": "auto"
+    },
+    {
+     "check": "Sky and ephemeris agree to the arcminute at 100 sampled times and locations.",
+     "how": "auto"
+    },
+    {
+     "check": "Positions computed forward from zero and directly at time t agree to sub-metre over a simulated century.",
+     "how": "auto"
+    },
+    {
+     "check": "A moon's phase matches the sun-moon-observer geometry from any body in the system.",
+     "how": "auto"
+    },
+    {
+     "check": "An eclipse predicted by the ephemeris is observable from the surface at the predicted time.",
+     "how": "capture"
+    },
+    {
+     "check": "Illuminance at each planet matches the inverse-square prediction.",
+     "how": "auto"
+    },
+    {
+     "check": "Landing on a moon uses the same terrain code path, with correct low gravity and no atmosphere.",
+     "how": "capture"
+    },
+    {
+     "check": "A system regenerates identically from its seed in a second process.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS8",
     "SS6.8"
@@ -109,6 +226,44 @@
    "title": "Atmosphere, weather and environment",
    "goal": "Air that behaves. Layered atmospheres per body, volumetric weather that moves and matters, storms with real wind fields, temperature and pressure as physical quantities the rest of the game reads.",
    "gate": "Fly into a storm front: visibility, wind loading on the ship and cockpit audio all change together, and the same storm is visible from orbit in the place the weather model puts it.",
+   "gateChecks": [
+    {
+     "check": "Flying into a storm front changes visibility, wind loading and audio together.",
+     "how": "capture"
+    },
+    {
+     "check": "The same storm is visible from orbit at the position the weather model gives it.",
+     "how": "capture"
+    },
+    {
+     "check": "A storm tracked over a simulated week follows a coherent path and reproduces from its seed.",
+     "how": "auto"
+    },
+    {
+     "check": "Three cloud decks resolve at the altitudes the atmosphere profile predicts.",
+     "how": "capture"
+    },
+    {
+     "check": "Rain falls below the freezing level and snow above it, at the boundary the lapse rate puts it.",
+     "how": "capture"
+    },
+    {
+     "check": "Fog fills a valley at dawn, is absent on the ridge above, and is invisible from orbit.",
+     "how": "capture"
+    },
+    {
+     "check": "A steep re-entry heats and a shallow one does not, from the density-velocity integral.",
+     "how": "measured"
+    },
+    {
+     "check": "Worst-case weather costs no more than 4 ms of GPU time.",
+     "how": "measured"
+    },
+    {
+     "check": "Wind speed changes and all five consumers respond within one second.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS6.8",
     "LW SS7.2"
@@ -129,6 +284,52 @@
    "title": "Ship framework: hulls, components, subsystems",
    "goal": "Ships as systems, not props. A component graph — power plant, thrusters, fuel, cooling, avionics, life support, shields — with real dependencies, damage that propagates through it, and hulls assembled from parts.",
    "gate": "Shoot out a power coupling and watch thrusters on that bus go dead, heat climb, and the affected systems degrade in an order the component graph explains. Repair it and the ship comes back.",
+   "gateChecks": [
+    {
+     "check": "Destroying a power coupling kills exactly the components downstream of it and nothing else.",
+     "how": "auto"
+    },
+    {
+     "check": "Heat climbs and affected systems degrade in the order the component graph explains.",
+     "how": "auto"
+    },
+    {
+     "check": "Repairing the coupling restores the ship to its stated condition.",
+     "how": "auto"
+    },
+    {
+     "check": "Overloading a bus sheds load in the configured priority order.",
+     "how": "auto"
+    },
+    {
+     "check": "Loading cargo on one side changes handling measurably in the predicted direction.",
+     "how": "measured"
+    },
+    {
+     "check": "Fuel burned over a flight matches thrust integrated over the same flight.",
+     "how": "auto"
+    },
+    {
+     "check": "A cold start brings systems up in dependency order; skipping a step prevents the next.",
+     "how": "auto"
+    },
+    {
+     "check": "A hull breach vents the compartment behind it and not the rest of the ship.",
+     "how": "auto"
+    },
+    {
+     "check": "Every instrument traces to a component reading; a failed sensor makes its gauge unavailable, not wrong.",
+     "how": "auto"
+    },
+    {
+     "check": "Shutting down non-essential systems measurably reduces detection range.",
+     "how": "measured"
+    },
+    {
+     "check": "A new ship is one data file plus art, requiring no recompile.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS6.9"
    ],
@@ -148,6 +349,56 @@
    "title": "Flight model in vacuum and in air",
    "goal": "Flight worth doing. Six-degree thruster allocation solved rather than faked, aerodynamic lift and drag in atmosphere, control surfaces, landing gear, gravity, and the transition between the two regimes.",
    "gate": "Take off from a pad, fly aerodynamically to another continent, exit the atmosphere, manoeuvre in vacuum, re-enter with heating and buffeting, and land on the pad you left. Cockpit view and instruments only.",
+   "gateChecks": [
+    {
+     "check": "Disabling one thruster makes the allocator compensate, losing authority in the axis the geometry predicts.",
+     "how": "auto"
+    },
+    {
+     "check": "Angular response matches the inertia tensor; off-axis thrust produces the torque the geometry gives.",
+     "how": "auto"
+    },
+    {
+     "check": "A winged ship glides unpowered in atmosphere and does not in vacuum.",
+     "how": "auto"
+    },
+    {
+     "check": "A deliberate stall departs controlled flight and standard recovery inputs recover it.",
+     "how": "capture"
+    },
+    {
+     "check": "A re-entry from vacuum to sea level shows no discontinuity in forces at any altitude.",
+     "how": "measured"
+    },
+    {
+     "check": "A hard landing compresses the gear and can damage it; a shallow one does not.",
+     "how": "auto"
+    },
+    {
+     "check": "Switching flight-assist mode changes only the controller; the physics underneath is provably identical.",
+     "how": "auto"
+    },
+    {
+     "check": "Auto-land places a ship on a pad in wind, repeatably, from any approach.",
+     "how": "auto"
+    },
+    {
+     "check": "A full flight is completable on instruments alone with the external view disabled.",
+     "how": "capture"
+    },
+    {
+     "check": "Pad to another continent, to vacuum, through re-entry, back to the same pad — cockpit view only.",
+     "how": "capture"
+    },
+    {
+     "check": "All three input devices produce identical commanded forces for equivalent input.",
+     "how": "auto"
+    },
+    {
+     "check": "A recorded flight replays to an identical trajectory.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS6.9"
    ],
@@ -167,6 +418,44 @@
    "title": "Seamless travel across a system",
    "goal": "Distance made crossable without a loading screen. Origin rebasing, multi-scale rendering from centimetres to astronomical units, and a high-speed travel mode with a real spool, a real interruption, and a real cost.",
    "gate": "Fly from a planet's surface to a moon of another planet in one continuous shot, with no loading screen, no cut, and no precision artefact anywhere along the path.",
+   "gateChecks": [
+    {
+     "check": "At one AU from origin, a one-millimetre movement is still one millimetre, for every actor and particle system.",
+     "how": "auto"
+    },
+    {
+     "check": "No z-fighting between a hand-held object and a planet in the same frame.",
+     "how": "capture"
+    },
+    {
+     "check": "Surface of one planet to a moon of another in one continuous shot, no loading screen and no cut.",
+     "how": "capture"
+    },
+    {
+     "check": "No frame exceeds 16.7 ms anywhere along that path.",
+     "how": "measured"
+    },
+    {
+     "check": "No allocation spike over budget anywhere along that path.",
+     "how": "measured"
+    },
+    {
+     "check": "A ship a thousand kilometres away is a dot; approaching it loses no state and shows no pop.",
+     "how": "capture"
+    },
+    {
+     "check": "A ship in transit is pulled out at the position and velocity the interdiction model predicts.",
+     "how": "auto"
+    },
+    {
+     "check": "Estimated and actual travel time agree within five percent over twenty sampled routes.",
+     "how": "auto"
+    },
+    {
+     "check": "A twenty-minute transit ends with position error inside tolerance and no jitter at any point.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS8",
     "SS6.8"
@@ -187,6 +476,48 @@
    "title": "Physics at scale and local grids",
    "goal": "The hardest engine problem in the project: walking around inside a ship that is itself moving at speed near a rotating planet. Nested reference frames, which Chaos does not have.",
    "gate": "Walk from the back of a ship to its cockpit while it accelerates, rolls and flies through atmosphere. Set a cup down and it stays on the table. Step out onto a landing pad on a rotating planet and inherit the right frame.",
+   "gateChecks": [
+    {
+     "check": "Walking stern to cockpit while the ship accelerates, rolls and crosses an atmosphere works without sliding.",
+     "how": "capture"
+    },
+    {
+     "check": "An object set on a table inside a manoeuvring ship stays on the table.",
+     "how": "auto"
+    },
+    {
+     "check": "Stepping from a pad onto a hovering ship and back shows no jolt, no launch and no lost velocity.",
+     "how": "capture"
+    },
+    {
+     "check": "An object at rest inside a manoeuvring ship stays at rest relative to the ship, at any reachable speed.",
+     "how": "auto"
+    },
+    {
+     "check": "A dropped object inside a spinning station lands where the rotating frame predicts, not directly below.",
+     "how": "auto"
+    },
+    {
+     "check": "Stepping onto a landing pad on a rotating planet inherits the correct frame.",
+     "how": "auto"
+    },
+    {
+     "check": "A projectile at any modelled speed always hits the surface it should, over ten thousand trials.",
+     "how": "auto"
+    },
+    {
+     "check": "Two levels of grid nesting are stable; the limit is enforced with a clear error.",
+     "how": "auto"
+    },
+    {
+     "check": "A recorded physics scenario replays identically at 30, 60 and 144 frames a second.",
+     "how": "auto"
+    },
+    {
+     "check": "Ten active grids with two hundred bodies each stays inside the physics budget.",
+     "how": "measured"
+    }
+   ],
    "designRefs": [
     "SS6.9"
    ],
@@ -206,6 +537,48 @@
    "title": "Embodiment and animation",
    "goal": "A body worth being in. Character controller with real momentum, full-body IK, procedural foot and hand placement, first and third person from one skeleton, interaction, seats, ladders, EVA.",
    "gate": "Walk out of a room, climb a ladder, cross a pad in wind, board a ship, take a seat, fly, and get out again — one continuous shot, no cut, no teleport, no animation that slides.",
+   "gateChecks": [
+    {
+     "check": "Room, ladder, pad in wind, ship, seat, flight, and out again — one continuous shot with no cut or teleport.",
+     "how": "capture"
+    },
+    {
+     "check": "No locomotion transition slides the feet, at any speed or direction change.",
+     "how": "auto"
+    },
+    {
+     "check": "Feet land on the ground that is there, at its angle, on stairs, slopes and debris.",
+     "how": "auto"
+    },
+    {
+     "check": "The same controller produces correct movement at 0.16 g, 1 g and 1.5 g with no special-cased animation.",
+     "how": "auto"
+    },
+    {
+     "check": "Crossing a compartment in zero gravity conserves momentum throughout.",
+     "how": "auto"
+    },
+    {
+     "check": "First person shows the same body doing the same thing a third-person camera shows.",
+     "how": "capture"
+    },
+    {
+     "check": "Boarding a hovering ship and taking the seat involves no teleport and no cut.",
+     "how": "capture"
+    },
+    {
+     "check": "A new interactable is one data declaration and inherits highlighting, reach and animation.",
+     "how": "auto"
+    },
+    {
+     "check": "Stepping into vacuum without a sealed suit kills on the modelled schedule, with warnings from the suit's components.",
+     "how": "auto"
+    },
+    {
+     "check": "Two hundred visible characters stay inside the animation budget with no visible LOD switch.",
+     "how": "measured"
+    }
+   ],
    "designRefs": [
     "SS6.9",
     "LW SS4"
@@ -226,6 +599,44 @@
    "title": "Interiors and modular architecture",
    "goal": "Insides. Ship interiors, station interiors and building interiors built from a modular kit, generated where they should be generated and authored where they should be authored, with no door that is a loading screen.",
    "gate": "Walk from a city street into a building, up through it, out onto a roof pad, into a docked ship and through it to the cockpit, with no load, no fade, and no drop below the frame budget.",
+   "gateChecks": [
+    {
+     "check": "Street, building, up through it, roof pad, docked ship, cockpit — no load, no fade.",
+     "how": "capture"
+    },
+    {
+     "check": "No frame during that traversal exceeds 16.7 ms.",
+     "how": "measured"
+    },
+    {
+     "check": "An interior assembled from the kit has no gap, no z-fight at any seam, and correct collision.",
+     "how": "auto"
+    },
+    {
+     "check": "Twenty generated interiors of one purpose are all navigable with no unreachable room.",
+     "how": "auto"
+    },
+    {
+     "check": "Every component in a ship's graph has a physical location inside it that can be walked to.",
+     "how": "auto"
+    },
+    {
+     "check": "A habitat on an airless world has an airlock and visible life support; the same archetype on a temperate world does not.",
+     "how": "capture"
+    },
+    {
+     "check": "A hundred walkable interiors in view cost no more than the handful visible through their openings.",
+     "how": "measured"
+    },
+    {
+     "check": "Cutting power to a building darkens its interior and brings up emergency lighting on its own reserve.",
+     "how": "capture"
+    },
+    {
+     "check": "An automated traversal agent covers every reachable point of ten generated interiors without getting stuck.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS7",
     "SS6.8"
@@ -246,6 +657,48 @@
    "title": "Rendering fidelity",
    "goal": "The look. A real PBR material pipeline, lighting that works from a lit cockpit at night to a sunlit dune, volumetrics, decals, wear, post, and the LOD and impostor chain that lets it survive at range.",
    "gate": "Side by side against reference footage at three distances and three lighting conditions, a stranger cannot immediately sort ours from theirs on material and lighting alone.",
+   "gateChecks": [
+    {
+     "check": "Shown twelve pairs of stills — ours and reference footage, at three distances and three lighting conditions, in random order — five people who have not seen the project identify ours correctly no more than 60% of the time.",
+     "how": "observed"
+    },
+    {
+     "check": "Every material in the project conforms to the documented PBR standard.",
+     "how": "auto"
+    },
+    {
+     "check": "A single hull material produces a clean ship and a filthy one from parameters alone.",
+     "how": "capture"
+    },
+    {
+     "check": "No shadow acne, peter-panning or cascade seam at cockpit, landscape or planetary scale.",
+     "how": "capture"
+    },
+    {
+     "check": "Flying from a dark hangar into daylight adapts smoothly with no overshoot and no clipped scene.",
+     "how": "capture"
+    },
+    {
+     "check": "No ghosting on cockpit instruments during rapid motion; no shimmer on terrain at any distance.",
+     "how": "capture"
+    },
+    {
+     "check": "No LOD transition is visible at any distance for any asset class.",
+     "how": "capture"
+    },
+    {
+     "check": "A character at conversation distance holds up in three lighting conditions.",
+     "how": "capture"
+    },
+    {
+     "check": "A cockpit at dawn, noon and night each hold up, with legible instruments in all three.",
+     "how": "capture"
+    },
+    {
+     "check": "Every post effect has a measured cost and a documented reason; the chain is inside its budget.",
+     "how": "measured"
+    }
+   ],
    "designRefs": [
     "SS6.8",
     "SS14"
@@ -266,6 +719,48 @@
    "title": "Asset pipeline and world content",
    "goal": "A way to get content in that is not a person placing things by hand. Import, validation, LOD generation, material assignment, biome and settlement generators, and the tooling to author a system.",
    "gate": "Add a new ship and a new biome end to end through the pipeline, with no manual step outside the tool, and both appear correctly at every LOD.",
+   "gateChecks": [
+    {
+     "check": "A new ship goes from mesh to flyable with interiors, through the pipeline, with no manual step outside the tool.",
+     "how": "auto"
+    },
+    {
+     "check": "A new biome is added the same way and appears correctly at every LOD.",
+     "how": "capture"
+    },
+    {
+     "check": "A deliberately broken asset is rejected at import with a message naming the problem.",
+     "how": "auto"
+    },
+    {
+     "check": "An imported asset arrives with a full LOD chain and collision matching its silhouette, unattended.",
+     "how": "auto"
+    },
+    {
+     "check": "A generated building's exterior openings correspond exactly to its interior layout.",
+     "how": "auto"
+    },
+    {
+     "check": "One archetype placed on four environments produces four structurally different buildings from one definition.",
+     "how": "capture"
+    },
+    {
+     "check": "A complete star system is authored end to end without editing source.",
+     "how": "observed"
+    },
+    {
+     "check": "Memory stays inside budget through a two-hour session visiting every content type.",
+     "how": "measured"
+    },
+    {
+     "check": "A packaged build runs the full technical slice with no editor present.",
+     "how": "auto"
+    },
+    {
+     "check": "Every texture in the project has a recorded source and licence.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS14"
    ],
@@ -285,6 +780,44 @@
    "title": "Performance and optimisation",
    "goal": "Budgets met with everything running at once. Rendering, streaming, physics and memory, at the densities the design actually asks for.",
    "gate": "Sixty frames a second with a full city, a docked ship interior and traffic in view, no frame over 16 ms, and a two-hour session with no memory growth.",
+   "gateChecks": [
+    {
+     "check": "Sixty frames a second with a full city, a docked ship interior and traffic in view.",
+     "how": "measured"
+    },
+    {
+     "check": "No frame exceeds 16.7 ms in any of the five fixed scenarios.",
+     "how": "measured"
+    },
+    {
+     "check": "A two-hour session ends with the memory profile it started with.",
+     "how": "measured"
+    },
+    {
+     "check": "Draw calls in the densest scene are below budget with no visual change.",
+     "how": "measured"
+    },
+    {
+     "check": "Visible triangle count in a city falls by an order of magnitude under culling, with no visual change.",
+     "how": "measured"
+    },
+    {
+     "check": "Every render pass is inside its budget in the worst scenario.",
+     "how": "measured"
+    },
+    {
+     "check": "A full traversal of the slice shows no frame over 16.7 ms.",
+     "how": "measured"
+    },
+    {
+     "check": "Three quality levels hit their target frame rate on three hardware profiles.",
+     "how": "measured"
+    },
+    {
+     "check": "A deliberate performance regression fails CI.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS14"
    ],
@@ -304,6 +837,40 @@
    "title": "Technical vertical slice",
    "goal": "Prove the model. One system, one planet, one moon, one city, one station, three ships — everything above running together and holding up under an hour of unscripted play.",
    "gate": "An hour of free play with no loading screen, no crash, no frame over 16 ms, and nothing that reads as placeholder. This is the milestone the whole technical plan exists to reach.",
+   "gateChecks": [
+    {
+     "check": "An hour of unscripted free play with no crash.",
+     "how": "observed"
+    },
+    {
+     "check": "No loading screen at any point during that hour.",
+     "how": "observed"
+    },
+    {
+     "check": "No frame over 16.7 ms during that hour.",
+     "how": "measured"
+    },
+    {
+     "check": "An automated audit reports zero placeholder assets in the slice.",
+     "how": "auto"
+    },
+    {
+     "check": "Ten hours of mixed play with no crash and no state corruption.",
+     "how": "auto"
+    },
+    {
+     "check": "Five external testers complete a free-play session; observations recorded and triaged.",
+     "how": "observed"
+    },
+    {
+     "check": "Every transition in the slice — door, ladder, seat, airlock, dock, frame change — is reviewed and none reported as rough.",
+     "how": "observed"
+    },
+    {
+     "check": "An ADR records what the technical model proved, what it did not, and what it forces on the simulation plan.",
+     "how": "observed"
+    }
+   ],
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -323,6 +890,48 @@
    "title": "Simulation core and determinism",
    "goal": "The substrate the living world is written against: event log, reducer contract, snapshots, replay, and a harness that proves reproducibility before there is anything complicated to reproduce.",
    "gate": "Replay a 100,000-tick log twice from one seed and diff the snapshots byte for byte. CI fails on divergence and names the first differing tick.",
+   "gateChecks": [
+    {
+     "check": "A 100,000-tick log replayed twice from one seed produces byte-identical snapshots.",
+     "how": "auto"
+    },
+    {
+     "check": "CI fails on divergence and names the first differing tick.",
+     "how": "auto"
+    },
+    {
+     "check": "Snapshot-plus-tail and full replay agree byte for byte at 100,000 ticks.",
+     "how": "auto"
+    },
+    {
+     "check": "Introducing a float into any authoritative struct fails a test.",
+     "how": "auto"
+    },
+    {
+     "check": "Renaming an event struct does not change its wire id.",
+     "how": "auto"
+    },
+    {
+     "check": "A log written against schema version 1 replays under version 2.",
+     "how": "auto"
+    },
+    {
+     "check": "A one-year log compacts and still replays to the same hash.",
+     "how": "auto"
+    },
+    {
+     "check": "No reducer is reachable except through a validated command.",
+     "how": "auto"
+    },
+    {
+     "check": "Any event walks back to a root cause with no domain-specific code.",
+     "how": "auto"
+    },
+    {
+     "check": "The client renders identically from a live sim and from a replay of it.",
+     "how": "capture"
+    }
+   ],
    "designRefs": [
     "SS3",
     "ARCH Rule 5"
@@ -343,6 +952,52 @@
    "title": "Agent framework",
    "goal": "The longest simulation milestone, and the one every other system reduces to. Needs, goals, planning, schedules, competence, loyalty — and agents that act on their own beliefs rather than on world state.",
    "gate": "Run 500 agents for 30 simulated days. Any one agent's whole history is explained by its needs and its beliefs, with no appeal to world state it never observed, and two agents holding different beliefs act differently.",
+   "gateChecks": [
+    {
+     "check": "500 agents run 30 simulated days without error.",
+     "how": "auto"
+    },
+    {
+     "check": "Any agent's full history is explained by its needs and beliefs, with no appeal to unobserved world state.",
+     "how": "auto"
+    },
+    {
+     "check": "A test proves the planner cannot reach world state.",
+     "how": "auto"
+    },
+    {
+     "check": "Two agents holding different beliefs about one fact demonstrably act differently.",
+     "how": "auto"
+    },
+    {
+     "check": "An agent with a false belief plans as though it were true.",
+     "how": "auto"
+    },
+    {
+     "check": "An agent with a motive to deceive does so, and the false belief propagates and is later contradicted.",
+     "how": "auto"
+    },
+    {
+     "check": "Two agents of different competence attempting one action produce measurably different outcome distributions.",
+     "how": "auto"
+    },
+    {
+     "check": "An agent demoted to statistical detail and promoted back has a consistent history and an invisible transition.",
+     "how": "auto"
+    },
+    {
+     "check": "Ten thousand agents are created, tracked and retired over a simulated year with no leak or orphan.",
+     "how": "auto"
+    },
+    {
+     "check": "Any agent's current action is explained in one screen with no code reading.",
+     "how": "observed"
+    },
+    {
+     "check": "Two hundred simulated agents are visible as characters going about traceable business, inside budget.",
+     "how": "measured"
+    }
+   ],
    "designRefs": [
     "LW SS6",
     "SS4"
@@ -363,6 +1018,44 @@
    "title": "Organisation framework",
    "goal": "Membership, roles, holdings, treasury, doctrine and span of control. A player organisation and an NPC organisation are the same type, founded through the same API, subject to the same drift.",
    "gate": "Over-extend an organisation and watch drift appear as subordinates pursuing their own goals — with no code path in the org layer that asks whether the owner is a player.",
+   "gateChecks": [
+    {
+     "check": "An over-extended organisation exhibits drift as subordinates pursuing their own goals.",
+     "how": "auto"
+    },
+    {
+     "check": "Drift emerges from agent goals, with no code in the org layer producing it directly.",
+     "how": "auto"
+    },
+    {
+     "check": "No branch anywhere in the org crate reads a player flag.",
+     "how": "auto"
+    },
+    {
+     "check": "A player organisation is founded through the same API an NPC one is.",
+     "how": "auto"
+    },
+    {
+     "check": "The chartering authority's disposition changes measurably as a result of chartering.",
+     "how": "auto"
+    },
+    {
+     "check": "Two organisations with identical assets and different doctrine produce measurably different action distributions.",
+     "how": "auto"
+    },
+    {
+     "check": "No reputation field exists; two organisations demonstrably hold different beliefs about a third.",
+     "how": "auto"
+    },
+    {
+     "check": "An agent defects to a rival when the offer beats their position on their own terms, and the org learns of it late.",
+     "how": "auto"
+    },
+    {
+     "check": "Oversight demand and supply are computable, and their ratio predicts the observed drift rate.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS2",
     "ARCH Rule 4"
@@ -383,6 +1076,40 @@
    "title": "Economy and logistics",
    "goal": "Goods, markets, production, contracts and convoys. Materials that have to physically arrive, which is what turns a build order into a logistics problem and a convoy into a target.",
    "gate": "A supply shock in one system moves prices three systems away with a lag that matches travel time. Ninety days with no negative inventory and no money created outside a mint event.",
+   "gateChecks": [
+    {
+     "check": "A supply shock moves prices three systems away with a lag matching travel time.",
+     "how": "auto"
+    },
+    {
+     "check": "Ninety simulated days with no negative inventory.",
+     "how": "auto"
+    },
+    {
+     "check": "No money created or destroyed outside an explicit mint or sink event.",
+     "how": "auto"
+    },
+    {
+     "check": "A three-deep production chain runs for a simulated year with conservation holding at every stage.",
+     "how": "auto"
+    },
+    {
+     "check": "Two markets in one system hold different prices for one good, explained by supply and transport cost.",
+     "how": "auto"
+    },
+    {
+     "check": "A shipment's arrival matches the route's travel time; destroying it removes the goods from the destination's supply.",
+     "how": "auto"
+    },
+    {
+     "check": "A breached contract has consequences propagating as belief and obligation, not as a number changing.",
+     "how": "auto"
+    },
+    {
+     "check": "Ten one-year runs from different seeds end with functioning economies and no runaway.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "SS7",
     "LW SS7.4"
@@ -403,6 +1130,48 @@
    "title": "Sites, construction and city life",
    "goal": "Claims, construction projects, four utility networks, condition that degrades, maintenance crews that respond, and a first-person tell for every mechanic.",
    "gate": "Build the same habitat archetype on a temperate world and an airless storm moon: different composition and cost from one definition. Cut power to a district and watch life support fail, crews respond, and people put masks on.",
+   "gateChecks": [
+    {
+     "check": "One habitat archetype on a temperate world and an airless storm moon produces different composition, cost and maintenance rate.",
+     "how": "auto"
+    },
+    {
+     "check": "Cutting a power node causes exactly the downstream failures the graph predicts, in the predicted order.",
+     "how": "auto"
+    },
+    {
+     "check": "A district that loses life support evacuates, and its population appears elsewhere rather than vanishing.",
+     "how": "auto"
+    },
+    {
+     "check": "All six first-person tells are observable by walking through a running city.",
+     "how": "capture"
+    },
+    {
+     "check": "Each tell is driven by simulation state rather than triggered for display.",
+     "how": "auto"
+    },
+    {
+     "check": "A crew fed a false belief about a fault location goes to the wrong district, and the right one stays dark.",
+     "how": "auto"
+    },
+    {
+     "check": "An understaffed organisation's backlog appears as public contracts; taking one clears the work order.",
+     "how": "auto"
+    },
+    {
+     "check": "A construction project is identifiable by sight at four stages of completion.",
+     "how": "capture"
+    },
+    {
+     "check": "A project on a remote world is delayed by a late convoy and by a storm, both traceable.",
+     "how": "auto"
+    },
+    {
+     "check": "A site's environment matches what the renderer and weather model report at that location.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS7"
    ],
@@ -422,6 +1191,48 @@
    "title": "Power, threat and coalitions",
    "goal": "The ceiling. Threat models built on belief rather than truth, alarm that rises with believed power and falls with dependency, and coalitions that form because several organisations independently reached one conclusion.",
    "gate": "Grow an organisation until rivals independently cross alarm and form a coalition against it. Feed one member a fabricated belief about another and watch the coalition fracture.",
+   "gateChecks": [
+    {
+     "check": "A coalition forms in a scenario with no code that decides a coalition should form.",
+     "how": "auto"
+    },
+    {
+     "check": "Each member can state why it joined, from its own threat model.",
+     "how": "auto"
+    },
+    {
+     "check": "A fabricated belief fed to one member fractures the coalition.",
+     "how": "auto"
+    },
+    {
+     "check": "A coalition dissolves both because its target fell below threshold and because a partner rose above one.",
+     "how": "auto"
+    },
+    {
+     "check": "A test proves the threat model cannot reach ground truth.",
+     "how": "auto"
+    },
+    {
+     "check": "Alarm responds correctly to each of its five inputs in isolation.",
+     "how": "auto"
+    },
+    {
+     "check": "Each of the four counterplays — hide, bribe, fracture, be useful — demonstrably breaks or prevents a coalition.",
+     "how": "auto"
+    },
+    {
+     "check": "Establishing a supply relationship measurably lowers the customer's alarm; severing it raises it.",
+     "how": "auto"
+    },
+    {
+     "check": "Observable event rate scales with organisation size; a large one cannot reach a small one's concealment.",
+     "how": "auto"
+    },
+    {
+     "check": "Twenty one-year runs produce neither a runaway hegemon nor a frozen balance.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS3",
     "SS4"
@@ -442,6 +1253,44 @@
    "title": "Missions and directives",
    "goal": "Missions generated from tension rather than authored, with stakes that are changes to the world. Directives: standing orders resolved by agents whether or not anyone is watching.",
    "gate": "Every generated mission traces to a named tension between real parties and none has a stake that is only money. A directive left alone for a simulated week resolves through subordinates, correctly or otherwise.",
+   "gateChecks": [
+    {
+     "check": "Every generated mission traces to a named tension between real parties.",
+     "how": "auto"
+    },
+    {
+     "check": "No generated mission has a stake that is only a payment.",
+     "how": "auto"
+    },
+    {
+     "check": "Removing a tension removes the missions generated from it.",
+     "how": "auto"
+    },
+    {
+     "check": "A directive left alone for a simulated week resolves through subordinates.",
+     "how": "auto"
+    },
+    {
+     "check": "A directive given to an incompetent or disloyal delegate produces a different outcome, explained by the agent.",
+     "how": "auto"
+    },
+    {
+     "check": "The same task done personally and by directive differ in all four stated ways, each measurable.",
+     "how": "auto"
+    },
+    {
+     "check": "A player directive produces a mission on the open board for an NPC, with no special code path.",
+     "how": "auto"
+    },
+    {
+     "check": "The same tension produces different offers to agents of different standing.",
+     "how": "auto"
+    },
+    {
+     "check": "A one-year run produces missions across all tension classes, none exceeding a stated share.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS5",
     "LW SS4.1"
@@ -462,6 +1311,40 @@
    "title": "Presence and Command",
    "goal": "The second lens. A map of what your organisation is doing, built from what your people have reported rather than from ground truth, with directives issued from it and your body still standing where you left it.",
    "gate": "Open Command mid-flight: the world does not pause and the ship does not stop. A report three days stale is visibly stale, and a fact nobody has observed does not appear at all.",
+   "gateChecks": [
+    {
+     "check": "Opening Command mid-flight does not pause the world or stop the ship.",
+     "how": "capture"
+    },
+    {
+     "check": "A test proves the Command data path cannot reach world state.",
+     "how": "auto"
+    },
+    {
+     "check": "A fact nobody has observed does not appear on the map.",
+     "how": "auto"
+    },
+    {
+     "check": "A report three days stale is visibly stale and its source is inspectable.",
+     "how": "capture"
+    },
+    {
+     "check": "Two contradictory reports are both shown with their sources rather than one silently winning.",
+     "how": "capture"
+    },
+    {
+     "check": "Every directive type is issuable from Command and resolves identically to one issued programmatically.",
+     "how": "auto"
+    },
+    {
+     "check": "A hostile agent can find and act on the player's body while Command is open.",
+     "how": "auto"
+    },
+    {
+     "check": "A hundred simultaneous events produce a legible summary rather than a hundred notifications.",
+     "how": "observed"
+    }
+   ],
    "designRefs": [
     "LW SS4"
    ],
@@ -481,6 +1364,48 @@
    "title": "The living world, integrated",
    "goal": "Everything at once, for a long time, without supervision. This is where the frameworks either compose or they do not.",
    "gate": "Run one simulated year unattended. No runaway monopoly, no dead economy, no organisation with a thousand ships, no agent stuck in a loop, and a dump that still explains itself.",
+   "gateChecks": [
+    {
+     "check": "One simulated year runs unattended with no crash and no deadlock.",
+     "how": "auto"
+    },
+    {
+     "check": "No unbounded quantity anywhere in that year.",
+     "how": "auto"
+    },
+    {
+     "check": "No runaway monopoly and no dead economy at the end of it.",
+     "how": "auto"
+    },
+    {
+     "check": "No organisation exceeds a stated ceiling on fleet size.",
+     "how": "auto"
+    },
+    {
+     "check": "No agent is stuck in a loop.",
+     "how": "auto"
+    },
+    {
+     "check": "A collapse anywhere in the year-old world is traceable back four causes from the dump.",
+     "how": "auto"
+    },
+    {
+     "check": "The same engagement fought in person and resolved in Command produces outcomes from one distribution.",
+     "how": "auto"
+    },
+    {
+     "check": "The simulation tick stays inside budget with fifty thousand agents across thirty-two systems.",
+     "how": "measured"
+    },
+    {
+     "check": "A one-year world saves and reloads in under thirty seconds with a matching hash.",
+     "how": "auto"
+    },
+    {
+     "check": "Killing the simulation mid-session degrades the client visibly and recovers with no invented facts.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS3",
     "SS12"
@@ -501,6 +1426,48 @@
    "title": "Vertical slice: nothing to coalition",
    "goal": "The game. Arrive with nothing, take work, build a crew, charter an organisation, claim ground, build on it, and grow until the galaxy decides you are the problem.",
    "gate": "A player who has never seen the game goes from nothing to a chartered organisation to a coalition forming against them, in one save, with no tutorial explaining any of the systems.",
+   "gateChecks": [
+    {
+     "check": "A player who has never seen the game reaches a chartered organisation with no tutorial.",
+     "how": "observed"
+    },
+    {
+     "check": "A coalition forms against that player's organisation in ordinary play.",
+     "how": "observed"
+    },
+    {
+     "check": "The player can see from Command why it formed.",
+     "how": "observed"
+    },
+    {
+     "check": "Playtesters find at least two of the four counterplays unprompted.",
+     "how": "observed"
+    },
+    {
+     "check": "A new player has a reason to move within sixty seconds of gaining control.",
+     "how": "observed"
+    },
+    {
+     "check": "A player can earn a living from generated work alone for three sessions without repetition becoming visible.",
+     "how": "observed"
+    },
+    {
+     "check": "Playtesters reach the point of using Command without being told to.",
+     "how": "observed"
+    },
+    {
+     "check": "Median time from nothing to the coalition falls inside the intended band across ten playtests.",
+     "how": "measured"
+    },
+    {
+     "check": "Ten testers complete the arc; findings recorded, triaged, and either fixed or explicitly deferred.",
+     "how": "observed"
+    },
+    {
+     "check": "Twenty hours of mixed play with no crash, no corruption and no soft lock.",
+     "how": "auto"
+    }
+   ],
    "designRefs": [
     "LW SS1",
     "LW SS3"
@@ -10635,5 +11602,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T21:22:27.490Z"
+ "updatedAt": "2026-09-08T21:30:58.423Z"
 }

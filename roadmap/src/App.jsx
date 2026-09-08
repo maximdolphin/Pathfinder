@@ -155,6 +155,16 @@ function MilestonePanel({ milestone, tasks }) {
           {milestone.gatePassedAt && <span className="gate-stamp">passed {milestone.gatePassedAt}</span>}
         </div>
         <p>{milestone.gate}</p>
+        {milestone.gateChecks?.length > 0 && (
+          <ol className="gate-checks">
+            {milestone.gateChecks.map((check, index) => (
+              <li key={index}>
+                <span className={`how how-${check.how}`}>{check.how}</span>
+                {check.check}
+              </li>
+            ))}
+          </ol>
+        )}
         {milestone.gateNote && <p className="gate-note">{milestone.gateNote}</p>}
         <Evidence items={milestone.evidence} />
       </div>

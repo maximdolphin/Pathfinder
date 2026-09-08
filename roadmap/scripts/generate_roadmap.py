@@ -22,6 +22,7 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from roadmap_data import MILESTONES, M00, M01
+from roadmap_gates import GATE_CHECKS
 from roadmap_data2 import M02, M03, M04
 from roadmap_data3 import M05, M06, M07, M08
 from roadmap_data4 import M09, M10, M11
@@ -94,6 +95,11 @@ def build():
             title=entry["title"],
             goal=entry["goal"],
             gate=entry["gate"],
+            # Each gate is also a list of individually falsifiable conditions,
+            # every one naming how it is decided. A gate written as a paragraph
+            # is a gate somebody argues with at the end of a milestone.
+            gateChecks=[dict(check=text, how=how)
+                        for text, how in GATE_CHECKS.get(entry["id"], [])],
             designRefs=entry["refs"],
             weekStart=entry["week_start"],
             weekEnd=entry["week_end"],
@@ -105,6 +111,8 @@ def build():
             gatePassedAt="2026-09-07" if entry["id"] == "M00" else None,
             evidence=[],
         ))
+
+    verify_gates(milestones)
 
     return dict(
         # The game has no name yet. "Ledger" below and throughout the source is
@@ -123,6 +131,26 @@ def build():
         milestones=milestones,
         tasks=tasks,
     )
+
+
+def verify_gates(milestones):
+    """A milestone without explicit checks is a milestone that passes by opinion.
+
+    Runs on every generation, so a gate cannot quietly become a paragraph again.
+    """
+    known = {"auto", "measured", "capture", "observed"}
+    problems = []
+    for entry in milestones:
+        checks = entry["gateChecks"]
+        if not checks:
+            problems.append("%s has no gate checks" % entry["id"])
+            continue
+        for check in checks:
+            if check["how"] not in known:
+                problems.append("%s: %r is not a known method for %r"
+                                % (entry["id"], check["how"], check["check"][:50]))
+    if problems:
+        raise SystemExit("\n".join(problems))
 
 
 def calibrate(tasks):
