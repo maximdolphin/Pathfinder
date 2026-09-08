@@ -1,0 +1,21 @@
+{
+  "name": "ledger-roadmap",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "LEDGER development roadmap. Agent-managed, human-readable.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "task": "node scripts/task.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}

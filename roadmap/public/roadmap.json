@@ -1,0 +1,5988 @@
+{
+ "project": "LEDGER",
+ "subtitle": "A corporate-feudal galaxy where information is the scarcest commodity.",
+ "designDoc": "docs/design/ledger-design.md",
+ "projectStart": "2026-09-07",
+ "generatedAt": "2026-09-08",
+ "totalTasks": 240,
+ "totalEstimateDays": 325,
+ "milestones": [
+  {
+   "id": "M0",
+   "title": "Foundations",
+   "goal": "A deterministic headless sim and a real-scale planet you can fly to and from.",
+   "gate": "Read out/world-dump.txt: can you trace a corporate collapse back four causes, and do two NPCs disagree about the same fact for legible reasons? Separately: does the client fly orbit to ground to orbit with no loading screen?",
+   "designRefs": [
+    "SS13.1",
+    "SS6.8",
+    "SS15.1"
+   ],
+   "weekStart": -6,
+   "weekEnd": 0,
+   "taskCount": 21,
+   "estimateDays": 36,
+   "plannedStart": "2026-09-07",
+   "plannedEnd": "2026-10-27",
+   "status": "done",
+   "gatePassedAt": "2026-09-07",
+   "evidence": [
+    {
+     "file": "evidence/M0-2026-09-08T15-20-44-830.png",
+     "caption": "6,371 km planet from 2 radii: oceans, coastlines, atmospheric limb",
+     "source": "../out/terrain-orbit.png",
+     "addedAt": "2026-09-08T15:20:44.832Z"
+    },
+    {
+     "file": "evidence/M0-2026-09-08T15-20-44-968.png",
+     "caption": "Atmospheric entry, mid-descent",
+     "source": "../out/terrain-entry.png",
+     "addedAt": "2026-09-08T15:20:44.971Z"
+    },
+    {
+     "file": "evidence/M0-2026-09-08T15-20-45-170.png",
+     "caption": "Eroded terrain from 1.2 km: triplanar detail, volumetric cloud deck",
+     "source": "../out/terrain-surface.png",
+     "addedAt": "2026-09-08T15:20:45.175Z"
+    },
+    {
+     "file": "evidence/M0-2026-09-08T15-20-45-497.png",
+     "caption": "The town: 32 buildings, 342 trees, ship on the pad",
+     "source": "../out/terrain-town.png",
+     "addedAt": "2026-09-08T15:20:45.500Z"
+    },
+    {
+     "file": "evidence/M0-2026-09-08T15-20-45-774.png",
+     "caption": "Back in orbit after climbing through the ship's own flight model",
+     "source": "../out/terrain-space.png",
+     "addedAt": "2026-09-08T15:20:45.776Z"
+    },
+    {
+     "file": "evidence/M0-2026-09-08T15-20-45-957.txt",
+     "caption": "Phase 0 gate artifact: 50,000 ticks, causal chains, metrics",
+     "source": "../out/world-dump.txt",
+     "addedAt": "2026-09-08T15:20:45.961Z"
+    }
+   ],
+   "doneCount": 21
+  },
+  {
+   "id": "M1",
+   "title": "Terrain to production standard",
+   "goal": "The terrain stops being a spike: water, stable LOD, collision everywhere it is needed, and assets that survive a cook.",
+   "gate": "Fly a 200 km transect at 300 m altitude at 60 fps with no holes, no popping that reads as a seam, and no frame over 20 ms.",
+   "designRefs": [
+    "SS6.8",
+    "SS14 R3"
+   ],
+   "weekStart": 1,
+   "weekEnd": 5,
+   "taskCount": 27,
+   "estimateDays": 21,
+   "plannedStart": "2026-10-27",
+   "plannedEnd": "2026-11-25",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M2",
+   "title": "Surface fidelity",
+   "goal": "Ground that holds up at walking distance: biome-blended materials, real texture sets, and detail that survives every LOD transition.",
+   "gate": "Stand on the surface at three biomes and at three altitudes. No tiling is visible, no shimmer, and the material does not change identity when a patch splits.",
+   "designRefs": [
+    "SS6.8"
+   ],
+   "weekStart": 6,
+   "weekEnd": 11,
+   "taskCount": 23,
+   "estimateDays": 33,
+   "plannedStart": "2026-11-25",
+   "plannedEnd": "2027-01-11",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M3",
+   "title": "Ship systems and flight",
+   "goal": "A ship you can actually fly: cockpit, HUD, landing gear, fuel, damage, and a flight model that behaves in vacuum and in air.",
+   "gate": "Take off from the pad, reach orbit, re-enter, and land on the same pad using only the cockpit view and the HUD.",
+   "designRefs": [
+    "SS6.9",
+    "SS1.1"
+   ],
+   "weekStart": 12,
+   "weekEnd": 17,
+   "taskCount": 22,
+   "estimateDays": 33,
+   "plannedStart": "2027-01-11",
+   "plannedEnd": "2027-02-25",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M4",
+   "title": "Sim to client bridge",
+   "goal": "The client stops reading a file. protobuf over TCP, live world state, and a contract board that reflects the running simulation.",
+   "gate": "Kill the sim mid-flight: the client degrades visibly and recovers when it restarts, without a crash and without inventing state.",
+   "designRefs": [
+    "SS5",
+    "SS9",
+    "ADR-0001"
+   ],
+   "weekStart": 18,
+   "weekEnd": 22,
+   "taskCount": 22,
+   "estimateDays": 24.5,
+   "plannedStart": "2027-02-25",
+   "plannedEnd": "2027-03-31",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M5",
+   "title": "The bounty loop, end to end",
+   "goal": "Design SS4.2's canonical mission, built properly: accept, investigate by disclosure, narrow a search volume, locate physically, resolve, choose delivery.",
+   "gate": "Phase 1 gate (SS13.2): does the bounty feel like investigation rather than a quest marker? Can a player describe how they found the target?",
+   "designRefs": [
+    "SS4.2",
+    "SS6.3",
+    "SS13.2"
+   ],
+   "weekStart": 23,
+   "weekEnd": 29,
+   "taskCount": 22,
+   "estimateDays": 35.5,
+   "plannedStart": "2027-03-31",
+   "plannedEnd": "2027-05-20",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M6",
+   "title": "Narration",
+   "goal": "A local model that renders state into prose and selects from a closed action space. It never decides anything that matters.",
+   "gate": "Tier 5: a full sim run with narration stubbed produces byte-identical world state to one with narration live.",
+   "designRefs": [
+    "SS6.4",
+    "SS11"
+   ],
+   "weekStart": 30,
+   "weekEnd": 34,
+   "taskCount": 16,
+   "estimateDays": 22.5,
+   "plannedStart": "2027-05-20",
+   "plannedEnd": "2027-06-21",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M7",
+   "title": "Economy and the news feed",
+   "goal": "Markets that move because something happened, and a news feed that is a lossy, biased rendering of true underlying state.",
+   "gate": "Watch a convoy die, then trade on it before the article appears. The article, when it appears, is late and slightly wrong.",
+   "designRefs": [
+    "SS6.5",
+    "SS12"
+   ],
+   "weekStart": 35,
+   "weekEnd": 40,
+   "taskCount": 18,
+   "estimateDays": 29.5,
+   "plannedStart": "2027-06-21",
+   "plannedEnd": "2027-08-02",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M8",
+   "title": "Crew",
+   "goal": "Named, simulated people you hire, rely on, and can lose. The losable thing (SS2.1).",
+   "gate": "Lose a crew member to a chain of events that was your fault and was foreseeable, and be able to reconstruct the chain afterwards.",
+   "designRefs": [
+    "SS2.1",
+    "SS15.4"
+   ],
+   "weekStart": 41,
+   "weekEnd": 44,
+   "taskCount": 15,
+   "estimateDays": 18,
+   "plannedStart": "2027-08-02",
+   "plannedEnd": "2027-08-26",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M9",
+   "title": "All six mission archetypes",
+   "goal": "Audit, Interception, Extraction, Fabrication and Collection, all on the one hidden-variable algorithm. No second implementation.",
+   "gate": "SS12 oatmeal detector: no archetype exceeds 35% of generated contracts over a 10,000 tick run, and every one uses the same investigation code path.",
+   "designRefs": [
+    "SS6.6",
+    "SS6.3",
+    "SS12"
+   ],
+   "weekStart": 45,
+   "weekEnd": 48,
+   "taskCount": 14,
+   "estimateDays": 20.5,
+   "plannedStart": "2027-08-26",
+   "plannedEnd": "2027-09-23",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M10",
+   "title": "Simulation LOD and reification",
+   "goal": "A world that ticks statistically where nobody is watching and instantiates consistently when somebody arrives.",
+   "gate": "Property test: aggregate(reify(A)) == A for arbitrary aggregate state. And a player cannot find the seam by flying between regions.",
+   "designRefs": [
+    "SS6.7",
+    "SS15.3"
+   ],
+   "weekStart": 49,
+   "weekEnd": 52,
+   "taskCount": 13,
+   "estimateDays": 20,
+   "plannedStart": "2027-09-23",
+   "plannedEnd": "2027-10-21",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M11",
+   "title": "Multiplayer foundation",
+   "goal": "A 16 to 32 player shard, sim-authoritative, with the PvPvE persistence classes resolved and IP counsel's review complete.",
+   "gate": "Sixteen players on one shard for an hour. No desync, no duplicated bounty target, and the belief graph survives a coordinated rumour-injection attempt.",
+   "designRefs": [
+    "SS6.10",
+    "SS7",
+    "SS15.2"
+   ],
+   "weekStart": 53,
+   "weekEnd": 56,
+   "taskCount": 15,
+   "estimateDays": 20,
+   "plannedStart": "2027-10-21",
+   "plannedEnd": "2027-11-18",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  },
+  {
+   "id": "M12",
+   "title": "MVP gate",
+   "goal": "The four pillar tests, on a live build, with real players.",
+   "gate": "P1: log out for a week, find three causally-explicable changes. P2: reconstruct four causes of any world change. P3: two players hold contradictory sincere beliefs. P4: lose something you spent twenty hours building, foreseeably.",
+   "designRefs": [
+    "SS2",
+    "SS13.3"
+   ],
+   "weekStart": 57,
+   "weekEnd": 58,
+   "taskCount": 12,
+   "estimateDays": 11.5,
+   "plannedStart": "2027-11-18",
+   "plannedEnd": "2027-12-06",
+   "status": "todo",
+   "gatePassedAt": null,
+   "evidence": [],
+   "doneCount": 0
+  }
+ ],
+ "tasks": [
+  {
+   "id": "T001",
+   "milestone": "M0",
+   "order": 1,
+   "title": "Rust workspace and CI-ready sim crate",
+   "detail": "Scaffold sim/ as a zero-dependency Rust crate. Event log, deterministic fold, seeded PRNG, fixed-point arithmetic.",
+   "acceptance": "cargo test green on an empty suite; replay determinism test exists before any domain logic.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS16",
+    "SS5.3"
+   ],
+   "dependsOn": [],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 0,
+   "plannedEndDay": 2,
+   "plannedStart": "2026-09-07",
+   "plannedEnd": "2026-09-09"
+  },
+  {
+   "id": "T002",
+   "milestone": "M0",
+   "order": 2,
+   "title": "Fixed-point arithmetic with no floats in authoritative state",
+   "detail": "Fx as scaled i64 with i128 intermediates. Display, clamp, exact rational scaling.",
+   "acceptance": "Multiplication at 1e12 does not overflow; display is stable and signed.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS5.2"
+   ],
+   "dependsOn": [
+    "T001"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 2,
+   "plannedEndDay": 2.5,
+   "plannedStart": "2026-09-09",
+   "plannedEnd": "2026-09-09"
+  },
+  {
+   "id": "T003",
+   "milestone": "M0",
+   "order": 3,
+   "title": "Deterministic PRNG seeded per region per tick",
+   "detail": "SplitMix64 derived from (world_seed, region_id, tick). Never thread_rng.",
+   "acceptance": "Same seed gives the same sequence; adjacent ticks and regions do not correlate.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T002"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 2.5,
+   "plannedEndDay": 3,
+   "plannedStart": "2026-09-09",
+   "plannedEnd": "2026-09-10"
+  },
+  {
+   "id": "T004",
+   "milestone": "M0",
+   "order": 4,
+   "title": "Event log and the fold",
+   "detail": "Append-only log; World::apply is the only write path; every event carries its cause.",
+   "acceptance": "Causal chain walks back and terminates; every cause points at an earlier event.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T003"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 3,
+   "plannedEndDay": 4.5,
+   "plannedStart": "2026-09-10",
+   "plannedEnd": "2026-09-11"
+  },
+  {
+   "id": "T005",
+   "milestone": "M0",
+   "order": 5,
+   "title": "Belief graph with propagation, decay and distortion",
+   "detail": "Typed Proposition enum, Belief with confidence and provenance, single-hop propagation.",
+   "acceptance": "Confidence never rises without independent corroboration; propagation terminates on a cyclic social graph.",
+   "estimateDays": 2.5,
+   "designRefs": [
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T004"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 4.5,
+   "plannedEndDay": 7,
+   "plannedStart": "2026-09-11",
+   "plannedEnd": "2026-09-16"
+  },
+  {
+   "id": "T006",
+   "milestone": "M0",
+   "order": 6,
+   "title": "Disposition computed, never stored",
+   "detail": "Disposition is a pure function of an entity's belief set. No reputation field anywhere.",
+   "acceptance": "grep the codebase for a stored reputation or relationship scalar: zero hits.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T005"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 7,
+   "plannedEndDay": 7.5,
+   "plannedStart": "2026-09-16",
+   "plannedEnd": "2026-09-16"
+  },
+  {
+   "id": "T007",
+   "milestone": "M0",
+   "order": 7,
+   "title": "Obligation ledger as a consumed-on-redemption multigraph",
+   "detail": "Typed ObligationClass; favours are spent, not renewable.",
+   "acceptance": "A redeemed favour cannot be redeemed twice; ordering is deterministic.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.2"
+   ],
+   "dependsOn": [
+    "T006"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 7.5,
+   "plannedEndDay": 9,
+   "plannedStart": "2026-09-16",
+   "plannedEnd": "2026-09-18"
+  },
+  {
+   "id": "T008",
+   "milestone": "M0",
+   "order": 8,
+   "title": "Investigation algorithm with search volumes",
+   "detail": "Search volume over a hidden variable; disclosures constrain it; contradictions widen it.",
+   "acceptance": "A contradictory claim widens the volume rather than silently picking a winner.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.3"
+   ],
+   "dependsOn": [
+    "T007"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 9,
+   "plannedEndDay": 11,
+   "plannedStart": "2026-09-18",
+   "plannedEnd": "2026-09-22"
+  },
+  {
+   "id": "T009",
+   "milestone": "M0",
+   "order": 9,
+   "title": "Economy with conservation laws",
+   "detail": "Cash and territory move between corps, never evaporate. Mean-reversion via overhead.",
+   "acceptance": "Money supply and lane count constant over 20,000 ticks; no faction ossifies.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T008"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 11,
+   "plannedEndDay": 13,
+   "plannedStart": "2026-09-22",
+   "plannedEnd": "2026-09-24"
+  },
+  {
+   "id": "T010",
+   "milestone": "M0",
+   "order": 10,
+   "title": "Mission generation as a query over existing tension",
+   "detail": "find (A,B) where A holds unresolved obligation against B and the tension predates the query.",
+   "acceptance": "Over 90% of contracts reference tension incurred before they were posted.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T009"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 13,
+   "plannedEndDay": 14.5,
+   "plannedStart": "2026-09-24",
+   "plannedEnd": "2026-09-25"
+  },
+  {
+   "id": "T011",
+   "milestone": "M0",
+   "order": 11,
+   "title": "Text world-dump and the SS12 metrics",
+   "detail": "A readable log of what happened and why, with the metrics printed into it.",
+   "acceptance": "A corporate collapse can be traced back four causes from the dump alone.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS13.1",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T010"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 14.5,
+   "plannedEndDay": 16.5,
+   "plannedStart": "2026-09-25",
+   "plannedEnd": "2026-09-29"
+  },
+  {
+   "id": "T012",
+   "milestone": "M0",
+   "order": 12,
+   "title": "Tier 2 and Tier 4 test suites",
+   "detail": "Invariant property tests and bit-identical replay determinism.",
+   "acceptance": "69 tests green; replay from the same seed is identical, from a different seed is not.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T011"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 16.5,
+   "plannedEndDay": 18.5,
+   "plannedStart": "2026-09-29",
+   "plannedEnd": "2026-10-01"
+  },
+  {
+   "id": "T013",
+   "milestone": "M0",
+   "order": 13,
+   "title": "UE5 C++ client with a typed snapshot boundary",
+   "detail": "No Blueprint logic. Archetypes parse into a UENUM; unknown variants are a parse failure.",
+   "acceptance": "Six automation tests pass headless via UnrealEditor-Cmd.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS9",
+    "SS11"
+   ],
+   "dependsOn": [
+    "T012"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 18.5,
+   "plannedEndDay": 20.5,
+   "plannedStart": "2026-10-01",
+   "plannedEnd": "2026-10-05"
+  },
+  {
+   "id": "T014",
+   "milestone": "M0",
+   "order": 14,
+   "title": "Cube-sphere quadtree terrain with screen-space error LOD",
+   "detail": "Six roots, horizon culling, edge-index stitching, vertices relative to node centres.",
+   "acceptance": "A planet renders from orbit with no cracks at face seams.",
+   "estimateDays": 3,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T013"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 20.5,
+   "plannedEndDay": 23.5,
+   "plannedStart": "2026-10-05",
+   "plannedEnd": "2026-10-08"
+  },
+  {
+   "id": "T015",
+   "milestone": "M0",
+   "order": 15,
+   "title": "Move patch generation to worker threads",
+   "detail": "Free functions over copied inputs; the game thread only uploads.",
+   "acceptance": "Worst game-thread cost falls from 53 ms to under 8 ms; zero starved patches at altitude.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8",
+    "ADR-0002"
+   ],
+   "dependsOn": [
+    "T014"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 23.5,
+   "plannedEndDay": 25.5,
+   "plannedStart": "2026-10-08",
+   "plannedEnd": "2026-10-12"
+  },
+  {
+   "id": "T016",
+   "milestone": "M0",
+   "order": 16,
+   "title": "Scale the planet to 6,371 km",
+   "detail": "Real radius, MaxDepth 15, noise frequency bands rescaled to the circumference.",
+   "acceptance": "4.8 m quads at the finest LOD; LWC carries the coordinates without precision loss.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T015"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 25.5,
+   "plannedEndDay": 27,
+   "plannedStart": "2026-10-12",
+   "plannedEnd": "2026-10-14"
+  },
+  {
+   "id": "T017",
+   "milestone": "M0",
+   "order": 17,
+   "title": "Sky Atmosphere, volumetric clouds, ozone",
+   "detail": "Earth's own scattering values at Earth's radius. Height fog removed as flat-world.",
+   "acceptance": "Sky is black outside the atmosphere and blue from the ground, with no parameter fighting.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T016"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 27,
+   "plannedEndDay": 29,
+   "plannedStart": "2026-10-14",
+   "plannedEnd": "2026-10-16"
+  },
+  {
+   "id": "T018",
+   "milestone": "M0",
+   "order": 18,
+   "title": "Analytic erosion via slope-damped octaves",
+   "detail": "Exact noise derivatives; each octave damped by the accumulated slope above it.",
+   "acceptance": "Terrain shows drainage. No seams at LOD boundaries, because it is a pure function.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T017"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 29,
+   "plannedEndDay": 31,
+   "plannedStart": "2026-10-16",
+   "plannedEnd": "2026-10-20"
+  },
+  {
+   "id": "T019",
+   "milestone": "M0",
+   "order": 19,
+   "title": "Triplanar surface material from generated mipped textures",
+   "detail": "256px detail textures with a full mip chain; world-aligned projection; depth fade.",
+   "acceptance": "No aliasing at any distance; no UV seam anywhere on the sphere.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T018"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 31,
+   "plannedEndDay": 33,
+   "plannedStart": "2026-10-20",
+   "plannedEnd": "2026-10-22"
+  },
+  {
+   "id": "T020",
+   "milestone": "M0",
+   "order": 20,
+   "title": "Ship, gravity, and a town",
+   "detail": "6-DOF flight, inverse-square gravity, atmospheric drag; 32 buildings and 342 trees.",
+   "acceptance": "The ship lands under gravity and climbs back to orbit through its own flight model.",
+   "estimateDays": 2.5,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T019"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 33,
+   "plannedEndDay": 35.5,
+   "plannedStart": "2026-10-22",
+   "plannedEnd": "2026-10-26"
+  },
+  {
+   "id": "T021",
+   "milestone": "M0",
+   "order": 21,
+   "title": "ADR-0001 and ADR-0002",
+   "detail": "Stack decision and the terrain build-vs-buy decision, with measurements attached.",
+   "acceptance": "Both ADRs are in docs/adr with Context, Decision, Consequences and rejected alternatives.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS8.5",
+    "SS15.1"
+   ],
+   "dependsOn": [
+    "T020"
+   ],
+   "status": "done",
+   "startedAt": null,
+   "completedAt": "2026-09-07",
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 35.5,
+   "plannedEndDay": 36,
+   "plannedStart": "2026-10-26",
+   "plannedEnd": "2026-10-27"
+  },
+  {
+   "id": "T022",
+   "milestone": "M1",
+   "order": 22,
+   "title": "Water surface as a separate render pass",
+   "detail": "Oceans are currently coloured terrain. Build a sea-level shell mesh with its own material: depth-based colour, Fresnel, and a screen-space reflection fallback.",
+   "acceptance": "Standing on a beach, the waterline is a surface with a horizon, not a colour change.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T021"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 36,
+   "plannedEndDay": 37.5,
+   "plannedStart": "2026-10-27",
+   "plannedEnd": "2026-10-28"
+  },
+  {
+   "id": "T023",
+   "milestone": "M1",
+   "order": 23,
+   "title": "Wave displacement and shoreline foam",
+   "detail": "Gerstner waves in the water material, amplitude falling off in shallow water. Foam where the terrain approaches sea level.",
+   "acceptance": "Waves are visible from 200 m and flatten correctly against the shore.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T022"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 37.5,
+   "plannedEndDay": 38.5,
+   "plannedStart": "2026-10-28",
+   "plannedEnd": "2026-10-29"
+  },
+  {
+   "id": "T024",
+   "milestone": "M1",
+   "order": 24,
+   "title": "Underwater fog and camera transition",
+   "detail": "A post-process volume that engages when the camera crosses the waterline.",
+   "acceptance": "Flying into the sea transitions without a pop and back out without a flash.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T023"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 38.5,
+   "plannedEndDay": 39,
+   "plannedStart": "2026-10-29",
+   "plannedEnd": "2026-10-30"
+  },
+  {
+   "id": "T025",
+   "milestone": "M1",
+   "order": 25,
+   "title": "Ocean-floor terrain profile",
+   "detail": "Seabeds currently use one smoothing rule. Add continental shelf, slope and abyssal plain so the depth profile reads as bathymetry.",
+   "acceptance": "A cross-section from coast to deep ocean shows a shelf break.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T024"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 39,
+   "plannedEndDay": 39.5,
+   "plannedStart": "2026-10-30",
+   "plannedEnd": "2026-10-30"
+  },
+  {
+   "id": "T026",
+   "milestone": "M1",
+   "order": 26,
+   "title": "Patch cache keyed by node id",
+   "detail": "Regenerating a patch the camera just left is pure waste. LRU cache of recent vertex buffers, bounded by memory not count.",
+   "acceptance": "Flying back and forth across a ridge regenerates nothing after the first pass.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T025"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 39.5,
+   "plannedEndDay": 40.5,
+   "plannedStart": "2026-10-30",
+   "plannedEnd": "2026-11-02"
+  },
+  {
+   "id": "T027",
+   "milestone": "M1",
+   "order": 27,
+   "title": "Predictive patch prefetch along the velocity vector",
+   "detail": "The collision cook already leads the camera. Do the same for geometry so a fast approach arrives at ground that already exists.",
+   "acceptance": "A 300 m/s descent shows no unfilled patches at any point.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T026"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 40.5,
+   "plannedEndDay": 41,
+   "plannedStart": "2026-11-02",
+   "plannedEnd": "2026-11-03"
+  },
+  {
+   "id": "T028",
+   "milestone": "M1",
+   "order": 28,
+   "title": "LOD transition blending",
+   "detail": "Patches currently swap. Blend between levels over a short distance band using vertex morphing toward the parent's surface.",
+   "acceptance": "No visible pop at any LOD boundary during a continuous descent.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T027"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 41,
+   "plannedEndDay": 42.5,
+   "plannedStart": "2026-11-03",
+   "plannedEnd": "2026-11-04"
+  },
+  {
+   "id": "T029",
+   "milestone": "M1",
+   "order": 29,
+   "title": "Fix stitching for the finer-neighbour case",
+   "detail": "Stitching only collapses vertices on the fine side. Verify the coarse side never needs it, and add a test that walks every visible edge pair.",
+   "acceptance": "An automated test finds zero cracks over 500 randomised camera positions.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T028"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 42.5,
+   "plannedEndDay": 43.5,
+   "plannedStart": "2026-11-04",
+   "plannedEnd": "2026-11-05"
+  },
+  {
+   "id": "T030",
+   "milestone": "M1",
+   "order": 30,
+   "title": "Collision for the town footprint and landing pads",
+   "detail": "Terrain collision is camera-radius only. Pin collision permanently around persistent structures so a ship cannot fall through an unloaded patch.",
+   "acceptance": "Teleport to the pad from orbit: the ship rests on it immediately.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T029"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 43.5,
+   "plannedEndDay": 44,
+   "plannedStart": "2026-11-05",
+   "plannedEnd": "2026-11-06"
+  },
+  {
+   "id": "T031",
+   "milestone": "M1",
+   "order": 31,
+   "title": "Collision cook budget and instrumentation",
+   "detail": "Track cook time per frame and per patch; alert in the stats when the budget is exceeded.",
+   "acceptance": "Ledger.Terrain.Stats reports cook time distribution, not just the worst case.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T030"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 44,
+   "plannedEndDay": 44.5,
+   "plannedStart": "2026-11-06",
+   "plannedEnd": "2026-11-06"
+  },
+  {
+   "id": "T032",
+   "milestone": "M1",
+   "order": 32,
+   "title": "Save generated terrain material as a real asset",
+   "detail": "The material is built at runtime and therefore editor-only. Write an editor commandlet that builds it once and saves it to /Game/Materials.",
+   "acceptance": "A packaged build renders the terrain correctly with no runtime shader compilation.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS9"
+   ],
+   "dependsOn": [
+    "T031"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 44.5,
+   "plannedEndDay": 45.5,
+   "plannedStart": "2026-11-06",
+   "plannedEnd": "2026-11-09"
+  },
+  {
+   "id": "T033",
+   "milestone": "M1",
+   "order": 33,
+   "title": "Save generated detail textures as assets",
+   "detail": "Same problem, same fix: generate the mipped textures at cook time.",
+   "acceptance": "The packaged build ships the textures; no UTexture2D is created at runtime.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T032"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 45.5,
+   "plannedEndDay": 46,
+   "plannedStart": "2026-11-09",
+   "plannedEnd": "2026-11-10"
+  },
+  {
+   "id": "T034",
+   "milestone": "M1",
+   "order": 34,
+   "title": "Package a standalone game build",
+   "detail": "The game target links but has never been cooked. Get a packaged build running.",
+   "acceptance": "Ledger.exe runs the reentry sequence with no editor present.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T033"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 46,
+   "plannedEndDay": 47,
+   "plannedStart": "2026-11-10",
+   "plannedEnd": "2026-11-11"
+  },
+  {
+   "id": "T035",
+   "milestone": "M1",
+   "order": 35,
+   "title": "Gauntlet performance test for the descent",
+   "detail": "Automate the orbit-to-ground descent as a Gauntlet test that records frame times.",
+   "acceptance": "The test fails if any frame exceeds 20 ms or the 99th percentile exceeds 16.6 ms.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T034"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 47,
+   "plannedEndDay": 48,
+   "plannedStart": "2026-11-11",
+   "plannedEnd": "2026-11-12"
+  },
+  {
+   "id": "T036",
+   "milestone": "M1",
+   "order": 36,
+   "title": "Terrain unit tests for the maths layer",
+   "detail": "LedgerTerrainMath has no tests. Cover cube-sphere round-tripping, noise determinism, derivative correctness against finite differences, and screen-space error.",
+   "acceptance": "Analytic derivatives agree with central differences to 1e-6 over 10,000 samples.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS11",
+    "SS8.1"
+   ],
+   "dependsOn": [
+    "T035"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 48,
+   "plannedEndDay": 49,
+   "plannedStart": "2026-11-12",
+   "plannedEnd": "2026-11-13"
+  },
+  {
+   "id": "T037",
+   "milestone": "M1",
+   "order": 37,
+   "title": "Deterministic terrain across machines",
+   "detail": "The terrain is a pure function of a seed, so two machines must agree. Hash a grid of elevation samples and compare in CI.",
+   "acceptance": "The elevation hash is identical on two machines and across two builds.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS5.2"
+   ],
+   "dependsOn": [
+    "T036"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 49,
+   "plannedEndDay": 49.5,
+   "plannedStart": "2026-11-13",
+   "plannedEnd": "2026-11-13"
+  },
+  {
+   "id": "T038",
+   "milestone": "M1",
+   "order": 38,
+   "title": "Profile and reduce per-patch generation cost",
+   "detail": "Erosion doubled the sample cost. Profile the noise inner loop and cut it: cache gradients, hoist the hash, consider SIMD.",
+   "acceptance": "Patch generation falls below 4 ms for a 65x65 patch with erosion on.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T037"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 49.5,
+   "plannedEndDay": 51,
+   "plannedStart": "2026-11-13",
+   "plannedEnd": "2026-11-17"
+  },
+  {
+   "id": "T039",
+   "milestone": "M1",
+   "order": 39,
+   "title": "Bound the mesh component pool by memory",
+   "detail": "The pool is a fixed 2,560 components. Size it against a memory budget and report when it is the limiting factor.",
+   "acceptance": "Stats show whether the pool or the job queue is the binding constraint.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T038"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 51,
+   "plannedEndDay": 51.5,
+   "plannedStart": "2026-11-17",
+   "plannedEnd": "2026-11-17"
+  },
+  {
+   "id": "T040",
+   "milestone": "M1",
+   "order": 40,
+   "title": "Horizon culling correctness test",
+   "detail": "Culling silently disabled itself once already. Add a test that asserts the visible set matches a brute-force horizon check at many altitudes.",
+   "acceptance": "Culled set matches brute force at 12 altitudes from surface to 3 radii.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS8.1"
+   ],
+   "dependsOn": [
+    "T039"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 51.5,
+   "plannedEndDay": 52,
+   "plannedStart": "2026-11-17",
+   "plannedEnd": "2026-11-18"
+  },
+  {
+   "id": "T041",
+   "milestone": "M1",
+   "order": 41,
+   "title": "Terrain streaming under a moving observer, soak test",
+   "detail": "Fly a great-circle route for 30 minutes and assert no leak, no starvation, no crack.",
+   "acceptance": "Memory is flat after the first orbit; zero starved patches; zero cracks.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T040"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 52,
+   "plannedEndDay": 53,
+   "plannedStart": "2026-11-18",
+   "plannedEnd": "2026-11-19"
+  },
+  {
+   "id": "T042",
+   "milestone": "M1",
+   "order": 42,
+   "title": "M1 evidence: transect flight recording",
+   "detail": "Capture the 200 km transect with frame times overlaid.",
+   "acceptance": "Video and frame-time trace uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T041"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 53,
+   "plannedEndDay": 53.5,
+   "plannedStart": "2026-11-19",
+   "plannedEnd": "2026-11-19"
+  },
+  {
+   "id": "T043",
+   "milestone": "M1",
+   "order": 43,
+   "title": "GitHub Actions: sim suite on every commit",
+   "detail": "Design SS9 says the sim suite runs on every commit and UE builds nightly. Wire it.",
+   "acceptance": "A push runs cargo test and fails the check on a red test.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS9",
+    "SS11"
+   ],
+   "dependsOn": [
+    "T042"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 53.5,
+   "plannedEndDay": 54,
+   "plannedStart": "2026-11-19",
+   "plannedEnd": "2026-11-20"
+  },
+  {
+   "id": "T044",
+   "milestone": "M1",
+   "order": 44,
+   "title": "GitHub Actions: nightly UE build and automation tests",
+   "detail": "Build the editor target and run the Tier 6 suite headless on a schedule.",
+   "acceptance": "A nightly run produces a build artifact and a test report.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS9",
+    "SS11"
+   ],
+   "dependsOn": [
+    "T043"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 54,
+   "plannedEndDay": 55,
+   "plannedStart": "2026-11-20",
+   "plannedEnd": "2026-11-23"
+  },
+  {
+   "id": "T045",
+   "milestone": "M1",
+   "order": 45,
+   "title": "Nightly Tier 3 fuzz job",
+   "detail": "The 1,000,000 tick invariant run, nightly, with failure notification.",
+   "acceptance": "A deliberately broken invariant is caught by the next nightly run.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T044"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 55,
+   "plannedEndDay": 55.5,
+   "plannedStart": "2026-11-23",
+   "plannedEnd": "2026-11-23"
+  },
+  {
+   "id": "T046",
+   "milestone": "M1",
+   "order": 46,
+   "title": "Terrain debug visualisation modes",
+   "detail": "Wireframe, LOD level as colour, patch age, collision coverage.",
+   "acceptance": "Ledger.Terrain.Debug cycles the modes and each is legible.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T045"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 55.5,
+   "plannedEndDay": 56,
+   "plannedStart": "2026-11-23",
+   "plannedEnd": "2026-11-24"
+  },
+  {
+   "id": "T047",
+   "milestone": "M1",
+   "order": 47,
+   "title": "Frame-time HUD and stat capture",
+   "detail": "A permanent overlay recording frame time, patch queue and memory.",
+   "acceptance": "Any capture can be correlated with the frame cost at that moment.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T046"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 56,
+   "plannedEndDay": 56.5,
+   "plannedStart": "2026-11-24",
+   "plannedEnd": "2026-11-24"
+  },
+  {
+   "id": "T048",
+   "milestone": "M1",
+   "order": 48,
+   "title": "Crash reporting and symbol retention",
+   "detail": "Keep PDBs per build so a crash from a week-old build is still readable.",
+   "acceptance": "A stack from an archived build resolves to source lines.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T047"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 56.5,
+   "plannedEndDay": 57,
+   "plannedStart": "2026-11-24",
+   "plannedEnd": "2026-11-25"
+  },
+  {
+   "id": "T049",
+   "milestone": "M2",
+   "order": 49,
+   "title": "Biome classification from climate rather than altitude",
+   "detail": "Colour is keyed to height and slope. Derive latitude, temperature and moisture from position and circulation, then classify biome from those.",
+   "acceptance": "A desert appears in a rain shadow, not at a fixed altitude band.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T048"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 57,
+   "plannedEndDay": 59,
+   "plannedStart": "2026-11-25",
+   "plannedEnd": "2026-11-27"
+  },
+  {
+   "id": "T050",
+   "milestone": "M2",
+   "order": 50,
+   "title": "Author a texture set per biome",
+   "detail": "Albedo, normal, roughness and height for rock, sand, grass, forest floor, snow.",
+   "acceptance": "Five biomes, each with four maps, all generated procedurally and cooked as assets.",
+   "estimateDays": 2.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T049"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 59,
+   "plannedEndDay": 61.5,
+   "plannedStart": "2026-11-27",
+   "plannedEnd": "2026-12-01"
+  },
+  {
+   "id": "T051",
+   "milestone": "M2",
+   "order": 51,
+   "title": "Height-blended material layering",
+   "detail": "Blend biomes by their height maps rather than by linear interpolation, so transitions interlock instead of dissolving.",
+   "acceptance": "A grass-to-rock transition shows grass in the crevices and rock on the high points.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T050"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 61.5,
+   "plannedEndDay": 63,
+   "plannedStart": "2026-12-01",
+   "plannedEnd": "2026-12-03"
+  },
+  {
+   "id": "T052",
+   "milestone": "M2",
+   "order": 52,
+   "title": "Parallax occlusion on the near LOD",
+   "detail": "Give close ground depth without geometry, faded out past 30 m.",
+   "acceptance": "Standing still, the ground has relief below the vertex scale; no cost past 30 m.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T051"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 63,
+   "plannedEndDay": 64.5,
+   "plannedStart": "2026-12-03",
+   "plannedEnd": "2026-12-04"
+  },
+  {
+   "id": "T053",
+   "milestone": "M2",
+   "order": 53,
+   "title": "Distance-based macro variation",
+   "detail": "Break the tiling that shows up from the air with a low-frequency colour and roughness modulation driven by the same noise the terrain uses.",
+   "acceptance": "From 2 km, no repeating pattern is visible anywhere in frame.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T052"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 64.5,
+   "plannedEndDay": 66,
+   "plannedStart": "2026-12-04",
+   "plannedEnd": "2026-12-08"
+  },
+  {
+   "id": "T054",
+   "milestone": "M2",
+   "order": 54,
+   "title": "Triplanar seam reduction on steep slopes",
+   "detail": "The three projections blend by normal; sharpen the blend so cliffs do not smear.",
+   "acceptance": "A vertical cliff face shows one dominant projection, not three overlapping.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T053"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 66,
+   "plannedEndDay": 67,
+   "plannedStart": "2026-12-08",
+   "plannedEnd": "2026-12-09"
+  },
+  {
+   "id": "T055",
+   "milestone": "M2",
+   "order": 55,
+   "title": "Material LOD continuity across patch splits",
+   "detail": "A patch split must not change material identity. Drive everything from world position, never from patch UVs.",
+   "acceptance": "Recording a split at 60 fps shows no material change on the frame the split happens.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.8"
+   ],
+   "dependsOn": [
+    "T054"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 67,
+   "plannedEndDay": 68,
+   "plannedStart": "2026-12-09",
+   "plannedEnd": "2026-12-10"
+  },
+  {
+   "id": "T056",
+   "milestone": "M2",
+   "order": 56,
+   "title": "Runtime Virtual Texture evaluation for the surface",
+   "detail": "Design SS6.8 proposes RVT. Prototype six RVT volumes on the cube faces and measure against the current triplanar path.",
+   "acceptance": "An ADR recording whether RVT beats triplanar here, with measurements.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.8",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T055"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 68,
+   "plannedEndDay": 70,
+   "plannedStart": "2026-12-10",
+   "plannedEnd": "2026-12-14"
+  },
+  {
+   "id": "T057",
+   "milestone": "M2",
+   "order": 57,
+   "title": "Snow and sand accumulation by slope and exposure",
+   "detail": "Deposit on shallow slopes and lee faces, expose rock on steep and windward.",
+   "acceptance": "Snow lies in gullies and off cliff faces without being authored.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T056"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 70,
+   "plannedEndDay": 71.5,
+   "plannedStart": "2026-12-14",
+   "plannedEnd": "2026-12-15"
+  },
+  {
+   "id": "T058",
+   "milestone": "M2",
+   "order": 58,
+   "title": "Wetness near the waterline and in valley floors",
+   "detail": "Darken albedo and drop roughness where drainage accumulates.",
+   "acceptance": "River valleys read as wet without a water mesh in them.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T057"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 71.5,
+   "plannedEndDay": 72.5,
+   "plannedStart": "2026-12-15",
+   "plannedEnd": "2026-12-16"
+  },
+  {
+   "id": "T059",
+   "milestone": "M2",
+   "order": 59,
+   "title": "Ambient occlusion baked into vertex colour",
+   "detail": "Approximate AO from the local heightfield curvature at generation time.",
+   "acceptance": "Valleys and crevices darken correctly with no screen-space cost.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T058"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 72.5,
+   "plannedEndDay": 74,
+   "plannedStart": "2026-12-16",
+   "plannedEnd": "2026-12-18"
+  },
+  {
+   "id": "T060",
+   "milestone": "M2",
+   "order": 60,
+   "title": "Scatter rocks and vegetation by biome",
+   "detail": "Instanced meshes placed from the same deterministic rules the biome uses.",
+   "acceptance": "Ten thousand instances within 500 m at no measurable frame cost.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T059"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 74,
+   "plannedEndDay": 76,
+   "plannedStart": "2026-12-18",
+   "plannedEnd": "2026-12-22"
+  },
+  {
+   "id": "T061",
+   "milestone": "M2",
+   "order": 61,
+   "title": "Procedural rock and plant meshes",
+   "detail": "Extend the mesh builder: rocks by displaced icosphere, shrubs and grass by billboard clusters.",
+   "acceptance": "Six rock variants and four plant variants, all generated from a seed.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T060"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 76,
+   "plannedEndDay": 78,
+   "plannedStart": "2026-12-22",
+   "plannedEnd": "2026-12-24"
+  },
+  {
+   "id": "T062",
+   "milestone": "M2",
+   "order": 62,
+   "title": "Vegetation wind animation",
+   "detail": "World-position-offset in the material, driven by a global wind vector.",
+   "acceptance": "Grass and canopies move coherently; nothing is animated per-instance on the CPU.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T061"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 78,
+   "plannedEndDay": 79,
+   "plannedStart": "2026-12-24",
+   "plannedEnd": "2026-12-25"
+  },
+  {
+   "id": "T063",
+   "milestone": "M2",
+   "order": 63,
+   "title": "Material parameter collection for global look",
+   "detail": "One collection holding wind, wetness, season and time of day, so the whole surface can be retuned without touching every material.",
+   "acceptance": "Changing one parameter changes the whole planet's look consistently.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T062"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 79,
+   "plannedEndDay": 80,
+   "plannedStart": "2026-12-25",
+   "plannedEnd": "2026-12-28"
+  },
+  {
+   "id": "T064",
+   "milestone": "M2",
+   "order": 64,
+   "title": "Surface fidelity soak test",
+   "detail": "Fly a route through every biome at three altitudes and capture stills.",
+   "acceptance": "Fifteen stills, no tiling, no shimmer, no material identity change.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T063"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 80,
+   "plannedEndDay": 81,
+   "plannedStart": "2026-12-28",
+   "plannedEnd": "2026-12-29"
+  },
+  {
+   "id": "T065",
+   "milestone": "M2",
+   "order": 65,
+   "title": "M2 evidence: biome gallery",
+   "detail": "Capture each biome at walking distance, at 200 m and from orbit.",
+   "acceptance": "Gallery uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T064"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 81,
+   "plannedEndDay": 81.5,
+   "plannedStart": "2026-12-29",
+   "plannedEnd": "2026-12-29"
+  },
+  {
+   "id": "T066",
+   "milestone": "M2",
+   "order": 66,
+   "title": "Screenshot regression harness",
+   "detail": "Capture fixed viewpoints each nightly build and diff against a baseline.",
+   "acceptance": "A material change that alters the look is flagged automatically.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T065"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 81.5,
+   "plannedEndDay": 83,
+   "plannedStart": "2026-12-29",
+   "plannedEnd": "2026-12-31"
+  },
+  {
+   "id": "T067",
+   "milestone": "M2",
+   "order": 67,
+   "title": "Material complexity budget",
+   "detail": "Shader instruction counts tracked per material, with a ceiling.",
+   "acceptance": "Exceeding the ceiling fails the nightly build.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T066"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 83,
+   "plannedEndDay": 84,
+   "plannedStart": "2026-12-31",
+   "plannedEnd": "2027-01-01"
+  },
+  {
+   "id": "T068",
+   "milestone": "M2",
+   "order": 68,
+   "title": "Texture memory budget and streaming",
+   "detail": "Know what the surface costs in VRAM, and leave room for the narration model.",
+   "acceptance": "Surface textures stay under budget with 4 GB reserved for inference.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T067"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 84,
+   "plannedEndDay": 85,
+   "plannedStart": "2027-01-01",
+   "plannedEnd": "2027-01-04"
+  },
+  {
+   "id": "T069",
+   "milestone": "M2",
+   "order": 69,
+   "title": "Colour grading and tone mapping pass",
+   "detail": "One look, applied consistently, rather than per-scene exposure fiddling.",
+   "acceptance": "The same grade reads correctly in orbit, at altitude and on the ground.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T068"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 85,
+   "plannedEndDay": 86.5,
+   "plannedStart": "2027-01-04",
+   "plannedEnd": "2027-01-05"
+  },
+  {
+   "id": "T070",
+   "milestone": "M2",
+   "order": 70,
+   "title": "Time of day and a moving sun",
+   "detail": "The sun currently never moves. Drive it from sim time.",
+   "acceptance": "A full day-night cycle runs and the atmosphere responds correctly at dawn.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T069"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 86.5,
+   "plannedEndDay": 88.5,
+   "plannedStart": "2027-01-05",
+   "plannedEnd": "2027-01-07"
+  },
+  {
+   "id": "T071",
+   "milestone": "M2",
+   "order": 71,
+   "title": "Night side: stars, moonlight, and town lights",
+   "detail": "The dark half of the planet has to be worth flying over.",
+   "acceptance": "Town lights are visible from orbit on the night side.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T070"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 88.5,
+   "plannedEndDay": 90,
+   "plannedStart": "2027-01-07",
+   "plannedEnd": "2027-01-11"
+  },
+  {
+   "id": "T072",
+   "milestone": "M3",
+   "order": 72,
+   "title": "Parametric ship kit with typed socket interfaces",
+   "detail": "Design SS6.9's ~40 components. Hull sections, wings, nacelles, gear, sensors, each with a typed socket, assembled at editor time and baked to StaticMesh.",
+   "acceptance": "Three hulls generated from the same kit by changing parameters only.",
+   "estimateDays": 2.5,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T071"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 90,
+   "plannedEndDay": 92.5,
+   "plannedStart": "2027-01-11",
+   "plannedEnd": "2027-01-13"
+  },
+  {
+   "id": "T073",
+   "milestone": "M3",
+   "order": 73,
+   "title": "Editor tooling for ship assembly",
+   "detail": "A commandlet that builds a hull from a parameter set and saves the asset.",
+   "acceptance": "Changing hull_length from 24 m to 18 m regenerates in seconds.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T072"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 92.5,
+   "plannedEndDay": 94,
+   "plannedStart": "2027-01-13",
+   "plannedEnd": "2027-01-15"
+  },
+  {
+   "id": "T074",
+   "milestone": "M3",
+   "order": 74,
+   "title": "Cockpit interior and first-person view",
+   "detail": "Cockpit-only interiors per SS6.9. Seat, canopy frame, instrument panel geometry.",
+   "acceptance": "The cockpit view shows a frame and panel that occlude correctly against the world.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T073"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 94,
+   "plannedEndDay": 96,
+   "plannedStart": "2027-01-15",
+   "plannedEnd": "2027-01-19"
+  },
+  {
+   "id": "T075",
+   "milestone": "M3",
+   "order": 75,
+   "title": "Flight HUD: attitude, velocity, altitude, throttle",
+   "detail": "Drawn in C++ via Slate or a HUD class, no UMG assets.",
+   "acceptance": "Altitude reads correctly from orbit to ground; the horizon indicator is right at every point on the sphere.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T074"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 96,
+   "plannedEndDay": 98,
+   "plannedStart": "2027-01-19",
+   "plannedEnd": "2027-01-21"
+  },
+  {
+   "id": "T076",
+   "milestone": "M3",
+   "order": 76,
+   "title": "Navigation and target reticle",
+   "detail": "A marker for the selected destination that works in a spherical frame.",
+   "acceptance": "The town marker stays correct while flying around the planet.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T075"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 98,
+   "plannedEndDay": 99.5,
+   "plannedStart": "2027-01-21",
+   "plannedEnd": "2027-01-22"
+  },
+  {
+   "id": "T077",
+   "milestone": "M3",
+   "order": 77,
+   "title": "Landing gear with deployment and ground contact",
+   "detail": "Gear geometry, animation, and per-leg ground contact rather than a single point.",
+   "acceptance": "The ship rests level on a slope, on three legs, without sinking.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T076"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 99.5,
+   "plannedEndDay": 101.5,
+   "plannedStart": "2027-01-22",
+   "plannedEnd": "2027-01-26"
+  },
+  {
+   "id": "T078",
+   "milestone": "M3",
+   "order": 78,
+   "title": "Fuel and thrust budget",
+   "detail": "Delta-v as a resource. Burn on main thrust, drain faster in atmosphere.",
+   "acceptance": "Reaching orbit from sea level consumes a legible fraction of a full tank.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T077"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 101.5,
+   "plannedEndDay": 103,
+   "plannedStart": "2027-01-26",
+   "plannedEnd": "2027-01-28"
+  },
+  {
+   "id": "T079",
+   "milestone": "M3",
+   "order": 79,
+   "title": "Atmospheric heating on re-entry",
+   "detail": "Heat accumulation from velocity and density, with a visual effect and a damage threshold.",
+   "acceptance": "A steep fast re-entry damages the hull; a shallow one does not.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T078"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 103,
+   "plannedEndDay": 104.5,
+   "plannedStart": "2027-01-28",
+   "plannedEnd": "2027-01-29"
+  },
+  {
+   "id": "T080",
+   "milestone": "M3",
+   "order": 80,
+   "title": "Hull damage model",
+   "detail": "Component-level damage: engines, control surfaces, hull integrity.",
+   "acceptance": "Losing an engine changes the flight model asymmetrically.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T079"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 104.5,
+   "plannedEndDay": 106.5,
+   "plannedStart": "2027-01-29",
+   "plannedEnd": "2027-02-02"
+  },
+  {
+   "id": "T081",
+   "milestone": "M3",
+   "order": 81,
+   "title": "Flight assist modes",
+   "detail": "Full 6-DOF for vacuum, an atmospheric assist that holds attitude against gravity.",
+   "acceptance": "Assist on, the ship holds a hover; assist off, it does not.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.9"
+   ],
+   "dependsOn": [
+    "T080"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 106.5,
+   "plannedEndDay": 108,
+   "plannedStart": "2027-02-02",
+   "plannedEnd": "2027-02-04"
+  },
+  {
+   "id": "T082",
+   "milestone": "M3",
+   "order": 82,
+   "title": "Ship-relative camera modes",
+   "detail": "Chase, cockpit, and an external orbit camera, all correct in a spherical frame.",
+   "acceptance": "No camera mode gimbal-locks at any point on the planet.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T081"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 108,
+   "plannedEndDay": 109,
+   "plannedStart": "2027-02-04",
+   "plannedEnd": "2027-02-05"
+  },
+  {
+   "id": "T083",
+   "milestone": "M3",
+   "order": 83,
+   "title": "Engine and thruster visual effects",
+   "detail": "Niagara plumes scaled by throttle, with atmospheric versus vacuum behaviour.",
+   "acceptance": "Plumes shorten and widen in atmosphere and go pencil-thin in vacuum.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T082"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 109,
+   "plannedEndDay": 110.5,
+   "plannedStart": "2027-02-05",
+   "plannedEnd": "2027-02-08"
+  },
+  {
+   "id": "T084",
+   "milestone": "M3",
+   "order": 84,
+   "title": "Sound: engines, atmosphere, and its absence",
+   "detail": "Procedural engine tone by throttle, wind noise by dynamic pressure, silence in vacuum.",
+   "acceptance": "Crossing the Karman line, wind noise fades to nothing while the engine stays.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T083"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 110.5,
+   "plannedEndDay": 112,
+   "plannedStart": "2027-02-08",
+   "plannedEnd": "2027-02-10"
+  },
+  {
+   "id": "T085",
+   "milestone": "M3",
+   "order": 85,
+   "title": "Docking and landing pad interaction",
+   "detail": "Detect a valid landing, lock the ship, and expose an interaction prompt.",
+   "acceptance": "Landing on the pad within tolerance registers; landing beside it does not.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T084"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 112,
+   "plannedEndDay": 113.5,
+   "plannedStart": "2027-02-10",
+   "plannedEnd": "2027-02-11"
+  },
+  {
+   "id": "T086",
+   "milestone": "M3",
+   "order": 86,
+   "title": "Ship save and restore state",
+   "detail": "Position, orientation, velocity, fuel and damage persist across a session boundary.",
+   "acceptance": "Quit in orbit, restart, and the ship is where it was, in the state it was.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T085"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 113.5,
+   "plannedEndDay": 114.5,
+   "plannedStart": "2027-02-11",
+   "plannedEnd": "2027-02-12"
+  },
+  {
+   "id": "T087",
+   "milestone": "M3",
+   "order": 87,
+   "title": "Flight model unit tests",
+   "detail": "Gravity, drag and thrust as pure functions, tested without a world.",
+   "acceptance": "Orbital velocity at 200 km matches the analytic value to within 1%.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS8.1"
+   ],
+   "dependsOn": [
+    "T086"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 114.5,
+   "plannedEndDay": 116,
+   "plannedStart": "2027-02-12",
+   "plannedEnd": "2027-02-16"
+  },
+  {
+   "id": "T088",
+   "milestone": "M3",
+   "order": 88,
+   "title": "M3 evidence: cockpit round trip",
+   "detail": "Record a full pad-to-orbit-to-pad flight from the cockpit view.",
+   "acceptance": "Recording uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T087"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 116,
+   "plannedEndDay": 116.5,
+   "plannedStart": "2027-02-16",
+   "plannedEnd": "2027-02-16"
+  },
+  {
+   "id": "T089",
+   "milestone": "M3",
+   "order": 89,
+   "title": "Input remapping and gamepad support",
+   "detail": "Axis mappings are hard-coded in config. Support rebinding and a controller.",
+   "acceptance": "A gamepad flies the ship with no keyboard input.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T088"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 116.5,
+   "plannedEndDay": 118,
+   "plannedStart": "2027-02-16",
+   "plannedEnd": "2027-02-18"
+  },
+  {
+   "id": "T090",
+   "milestone": "M3",
+   "order": 90,
+   "title": "Settings menu in C++",
+   "detail": "Resolution, quality, input, audio. No UMG assets.",
+   "acceptance": "Settings persist across a restart.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS9"
+   ],
+   "dependsOn": [
+    "T089"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 118,
+   "plannedEndDay": 119.5,
+   "plannedStart": "2027-02-18",
+   "plannedEnd": "2027-02-19"
+  },
+  {
+   "id": "T091",
+   "milestone": "M3",
+   "order": 91,
+   "title": "Pause, save and quit flow",
+   "detail": "A session boundary that does not lose state.",
+   "acceptance": "Quitting and resuming restores the ship and the world clock.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T090"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 119.5,
+   "plannedEndDay": 120.5,
+   "plannedStart": "2027-02-19",
+   "plannedEnd": "2027-02-22"
+  },
+  {
+   "id": "T092",
+   "milestone": "M3",
+   "order": 92,
+   "title": "Ship interior ambient audio",
+   "detail": "Hull creak under load, air handling, alarm tones on damage.",
+   "acceptance": "Damage produces an audible cue before the HUD shows it.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T091"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 120.5,
+   "plannedEndDay": 121.5,
+   "plannedStart": "2027-02-22",
+   "plannedEnd": "2027-02-23"
+  },
+  {
+   "id": "T093",
+   "milestone": "M3",
+   "order": 93,
+   "title": "Accessibility: subtitles, colourblind-safe HUD, motion options",
+   "detail": "The HUD encodes state in colour alone in places. Fix that.",
+   "acceptance": "Every HUD state is distinguishable without colour.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T092"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 121.5,
+   "plannedEndDay": 123,
+   "plannedStart": "2027-02-23",
+   "plannedEnd": "2027-02-25"
+  },
+  {
+   "id": "T094",
+   "milestone": "M4",
+   "order": 94,
+   "title": "proto/ schema for the wire contract",
+   "detail": "Design SS10: proto/ is the only place the sim-client contract is defined, and both sides generate from it. Entities, factions, contracts, beliefs, market state.",
+   "acceptance": "Both the Rust sim and the UE client build from the same .proto with no hand-written duplicate of any message.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS10",
+    "SS9"
+   ],
+   "dependsOn": [
+    "T093"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 123,
+   "plannedEndDay": 124.5,
+   "plannedStart": "2027-02-25",
+   "plannedEnd": "2027-02-26"
+  },
+  {
+   "id": "T095",
+   "milestone": "M4",
+   "order": 95,
+   "title": "Rust protobuf codegen in the sim build",
+   "detail": "prost or equivalent, wired into build.rs so the generated types are never committed.",
+   "acceptance": "Deleting the generated directory and rebuilding produces identical types.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS9"
+   ],
+   "dependsOn": [
+    "T094"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 124.5,
+   "plannedEndDay": 125.5,
+   "plannedStart": "2027-02-26",
+   "plannedEnd": "2027-03-01"
+  },
+  {
+   "id": "T096",
+   "milestone": "M4",
+   "order": 96,
+   "title": "UE protobuf integration as a third-party module",
+   "detail": "The known slog: UE disables exceptions and RTTI, and its check macro collides with protobuf headers. Budget it explicitly.",
+   "acceptance": "The client links protobuf and round-trips a message in an automation test.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "ADR-0001"
+   ],
+   "dependsOn": [
+    "T095"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 125.5,
+   "plannedEndDay": 127,
+   "plannedStart": "2027-03-01",
+   "plannedEnd": "2027-03-03"
+  },
+  {
+   "id": "T097",
+   "milestone": "M4",
+   "order": 97,
+   "title": "Length-prefixed TCP transport",
+   "detail": "Phase 1 transport per ADR-0001. Framing, reconnect with backoff, and a heartbeat.",
+   "acceptance": "Killing the sim and restarting it reconnects within two seconds with no client restart.",
+   "estimateDays": 1,
+   "designRefs": [
+    "ADR-0001"
+   ],
+   "dependsOn": [
+    "T096"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 127,
+   "plannedEndDay": 128,
+   "plannedStart": "2027-03-03",
+   "plannedEnd": "2027-03-04"
+  },
+  {
+   "id": "T098",
+   "milestone": "M4",
+   "order": 98,
+   "title": "Sim-side gRPC-free server loop",
+   "detail": "A tick loop that accepts connections, streams state deltas, and applies client intents.",
+   "acceptance": "One client connected costs under 0.5 ms per tick of server time.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5"
+   ],
+   "dependsOn": [
+    "T097"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 128,
+   "plannedEndDay": 129.5,
+   "plannedStart": "2027-03-04",
+   "plannedEnd": "2027-03-05"
+  },
+  {
+   "id": "T099",
+   "milestone": "M4",
+   "order": 99,
+   "title": "World state delta encoding",
+   "detail": "Send what changed, not the world. Per-entity dirty flags folded from the event log.",
+   "acceptance": "Steady-state bandwidth under 32 KB/s per client with 2,000 entities simulated.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5"
+   ],
+   "dependsOn": [
+    "T098"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 129.5,
+   "plannedEndDay": 131,
+   "plannedStart": "2027-03-05",
+   "plannedEnd": "2027-03-09"
+  },
+  {
+   "id": "T100",
+   "milestone": "M4",
+   "order": 100,
+   "title": "Client-side world state cache and interpolation",
+   "detail": "The client holds a view of sim state and interpolates between ticks for presentation.",
+   "acceptance": "Entity positions do not jitter at a 10 Hz sim tick and a 60 Hz render.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T099"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 131,
+   "plannedEndDay": 132,
+   "plannedStart": "2027-03-09",
+   "plannedEnd": "2027-03-10"
+  },
+  {
+   "id": "T101",
+   "milestone": "M4",
+   "order": 101,
+   "title": "Contract board reading live sim state",
+   "detail": "Replace the snapshot file. The board reflects contracts as they are posted.",
+   "acceptance": "A contract posted in the sim appears on the board within one tick round trip.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS13.2"
+   ],
+   "dependsOn": [
+    "T100"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 132,
+   "plannedEndDay": 133,
+   "plannedStart": "2027-03-10",
+   "plannedEnd": "2027-03-11"
+  },
+  {
+   "id": "T102",
+   "milestone": "M4",
+   "order": 102,
+   "title": "Player intent messages",
+   "detail": "Accept a contract, make an inquiry, offer an incentive, redeem a favour. Typed, validated server-side.",
+   "acceptance": "A malformed or impossible intent is rejected with a typed error, never applied.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T101"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 133,
+   "plannedEndDay": 134,
+   "plannedStart": "2027-03-11",
+   "plannedEnd": "2027-03-12"
+  },
+  {
+   "id": "T103",
+   "milestone": "M4",
+   "order": 103,
+   "title": "Schema versioning and refusal",
+   "detail": "The client already refuses a future snapshot schema. Extend that to the wire protocol.",
+   "acceptance": "A client one version behind refuses to connect and says why.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T102"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 134,
+   "plannedEndDay": 135,
+   "plannedStart": "2027-03-12",
+   "plannedEnd": "2027-03-15"
+  },
+  {
+   "id": "T104",
+   "milestone": "M4",
+   "order": 104,
+   "title": "Connection state in the UI",
+   "detail": "Show connected, reconnecting, and stale-state clearly rather than silently lying.",
+   "acceptance": "Killing the sim shows a visible degraded state within two seconds.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T103"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 135,
+   "plannedEndDay": 136,
+   "plannedStart": "2027-03-15",
+   "plannedEnd": "2027-03-16"
+  },
+  {
+   "id": "T105",
+   "milestone": "M4",
+   "order": 105,
+   "title": "Sim as a service: run headless, log, restart",
+   "detail": "Process supervision, structured logging, and a clean shutdown that flushes the log.",
+   "acceptance": "SIGTERM produces a replayable log with no truncated event.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T104"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 136,
+   "plannedEndDay": 137,
+   "plannedStart": "2027-03-16",
+   "plannedEnd": "2027-03-17"
+  },
+  {
+   "id": "T106",
+   "milestone": "M4",
+   "order": 106,
+   "title": "Event log persistence to disk",
+   "detail": "ADR-0001 defers Postgres; this is the file-backed step before it. Append-only, chunked, with a manifest.",
+   "acceptance": "A 1,000,000 tick run writes a log that replays to a bit-identical state.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T105"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 137,
+   "plannedEndDay": 138.5,
+   "plannedStart": "2027-03-17",
+   "plannedEnd": "2027-03-18"
+  },
+  {
+   "id": "T107",
+   "milestone": "M4",
+   "order": 107,
+   "title": "Replay bisector tool",
+   "detail": "Design SS11 wants this early. Replay to tick N, bisect for the first divergence.",
+   "acceptance": "Given a seeded divergence, the bisector finds the exact event in under a minute.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T106"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 138.5,
+   "plannedEndDay": 139.5,
+   "plannedStart": "2027-03-18",
+   "plannedEnd": "2027-03-19"
+  },
+  {
+   "id": "T108",
+   "milestone": "M4",
+   "order": 108,
+   "title": "World inspector tool",
+   "detail": "A text or web view of live sim state: entities, beliefs, obligations, market.",
+   "acceptance": "Any entity's full belief set is inspectable while the sim runs.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS10"
+   ],
+   "dependsOn": [
+    "T107"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 139.5,
+   "plannedEndDay": 140.5,
+   "plannedStart": "2027-03-19",
+   "plannedEnd": "2027-03-22"
+  },
+  {
+   "id": "T109",
+   "milestone": "M4",
+   "order": 109,
+   "title": "Bridge integration tests",
+   "detail": "Sim and client in one test harness, asserting state agreement after N ticks.",
+   "acceptance": "Client and sim agree on every contract and corp balance after 1,000 ticks.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T108"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 140.5,
+   "plannedEndDay": 141.5,
+   "plannedStart": "2027-03-22",
+   "plannedEnd": "2027-03-23"
+  },
+  {
+   "id": "T110",
+   "milestone": "M4",
+   "order": 110,
+   "title": "M4 evidence: kill-the-sim recording",
+   "detail": "Record the client degrading and recovering.",
+   "acceptance": "Recording uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T109"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 141.5,
+   "plannedEndDay": 142,
+   "plannedStart": "2027-03-23",
+   "plannedEnd": "2027-03-24"
+  },
+  {
+   "id": "T111",
+   "milestone": "M4",
+   "order": 111,
+   "title": "OpenTelemetry instrumentation in the sim",
+   "detail": "SS9's observability stack, now that there is a service to observe.",
+   "acceptance": "Per-region tick cost and propagation depth export as metrics.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS9",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T110"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 142,
+   "plannedEndDay": 143,
+   "plannedStart": "2027-03-24",
+   "plannedEnd": "2027-03-25"
+  },
+  {
+   "id": "T112",
+   "milestone": "M4",
+   "order": 112,
+   "title": "Grafana dashboards for the SS12 metrics",
+   "detail": "Every metric in SS12 on one board, with its target band drawn on.",
+   "acceptance": "A metric outside its band is visually obvious without reading numbers.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T111"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 143,
+   "plannedEndDay": 144,
+   "plannedStart": "2027-03-25",
+   "plannedEnd": "2027-03-26"
+  },
+  {
+   "id": "T113",
+   "milestone": "M4",
+   "order": 113,
+   "title": "Structured logging with correlation ids",
+   "detail": "Trace an intent from client to sim to event to consequence.",
+   "acceptance": "One id follows a contract acceptance through every log line it causes.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T112"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 144,
+   "plannedEndDay": 145,
+   "plannedStart": "2027-03-26",
+   "plannedEnd": "2027-03-29"
+  },
+  {
+   "id": "T114",
+   "milestone": "M4",
+   "order": 114,
+   "title": "Deployment scripts for the sim service",
+   "detail": "SS10's ops/ tree. Run it somewhere that is not a developer laptop.",
+   "acceptance": "The sim runs on a remote host and a local client connects to it.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS10"
+   ],
+   "dependsOn": [
+    "T113"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 145,
+   "plannedEndDay": 146,
+   "plannedStart": "2027-03-29",
+   "plannedEnd": "2027-03-30"
+  },
+  {
+   "id": "T115",
+   "milestone": "M4",
+   "order": 115,
+   "title": "Database migration path from file log to Postgres",
+   "detail": "ADR-0001 defers this to Phase 1. This is Phase 1.",
+   "acceptance": "The same event log replays identically from a file and from Postgres.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "ADR-0001",
+    "SS9"
+   ],
+   "dependsOn": [
+    "T114"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 146,
+   "plannedEndDay": 147.5,
+   "plannedStart": "2027-03-30",
+   "plannedEnd": "2027-03-31"
+  },
+  {
+   "id": "T116",
+   "milestone": "M5",
+   "order": 116,
+   "title": "Contract board UI with archetype and tension age",
+   "detail": "Show who wants what, and how old the grudge is. The age is what makes it read as authored rather than generated.",
+   "acceptance": "Every listed contract shows the tick its tension was incurred.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T115"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 147.5,
+   "plannedEndDay": 149,
+   "plannedStart": "2027-03-31",
+   "plannedEnd": "2027-04-02"
+  },
+  {
+   "id": "T117",
+   "milestone": "M5",
+   "order": 117,
+   "title": "Accept and abandon a contract",
+   "detail": "Acceptance is an event that propagates. Abandoning has a cost.",
+   "acceptance": "Accepting a contract is visible to other entities through the belief graph.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS4.2"
+   ],
+   "dependsOn": [
+    "T116"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 149,
+   "plannedEndDay": 150,
+   "plannedStart": "2027-04-02",
+   "plannedEnd": "2027-04-05"
+  },
+  {
+   "id": "T118",
+   "milestone": "M5",
+   "order": 118,
+   "title": "NPC entities rendered in the world",
+   "detail": "Simulated people need bodies where the player is. Instanced characters placed from sim state, at the region the sim says they are in.",
+   "acceptance": "An NPC the sim moves is seen to move, without a teleport.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.7"
+   ],
+   "dependsOn": [
+    "T117"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 150,
+   "plannedEndDay": 152,
+   "plannedStart": "2027-04-05",
+   "plannedEnd": "2027-04-07"
+  },
+  {
+   "id": "T119",
+   "milestone": "M5",
+   "order": 119,
+   "title": "Approach and conversation entry",
+   "detail": "Walk or fly to an NPC and open a conversation. No dialogue content yet.",
+   "acceptance": "Conversation opens against the correct simulated entity, identified by id.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T118"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 152,
+   "plannedEndDay": 153.5,
+   "plannedStart": "2027-04-07",
+   "plannedEnd": "2027-04-08"
+  },
+  {
+   "id": "T120",
+   "milestone": "M5",
+   "order": 120,
+   "title": "Disclosure interaction: the four incentives",
+   "detail": "Money, favour redemption, threat, and traded information, per SS6.3.",
+   "acceptance": "Each incentive produces a different disclosure probability, visibly.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.3"
+   ],
+   "dependsOn": [
+    "T119"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 153.5,
+   "plannedEndDay": 155.5,
+   "plannedStart": "2027-04-08",
+   "plannedEnd": "2027-04-12"
+  },
+  {
+   "id": "T121",
+   "milestone": "M5",
+   "order": 121,
+   "title": "Search volume rendered as a region, not a pin",
+   "detail": "SS6.3 is explicit: no quest markers. Draw the volume as a shaded region on the map and in the world.",
+   "acceptance": "The volume visibly widens when a source contradicts an earlier one.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.3"
+   ],
+   "dependsOn": [
+    "T120"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 155.5,
+   "plannedEndDay": 157.5,
+   "plannedStart": "2027-04-12",
+   "plannedEnd": "2027-04-14"
+  },
+  {
+   "id": "T122",
+   "milestone": "M5",
+   "order": 122,
+   "title": "Inquiry events propagate and the target reacts",
+   "detail": "The closing edge of the core loop. Asking is itself an event.",
+   "acceptance": "Asking enough people causes the target to relocate, traceably.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS4"
+   ],
+   "dependsOn": [
+    "T121"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 157.5,
+   "plannedEndDay": 159,
+   "plannedStart": "2027-04-14",
+   "plannedEnd": "2027-04-16"
+  },
+  {
+   "id": "T123",
+   "milestone": "M5",
+   "order": 123,
+   "title": "Stale intelligence and the cost of delay",
+   "detail": "A disclosure ages. Its confidence decays, and acting on old information fails.",
+   "acceptance": "Waiting ten in-game days after a disclosure makes the location wrong.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T122"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 159,
+   "plannedEndDay": 160,
+   "plannedStart": "2027-04-16",
+   "plannedEnd": "2027-04-19"
+  },
+  {
+   "id": "T124",
+   "milestone": "M5",
+   "order": 124,
+   "title": "Physical resolution: locating the target on the surface",
+   "detail": "Fly to the region, find the target's actual position, and approach.",
+   "acceptance": "The target is physically present at the location the sim holds, not spawned on arrival.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS4.2"
+   ],
+   "dependsOn": [
+    "T123"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 160,
+   "plannedEndDay": 162,
+   "plannedStart": "2027-04-19",
+   "plannedEnd": "2027-04-21"
+  },
+  {
+   "id": "T125",
+   "milestone": "M5",
+   "order": 125,
+   "title": "Capture alive versus kill",
+   "detail": "Alive is worth more and requires approach and preparation. Dead is fast and loud.",
+   "acceptance": "Killing generates worse events than capturing, measurably, in the belief graph.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS4.2"
+   ],
+   "dependsOn": [
+    "T124"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 162,
+   "plannedEndDay": 163.5,
+   "plannedStart": "2027-04-21",
+   "plannedEnd": "2027-04-22"
+  },
+  {
+   "id": "T126",
+   "milestone": "M5",
+   "order": 126,
+   "title": "Delivery choice and betrayal",
+   "detail": "The posting corp is not the only buyer. A rival may pay more.",
+   "acceptance": "Delivering to the rival is a betrayal event that propagates and changes disposition.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS4.2"
+   ],
+   "dependsOn": [
+    "T125"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 163.5,
+   "plannedEndDay": 165,
+   "plannedStart": "2027-04-22",
+   "plannedEnd": "2027-04-26"
+  },
+  {
+   "id": "T127",
+   "milestone": "M5",
+   "order": 127,
+   "title": "Consequence surfacing after the fact",
+   "detail": "Show the player what their choice caused, days later, without telling them at the time.",
+   "acceptance": "A betrayal produces a visible consequence at least one session later.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T126"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 165,
+   "plannedEndDay": 166.5,
+   "plannedStart": "2027-04-26",
+   "plannedEnd": "2027-04-27"
+  },
+  {
+   "id": "T128",
+   "milestone": "M5",
+   "order": 128,
+   "title": "Witness system and elimination",
+   "detail": "Who saw what, and what happens if they do not survive to tell it.",
+   "acceptance": "Removing the only witness measurably slows propagation of the act.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T127"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 166.5,
+   "plannedEndDay": 168,
+   "plannedStart": "2027-04-27",
+   "plannedEnd": "2027-04-29"
+  },
+  {
+   "id": "T129",
+   "milestone": "M5",
+   "order": 129,
+   "title": "Map view with belief overlay",
+   "detail": "Show what the player knows, not what is true. Confidence and provenance visible.",
+   "acceptance": "The map shows a contradicted location as two claims, not an average.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T128"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 168,
+   "plannedEndDay": 170,
+   "plannedStart": "2027-04-29",
+   "plannedEnd": "2027-05-03"
+  },
+  {
+   "id": "T130",
+   "milestone": "M5",
+   "order": 130,
+   "title": "Journal of leads and sources",
+   "detail": "A record of who said what, when, and how sure they were.",
+   "acceptance": "A player can reconstruct how they found a target from the journal alone.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS13.2"
+   ],
+   "dependsOn": [
+    "T129"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 170,
+   "plannedEndDay": 171.5,
+   "plannedStart": "2027-05-03",
+   "plannedEnd": "2027-05-04"
+  },
+  {
+   "id": "T131",
+   "milestone": "M5",
+   "order": 131,
+   "title": "Scripted agent parity test",
+   "detail": "The headless scripted agent and the player-facing loop must exercise the same code.",
+   "acceptance": "A test drives the full loop headlessly and asserts the same events as a play session.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.3",
+    "SS11"
+   ],
+   "dependsOn": [
+    "T130"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 171.5,
+   "plannedEndDay": 173,
+   "plannedStart": "2027-05-04",
+   "plannedEnd": "2027-05-06"
+  },
+  {
+   "id": "T132",
+   "milestone": "M5",
+   "order": 132,
+   "title": "Bounty loop balance pass",
+   "detail": "Tune disclosure costs, decay rates and flight thresholds against the SS12 bands.",
+   "acceptance": "Favour redemption 40-70%, false beliefs 10-25%, propagation depth 3-6 hops.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T131"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 173,
+   "plannedEndDay": 175,
+   "plannedStart": "2027-05-06",
+   "plannedEnd": "2027-05-10"
+  },
+  {
+   "id": "T133",
+   "milestone": "M5",
+   "order": 133,
+   "title": "M5 evidence: a bounty, start to finish",
+   "detail": "Record a full contract from board to delivery, with the journal visible.",
+   "acceptance": "Recording plus journal export uploaded as milestone evidence.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS13.2"
+   ],
+   "dependsOn": [
+    "T132"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 175,
+   "plannedEndDay": 176,
+   "plannedStart": "2027-05-10",
+   "plannedEnd": "2027-05-11"
+  },
+  {
+   "id": "T134",
+   "milestone": "M5",
+   "order": 134,
+   "title": "Tutorial-free onboarding",
+   "detail": "The first contract has to teach the loop without a tutorial, because the loop is the game and a tutorial would tell you the answer.",
+   "acceptance": "A new player completes a first contract without instructions, in a playtest.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T133"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 176,
+   "plannedEndDay": 178,
+   "plannedStart": "2027-05-11",
+   "plannedEnd": "2027-05-13"
+  },
+  {
+   "id": "T135",
+   "milestone": "M5",
+   "order": 135,
+   "title": "Playtest harness and session recording",
+   "detail": "Record inputs and sim state so a playtest can be replayed and analysed.",
+   "acceptance": "A recorded session replays deterministically.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T134"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 178,
+   "plannedEndDay": 179.5,
+   "plannedStart": "2027-05-13",
+   "plannedEnd": "2027-05-14"
+  },
+  {
+   "id": "T136",
+   "milestone": "M5",
+   "order": 136,
+   "title": "First external playtest",
+   "detail": "Five people who have not seen it. Watch, do not explain.",
+   "acceptance": "Written notes from five sessions, with the points where players stalled.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T135"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 179.5,
+   "plannedEndDay": 181,
+   "plannedStart": "2027-05-14",
+   "plannedEnd": "2027-05-18"
+  },
+  {
+   "id": "T137",
+   "milestone": "M5",
+   "order": 137,
+   "title": "Investigation UI iteration from playtest findings",
+   "detail": "Fix whatever the playtest showed, not whatever seemed likely beforehand.",
+   "acceptance": "The top three stall points from the playtest are addressed and retested.",
+   "estimateDays": 2,
+   "designRefs": [],
+   "dependsOn": [
+    "T136"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 181,
+   "plannedEndDay": 183,
+   "plannedStart": "2027-05-18",
+   "plannedEnd": "2027-05-20"
+  },
+  {
+   "id": "T138",
+   "milestone": "M6",
+   "order": 138,
+   "title": "Narration service skeleton in Python",
+   "detail": "Design SS10's narration/ tree. A process that accepts structured state and returns text or an enum, batched and off the critical path.",
+   "acceptance": "The sim runs identically with the service absent.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.4",
+    "SS10"
+   ],
+   "dependsOn": [
+    "T137"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 183,
+   "plannedEndDay": 184.5,
+   "plannedStart": "2027-05-20",
+   "plannedEnd": "2027-05-21"
+  },
+  {
+   "id": "T139",
+   "milestone": "M6",
+   "order": 139,
+   "title": "llama.cpp integration with a quantised local model",
+   "detail": "3-8B at Q4 per SS6.4, with an explicit VRAM budget measured against the renderer.",
+   "acceptance": "Inference runs alongside a 60 fps render without dropping frames.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T138"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 184.5,
+   "plannedEndDay": 186.5,
+   "plannedStart": "2027-05-21",
+   "plannedEnd": "2027-05-25"
+  },
+  {
+   "id": "T140",
+   "milestone": "M6",
+   "order": 140,
+   "title": "GBNF grammars for constrained action selection",
+   "detail": "The model selects an enum variant, never free text that touches state.",
+   "acceptance": "Every model output parses into a typed variant or is rejected; zero string parsing.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T139"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 186.5,
+   "plannedEndDay": 188.5,
+   "plannedStart": "2027-05-25",
+   "plannedEnd": "2027-05-27"
+  },
+  {
+   "id": "T141",
+   "milestone": "M6",
+   "order": 141,
+   "title": "Renderers: news article from market state",
+   "detail": "State to prose. The article is a lossy, biased rendering of true state.",
+   "acceptance": "Articles lag the price move that caused them.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T140"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 188.5,
+   "plannedEndDay": 190,
+   "plannedStart": "2027-05-27",
+   "plannedEnd": "2027-05-31"
+  },
+  {
+   "id": "T142",
+   "milestone": "M6",
+   "order": 142,
+   "title": "Renderers: dialogue line from disposition and belief",
+   "detail": "What an NPC says derives from what it believes and how it feels, both computed.",
+   "acceptance": "Two NPCs with contradictory beliefs say contradictory things.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T141"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 190,
+   "plannedEndDay": 192,
+   "plannedStart": "2027-05-31",
+   "plannedEnd": "2027-06-02"
+  },
+  {
+   "id": "T143",
+   "milestone": "M6",
+   "order": 143,
+   "title": "Renderers: corporate filings and obligation notices",
+   "detail": "Bureaucratic menace as text. The scariest thing in the setting is a compliance division.",
+   "acceptance": "A filing references a real obligation with real numbers from the ledger.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS3"
+   ],
+   "dependsOn": [
+    "T142"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 192,
+   "plannedEndDay": 193.5,
+   "plannedStart": "2027-06-02",
+   "plannedEnd": "2027-06-03"
+  },
+  {
+   "id": "T144",
+   "milestone": "M6",
+   "order": 144,
+   "title": "Authored fallback lines on timeout",
+   "detail": "300 ms budget per SS6.4, with a fallback that is never obviously a fallback.",
+   "acceptance": "Forcing every request to time out still produces a playable conversation.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T143"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 193.5,
+   "plannedEndDay": 195,
+   "plannedStart": "2027-06-03",
+   "plannedEnd": "2027-06-07"
+  },
+  {
+   "id": "T145",
+   "milestone": "M6",
+   "order": 145,
+   "title": "Batching and scheduling off the render thread",
+   "detail": "Slow decisions only: faction moves on minutes, board text at refresh, dialogue at open.",
+   "acceptance": "No inference call is made from the render thread, ever, asserted in code.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T144"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 195,
+   "plannedEndDay": 196.5,
+   "plannedStart": "2027-06-07",
+   "plannedEnd": "2027-06-08"
+  },
+  {
+   "id": "T146",
+   "milestone": "M6",
+   "order": 146,
+   "title": "Tier 5 stub-equivalence test",
+   "detail": "A full sim run with narration stubbed must produce byte-identical world state.",
+   "acceptance": "The test is in CI and fails if any narration path writes to authoritative state.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS11",
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T145"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 196.5,
+   "plannedEndDay": 198,
+   "plannedStart": "2027-06-08",
+   "plannedEnd": "2027-06-10"
+  },
+  {
+   "id": "T147",
+   "milestone": "M6",
+   "order": 147,
+   "title": "Prompt and grammar versioning",
+   "detail": "Prompts are code. Version them, and record which version produced which text.",
+   "acceptance": "Any generated article can be traced to the prompt and model version that made it.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T146"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 198,
+   "plannedEndDay": 199,
+   "plannedStart": "2027-06-10",
+   "plannedEnd": "2027-06-11"
+  },
+  {
+   "id": "T148",
+   "milestone": "M6",
+   "order": 148,
+   "title": "Narration cost and latency dashboard",
+   "detail": "Measure tokens, latency and fallback rate per surface.",
+   "acceptance": "Fallback rate is visible and under 5% in normal play.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T147"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 199,
+   "plannedEndDay": 200,
+   "plannedStart": "2027-06-11",
+   "plannedEnd": "2027-06-14"
+  },
+  {
+   "id": "T149",
+   "milestone": "M6",
+   "order": 149,
+   "title": "Cloud fallback decision and ADR",
+   "detail": "SS15.6: local-only, or optional cloud for players without VRAM.",
+   "acceptance": "An ADR recording the decision and its consequences for latency and privacy.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS15.6",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T148"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 200,
+   "plannedEndDay": 201,
+   "plannedStart": "2027-06-14",
+   "plannedEnd": "2027-06-15"
+  },
+  {
+   "id": "T150",
+   "milestone": "M6",
+   "order": 150,
+   "title": "M6 evidence: stubbed versus live equivalence",
+   "detail": "Run both, diff the state hashes, capture the result.",
+   "acceptance": "Diff output uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T149"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 201,
+   "plannedEndDay": 201.5,
+   "plannedStart": "2027-06-15",
+   "plannedEnd": "2027-06-15"
+  },
+  {
+   "id": "T151",
+   "milestone": "M6",
+   "order": 151,
+   "title": "Model evaluation harness",
+   "detail": "Compare candidate models on the actual prompts, measuring latency and refusal rate.",
+   "acceptance": "Three models compared on the same 200 prompts with a written recommendation.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T150"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 201.5,
+   "plannedEndDay": 203,
+   "plannedStart": "2027-06-15",
+   "plannedEnd": "2027-06-17"
+  },
+  {
+   "id": "T152",
+   "milestone": "M6",
+   "order": 152,
+   "title": "Dialogue content pipeline",
+   "detail": "Authored fallbacks need writing, versioning and coverage measurement.",
+   "acceptance": "Every dialogue surface has at least three authored fallbacks.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T151"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 203,
+   "plannedEndDay": 204.5,
+   "plannedStart": "2027-06-17",
+   "plannedEnd": "2027-06-18"
+  },
+  {
+   "id": "T153",
+   "milestone": "M6",
+   "order": 153,
+   "title": "Narration failure modes and graceful degradation",
+   "detail": "Model missing, VRAM exhausted, service crashed. All three must be survivable.",
+   "acceptance": "Killing the narration service mid-conversation degrades to authored text.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T152"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 204.5,
+   "plannedEndDay": 205.5,
+   "plannedStart": "2027-06-18",
+   "plannedEnd": "2027-06-21"
+  },
+  {
+   "id": "T154",
+   "milestone": "M7",
+   "order": 154,
+   "title": "Market instrument design and ADR",
+   "detail": "SS15.5: order book, continuous double auction, or corp shares only. This determines the anti-bot surface.",
+   "acceptance": "An ADR with the decision and the exploit surface it accepts.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS15.5",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T153"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 205.5,
+   "plannedEndDay": 207,
+   "plannedStart": "2027-06-21",
+   "plannedEnd": "2027-06-23"
+  },
+  {
+   "id": "T155",
+   "milestone": "M7",
+   "order": 155,
+   "title": "Commodity supply and demand model",
+   "detail": "Production, consumption and stock per region, moved by lanes.",
+   "acceptance": "A blocked lane produces a shortage downstream within a legible number of ticks.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T154"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 207,
+   "plannedEndDay": 209,
+   "plannedStart": "2027-06-23",
+   "plannedEnd": "2027-06-25"
+  },
+  {
+   "id": "T156",
+   "milestone": "M7",
+   "order": 156,
+   "title": "Price formation from supply and demand",
+   "detail": "simulation event to supply/demand to price. Never the inverse.",
+   "acceptance": "No price moves without a simulation event that caused it, asserted in a test.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T155"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 209,
+   "plannedEndDay": 210.5,
+   "plannedStart": "2027-06-25",
+   "plannedEnd": "2027-06-28"
+  },
+  {
+   "id": "T157",
+   "milestone": "M7",
+   "order": 157,
+   "title": "Corporate balance sheets and share instruments",
+   "detail": "Assets, liabilities, and shares outstanding that stay constant per instrument.",
+   "acceptance": "Total shares outstanding per instrument is invariant over 1,000,000 ticks.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T156"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 210.5,
+   "plannedEndDay": 212.5,
+   "plannedStart": "2027-06-28",
+   "plannedEnd": "2027-06-30"
+  },
+  {
+   "id": "T158",
+   "milestone": "M7",
+   "order": 158,
+   "title": "Faucets and sinks, explicitly logged",
+   "detail": "Money supply changes only through defined faucets and sinks, and they are logged.",
+   "acceptance": "Every change to the money supply names its faucet or sink in the event log.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T157"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 212.5,
+   "plannedEndDay": 214,
+   "plannedStart": "2027-06-30",
+   "plannedEnd": "2027-07-02"
+  },
+  {
+   "id": "T159",
+   "milestone": "M7",
+   "order": 159,
+   "title": "Bankruptcy and asset transfer to creditors",
+   "detail": "Assets transfer; they never delete. The state space is a cycle, not a line.",
+   "acceptance": "A bankrupt corp's assets sum to the same total after the transfer as before.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T158"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 214,
+   "plannedEndDay": 215.5,
+   "plannedStart": "2027-07-02",
+   "plannedEnd": "2027-07-05"
+  },
+  {
+   "id": "T160",
+   "milestone": "M7",
+   "order": 160,
+   "title": "Mean-reversion pressure at scale",
+   "detail": "Overhead rises with size; rivals coalesce against a leader.",
+   "acceptance": "Gini over lane holdings oscillates rather than trending over 1,000,000 ticks.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T159"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 215.5,
+   "plannedEndDay": 217,
+   "plannedStart": "2027-07-05",
+   "plannedEnd": "2027-07-07"
+  },
+  {
+   "id": "T161",
+   "milestone": "M7",
+   "order": 161,
+   "title": "News feed UI with source bias",
+   "detail": "Some outlets are captured. Corporate releases spin.",
+   "acceptance": "Two outlets report the same event differently, and both are wrong in different ways.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T160"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 217,
+   "plannedEndDay": 219,
+   "plannedStart": "2027-07-07",
+   "plannedEnd": "2027-07-09"
+  },
+  {
+   "id": "T162",
+   "milestone": "M7",
+   "order": 162,
+   "title": "Article lag behind price movement",
+   "detail": "Players who watched the convoy die traded before the news broke.",
+   "acceptance": "Articles are published a measurable number of ticks after the causing event.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T161"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 219,
+   "plannedEndDay": 220,
+   "plannedStart": "2027-07-09",
+   "plannedEnd": "2027-07-12"
+  },
+  {
+   "id": "T163",
+   "milestone": "M7",
+   "order": 163,
+   "title": "Player trading interface",
+   "detail": "Positions, orders, and a portfolio, in the instrument the ADR chose.",
+   "acceptance": "A player can take a position on a corp and realise a gain from a simulated event.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T162"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 220,
+   "plannedEndDay": 222,
+   "plannedStart": "2027-07-12",
+   "plannedEnd": "2027-07-14"
+  },
+  {
+   "id": "T164",
+   "milestone": "M7",
+   "order": 164,
+   "title": "Anti-bot friction, designed not discovered",
+   "detail": "Knowledge that only exists inside physical conversations; positions requiring presence.",
+   "acceptance": "A scripted client with full market data cannot outperform a player who travels.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T163"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 222,
+   "plannedEndDay": 224,
+   "plannedStart": "2027-07-14",
+   "plannedEnd": "2027-07-16"
+  },
+  {
+   "id": "T165",
+   "milestone": "M7",
+   "order": 165,
+   "title": "Tier 3 fuzz over the economy for 1,000,000 ticks",
+   "detail": "Adversarial scripted agent, every invariant asserted continuously, nightly in CI.",
+   "acceptance": "The nightly run is green for seven consecutive nights.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS11",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T164"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 224,
+   "plannedEndDay": 226,
+   "plannedStart": "2027-07-16",
+   "plannedEnd": "2027-07-20"
+  },
+  {
+   "id": "T166",
+   "milestone": "M7",
+   "order": 166,
+   "title": "Economy metrics dashboard",
+   "detail": "Per-region tick cost, Gini, dominance, money supply, faucet and sink volumes.",
+   "acceptance": "All SS12 economy metrics are visible on one page and alert outside their bands.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T165"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 226,
+   "plannedEndDay": 227.5,
+   "plannedStart": "2027-07-20",
+   "plannedEnd": "2027-07-21"
+  },
+  {
+   "id": "T167",
+   "milestone": "M7",
+   "order": 167,
+   "title": "Cornering and manipulation testing",
+   "detail": "Try to corner a market deliberately and see whether the invariants hold.",
+   "acceptance": "A deliberate corner attempt is either impossible or self-correcting within N ticks.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5",
+    "SS14 R4"
+   ],
+   "dependsOn": [
+    "T166"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 227.5,
+   "plannedEndDay": 229,
+   "plannedStart": "2027-07-21",
+   "plannedEnd": "2027-07-23"
+  },
+  {
+   "id": "T168",
+   "milestone": "M7",
+   "order": 168,
+   "title": "M7 evidence: trade ahead of the news",
+   "detail": "Record watching a convoy die, taking a position, and the article arriving late.",
+   "acceptance": "Recording uploaded as milestone evidence.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T167"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 229,
+   "plannedEndDay": 230,
+   "plannedStart": "2027-07-23",
+   "plannedEnd": "2027-07-26"
+  },
+  {
+   "id": "T169",
+   "milestone": "M7",
+   "order": 169,
+   "title": "Market UI: charts that do not lie",
+   "detail": "Price history with the event that caused each move annotatable.",
+   "acceptance": "A player can click a price move and see the article about it.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T168"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 230,
+   "plannedEndDay": 232,
+   "plannedStart": "2027-07-26",
+   "plannedEnd": "2027-07-28"
+  },
+  {
+   "id": "T170",
+   "milestone": "M7",
+   "order": 170,
+   "title": "Economic tuning harness",
+   "detail": "Run parameter sweeps headless and report which land inside the SS12 bands.",
+   "acceptance": "A sweep of 200 parameter sets reports the viable region.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T169"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 232,
+   "plannedEndDay": 233.5,
+   "plannedStart": "2027-07-28",
+   "plannedEnd": "2027-07-29"
+  },
+  {
+   "id": "T171",
+   "milestone": "M7",
+   "order": 171,
+   "title": "Economist review of the model",
+   "detail": "SS6.5's prior-art warning is explicit: EVE employs professional economists.",
+   "acceptance": "Written review on file with the failure modes it identifies.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.5"
+   ],
+   "dependsOn": [
+    "T170"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 233.5,
+   "plannedEndDay": 235,
+   "plannedStart": "2027-07-29",
+   "plannedEnd": "2027-08-02"
+  },
+  {
+   "id": "T172",
+   "milestone": "M8",
+   "order": 172,
+   "title": "Crew as first-class simulated entities",
+   "detail": "Design SS2.1: crew are the losable thing. They hold beliefs, owe favours, and have their own fears. Not a stat block attached to the player.",
+   "acceptance": "A crew member has a full belief set and can be queried like any other entity.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS2.1"
+   ],
+   "dependsOn": [
+    "T171"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 235,
+   "plannedEndDay": 236.5,
+   "plannedStart": "2027-08-02",
+   "plannedEnd": "2027-08-03"
+  },
+  {
+   "id": "T173",
+   "milestone": "M8",
+   "order": 173,
+   "title": "Hiring: finding, negotiating, and the terms",
+   "detail": "Who is available depends on who has heard of you and what they believe.",
+   "acceptance": "A crew member with a bad belief about the player refuses, and says why.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS2.1",
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T172"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 236.5,
+   "plannedEndDay": 238,
+   "plannedStart": "2027-08-03",
+   "plannedEnd": "2027-08-05"
+  },
+  {
+   "id": "T174",
+   "milestone": "M8",
+   "order": 174,
+   "title": "Crew skills as access rather than numbers",
+   "detail": "A crew member's value is which obligation classes they unlock, not a damage modifier.",
+   "acceptance": "Hiring a port authority contact opens clean landings that were previously unavailable.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.2"
+   ],
+   "dependsOn": [
+    "T173"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 238,
+   "plannedEndDay": 239,
+   "plannedStart": "2027-08-05",
+   "plannedEnd": "2027-08-06"
+  },
+  {
+   "id": "T175",
+   "milestone": "M8",
+   "order": 175,
+   "title": "Crew loyalty derived from obligations, not a bar",
+   "detail": "Loyalty is computed from the favour ledger and the belief graph.",
+   "acceptance": "grep for a loyalty scalar: zero hits. Loyalty is a query.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.1",
+    "SS6.2"
+   ],
+   "dependsOn": [
+    "T174"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 239,
+   "plannedEndDay": 240,
+   "plannedStart": "2027-08-06",
+   "plannedEnd": "2027-08-09"
+  },
+  {
+   "id": "T176",
+   "milestone": "M8",
+   "order": 176,
+   "title": "Crew can be bought, frightened, or turned",
+   "detail": "A rival can approach your crew with money, a threat, or information.",
+   "acceptance": "A rival successfully turns a crew member, and the player can find out how.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS2.1"
+   ],
+   "dependsOn": [
+    "T175"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 240,
+   "plannedEndDay": 241.5,
+   "plannedStart": "2027-08-09",
+   "plannedEnd": "2027-08-10"
+  },
+  {
+   "id": "T177",
+   "milestone": "M8",
+   "order": 177,
+   "title": "Crew death and its permanence",
+   "detail": "SS15.4 is open: how permanent, and is there a mitigation the player can buy?",
+   "acceptance": "An ADR recording the decision, and the behaviour matching it.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS15.4",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T176"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 241.5,
+   "plannedEndDay": 242.5,
+   "plannedStart": "2027-08-10",
+   "plannedEnd": "2027-08-11"
+  },
+  {
+   "id": "T178",
+   "milestone": "M8",
+   "order": 178,
+   "title": "Crew presence in the world",
+   "detail": "Crew appear aboard the ship and in the town, positioned from sim state.",
+   "acceptance": "A crew member the sim says is at the town is standing in the town.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T177"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 242.5,
+   "plannedEndDay": 243.5,
+   "plannedStart": "2027-08-11",
+   "plannedEnd": "2027-08-12"
+  },
+  {
+   "id": "T179",
+   "milestone": "M8",
+   "order": 179,
+   "title": "Crew dialogue driven by their own beliefs",
+   "detail": "They tell you what they think is true, which is sometimes wrong.",
+   "acceptance": "A crew member reports a stale location sincerely.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.1",
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T178"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 243.5,
+   "plannedEndDay": 244.5,
+   "plannedStart": "2027-08-12",
+   "plannedEnd": "2027-08-13"
+  },
+  {
+   "id": "T180",
+   "milestone": "M8",
+   "order": 180,
+   "title": "Crew-initiated missions",
+   "detail": "NPCs call in favours on the player. SS6.2 says this is not optional content.",
+   "acceptance": "A crew member's creditor calls in a favour and it becomes a contract the player must answer.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.2"
+   ],
+   "dependsOn": [
+    "T179"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 244.5,
+   "plannedEndDay": 246,
+   "plannedStart": "2027-08-13",
+   "plannedEnd": "2027-08-17"
+  },
+  {
+   "id": "T181",
+   "milestone": "M8",
+   "order": 181,
+   "title": "Crew roster UI",
+   "detail": "Who you have, what they open, what they are owed and by whom.",
+   "acceptance": "The roster shows obligations in both directions, not a loyalty percentage.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T180"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 246,
+   "plannedEndDay": 247,
+   "plannedStart": "2027-08-17",
+   "plannedEnd": "2027-08-18"
+  },
+  {
+   "id": "T182",
+   "milestone": "M8",
+   "order": 182,
+   "title": "Crew jeopardy in mission resolution",
+   "detail": "Bringing crew on a job risks them. The risk is legible before committing.",
+   "acceptance": "The player can see, before accepting, which crew are exposed and to what.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2.1"
+   ],
+   "dependsOn": [
+    "T181"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 247,
+   "plannedEndDay": 248,
+   "plannedStart": "2027-08-18",
+   "plannedEnd": "2027-08-19"
+  },
+  {
+   "id": "T183",
+   "milestone": "M8",
+   "order": 183,
+   "title": "M8 evidence: losing someone",
+   "detail": "Record a chain of events ending in a crew loss that the player caused and could have foreseen, and the reconstruction afterwards.",
+   "acceptance": "Recording plus the causal chain from the log, uploaded as milestone evidence.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2",
+    "SS2.1"
+   ],
+   "dependsOn": [
+    "T182"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 248,
+   "plannedEndDay": 249,
+   "plannedStart": "2027-08-19",
+   "plannedEnd": "2027-08-20"
+  },
+  {
+   "id": "T184",
+   "milestone": "M8",
+   "order": 184,
+   "title": "Character rendering and variation",
+   "detail": "Crew and NPCs need bodies that differ. Procedural variation over a base mesh.",
+   "acceptance": "Twenty NPCs in one scene, visually distinguishable, at no measurable cost.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T183"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 249,
+   "plannedEndDay": 250.5,
+   "plannedStart": "2027-08-20",
+   "plannedEnd": "2027-08-23"
+  },
+  {
+   "id": "T185",
+   "milestone": "M8",
+   "order": 185,
+   "title": "Character animation: idle, walk, sit, gesture",
+   "detail": "Enough that a person standing in a bar reads as a person.",
+   "acceptance": "An NPC transitions between states without a pop.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T184"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 250.5,
+   "plannedEndDay": 252,
+   "plannedStart": "2027-08-23",
+   "plannedEnd": "2027-08-25"
+  },
+  {
+   "id": "T186",
+   "milestone": "M8",
+   "order": 186,
+   "title": "Crew audio: voice barks from the narration layer",
+   "detail": "Short lines, generated text, synthesised or authored.",
+   "acceptance": "A crew member's bark reflects a belief they actually hold.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.4"
+   ],
+   "dependsOn": [
+    "T185"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 252,
+   "plannedEndDay": 253,
+   "plannedStart": "2027-08-25",
+   "plannedEnd": "2027-08-26"
+  },
+  {
+   "id": "T187",
+   "milestone": "M9",
+   "order": 187,
+   "title": "Audit archetype on the shared algorithm",
+   "detail": "Hidden variable: who is skimming. Resolution verb: expose or blackmail.",
+   "acceptance": "Audit uses the identical investigation code path as Bounty, asserted by a test.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6",
+    "SS6.3"
+   ],
+   "dependsOn": [
+    "T186"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 253,
+   "plannedEndDay": 254.5,
+   "plannedStart": "2027-08-26",
+   "plannedEnd": "2027-08-27"
+  },
+  {
+   "id": "T188",
+   "milestone": "M9",
+   "order": 188,
+   "title": "Interception archetype",
+   "detail": "Hidden variable: route and timing. Resolution: board, destroy or observe.",
+   "acceptance": "Interception constrains a search volume over route-time rather than position, using the same algorithm.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T187"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 254.5,
+   "plannedEndDay": 256,
+   "plannedStart": "2027-08-27",
+   "plannedEnd": "2027-08-31"
+  },
+  {
+   "id": "T189",
+   "milestone": "M9",
+   "order": 189,
+   "title": "Extraction archetype",
+   "detail": "Hidden variable: holding location. Resolution: retrieve a person or data.",
+   "acceptance": "Extraction resolves against a physically present target.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T188"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 256,
+   "plannedEndDay": 257.5,
+   "plannedStart": "2027-08-31",
+   "plannedEnd": "2027-09-01"
+  },
+  {
+   "id": "T190",
+   "milestone": "M9",
+   "order": 190,
+   "title": "Fabrication archetype",
+   "detail": "No hidden variable: this one injects. Plant a false belief through the same pipeline the truth uses.",
+   "acceptance": "A fabricated belief propagates identically to a true one and carries Provenance::Fabricated.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6",
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T189"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 257.5,
+   "plannedEndDay": 259,
+   "plannedStart": "2027-09-01",
+   "plannedEnd": "2027-09-03"
+  },
+  {
+   "id": "T191",
+   "milestone": "M9",
+   "order": 191,
+   "title": "Collection archetype",
+   "detail": "Hidden variable: debtor whereabouts and assets. Resolution: coerce or negotiate.",
+   "acceptance": "Collection surfaces the debtor's assets as a second hidden variable.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T190"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 259,
+   "plannedEndDay": 260.5,
+   "plannedStart": "2027-09-03",
+   "plannedEnd": "2027-09-06"
+  },
+  {
+   "id": "T192",
+   "milestone": "M9",
+   "order": 192,
+   "title": "Generalise the search volume beyond regions",
+   "detail": "The algorithm currently constrains over RegionId. Make the hidden variable generic so route-time and identity work without a second implementation.",
+   "acceptance": "One generic implementation serves all six archetypes; the old one is deleted.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.3",
+    "SS8.4"
+   ],
+   "dependsOn": [
+    "T191"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 260.5,
+   "plannedEndDay": 262.5,
+   "plannedStart": "2027-09-06",
+   "plannedEnd": "2027-09-08"
+  },
+  {
+   "id": "T193",
+   "milestone": "M9",
+   "order": 193,
+   "title": "Archetype distribution metric in CI",
+   "detail": "SS12's oatmeal detector, asserted rather than observed.",
+   "acceptance": "A 10,000 tick run fails CI if any archetype exceeds 35%.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS12",
+    "SS14 R2"
+   ],
+   "dependsOn": [
+    "T192"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 262.5,
+   "plannedEndDay": 263.5,
+   "plannedStart": "2027-09-08",
+   "plannedEnd": "2027-09-09"
+  },
+  {
+   "id": "T194",
+   "milestone": "M9",
+   "order": 194,
+   "title": "Mission variety from simulation state, not templates",
+   "detail": "Verify the variety comes from the world. Freeze the sim and confirm the generator produces almost nothing.",
+   "acceptance": "With a static world, contract variety collapses; with a live one it does not.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T193"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 263.5,
+   "plannedEndDay": 265,
+   "plannedStart": "2027-09-09",
+   "plannedEnd": "2027-09-13"
+  },
+  {
+   "id": "T195",
+   "milestone": "M9",
+   "order": 195,
+   "title": "Contract chaining and consequence",
+   "detail": "Resolving one contract creates the tension the next one queries.",
+   "acceptance": "A resolved contract is traceably the cause of a later one.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T194"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 265,
+   "plannedEndDay": 266.5,
+   "plannedStart": "2027-09-13",
+   "plannedEnd": "2027-09-14"
+  },
+  {
+   "id": "T196",
+   "milestone": "M9",
+   "order": 196,
+   "title": "Difficulty from access rather than numbers",
+   "detail": "A hard job is one you lack the obligation classes for, not one with more hit points.",
+   "acceptance": "Two contracts with identical parameters differ in difficulty by the player's ledger.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.2"
+   ],
+   "dependsOn": [
+    "T195"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 266.5,
+   "plannedEndDay": 268,
+   "plannedStart": "2027-09-14",
+   "plannedEnd": "2027-09-16"
+  },
+  {
+   "id": "T197",
+   "milestone": "M9",
+   "order": 197,
+   "title": "M9 evidence: six archetypes, one code path",
+   "detail": "Capture one contract of each type, plus the test asserting the shared path.",
+   "acceptance": "Six recordings and the test output uploaded as milestone evidence.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T196"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 268,
+   "plannedEndDay": 269,
+   "plannedStart": "2027-09-16",
+   "plannedEnd": "2027-09-17"
+  },
+  {
+   "id": "T198",
+   "milestone": "M9",
+   "order": 198,
+   "title": "Mission generation tuning harness",
+   "detail": "Sweep the query parameters and report archetype distribution and tension age.",
+   "acceptance": "A sweep reports which parameters keep every archetype under 35%.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T197"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 269,
+   "plannedEndDay": 270.5,
+   "plannedStart": "2027-09-17",
+   "plannedEnd": "2027-09-20"
+  },
+  {
+   "id": "T199",
+   "milestone": "M9",
+   "order": 199,
+   "title": "Second external playtest, full loop",
+   "detail": "Six archetypes, live economy, crew. Watch for the oatmeal problem.",
+   "acceptance": "Five sessions, with players asked to describe two contracts they did.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T198"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 270.5,
+   "plannedEndDay": 272,
+   "plannedStart": "2027-09-20",
+   "plannedEnd": "2027-09-22"
+  },
+  {
+   "id": "T200",
+   "milestone": "M9",
+   "order": 200,
+   "title": "Content pass on contract presentation",
+   "detail": "The board text has to carry the tension. Written from state, not templated.",
+   "acceptance": "No two contracts on the board read as the same sentence with names swapped.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.6"
+   ],
+   "dependsOn": [
+    "T199"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 272,
+   "plannedEndDay": 273.5,
+   "plannedStart": "2027-09-22",
+   "plannedEnd": "2027-09-23"
+  },
+  {
+   "id": "T201",
+   "milestone": "M10",
+   "order": 201,
+   "title": "Aggregate region representation",
+   "detail": "Distant regions tick statistically: aggregate flows, no individual agents.",
+   "acceptance": "A region with no observer costs under 0.05 ms per tick.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.7"
+   ],
+   "dependsOn": [
+    "T200"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 273.5,
+   "plannedEndDay": 275.5,
+   "plannedStart": "2027-09-23",
+   "plannedEnd": "2027-09-27"
+  },
+  {
+   "id": "T202",
+   "milestone": "M10",
+   "order": 202,
+   "title": "Reification: aggregate to concrete agents",
+   "detail": "When a player arrives, approximate state instantiates into individuals consistently.",
+   "acceptance": "Arriving at a region twice from the same aggregate state produces the same agents.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.7"
+   ],
+   "dependsOn": [
+    "T201"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 275.5,
+   "plannedEndDay": 277.5,
+   "plannedStart": "2027-09-27",
+   "plannedEnd": "2027-09-29"
+  },
+  {
+   "id": "T203",
+   "milestone": "M10",
+   "order": 203,
+   "title": "Dereification: concrete back to aggregate",
+   "detail": "When they leave, concrete state folds back without losing information.",
+   "acceptance": "Property test: aggregate(reify(A)) == A for arbitrary aggregate state.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.7",
+    "SS11"
+   ],
+   "dependsOn": [
+    "T202"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 277.5,
+   "plannedEndDay": 279.5,
+   "plannedStart": "2027-09-29",
+   "plannedEnd": "2027-10-01"
+  },
+  {
+   "id": "T204",
+   "milestone": "M10",
+   "order": 204,
+   "title": "Concurrent arrival determinism",
+   "detail": "SS15.3 is open: two players entering a statistical region simultaneously. Who triggers the transform, and is it deterministic?",
+   "acceptance": "An ADR, and a test with two simultaneous arrivals producing one consistent result.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS15.3",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T203"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 279.5,
+   "plannedEndDay": 281,
+   "plannedStart": "2027-10-01",
+   "plannedEnd": "2027-10-05"
+  },
+  {
+   "id": "T205",
+   "milestone": "M10",
+   "order": 205,
+   "title": "Belief propagation across the LOD boundary",
+   "detail": "A rumour must cross from aggregate to concrete and back without being lost or doubled.",
+   "acceptance": "A belief injected in an aggregate region is present after reification, at the right confidence.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.7",
+    "SS6.1"
+   ],
+   "dependsOn": [
+    "T204"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 281,
+   "plannedEndDay": 282.5,
+   "plannedStart": "2027-10-05",
+   "plannedEnd": "2027-10-06"
+  },
+  {
+   "id": "T206",
+   "milestone": "M10",
+   "order": 206,
+   "title": "Per-region tick cost budget and enforcement",
+   "detail": "SS12: under 5 ms full fidelity. Measure per region and alert.",
+   "acceptance": "The metrics dashboard shows per-region cost and flags any region over budget.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T205"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 282.5,
+   "plannedEndDay": 284,
+   "plannedStart": "2027-10-06",
+   "plannedEnd": "2027-10-08"
+  },
+  {
+   "id": "T207",
+   "milestone": "M10",
+   "order": 207,
+   "title": "Server cost per region-tick, measured",
+   "detail": "SS14 R7: simulation cost scales with world size, not player count. Know the number.",
+   "acceptance": "Cost per region-tick is reported continuously and tracked over time.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS14 R7"
+   ],
+   "dependsOn": [
+    "T206"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 284,
+   "plannedEndDay": 285.5,
+   "plannedStart": "2027-10-08",
+   "plannedEnd": "2027-10-11"
+  },
+  {
+   "id": "T208",
+   "milestone": "M10",
+   "order": 208,
+   "title": "Scale to 2,000 simulated entities across 5 regions",
+   "detail": "The MVP scale from SS3, running with LOD.",
+   "acceptance": "2,000 entities, 5 regions, under 5 ms per full-fidelity region tick.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS3",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T207"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 285.5,
+   "plannedEndDay": 287,
+   "plannedStart": "2027-10-11",
+   "plannedEnd": "2027-10-13"
+  },
+  {
+   "id": "T209",
+   "milestone": "M10",
+   "order": 209,
+   "title": "Seam hunting: find the LOD boundary as a player",
+   "detail": "Fly between regions repeatedly and try to catch the transform.",
+   "acceptance": "No observable discontinuity in entity behaviour across 50 crossings.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.7"
+   ],
+   "dependsOn": [
+    "T208"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 287,
+   "plannedEndDay": 288.5,
+   "plannedStart": "2027-10-13",
+   "plannedEnd": "2027-10-14"
+  },
+  {
+   "id": "T210",
+   "milestone": "M10",
+   "order": 210,
+   "title": "M10 evidence: the reification property test",
+   "detail": "Capture the property test output over 100,000 arbitrary aggregate states.",
+   "acceptance": "Test output uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS11"
+   ],
+   "dependsOn": [
+    "T209"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 288.5,
+   "plannedEndDay": 289,
+   "plannedStart": "2027-10-14",
+   "plannedEnd": "2027-10-15"
+  },
+  {
+   "id": "T211",
+   "milestone": "M10",
+   "order": 211,
+   "title": "Memory profiling at MVP scale",
+   "detail": "2,000 entities, five regions, and a planet. Know where the memory goes.",
+   "acceptance": "A memory report attributing every 10 MB to a subsystem.",
+   "estimateDays": 1.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T210"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 289,
+   "plannedEndDay": 290.5,
+   "plannedStart": "2027-10-15",
+   "plannedEnd": "2027-10-18"
+  },
+  {
+   "id": "T212",
+   "milestone": "M10",
+   "order": 212,
+   "title": "Sim performance optimisation pass",
+   "detail": "Profile the tick and cut the top three costs.",
+   "acceptance": "Per-region full-fidelity tick under 5 ms with 400 entities present.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T211"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 290.5,
+   "plannedEndDay": 292,
+   "plannedStart": "2027-10-18",
+   "plannedEnd": "2027-10-20"
+  },
+  {
+   "id": "T213",
+   "milestone": "M10",
+   "order": 213,
+   "title": "Save and load a whole world",
+   "detail": "Snapshot plus log, restored to a bit-identical state.",
+   "acceptance": "A save restored on another machine produces the same state fingerprint.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS5.3"
+   ],
+   "dependsOn": [
+    "T212"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 292,
+   "plannedEndDay": 293.5,
+   "plannedStart": "2027-10-20",
+   "plannedEnd": "2027-10-21"
+  },
+  {
+   "id": "T214",
+   "milestone": "M11",
+   "order": 214,
+   "title": "IP counsel review against SS6.1 and SS6.10",
+   "detail": "SS7 requires this before Phase 2. The Nemesis patent expires August 2036; our differentiator is structural, not cosmetic.",
+   "acceptance": "Written counsel opinion on file, and any required changes implemented.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS7"
+   ],
+   "dependsOn": [
+    "T213"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 293.5,
+   "plannedEndDay": 295.5,
+   "plannedStart": "2027-10-21",
+   "plannedEnd": "2027-10-25"
+  },
+  {
+   "id": "T215",
+   "milestone": "M11",
+   "order": 215,
+   "title": "Sim-authoritative multiplayer session",
+   "detail": "One shard, sim owns all world state, clients hold views.",
+   "acceptance": "Two clients see the same world state and cannot disagree about it.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T214"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 295.5,
+   "plannedEndDay": 297.5,
+   "plannedStart": "2027-10-25",
+   "plannedEnd": "2027-10-27"
+  },
+  {
+   "id": "T216",
+   "milestone": "M11",
+   "order": 216,
+   "title": "Target persistence classes",
+   "detail": "SS15.2 is open. Unique, Regional and Personal, declared on the contract board.",
+   "acceptance": "An ADR, and the board declaring the class of every contract up front.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.10",
+    "SS15.2",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T215"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 297.5,
+   "plannedEndDay": 299,
+   "plannedStart": "2027-10-27",
+   "plannedEnd": "2027-10-29"
+  },
+  {
+   "id": "T217",
+   "milestone": "M11",
+   "order": 217,
+   "title": "Contested targets and intentional races",
+   "detail": "A Unique target is shared and the race is the point.",
+   "acceptance": "Two players hunting one target both see it move, and only one can resolve it.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T216"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 299,
+   "plannedEndDay": 300.5,
+   "plannedStart": "2027-10-29",
+   "plannedEnd": "2027-11-01"
+  },
+  {
+   "id": "T218",
+   "milestone": "M11",
+   "order": 218,
+   "title": "Fabrication rate limits and traceability",
+   "detail": "SS6.10: rumour injection is a griefing surface. Rate-limit per source, require corroboration above a confidence ceiling.",
+   "acceptance": "A coordinated injection attempt by four accounts fails to move a target's standing past the ceiling.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.10",
+    "SS15.8"
+   ],
+   "dependsOn": [
+    "T217"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 300.5,
+   "plannedEndDay": 302,
+   "plannedStart": "2027-11-01",
+   "plannedEnd": "2027-11-03"
+  },
+  {
+   "id": "T219",
+   "milestone": "M11",
+   "order": 219,
+   "title": "Client-predicted combat with server validation",
+   "detail": "Standard posture per SS6.10. No custom netcode before MVP.",
+   "acceptance": "Combat feels responsive at 120 ms RTT and the server rejects impossible outcomes.",
+   "estimateDays": 2,
+   "designRefs": [
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T218"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 302,
+   "plannedEndDay": 304,
+   "plannedStart": "2027-11-03",
+   "plannedEnd": "2027-11-05"
+  },
+  {
+   "id": "T220",
+   "milestone": "M11",
+   "order": 220,
+   "title": "Presence and region handoff",
+   "detail": "Players entering and leaving regions drive the LOD transform correctly.",
+   "acceptance": "Sixteen players spread across five regions with correct fidelity in each.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.7",
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T219"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 304,
+   "plannedEndDay": 305.5,
+   "plannedStart": "2027-11-05",
+   "plannedEnd": "2027-11-08"
+  },
+  {
+   "id": "T221",
+   "milestone": "M11",
+   "order": 221,
+   "title": "Shard topology decision and ADR",
+   "detail": "SS15.7: one shard or several with separate world state? It decides whether the world that lives without you is one world or many.",
+   "acceptance": "An ADR with the decision and its consequence for the premise.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS15.7",
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T220"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 305.5,
+   "plannedEndDay": 306.5,
+   "plannedStart": "2027-11-08",
+   "plannedEnd": "2027-11-09"
+  },
+  {
+   "id": "T222",
+   "milestone": "M11",
+   "order": 222,
+   "title": "Sixteen-player soak test",
+   "detail": "Sixteen clients, one hour, scripted behaviour plus humans.",
+   "acceptance": "No desync, no crash, no duplicated target, memory flat.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T221"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 306.5,
+   "plannedEndDay": 308,
+   "plannedStart": "2027-11-09",
+   "plannedEnd": "2027-11-11"
+  },
+  {
+   "id": "T223",
+   "milestone": "M11",
+   "order": 223,
+   "title": "Server cost model at 32 players",
+   "detail": "Measure what a shard actually costs, so the revenue relationship is known.",
+   "acceptance": "Cost per player-hour reported, with the region-tick component separated out.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS14 R7"
+   ],
+   "dependsOn": [
+    "T222"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 308,
+   "plannedEndDay": 309,
+   "plannedStart": "2027-11-11",
+   "plannedEnd": "2027-11-12"
+  },
+  {
+   "id": "T224",
+   "milestone": "M11",
+   "order": 224,
+   "title": "M11 evidence: sixteen players, one hour",
+   "detail": "Record the soak test with the server metrics alongside.",
+   "acceptance": "Recording and metrics uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [],
+   "dependsOn": [
+    "T223"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 309,
+   "plannedEndDay": 309.5,
+   "plannedStart": "2027-11-12",
+   "plannedEnd": "2027-11-12"
+  },
+  {
+   "id": "T225",
+   "milestone": "M11",
+   "order": 225,
+   "title": "Account and identity handling",
+   "detail": "Who a player is, minimally and safely. No credentials stored by us.",
+   "acceptance": "Sign-in works and stores no password or payment data.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T224"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 309.5,
+   "plannedEndDay": 310.5,
+   "plannedStart": "2027-11-12",
+   "plannedEnd": "2027-11-15"
+  },
+  {
+   "id": "T226",
+   "milestone": "M11",
+   "order": 226,
+   "title": "Anti-cheat posture for a sim-authoritative world",
+   "detail": "The sim owns state, so cheating means lying about intents. Validate them.",
+   "acceptance": "A client sending impossible intents is disconnected and logged.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.10"
+   ],
+   "dependsOn": [
+    "T225"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 310.5,
+   "plannedEndDay": 311.5,
+   "plannedStart": "2027-11-15",
+   "plannedEnd": "2027-11-16"
+  },
+  {
+   "id": "T227",
+   "milestone": "M11",
+   "order": 227,
+   "title": "Griefing review across every system",
+   "detail": "Not only rumour injection: contracts, markets, crew, and presence.",
+   "acceptance": "A written review naming each surface and its mitigation.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS6.10",
+    "SS15.8"
+   ],
+   "dependsOn": [
+    "T226"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 311.5,
+   "plannedEndDay": 312.5,
+   "plannedStart": "2027-11-16",
+   "plannedEnd": "2027-11-17"
+  },
+  {
+   "id": "T228",
+   "milestone": "M11",
+   "order": 228,
+   "title": "Third external playtest, multiplayer",
+   "detail": "Sixteen people who do not know each other.",
+   "acceptance": "Written notes, plus the belief graph state before and after.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T227"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 312.5,
+   "plannedEndDay": 313.5,
+   "plannedStart": "2027-11-17",
+   "plannedEnd": "2027-11-18"
+  },
+  {
+   "id": "T229",
+   "milestone": "M12",
+   "order": 229,
+   "title": "Pillar P1: the world does not wait for you",
+   "detail": "Log out for a week of world time. Come back. Find three specific, causally-explicable changes that had nothing to do with you.",
+   "acceptance": "Three changes found and each traced to its cause in the log.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T228"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 313.5,
+   "plannedEndDay": 314.5,
+   "plannedStart": "2027-11-18",
+   "plannedEnd": "2027-11-19"
+  },
+  {
+   "id": "T230",
+   "milestone": "M12",
+   "order": 230,
+   "title": "Pillar P2: consequence legible in hindsight",
+   "detail": "Take any world-state change and reconstruct the four preceding causes from information available in-game before it happened.",
+   "acceptance": "Four causes reconstructed from in-game information only, not from the event log.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T229"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 314.5,
+   "plannedEndDay": 315.5,
+   "plannedStart": "2027-11-19",
+   "plannedEnd": "2027-11-22"
+  },
+  {
+   "id": "T231",
+   "milestone": "M12",
+   "order": 231,
+   "title": "Pillar P3: knowledge is asymmetric",
+   "detail": "Two players in the same system holding contradictory, sincerely-held, non-buggy beliefs about the same fact.",
+   "acceptance": "Two players demonstrate the contradiction and both can justify their belief.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T230"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 315.5,
+   "plannedEndDay": 316.5,
+   "plannedStart": "2027-11-22",
+   "plannedEnd": "2027-11-23"
+  },
+  {
+   "id": "T232",
+   "milestone": "M12",
+   "order": 232,
+   "title": "Pillar P4: you are a participant, not a protagonist",
+   "detail": "A player permanently loses something they spent twenty hours building, through a chain that was their fault and was foreseeable.",
+   "acceptance": "The loss happens, and the player can name the decision that caused it.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T231"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 316.5,
+   "plannedEndDay": 317.5,
+   "plannedStart": "2027-11-23",
+   "plannedEnd": "2027-11-24"
+  },
+  {
+   "id": "T233",
+   "milestone": "M12",
+   "order": 233,
+   "title": "Full SS12 metrics run at MVP scale",
+   "detail": "Every metric in the band, on a live build, with real players.",
+   "acceptance": "All nine SS12 metrics inside their target ranges over a 24-hour live run.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS12"
+   ],
+   "dependsOn": [
+    "T232"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 317.5,
+   "plannedEndDay": 318.5,
+   "plannedStart": "2027-11-24",
+   "plannedEnd": "2027-11-25"
+  },
+  {
+   "id": "T234",
+   "milestone": "M12",
+   "order": 234,
+   "title": "Fresh-agent review pass over the whole codebase",
+   "detail": "SS8.7, capped at two rounds. Fresh context, checking against SS8.1 to SS8.6 and every invariant in SS6.",
+   "acceptance": "Two rounds complete; everything surviving is recorded as a judgement call.",
+   "estimateDays": 1.5,
+   "designRefs": [
+    "SS8.7"
+   ],
+   "dependsOn": [
+    "T233"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 318.5,
+   "plannedEndDay": 320,
+   "plannedStart": "2027-11-25",
+   "plannedEnd": "2027-11-29"
+  },
+  {
+   "id": "T235",
+   "milestone": "M12",
+   "order": 235,
+   "title": "Architecture documentation refresh",
+   "detail": "Every ADR current, every architecture doc matching the code.",
+   "acceptance": "No ADR describes a decision that has since been reversed without a superseding ADR.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS8.5"
+   ],
+   "dependsOn": [
+    "T234"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 320,
+   "plannedEndDay": 321,
+   "plannedStart": "2027-11-29",
+   "plannedEnd": "2027-11-30"
+  },
+  {
+   "id": "T236",
+   "milestone": "M12",
+   "order": 236,
+   "title": "MVP gate review and go/no-go",
+   "detail": "The four pillar tests, the metrics, and an honest assessment of Phase 3 feasibility.",
+   "acceptance": "A written gate decision with evidence for each pillar.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS13.3",
+    "SS13.5"
+   ],
+   "dependsOn": [
+    "T235"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 321,
+   "plannedEndDay": 321.5,
+   "plannedStart": "2027-11-30",
+   "plannedEnd": "2027-11-30"
+  },
+  {
+   "id": "T237",
+   "milestone": "M12",
+   "order": 237,
+   "title": "M12 evidence: the four pillar tests",
+   "detail": "Capture each pillar test being passed, with the supporting reconstruction.",
+   "acceptance": "Four recordings and their causal chains uploaded as milestone evidence.",
+   "estimateDays": 0.5,
+   "designRefs": [
+    "SS2"
+   ],
+   "dependsOn": [
+    "T236"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 321.5,
+   "plannedEndDay": 322,
+   "plannedStart": "2027-11-30",
+   "plannedEnd": "2027-12-01"
+  },
+  {
+   "id": "T238",
+   "milestone": "M12",
+   "order": 238,
+   "title": "Release build and packaging pipeline",
+   "detail": "Cook, package, sign and distribute a build people can install.",
+   "acceptance": "A tester installs and runs the build with no engine present.",
+   "estimateDays": 1,
+   "designRefs": [],
+   "dependsOn": [
+    "T237"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 322,
+   "plannedEndDay": 323,
+   "plannedStart": "2027-12-01",
+   "plannedEnd": "2027-12-02"
+  },
+  {
+   "id": "T239",
+   "milestone": "M12",
+   "order": 239,
+   "title": "Telemetry for the pillar tests in the wild",
+   "detail": "Instrument the four pillars so they can be measured on real sessions.",
+   "acceptance": "Each pillar has a metric that can be read off a live population.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS2",
+    "SS12"
+   ],
+   "dependsOn": [
+    "T238"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 323,
+   "plannedEndDay": 324,
+   "plannedStart": "2027-12-02",
+   "plannedEnd": "2027-12-03"
+  },
+  {
+   "id": "T240",
+   "milestone": "M12",
+   "order": 240,
+   "title": "Phase 3 assessment and funding materials",
+   "detail": "SS13.5 is explicit that Phase 3 is not achievable solo. Phase 2 exists to be the thing you raise money or recruit on.",
+   "acceptance": "A written assessment with the metrics and recordings that support it.",
+   "estimateDays": 1,
+   "designRefs": [
+    "SS13.4",
+    "SS13.5"
+   ],
+   "dependsOn": [
+    "T239"
+   ],
+   "status": "todo",
+   "startedAt": null,
+   "completedAt": null,
+   "notes": [],
+   "evidence": [],
+   "plannedStartDay": 324,
+   "plannedEndDay": 325,
+   "plannedStart": "2027-12-03",
+   "plannedEnd": "2027-12-06"
+  }
+ ],
+ "updatedAt": "2026-09-08T15:20:45.963Z"
+}

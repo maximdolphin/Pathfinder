@@ -1,0 +1,98 @@
+LEDGER — Phase 0 world dump
+seed 20260908  ·  50000 ticks  ·  200 entities  ·  6 regions  ·  2944097 events logged
+
+WHAT CHANGED HANDS, AND WHY
+===========================
+
+258 lanes changed hands over the run. Three of them, traced backwards:
+
+  t49929 — Aurel Holdings sold lane 9 to Vantage Terraform for 400.00
+    because Aurel Holdings's reserves went negative
+      because Aurel Holdings paid Meridian Lien Group 113.40 (t49929)
+        because the contract penalty triggered against Aurel Holdings — 113.40 owed to Meridian Lien Group (t49929)
+          because Aurel Holdings's shipment ran late — there was no crew to load it (t49920)
+
+  t49828 — Kestrel Freight Consortium sold lane 21 to Meridian Lien Group for 400.00
+    because Kestrel Freight Consortium's reserves went negative
+      because Kestrel Freight Consortium paid Vantage Terraform 136.80 (t49828)
+        because the contract penalty triggered against Kestrel Freight Consortium — 136.80 owed to Vantage Terraform (t49828)
+          because Kestrel Freight Consortium's shipment ran late — there was no crew to load it (t49824)
+
+  t49774 — Aurel Holdings sold lane 8 to Meridian Lien Group for 400.00
+    because Aurel Holdings's reserves went negative
+      because Aurel Holdings paid Meridian Lien Group 285.00 (t49774)
+        because the contract penalty triggered against Aurel Holdings — 285.00 owed to Meridian Lien Group (t49774)
+          because Aurel Holdings's shipment ran late — there was no crew to load it (t49759)
+
+
+WHO DISAGREES, AND WHY
+======================
+
+37330 contradictory belief pairs are live. A sample:
+
+  Cassius Reyes believes Kestrel Freight Consortium is solvent (confidence 0.901122, 1 hops, Told(e34))
+  Ambrose Lindqvist believes Kestrel Freight Consortium is insolvent (confidence 0.448704, 2 hops, Told(e21))
+  → the first is true, the second is false.
+
+  Cassius Reyes believes Kestrel Freight Consortium is solvent (confidence 0.901122, 1 hops, Told(e34))
+  Delphine Halloran believes Kestrel Freight Consortium is insolvent (confidence 0.673192, 1 hops, Told(e32))
+  → the first is true, the second is false.
+
+  Cassius Reyes believes Kestrel Freight Consortium is solvent (confidence 0.901122, 1 hops, Told(e34))
+  Wren Duquesne believes Kestrel Freight Consortium is insolvent (confidence 0.874461, 1 hops, Told(e141))
+  → the first is true, the second is false.
+
+  Cassius Reyes believes Kestrel Freight Consortium is solvent (confidence 0.901122, 1 hops, Told(e34))
+  Edric Orsini believes Kestrel Freight Consortium is insolvent (confidence 0.533653, 4 hops, Told(e79))
+  → the first is true, the second is false.
+
+
+THE CONTRACT
+============
+
+174 contracts posted · 173 resolved · 66 resolution attempts hit a stale location
+
+Most recent: t49980 — Kestrel Freight Consortium posted a Collection contract on Bram Ferris
+  54 inquiries were made about them.
+    t37128 Cassius Reyes asked Edric Orsini about Bram Ferris
+    t37152 Cassius Reyes asked Marek Lindqvist about Bram Ferris
+    t37176 Cassius Reyes asked Ilse Vashti about Bram Ferris
+    t37200 Cassius Reyes asked Ivy Orsini about Bram Ferris
+    t49992 Cassius Reyes asked Osric Larkin about Bram Ferris
+  They moved 2 times — the inquiries reached them.
+    t22680 Bram Ferris left Halberd Yards for Corvid Station
+    t36960 Bram Ferris left Corvid Station for Tessellate Reach
+
+Open search volume: 6 of 6 regions — Corvid Station, Halberd Yards, Tessellate Reach, Ninth Ward Docks, Auger Flats, The Understack
+  after 1 inquiries.
+
+
+STANDINGS
+=========
+
+  corporation                            cash   lanes
+  Meridian Lien Group                 8520.60      12
+  Vantage Terraform                   4740.50       9
+  Ostrander Compliance                4315.50       5
+  Kestrel Freight Consortium          1671.20       1
+  Aurel Holdings                       752.20       3
+
+  total cash 20000.00 (constant by construction — see the conservation invariant)
+open obligations 4529
+
+
+METRICS (design §12)
+=====================
+
+  [PASS] Per-region tick cost                              46 us   target < 5000 us
+  [PASS] Belief propagation depth (median)                3 hops   target 3-6 hops
+  [PASS] Beliefs held that are false                         22%   target 10-25%
+  [FAIL] Largest mission archetype share        39% of 174 (3 archetypes, even = 33%)   target < 35% (oatmeal detector)
+  [PASS] Contracts from pre-existing tension                100%   target > 90%
+  [PASS] Favour redemption rate                              55%   target 40-70%
+  [PASS] Lane-holding Gini                              0.373333   target bounded, oscillating
+  [PASS] Peak faction dominance                              40%   target <= 40%
+  [PASS] Contradictory belief pairs                        37330   target > 0 (pillar P3)
+
+  These are the falsifiable half of the gate. The other half is whether
+the three sections above were worth reading.
