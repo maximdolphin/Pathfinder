@@ -1,0 +1,723 @@
+{
+  "sets": [
+    {
+      "name": "arid_gravel_ground_wkjncjv",
+      "display": "Arid Gravel Ground",
+      "source": "Quixel Megascans via Fab, asset id wkjncjv",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "red",
+        "white",
+        "ground",
+        "fields",
+        "nature",
+        "gannabos",
+        "deserts",
+        "shrublands",
+        "xeric-shrublands",
+        "stones",
+        "soil",
+        "pebbles",
+        "gravel",
+        "dry",
+        "old",
+        "weathered",
+        "worn",
+        "scattered",
+        "arid"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "arid_gravel_ground_wkjncjv/albedo.png",
+        "normal": "arid_gravel_ground_wkjncjv/normal.png",
+        "roughness": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png",
+        "ao": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png",
+        "height": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "arid_gravel_ground_xboiccd",
+      "display": "Arid Gravel Ground",
+      "source": "Quixel Megascans via Fab, asset id xboiccd",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "white",
+        "ground",
+        "fields",
+        "nature",
+        "gannabos",
+        "deserts",
+        "stones",
+        "soil",
+        "pebbles",
+        "gravel",
+        "dry",
+        "old",
+        "weathered",
+        "worn",
+        "scattered",
+        "arid"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "arid_gravel_ground_xboiccd/albedo.png",
+        "normal": "arid_gravel_ground_xboiccd/normal.png",
+        "roughness": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png",
+        "ao": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png",
+        "height": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "dry_sand_xfhsfao",
+      "display": "Dry Sand",
+      "source": "Quixel Megascans via Fab, asset id xfhsfao",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "beige",
+        "brown",
+        "black",
+        "gray",
+        "white",
+        "mountains",
+        "hills",
+        "outdoors",
+        "mediterranean forests",
+        "woodlands",
+        "kagga kamma",
+        "rock",
+        "wall",
+        "rough",
+        "dull",
+        "weathered",
+        "cracked"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "dry_sand_xfhsfao/albedo.png",
+        "normal": "dry_sand_xfhsfao/normal.png",
+        "roughness": "dry_sand_xfhsfao/packed_ao_rough_height.png",
+        "ao": "dry_sand_xfhsfao/packed_ao_rough_height.png",
+        "height": "dry_sand_xfhsfao/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "forest_floor_compost_teiowah",
+      "display": "Forest Floor Compost",
+      "source": "Quixel Megascans via Fab, asset id teiowah",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 0.5,
+      "tags": [
+        "atlas",
+        "rotten",
+        "decay",
+        "pile",
+        "decal",
+        "archviz"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "forest_floor_compost_teiowah/albedo.png",
+        "normal": "forest_floor_compost_teiowah/normal.png",
+        "roughness": "forest_floor_compost_teiowah/packed_ao_rough_height.png",
+        "ao": "forest_floor_compost_teiowah/packed_ao_rough_height.png",
+        "height": "forest_floor_compost_teiowah/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "forest_floor_sfjmafua",
+      "display": "Forest Floor",
+      "source": "Quixel Megascans via Fab, asset id sfjmafua",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "surface mix",
+        "saturated",
+        "vivid",
+        "colorful",
+        "smokey",
+        "smoky",
+        "yellow",
+        "archviz"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "forest_floor_sfjmafua/albedo.png",
+        "normal": "forest_floor_sfjmafua/normal.png",
+        "roughness": "forest_floor_sfjmafua/packed_ao_rough_height.png",
+        "ao": "forest_floor_sfjmafua/packed_ao_rough_height.png",
+        "height": "forest_floor_sfjmafua/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "fresh_windswept_snow_ugspafgdy",
+      "display": "Fresh Windswept Snow",
+      "source": "Quixel Megascans via Fab, asset id ugspafgdy",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "white",
+        "cold",
+        "outdoor",
+        "snow",
+        "pine needles",
+        "rocks",
+        "cool",
+        "winter"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "fresh_windswept_snow_ugspafgdy/albedo.png",
+        "normal": "fresh_windswept_snow_ugspafgdy/normal.png",
+        "roughness": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png",
+        "ao": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png",
+        "height": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "grassy_soil_xbklfix",
+      "display": "Grassy Soil",
+      "source": "Quixel Megascans via Fab, asset id xbklfix",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "green",
+        "prairie",
+        "lawns",
+        "gardens",
+        "plains",
+        "wilderness",
+        "grasslands",
+        "fields",
+        "dirt",
+        "soil",
+        "grass",
+        "wild",
+        "patchy",
+        "dry"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "grassy_soil_xbklfix/albedo.png",
+        "normal": "grassy_soil_xbklfix/normal.png",
+        "roughness": "grassy_soil_xbklfix/packed_ao_rough_height.png",
+        "ao": "grassy_soil_xbklfix/packed_ao_rough_height.png",
+        "height": "grassy_soil_xbklfix/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "grassy_soil_xbreair",
+      "display": "Grassy Soil",
+      "source": "Quixel Megascans via Fab, asset id xbreair",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "green",
+        "lawns",
+        "plains",
+        "wilderness",
+        "fields",
+        "ground",
+        "quarry",
+        "hillcrest",
+        "dirt",
+        "soil",
+        "grass",
+        "wild",
+        "patchy",
+        "dry",
+        "thin"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "grassy_soil_xbreair/albedo.png",
+        "normal": "grassy_soil_xbreair/normal.png",
+        "roughness": "grassy_soil_xbreair/packed_ao_rough_height.png",
+        "ao": "grassy_soil_xbreair/packed_ao_rough_height.png",
+        "height": "grassy_soil_xbreair/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "gravel_ground_vi0maebg",
+      "display": "Gravel Ground",
+      "source": "Quixel Megascans via Fab, asset id vi0maebg",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "gray",
+        "white",
+        "palace",
+        "construction",
+        "palace belcz wielki",
+        "dust",
+        "dirt",
+        "rubble",
+        "gravel",
+        "scattered",
+        "fine",
+        "small",
+        "dusty",
+        "old",
+        "shattered",
+        "trampled"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "gravel_ground_vi0maebg/albedo.png",
+        "normal": "gravel_ground_vi0maebg/normal.png",
+        "roughness": "gravel_ground_vi0maebg/packed_ao_rough_height.png",
+        "ao": "gravel_ground_vi0maebg/packed_ao_rough_height.png",
+        "height": "gravel_ground_vi0maebg/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "icelandic_jagged_slate_rock_shfsaida",
+      "display": "Icelandic Jagged Slate Rock",
+      "source": "Quixel Megascans via Fab, asset id shfsaida",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "surface",
+        "rock",
+        "grey",
+        "gray",
+        "rough",
+        "archviz",
+        "jagged",
+        "uneven",
+        "irregular",
+        "pointed",
+        "iceland",
+        "icelandic",
+        "free"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "icelandic_jagged_slate_rock_shfsaida/albedo.png",
+        "normal": "icelandic_jagged_slate_rock_shfsaida/normal.png",
+        "roughness": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png",
+        "ao": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png",
+        "height": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "icelandic_rock_cliff_sjggaija",
+      "display": "Icelandic Rock Cliff",
+      "source": "Quixel Megascans via Fab, asset id sjggaija",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "surface mix",
+        "rock",
+        "cliff",
+        "stone",
+        "archviz",
+        "iceland",
+        "icelandic",
+        "free"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "icelandic_rock_cliff_sjggaija/albedo.png",
+        "normal": "icelandic_rock_cliff_sjggaija/normal.png",
+        "roughness": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png",
+        "ao": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png",
+        "height": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "layered_rock_cliff_tjtmcg3g",
+      "display": "Layered Rock Cliff",
+      "source": "Quixel Megascans via Fab, asset id tjtmcg3g",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "surface",
+        "jagged",
+        "sharp",
+        "stone",
+        "united kingdom",
+        "archviz"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "layered_rock_cliff_tjtmcg3g/albedo.png",
+        "normal": "layered_rock_cliff_tjtmcg3g/normal.png",
+        "roughness": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png",
+        "ao": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png",
+        "height": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "layered_rock_cliff_ubulehofw",
+      "display": "Layered Rock Cliff",
+      "source": "Quixel Megascans via Fab, asset id ubulehofw",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "surface",
+        "kinnekulle",
+        "rough",
+        "sharp"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "layered_rock_cliff_ubulehofw/albedo.png",
+        "normal": "layered_rock_cliff_ubulehofw/normal.png",
+        "roughness": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png",
+        "ao": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png",
+        "height": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "mossy_forest_floor_vfylbge",
+      "display": "Mossy Forest Floor",
+      "source": "Quixel Megascans via Fab, asset id vfylbge",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 1.0,
+      "tags": [
+        "green",
+        "taiga",
+        "jonsered",
+        "boreal forest",
+        "forest",
+        "wilderness",
+        "outdoors",
+        "moss",
+        "clovers",
+        "shrubs",
+        "ferns",
+        "grass",
+        "undergrowth",
+        "stones",
+        "floor",
+        "mossy",
+        "scattered",
+        "vibrant",
+        "small",
+        "flat",
+        "old"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "mossy_forest_floor_vfylbge/albedo.png",
+        "normal": "mossy_forest_floor_vfylbge/normal.png",
+        "roughness": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png",
+        "ao": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png",
+        "height": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rippled_sand_vd3lecfs",
+      "display": "Rippled Sand",
+      "source": "Quixel Megascans via Fab, asset id vd3lecfs",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "exterior",
+        "outdoor",
+        "coastline",
+        "rural",
+        "sand",
+        "ripples",
+        "dry",
+        "rough",
+        "grainy",
+        "fine",
+        "rippled",
+        "wind-swept"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rippled_sand_vd3lecfs/albedo.png",
+        "normal": "rippled_sand_vd3lecfs/normal.png",
+        "roughness": "rippled_sand_vd3lecfs/packed_ao_rough_height.png",
+        "ao": "rippled_sand_vd3lecfs/packed_ao_rough_height.png",
+        "height": "rippled_sand_vd3lecfs/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rock_cliff_xbknedb",
+      "display": "Rock Cliff",
+      "source": "Quixel Megascans via Fab, asset id xbknedb",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 1.0,
+      "tags": [
+        "gray",
+        "brown",
+        "black",
+        "white",
+        "hills",
+        "outdoors",
+        "cliffs",
+        "rock-face",
+        "mountains",
+        "rock",
+        "cracks",
+        "jagged",
+        "sharp",
+        "rough"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rock_cliff_xbknedb/albedo.png",
+        "normal": "rock_cliff_xbknedb/normal.png",
+        "roughness": "rock_cliff_xbknedb/packed_ao_rough_height.png",
+        "ao": "rock_cliff_xbknedb/packed_ao_rough_height.png",
+        "height": "rock_cliff_xbknedb/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rock_cliff_xccibbi",
+      "display": "Rock Cliff",
+      "source": "Quixel Megascans via Fab, asset id xccibbi",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 1.0,
+      "tags": [
+        "gray",
+        "brown",
+        "black",
+        "white",
+        "hills",
+        "outdoors",
+        "cliffs",
+        "rock-face",
+        "mountains",
+        "quarry",
+        "hillcrest",
+        "rock",
+        "cracks",
+        "lichen",
+        "jagged",
+        "sharp",
+        "rough",
+        "lichened"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rock_cliff_xccibbi/albedo.png",
+        "normal": "rock_cliff_xccibbi/normal.png",
+        "roughness": "rock_cliff_xccibbi/packed_ao_rough_height.png",
+        "ao": "rock_cliff_xccibbi/packed_ao_rough_height.png",
+        "height": "rock_cliff_xccibbi/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_forest_floor_wjvpaff",
+      "display": "Rocky Forest Floor",
+      "source": "Quixel Megascans via Fab, asset id wjvpaff",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "green",
+        "forests",
+        "ground",
+        "floor",
+        "outdoors",
+        "jungles",
+        "woods",
+        "nature",
+        "ion swamp",
+        "tropical",
+        "subtropical",
+        "grasslands",
+        "savannas",
+        "shrublands",
+        "pixarells. mallorca",
+        "hiking",
+        "trails",
+        "camping",
+        "twigs",
+        "soil",
+        "debris",
+        "dirt",
+        "leaves",
+        "scattered",
+        "rough",
+        "old",
+        "moist",
+        "littered"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_forest_floor_wjvpaff/albedo.png",
+        "normal": "rocky_forest_floor_wjvpaff/normal.png",
+        "roughness": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png",
+        "ao": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png",
+        "height": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_ground_wf4mdeen",
+      "display": "Rocky Ground",
+      "source": "Quixel Megascans via Fab, asset id wf4mdeen",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "gray",
+        "green",
+        "white",
+        "black",
+        "exterior",
+        "outdoor",
+        "rural",
+        "stone",
+        "moss",
+        "mud",
+        "dirty",
+        "mossy",
+        "rough"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_ground_wf4mdeen/albedo.png",
+        "normal": "rocky_ground_wf4mdeen/normal.png",
+        "roughness": "rocky_ground_wf4mdeen/packed_ao_rough_height.png",
+        "ao": "rocky_ground_wf4mdeen/packed_ao_rough_height.png",
+        "height": "rocky_ground_wf4mdeen/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_ground_xbkibje",
+      "display": "Rocky Ground",
+      "source": "Quixel Megascans via Fab, asset id xbkibje",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "fields",
+        "countryside",
+        "rural",
+        "hills",
+        "canyons",
+        "arid",
+        "soil",
+        "mud",
+        "grit",
+        "dirt",
+        "pebbles",
+        "rough",
+        "scattered",
+        "dirty",
+        "dry",
+        "old",
+        "weathered"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_ground_xbkibje/albedo.png",
+        "normal": "rocky_ground_xbkibje/normal.png",
+        "roughness": "rocky_ground_xbkibje/packed_ao_rough_height.png",
+        "ao": "rocky_ground_xbkibje/packed_ao_rough_height.png",
+        "height": "rocky_ground_xbkibje/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_ground_xbtfda2",
+      "display": "Rocky Ground",
+      "source": "Quixel Megascans via Fab, asset id xbtfda2",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "quarry",
+        "limestone",
+        "desert",
+        "valley",
+        "ground",
+        "gravel",
+        "grit",
+        "dust",
+        "sand",
+        "dusty",
+        "dry",
+        "flat",
+        "rough"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_ground_xbtfda2/albedo.png",
+        "normal": "rocky_ground_xbtfda2/normal.png",
+        "roughness": "rocky_ground_xbtfda2/packed_ao_rough_height.png",
+        "ao": "rocky_ground_xbtfda2/packed_ao_rough_height.png",
+        "height": "rocky_ground_xbtfda2/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_sand_vd4pbdt",
+      "display": "Rocky Sand",
+      "source": "Quixel Megascans via Fab, asset id vd4pbdt",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "gray",
+        "brown",
+        "outdoors",
+        "deserts",
+        "moorlands",
+        "shrublands",
+        "xeric-shrublands",
+        "sand",
+        "stones",
+        "rocks",
+        "pebbles",
+        "cracks",
+        "scattered",
+        "rocky",
+        "sandy",
+        "dry"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_sand_vd4pbdt/albedo.png",
+        "normal": "rocky_sand_vd4pbdt/normal.png",
+        "roughness": "rocky_sand_vd4pbdt/packed_ao_rough_height.png",
+        "ao": "rocky_sand_vd4pbdt/packed_ao_rough_height.png",
+        "height": "rocky_sand_vd4pbdt/packed_ao_rough_height.png"
+      }
+    },
+    {
+      "name": "rocky_sand_vmkecjj",
+      "display": "Rocky Sand",
+      "source": "Quixel Megascans via Fab, asset id vmkecjj",
+      "licence": "Fab Standard License (free tier). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "tags": [
+        "brown",
+        "outdoors",
+        "deserts",
+        "moorland",
+        "shrublands",
+        "xeric-shrublands",
+        "hills",
+        "pebbles",
+        "rocks",
+        "dirt",
+        "sand",
+        "ground",
+        "scattered",
+        "uneven",
+        "sandy",
+        "dry",
+        "rocky"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "rocky_sand_vmkecjj/albedo.png",
+        "normal": "rocky_sand_vmkecjj/normal.png",
+        "roughness": "rocky_sand_vmkecjj/packed_ao_rough_height.png",
+        "ao": "rocky_sand_vmkecjj/packed_ao_rough_height.png",
+        "height": "rocky_sand_vmkecjj/packed_ao_rough_height.png"
+      }
+    }
+  ],
+  "note": "Generated by tools/import_surfaces.py. Every entry records where the asset came from and under what licence; tools/check_surfaces.py fails the build on any texture without one. See docs/asset-licensing.md."
+}

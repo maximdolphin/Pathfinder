@@ -170,16 +170,37 @@ def read_metadata(bundle):
 
 
 def classify(filename):
-    """Which map a file is, from its name. Longest match first: 'basecolor'
-    contains 'color', and a normal map imported as base colour is an afternoon."""
-    lowered = os.path.basename(filename).lower()
-    for key in sorted(WANTED, key=len, reverse=True):
-        if key in lowered:
-            return key
-    for key in DISCARDED:
-        if key in lowered:
-            return None
+    """Which map a file is, from its name.
+
+    Megascans names every file `<Name>_<id>_<resolution>_<MapType>.<ext>`, so
+    the map type is the last underscore-separated piece of the stem and nothing
+    else. Matching it anywhere in the name instead is what this used to do, and
+    it broke on the first asset whose id happened to end in a role name: "ao"
+    appears inside `Dry_Sand_xfhsfao_4K_Bump.jpg`, and inside `xfhsfao.json`,
+    so the ambient occlusion slot ended up holding the metadata file and Pillow
+    was handed JSON to decode. Anchoring to the last piece cannot do that."""
+    stem = os.path.splitext(os.path.basename(filename))[0].lower()
+    suffix = stem.rsplit("_", 1)[-1]
+    if suffix in WANTED:
+        return suffix
     return None
+
+
+def check_classify():
+    """The classifier is the one piece of guesswork in here, and it has been
+    wrong once. Cheap enough to assert on every run."""
+    assert classify("Dry_Sand_xfhsfao_4K_AO.jpg") == "ao"
+    assert classify("Dry_Sand_xfhsfao_4K_BaseColor.jpg") == "basecolor"
+    assert classify("Dry_Sand_xfhsfao_4K_Normal.jpg") == "normal"
+    assert classify("Dry_Sand_xfhsfao_4K_Roughness.jpg") == "roughness"
+    assert classify("Dry_Sand_xfhsfao_4K_Displacement.jpg") == "displacement"
+    # The three that broke it: an asset id ending in a role name.
+    assert classify("Dry_Sand_xfhsfao_4K_Bump.jpg") is None
+    assert classify("xfhsfao.json") is None
+    assert classify("Dry_Sand_xfhsfao_4K_Cavity.jpg") is None
+    # Paths from inside a zip, and the maps we drop.
+    assert classify("some/dir/Rippled_Sand_vd3lecfs_4K_Gloss.jpg") is None
+    assert classify("thumbnail.jpeg") is None
 
 
 def import_one(bundle):
@@ -286,6 +307,7 @@ def main():
     parser.add_argument("--vault", action="store_true",
                         help="also read the Epic launcher's Fab vault cache")
     arguments = parser.parse_args()
+    check_classify()
 
     sources = list(arguments.sources) or [INCOMING]
     if arguments.vault:
@@ -334,7 +356,15 @@ def main():
     problems = []
 
     for bundle in chosen:
-        entry, problem = import_one(bundle)
+        # A set that blows up is one bad set, not a lost run. The manifest is
+        # written after this loop, so an exception here used to throw away
+        # every successful import that came before it.
+        try:
+            entry, problem = import_one(bundle)
+        except Exception as failure:
+            problems.append("%s: %s: %s"
+                            % (bundle.label, type(failure).__name__, failure))
+            continue
         if problem:
             problems.append(problem)
             continue
