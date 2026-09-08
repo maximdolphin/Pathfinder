@@ -7,6 +7,7 @@
 #include "HAL/IConsoleManager.h"
 #include "LedgerLog.h"
 #include "LedgerPatchGenerator.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "ProceduralMeshComponent.h"
 
@@ -46,6 +47,11 @@ void ALedgerPlanet::BeginPlay()
 			nullptr, TEXT("/Engine/EngineDebugMaterials/VertexColorViewMode_ColorOnly"));
 		UE_LOG(LogLedger, Warning,
 			TEXT("planet spawned with no surface material; falling back to vertex colour"));
+	}
+
+	if (SurfaceMaterial != nullptr)
+	{
+		SurfaceInstance = UMaterialInstanceDynamic::Create(SurfaceMaterial, this);
 	}
 
 	UE_LOG(LogLedger, Log, TEXT("materials: terrain %s, water %s"),
@@ -196,6 +202,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		LeadOffset *= LeadLimit / LeadLength;
 	}
 	const FVector3d GeometryLead = CameraLocal + LeadOffset;
+
+	// Before the tree walks: the blend has to be told the same thing the LOD
+	// decision is about to be told, in the same frame.
+	UpdateMorphParameters(ViewportWidth, Fov);
 
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{

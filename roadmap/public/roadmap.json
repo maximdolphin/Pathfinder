@@ -162,10 +162,10 @@
    "estimateDays": 44.5,
    "plannedStart": "2026-11-23",
    "plannedEnd": "2027-01-25",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 1
   },
   {
    "id": "M03",
@@ -2866,10 +2866,16 @@
    "dependsOn": [
     "T043"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "block",
+     "text": "Needs an Epic/Fab sign-in, which is a manual step only the user can do. Everything around it is built: the manifest format, the validator that fails the build on any texture with no recorded source and licence, and its CI job."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 55.5,
    "plannedEndDay": 56,
@@ -2962,11 +2968,39 @@
    "dependsOn": [
     "T047"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Each vertex records where the parent LOD would put it: even positions do not move, edge-odd ones sit at the midpoint of their two even neighbours, centre-odd ones at the average of four. Only a scalar is stored, not an offset — the coarse position is the same direction at the interpolated elevation, and the chord-versus-arc error that approximation costs is a fraction of a millimetre against elevation differences of metres."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The blend is driven by the same quantity the LOD decision uses, or the two disagree and the pop moves rather than disappearing. A node collapses when its parent's projected error falls below threshold, and the parent is twice the size, so the collapse distance is 2*WorldSize*MorphScale — one number packing viewport width, field of view and the pixel threshold, set once per frame on one material instance. Nothing is per-patch: what differs per patch is baked into its vertices."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The capture comparison caught a bug I was not looking for. Three captures differed after the change, and it was not the morph — the ship fell a different distance before the first screenshot because the flight model integrated with the frame's own delta. Frame-rate-dependent physics, which my own coding standard warns about, on a run that happened to be faster than the one before it. Now fixed-step at 120 Hz with bounded catch-up. Orbit capture difference went from 24.78 to 0.03."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Determinism at a fixed step was already tested and passed; nothing asked whether two different step sizes agreed. That test now exists, plus one asserting a ten-second hitch does not become ten seconds of catch-up on one frame — which is how a stall puts a ship on the far side of a planet."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T048-2026-09-08T21-47-47-584.png",
+     "caption": "terrain-surface.png",
+     "source": "../out/terrain-surface.png",
+     "addedAt": "2026-09-08T21:47:47.586Z"
+    }
+   ],
    "plannedStartDay": 59.5,
    "plannedEndDay": 61.5,
    "plannedStart": "2026-11-27",
@@ -11602,5 +11636,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T21:30:58.423Z"
+ "updatedAt": "2026-09-08T21:47:47.654Z"
 }

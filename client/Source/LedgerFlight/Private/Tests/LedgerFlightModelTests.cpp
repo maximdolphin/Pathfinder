@@ -188,4 +188,66 @@ bool FLedgerFlightIsDeterministic::RunTest(const FString&)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerFlightIsFrameRateIndependent,
+	"Ledger.Flight.IsFrameRateIndependent",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerFlightIsFrameRateIndependent::RunTest(const FString&)
+{
+	// The test that was missing. Determinism at a fixed step was already
+	// covered, and it passed, and the trajectory still depended on frame rate —
+	// because nothing asked whether two *different* step sizes agreed.
+	//
+	// It was caught by a screenshot comparison instead: the ship fell a
+	// different distance before the first capture, on a run that happened to be
+	// faster than the one before it.
+	const FLedgerGravityField Field = EarthLike();
+
+	auto FlyFor = [&Field](double FrameSeconds) -> FVector3d
+	{
+		FLedgerFlightState State;
+		State.Position = FVector3d(0.0, 0.0, Field.Radius * 1.6);
+		State.Velocity = FVector3d(90000.0, 0.0, 0.0);
+		double Remainder = 0.0;
+		for (double Elapsed = 0.0; Elapsed < 20.0; Elapsed += FrameSeconds)
+		{
+			LedgerFlight::Advance(State, Field, FrameSeconds, Remainder);
+		}
+		return State.Position;
+	};
+
+	const FVector3d At30 = FlyFor(1.0 / 30.0);
+	const FVector3d At60 = FlyFor(1.0 / 60.0);
+	const FVector3d At144 = FlyFor(1.0 / 144.0);
+
+	// A metre over twenty seconds and eleven thousand kilometres of fall. The
+	// residual is the fixed step's own remainder, not accumulated error.
+	TestTrue(TEXT("30 and 60 agree"), FVector3d::Distance(At30, At60) < 100.0);
+	TestTrue(TEXT("60 and 144 agree"), FVector3d::Distance(At60, At144) < 100.0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerFlightSurvivesAHitch,
+	"Ledger.Flight.SurvivesAHitch",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerFlightSurvivesAHitch::RunTest(const FString&)
+{
+	// A ten-second stall must not become ten seconds of catch-up on one frame.
+	// Unbounded, that is how a hitch puts the ship on the far side of a planet.
+	const FLedgerGravityField Field = EarthLike();
+	FLedgerFlightState State;
+	State.Position = FVector3d(0.0, 0.0, Field.Radius * 1.6);
+	double Remainder = 0.0;
+
+	const FVector3d Before = State.Position;
+	LedgerFlight::Advance(State, Field, 10.0, Remainder);
+
+	// Sixteen steps at 1/120 is a seventh of a second of fall, not ten seconds.
+	const double Moved = FVector3d::Distance(Before, State.Position);
+	TestTrue(TEXT("a ten-second hitch moves it less than a metre"), Moved < 100.0);
+	TestTrue(TEXT("and does not bank the time for later"), Remainder == 0.0);
+	return true;
+}
+
 #endif

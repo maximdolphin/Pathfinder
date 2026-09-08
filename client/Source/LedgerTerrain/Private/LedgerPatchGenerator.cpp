@@ -71,6 +71,7 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	Job.Vertices.SetNumUninitialized(VertexCount);
 	Job.Normals.SetNumZeroed(VertexCount);
 	Job.UVs.SetNumUninitialized(VertexCount);
+	Job.MorphUVs.SetNumUninitialized(VertexCount);
 	Job.Colors.SetNumUninitialized(VertexCount);
 	Job.Tangents.SetNumUninitialized(VertexCount);
 
@@ -123,6 +124,46 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			Job.Vertices[Index] = FVector(Surface - Job.Centre);
 			Job.UVs[Index] = FVector2D(LocalU, LocalV);
 			Elevations[Index] = Elevation;
+		}
+	}
+
+	// ---- geomorph targets ------------------------------------------------
+	//
+	// A vertex at an odd grid position does not exist in the parent LOD. When
+	// this node collapses, that vertex vanishes and its neighbourhood snaps to
+	// whatever the parent's coarser sampling says — which is the pop.
+	//
+	// So each vertex records where the parent *would* have put it: even ones do
+	// not move, edge-odd ones sit at the midpoint of their two even neighbours,
+	// and centre-odd ones at the average of the four surrounding evens. The
+	// shader blends toward that as the node approaches its collapse threshold,
+	// so by the moment it collapses the two meshes already agree.
+	for (int32 Y = 0; Y < Side; ++Y)
+	{
+		for (int32 X = 0; X < Side; ++X)
+		{
+			const int32 Index = Y * Side + X;
+			const bool bOddX = (X & 1) != 0;
+			const bool bOddY = (Y & 1) != 0;
+
+			double Coarse = Elevations[Index];
+			if (bOddX && bOddY)
+			{
+				Coarse = 0.25 * (Elevations[(Y - 1) * Side + (X - 1)]
+					+ Elevations[(Y - 1) * Side + (X + 1)]
+					+ Elevations[(Y + 1) * Side + (X - 1)]
+					+ Elevations[(Y + 1) * Side + (X + 1)]);
+			}
+			else if (bOddX)
+			{
+				Coarse = 0.5 * (Elevations[Y * Side + (X - 1)] + Elevations[Y * Side + (X + 1)]);
+			}
+			else if (bOddY)
+			{
+				Coarse = 0.5 * (Elevations[(Y - 1) * Side + X] + Elevations[(Y + 1) * Side + X]);
+			}
+
+			Job.MorphUVs[Index] = FVector2D(Coarse - Elevations[Index], Job.WorldSize);
 		}
 	}
 

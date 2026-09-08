@@ -30,11 +30,21 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAPTURES = os.path.join(ROOT, "out")
 REFERENCE = os.path.join(ROOT, "docs", "reference-captures")
 
-# A little tolerance, because the flight is not bit-identical run to run:
-# temporal anti-aliasing carries history across frames and the capture lands on
-# whichever frame it lands on. These are tuned to pass on an unchanged build and
-# fail on a one-shade material change.
-MEAN_TOLERANCE = 2.5     # mean absolute difference per channel, out of 255
+# Structural difference, after a global brightness offset has been removed.
+# This is the number that catches a material change, a geometry change or a
+# missing object.
+RESIDUAL_TOLERANCE = 2.5
+
+# The brightness offset itself, tolerated separately and generously.
+#
+# Auto-exposure adapts over frames, and two runs reach the same *game* time
+# after different numbers of frames, so the adapted exposure differs slightly
+# and every pixel shifts by the same small amount. That is not a regression, and
+# judging it as one made the check cry wolf on a run where nothing had changed.
+# Comparing the residual after removing the offset separates "the image is
+# different" from "the image is the same, dimmer".
+OFFSET_TOLERANCE = 14.0
+
 CHANGED_FRACTION = 0.06  # fraction of pixels allowed to differ by more than 24
 
 
@@ -107,27 +117,43 @@ def compare(reference_path, capture_path):
     if (rw, rh) != (cw, ch):
         return "size changed: reference %dx%d, capture %dx%d" % (rw, rh, cw, ch), 0.0, 0.0
 
-    total = 0
-    changed = 0
+    # Two passes: the first finds the global brightness offset, the second
+    # measures what is left once that is taken out.
+    signed = 0
     samples = 0
     for y in range(rh):
         a, b = rrows[y], crows[y]
         for x in range(0, rw * rc, rc):
             for channel in range(3):
-                difference = abs(a[x + channel] - b[x + channel])
-                total += difference
+                signed += b[x + channel] - a[x + channel]
                 samples += 1
-                if difference > 24:
+
+    offset = signed / float(samples)
+
+    residual = 0.0
+    changed = 0
+    for y in range(rh):
+        a, b = rrows[y], crows[y]
+        for x in range(0, rw * rc, rc):
+            for channel in range(3):
+                difference = (b[x + channel] - a[x + channel]) - offset
+                residual += abs(difference)
+                if abs(difference) > 24:
                     changed += 1
 
-    mean = total / float(samples)
+    residual /= float(samples)
     fraction = changed / float(samples)
 
-    if mean > MEAN_TOLERANCE or fraction > CHANGED_FRACTION:
-        return ("mean difference %.2f (limit %.2f), %.1f%% of samples changed "
-                "(limit %.1f%%)" % (mean, MEAN_TOLERANCE, fraction * 100.0,
-                                    CHANGED_FRACTION * 100.0)), mean, fraction
-    return None, mean, fraction
+    if residual > RESIDUAL_TOLERANCE:
+        return ("structural difference %.2f after removing a %.2f brightness "
+                "offset (limit %.2f)" % (residual, offset, RESIDUAL_TOLERANCE)), residual, fraction
+    if fraction > CHANGED_FRACTION:
+        return ("%.1f%% of samples changed by more than 24 (limit %.1f%%)"
+                % (fraction * 100.0, CHANGED_FRACTION * 100.0)), residual, fraction
+    if abs(offset) > OFFSET_TOLERANCE:
+        return ("brightness shifted by %.2f with no structural change (limit %.2f) "
+                "— check exposure or lighting" % (offset, OFFSET_TOLERANCE)), residual, fraction
+    return None, residual, fraction
 
 
 def main():
@@ -171,7 +197,7 @@ def main():
         if problem:
             failures.append("%s: %s" % (name, problem))
         else:
-            print("  %-26s mean %.2f, %.2f%% changed" % (name, mean, fraction * 100.0))
+            print("  %-26s residual %.2f, %.2f%% changed" % (name, mean, fraction * 100.0))
 
     for name in captures:
         if not os.path.isfile(os.path.join(REFERENCE, name)):

@@ -8,7 +8,13 @@
 #include "MaterialDomain.h"
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
+#include "Materials/MaterialExpressionCameraPositionWS.h"
+#include "Materials/MaterialExpressionDistance.h"
 #include "Materials/MaterialExpressionDotProduct.h"
+#include "Materials/MaterialExpressionNormalize.h"
+#include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionPixelDepth.h"
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialExpressionVertexColor.h"
@@ -98,6 +104,76 @@ namespace LedgerSurface
 		{
 			return nullptr;
 		}
+		// ---- geomorph ----------------------------------------------------
+		//
+		// A vertex at an odd grid position does not exist in the parent LOD.
+		// When this node collapses, it vanishes and the surface snaps to the
+		// parent's coarser sampling — the pop. UV1.x is how far this vertex has
+		// to move along its radial to already be where the parent would put it;
+		// UV1.y is the node's world size.
+		//
+		// The blend has to be driven by the same quantity the LOD decision uses,
+		// or the two disagree and the pop moves rather than disappearing. A node
+		// collapses when its *parent's* projected error falls below the
+		// threshold, and the parent is twice the size — so the collapse distance
+		// is 2 * WorldSize * MorphScale, where MorphScale packs viewport width,
+		// field of view and the pixel threshold into one number the planet sets
+		// once per frame.
+		UMaterialExpressionTextureCoordinate* MorphCoord =
+			Graph.Make<UMaterialExpressionTextureCoordinate>();
+		MorphCoord->CoordinateIndex = 1;
+
+		UMaterialExpression* MorphDelta = Graph.Mask(MorphCoord, true, false, false);
+		UMaterialExpression* NodeSize = Graph.Mask(MorphCoord, false, true, false);
+
+		UMaterialExpressionScalarParameter* MorphScale =
+			Graph.Make<UMaterialExpressionScalarParameter>();
+		MorphScale->ParameterName = TEXT("MorphScale");
+		// A sane still-frame default, so the material is correct even if nobody
+		// ever sets it. The planet overrides it every frame.
+		MorphScale->DefaultValue = 12.0f;
+
+		UMaterialExpressionScalarParameter* MorphBegin =
+			Graph.Make<UMaterialExpressionScalarParameter>();
+		MorphBegin->ParameterName = TEXT("MorphBegin");
+		// Blend over the last 30% of the node's life. Sooner and distant terrain
+		// is permanently coarser than it needs to be; later and the blend has to
+		// happen fast enough to be visible as motion.
+		MorphBegin->DefaultValue = 0.7f;
+
+		UMaterialExpressionDistance* ToCamera = Graph.Make<UMaterialExpressionDistance>();
+		ToCamera->A.Expression = Graph.Make<UMaterialExpressionCameraPositionWS>();
+		UMaterialExpressionWorldPosition* AbsolutePosition =
+			Graph.Make<UMaterialExpressionWorldPosition>();
+		AbsolutePosition->WorldPositionShaderOffset = WPT_Default;
+		ToCamera->B.Expression = AbsolutePosition;
+
+		// How far through its life this node is: 0 when freshly split, 1 at the
+		// distance its parent takes over.
+		UMaterialExpression* CollapseDistance = Graph.Multiply(
+			Graph.Multiply(NodeSize, Graph.Constant(2.0f)), MorphScale);
+		UMaterialExpression* Through = Graph.Divide(ToCamera, CollapseDistance);
+
+		UMaterialExpression* MorphFactor = Graph.Saturate(
+			Graph.Divide(
+				Graph.Subtract(Through, MorphBegin),
+				Graph.Subtract(Graph.Constant(1.0f), MorphBegin)));
+
+		// Radial, because that is the direction the elevation difference is in.
+		// The planet's centre is a parameter rather than the world origin: the
+		// two coincide today and will not once there is a second body.
+		UMaterialExpressionVectorParameter* PlanetCentre =
+			Graph.Make<UMaterialExpressionVectorParameter>();
+		PlanetCentre->ParameterName = TEXT("PlanetCentre");
+		PlanetCentre->DefaultValue = FLinearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+		UMaterialExpressionNormalize* Radial = Graph.Make<UMaterialExpressionNormalize>();
+		Radial->VectorInput.Expression = Graph.Subtract(
+			AbsolutePosition, Graph.Mask(PlanetCentre, true, true, true));
+
+		EditorData->WorldPositionOffset.Expression =
+			Graph.Multiply(Radial, Graph.Multiply(MorphDelta, MorphFactor));
+
 		EditorData->BaseColor.Expression = BaseColour;
 		EditorData->Normal.Expression = FadedNormal;
 		EditorData->Roughness.Expression = Graph.Constant(0.93f);

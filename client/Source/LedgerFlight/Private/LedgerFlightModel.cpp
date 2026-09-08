@@ -13,6 +13,31 @@ namespace LedgerFlight
 		return Distance - Field.GroundAt(Radial / Distance);
 	}
 
+	void Advance(FLedgerFlightState& State, const FLedgerGravityField& Field,
+		double DeltaSeconds, double& Accumulator)
+	{
+		Accumulator += FMath::Max(0.0, DeltaSeconds);
+
+		// Bounded catch-up. A long hitch — a shader compile, a level load, the
+		// debugger — must not turn into a hundred steps of simulation on the
+		// next frame, which is how a stall becomes a ship on the far side of
+		// the planet. Past this the simulation simply loses the time.
+		constexpr int32 MaxStepsPerFrame = 16;
+
+		int32 Steps = 0;
+		while (Accumulator >= FixedStep && Steps < MaxStepsPerFrame)
+		{
+			Integrate(State, Field, FixedStep);
+			Accumulator -= FixedStep;
+			++Steps;
+		}
+
+		if (Steps == MaxStepsPerFrame)
+		{
+			Accumulator = 0.0;
+		}
+	}
+
 	void Integrate(FLedgerFlightState& State, const FLedgerGravityField& Field, double DeltaSeconds)
 	{
 		if (DeltaSeconds <= 0.0)

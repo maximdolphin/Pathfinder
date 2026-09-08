@@ -51,6 +51,11 @@ struct FLedgerPatchJob
 	FLedgerTerrainParams Params;
 	int32 Side = 33;
 
+	/// Approximate world-space extent of the node, centimetres. Baked into the
+	/// vertices so the shader can work out how close this patch is to being
+	/// collapsed without being told per frame.
+	double WorldSize = 0.0;
+
 	/// Edges that border a coarser neighbour and therefore need stitching.
 	bool bStitchLeft = false;
 	bool bStitchRight = false;
@@ -62,6 +67,17 @@ struct FLedgerPatchJob
 	TArray<int32> Triangles;
 	TArray<FVector> Normals;
 	TArray<FVector2D> UVs;
+
+	/// Geomorph data, one per vertex: X is how far this vertex must move along
+	/// its radial to sit where the *parent* LOD would have put it, and Y is the
+	/// node's world size.
+	///
+	/// Only a scalar is needed rather than a full offset, because the coarse
+	/// position is taken as the same direction at the interpolated elevation.
+	/// The true midpoint of two points on a sphere is slightly inside it, and
+	/// that chord-versus-arc error at patch scale is a fraction of a millimetre
+	/// — far below the elevation difference this is correcting.
+	TArray<FVector2D> MorphUVs;
 	TArray<FColor> Colors;
 	TArray<FProcMeshTangent> Tangents;
 
@@ -321,6 +337,15 @@ private:
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> SurfaceMaterial;
 
+	/// The surface material with the geomorph parameters bound.
+	///
+	/// One instance for the whole planet rather than one per patch: the two
+	/// things the blend needs that change — where the camera is and how wide
+	/// the viewport is — are the same for every patch in a frame, and the one
+	/// thing that differs per patch is baked into its vertices.
+	UPROPERTY()
+	TObjectPtr<UMaterialInstanceDynamic> SurfaceInstance;
+
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> WaterMaterial;
 
@@ -369,6 +394,16 @@ private:
 	/// Serves a leaf from the cache if the geometry is there and still correct.
 	bool UploadFromCache(const FLedgerQuadNode& Node, bool bWithCollision);
 
+
+	/// The instance if there is one, the base material otherwise. Patches take
+	/// this rather than SurfaceMaterial, because the geomorph parameters live on
+	/// the instance and a patch wearing the base material would not blend.
+	UMaterialInterface* TerrainMaterial() const;
+
+	/// Feeds the geomorph blend the same numbers the LOD decision uses. Called
+	/// once a frame; if the two ever disagree the pop does not disappear, it
+	/// moves somewhere else.
+	void UpdateMorphParameters(double ViewportWidth, double FovRadians);
 
 	void ReleaseSection(uint64 Key);
 	void AbandonJob(uint64 Key);

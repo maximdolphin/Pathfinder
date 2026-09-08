@@ -115,6 +115,11 @@ private:
 	float Submersion = 0.0f;
 
 	FVector Velocity = FVector::ZeroVector;
+
+	/// Leftover time between fixed physics steps. The flight model runs at a
+	/// fixed rate whatever the frame rate is; this is what carries the
+	/// remainder across frames.
+	double PhysicsRemainder = 0.0;
 	bool bFlightEnabled = true;
 	bool bLanded = false;
 

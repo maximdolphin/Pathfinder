@@ -81,6 +81,27 @@ namespace LedgerFlight
 		const FLedgerGravityField& Field,
 		double DeltaSeconds);
 
+	/// Seconds per integration step. Physics runs at this rate whatever the
+	/// frame rate is.
+	constexpr double FixedStep = 1.0 / 120.0;
+
+	/// Advances by a frame's worth of time, in fixed steps.
+	///
+	/// **Frame time varies and physics must not.** Integrating with the frame's
+	/// own delta makes the trajectory depend on how fast the machine is, which
+	/// is a bug that only shows up on somebody else's computer — or, as it
+	/// happened here, on the same computer on a quieter afternoon. It was found
+	/// by a capture comparison: the ship fell a different distance before the
+	/// first screenshot, because the run was faster than the one before it.
+	///
+	/// `Accumulator` carries the remainder between frames and belongs to the
+	/// caller, so two ships do not share one.
+	LEDGERFLIGHT_API void Advance(
+		FLedgerFlightState& State,
+		const FLedgerGravityField& Field,
+		double DeltaSeconds,
+		double& Accumulator);
+
 	/// Height above the ground beneath, in centimetres.
 	LEDGERFLIGHT_API double AltitudeAbove(
 		const FLedgerFlightState& State,

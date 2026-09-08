@@ -37,6 +37,7 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 	Job->Centre = Node.Centre;
 	Job->Params = TerrainParams();
 	Job->Side = GridResolution;
+	Job->WorldSize = Node.WorldSize;
 
 	// Neighbour depths are read here, on the game thread, while the tree is
 	// stable. The worker never touches the tree.
@@ -85,8 +86,12 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		Mesh->ClearMeshSection(0);
 
 		const double CollisionStart = FPlatformTime::Seconds();
+		// UV1 carries the geomorph target. The overload that takes it wants all
+		// four channels, so two go in empty.
+		const TArray<FVector2D> Unused;
 		Mesh->CreateMeshSection(
 			0, Job->Vertices, Job->Triangles, Job->Normals, Job->UVs,
+			Job->MorphUVs, Unused, Unused,
 			Job->Colors, Job->Tangents, Job->bWithCollision);
 		if (Job->bWithCollision)
 		{
@@ -99,7 +104,7 @@ void ALedgerPlanet::HarvestCompletedPatches()
 			: ECollisionEnabled::NoCollision);
 		if (SurfaceMaterial != nullptr)
 		{
-			Mesh->SetMaterial(0, SurfaceMaterial);
+			Mesh->SetMaterial(0, TerrainMaterial());
 		}
 
 		// Section 1 is the sea. Same component, so it moves and culls with the
@@ -178,7 +183,7 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	Mesh->SetProcMeshSection(0, Entry.Land);
 	if (SurfaceMaterial != nullptr)
 	{
-		Mesh->SetMaterial(0, SurfaceMaterial);
+		Mesh->SetMaterial(0, TerrainMaterial());
 	}
 
 	if (Entry.bHasWater)
@@ -213,6 +218,37 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	Stats.CacheMegabytes = static_cast<double>(PatchCache.Bytes()) / (1024.0 * 1024.0);
 	++Stats.CacheHits;
 	return true;
+}
+
+UMaterialInterface* ALedgerPlanet::TerrainMaterial() const
+{
+	return SurfaceInstance != nullptr
+		? Cast<UMaterialInterface>(SurfaceInstance)
+		: SurfaceMaterial.Get();
+}
+
+void ALedgerPlanet::UpdateMorphParameters(double ViewportWidth, double FovRadians)
+{
+	if (SurfaceInstance == nullptr)
+	{
+		return;
+	}
+
+	// Same projection the screen-space error metric uses, rearranged.
+	//
+	// Error in pixels is NodeWorldSize * Scale / Distance, so a node is at its
+	// threshold when Distance equals NodeWorldSize * Scale. Handing the shader
+	// that one number lets it work out how close any patch is to collapsing
+	// from the patch's own size, with nothing per-patch to set.
+	const double HalfFov = FMath::Max(FovRadians * 0.5, 0.001);
+	const double Scale = (ViewportWidth * 0.5) / (FMath::Tan(HalfFov) * FMath::Max(ErrorThresholdPixels, 1.0));
+
+	SurfaceInstance->SetScalarParameterValue(TEXT("MorphScale"), static_cast<float>(Scale));
+	SurfaceInstance->SetVectorParameterValue(TEXT("PlanetCentre"), FLinearColor(
+		static_cast<float>(GetActorLocation().X),
+		static_cast<float>(GetActorLocation().Y),
+		static_cast<float>(GetActorLocation().Z),
+		0.0f));
 }
 
 void ALedgerPlanet::ReleaseSection(uint64 Key)
