@@ -3020,10 +3020,26 @@
    "dependsOn": [
     "T048"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-08",
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Measured before building anything. Found a real bug on the way: LeafDepthAt descended to the tree's leaf, but a split node keeps its geometry until all four children have theirs, so during streaming the thing on screen is the parent at the parent's resolution while the tree below is several levels deeper. Stitch flags are computed from that function, so a patch stitched against a neighbour it was not meeting — a crack that appears under load, closes when the load passes, and is invisible in any still taken afterwards. Fixed: it now stops at whatever is drawn."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The imbalance counter itself was wrong twice over. It read 43% of all edges imbalanced on terrain with no visible crack, which was the tell. The collected leaf set contains a split parent AND its children while the children stream, so it was comparing nodes that are not both on screen. Now filtered to drawn nodes only. Unverified — needs a run."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "block",
+     "text": "Metric corrected twice and not yet re-measured. Whether the tree needs a balancing pass at all is still an open question, and building one before the measurement is trustworthy would be building it on a number I have already been wrong about twice."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 61.5,
    "plannedEndDay": 62.5,
@@ -11636,5 +11652,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T21:47:47.654Z"
+ "updatedAt": "2026-09-08T22:00:47.586Z"
 }

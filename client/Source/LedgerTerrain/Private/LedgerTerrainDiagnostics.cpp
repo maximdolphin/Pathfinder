@@ -24,6 +24,8 @@ void ALedgerPlanet::LogStats() const
 		Stats.LastFrameUploadMs, Stats.WorstFrameUploadMs);
 	UE_LOG(LogLedger, Log, TEXT("  generate ms (task) last %.3f"), Stats.LastPatchGenerationMs);
 	UE_LOG(LogLedger, Log, TEXT("  cook ms            worst %.3f"), Stats.WorstFrameCollisionMs);
+	UE_LOG(LogLedger, Log, TEXT("  imbalanced edges   %d  (worst depth gap %d)"),
+		Stats.ImbalancedEdges, Stats.WorstDepthDifference);
 	UE_LOG(LogLedger, Log, TEXT("  water sections     %d uploaded"), Stats.WaterSections);
 	UE_LOG(LogLedger, Log, TEXT("  patch cache        %lld hit / %lld generated (%.0f%% reused)"),
 		Stats.CacheHits, Stats.CacheMisses,

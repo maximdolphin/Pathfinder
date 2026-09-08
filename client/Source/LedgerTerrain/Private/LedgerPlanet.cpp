@@ -287,6 +287,36 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 
 	Stats.PendingBuilds = Pending;
+	// Measure the imbalance before building anything to fix it. The stitching
+	// handles a one-level difference; whether a larger one ever arises is a
+	// question with an answer, and the answer decides whether the tree needs a
+	// balancing pass at all.
+	Stats.ImbalancedEdges = 0;
+	Stats.WorstDepthDifference = 0;
+	for (const FLedgerQuadNode* Leaf : Leaves)
+	{
+		// Only nodes that are actually drawn. The collected set contains a split
+		// parent *and* its children while the children stream, so comparing
+		// every entry against its neighbour compares nodes that are not both on
+		// screen — which is how this counter first read 43% of all edges
+		// imbalanced on terrain with no visible crack in it.
+		if (!ActiveSections.Contains(NodeKey(*Leaf)))
+		{
+			continue;
+		}
+
+		const double Probes[4][2] = { {-0.02, 0.5}, {1.02, 0.5}, {0.5, -0.02}, {0.5, 1.02} };
+		for (const double(&Probe)[2] : Probes)
+		{
+			const int32 Difference = Leaf->Depth - LeafDepthAt(UnitSphereAt(*Leaf, Probe[0], Probe[1]));
+			if (Difference > 1)
+			{
+				++Stats.ImbalancedEdges;
+				Stats.WorstDepthDifference = FMath::Max(Stats.WorstDepthDifference, Difference);
+			}
+		}
+	}
+
 	Stats.SectionsActive = ActiveSections.Num();
 	Stats.SectionsFree = FreeSections.Num();
 	Stats.SectionsPending = InFlight.Num();

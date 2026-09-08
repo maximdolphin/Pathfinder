@@ -192,6 +192,18 @@ struct FLedgerTerrainStats
 	UPROPERTY()
 	int32 SectionsPending = 0;
 
+	/// Adjacent visible leaves whose depths differ by more than one.
+	///
+	/// Edge stitching collapses a finer node's odd edge vertices onto their even
+	/// neighbours, which closes a one-level difference exactly. It cannot close
+	/// two: the finer node would have to collapse two levels of vertices and it
+	/// only knows how to collapse one. Any count here is a crack somewhere.
+	UPROPERTY()
+	int32 ImbalancedEdges = 0;
+
+	UPROPERTY()
+	int32 WorstDepthDifference = 0;
+
 	UPROPERTY()
 	int32 WaterSections = 0;
 

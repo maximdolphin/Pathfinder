@@ -331,6 +331,23 @@ int32 ALedgerPlanet::LeafDepthAt(const FVector3d& UnitDirection) const
 
 	while (Node->bHasChildren)
 	{
+		// Stop at whatever is actually being *drawn*, not at the tree's leaf.
+		//
+		// A split node keeps its geometry until all four children have theirs,
+		// so during streaming the thing on screen at this direction is the
+		// parent, at the parent's resolution — while the tree below it is
+		// already several levels deeper.
+		//
+		// This function's answer decides edge stitching. Returning the tree
+		// depth meant a patch stitched against a neighbour that was not the one
+		// it met, for as long as that neighbour was streaming: a crack that
+		// appears under load, closes when the load passes, and is therefore
+		// invisible in any still taken afterwards.
+		if (ActiveSections.Contains(NodeKey(*Node)))
+		{
+			break;
+		}
+
 		const double Half = Node->Extent * 0.5;
 		const int32 Index = (U >= Node->U + Half ? 1 : 0) | (V >= Node->V + Half ? 2 : 0);
 		const FLedgerQuadNode* Child = Node->Children[Index].Get();
