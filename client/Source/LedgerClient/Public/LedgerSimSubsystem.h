@@ -11,13 +11,16 @@
 
 #include "CoreMinimal.h"
 #include "LedgerSnapshot.h"
-#include "Subsystems/GameInstanceSubsystem.h"
+#include "Subsystems/EngineSubsystem.h"
 #include "LedgerSimSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogLedger, Log, All);
 
+// An *engine* subsystem, not a game-instance one. The contract board is a
+// developer-facing view of sim state, and tying it to a GameInstance would mean
+// it — and the console commands below — only existed inside Play-In-Editor.
 UCLASS()
-class LEDGERCLIENT_API ULedgerSimSubsystem : public UGameInstanceSubsystem
+class LEDGERCLIENT_API ULedgerSimSubsystem : public UEngineSubsystem
 {
 	GENERATED_BODY()
 
