@@ -10,6 +10,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "Misc/FileHelper.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAtmosphere.h"
 #include "LedgerPlanet.h"
@@ -714,6 +715,7 @@ void ULedgerWorldBuilder::FrameCoast()
 
 	CoastSite = Best;
 	CoastSeaward = BestSeaward.GetSafeNormal();
+	DumpBathymetry();
 
 	FTimerHandle Shot;
 	World->GetTimerManager().SetTimer(
@@ -721,6 +723,97 @@ void ULedgerWorldBuilder::FrameCoast()
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-coast.png")),
 		6.0f,
 		false);
+}
+
+void ULedgerWorldBuilder::DumpBathymetry()
+{
+	if (Planet == nullptr || CoastSeaward.IsNearlyZero())
+	{
+		return;
+	}
+
+	const FLedgerTerrainParams Params = Planet->TerrainParams();
+
+	// Out to half a radian, about 3,200 km — far enough to leave a shelf even
+	// if the shelf is wide.
+	constexpr int32 Steps = 96;
+	constexpr double Arc = 0.5;
+
+	// The coast search picked its seaward direction by probing six kilometres,
+	// which is enough to tell water from land and not enough to tell a basin
+	// from a lagoon. Re-pick it here against the far end of the line: a
+	// transect down the length of an archipelago shows nothing but islands.
+	const FVector3d Tangent = FVector3d::CrossProduct(CoastSite, FVector3d::UpVector).GetSafeNormal();
+	const FVector3d Bitangent = FVector3d::CrossProduct(CoastSite, Tangent);
+
+	FVector3d Seaward = CoastSeaward;
+	double BestFar = MAX_dbl;
+	for (int32 Probe = 0; Probe < 32; ++Probe)
+	{
+		const double Angle = (Probe / 32.0) * 2.0 * PI;
+		const FVector3d Direction = Tangent * FMath::Cos(Angle) + Bitangent * FMath::Sin(Angle);
+
+		// Score on the mean over the outer half, not the single far point, so a
+		// direction is not chosen by one trench it happens to end in.
+		double Sum = 0.0;
+		for (int32 Step = Steps / 2; Step < Steps; ++Step)
+		{
+			const double Along = (static_cast<double>(Step) / (Steps - 1)) * Arc;
+			Sum += LedgerTerrain::Elevation(
+				(CoastSite + Direction * FMath::Tan(Along)).GetSafeNormal(), Params);
+		}
+		if (Sum < BestFar)
+		{
+			BestFar = Sum;
+			Seaward = Direction;
+		}
+	}
+
+	TArray<double> Depths;
+	TArray<double> Offshore;
+	Depths.Reserve(Steps);
+	Offshore.Reserve(Steps);
+	double Deepest = 0.0;
+	for (int32 Step = 0; Step < Steps; ++Step)
+	{
+		const double Along = (static_cast<double>(Step) / (Steps - 1)) * Arc;
+		const FVector3d Sample = (CoastSite + Seaward * FMath::Tan(Along)).GetSafeNormal();
+		const double Metres = LedgerTerrain::Elevation(Sample, Params) / 100.0;
+		Depths.Add(Metres);
+		Offshore.Add(LedgerTerrain::OffshoreParameter(Sample, Params));
+		Deepest = FMath::Min(Deepest, Metres);
+	}
+
+	FString Out = TEXT("Depth transect from the town coast, along the direction with the\n");
+	Out += TEXT("deepest far field, which on this planet crosses the landmass first.\n");
+	Out += TEXT("Positive metres are land; the bar plots depth only.\n");
+	Out += TEXT("t is the offshore parameter the profile is a function of: shelf below\n");
+	Out += TEXT("0.10, continental slope to 0.26, abyssal plain beyond.\n");
+	Out += FString::Printf(TEXT("planet radius %.0f km, deepest on this line %.0f m\n\n"),
+		Planet->Radius / 100000.0, -Deepest);
+	Out += TEXT("    km      m      t   profile\n");
+
+	constexpr int32 Columns = 64;
+	for (int32 Step = 0; Step < Depths.Num(); ++Step)
+	{
+		const double Along = (static_cast<double>(Step) / (Steps - 1)) * Arc;
+		const double Kilometres = Along * Planet->Radius / 100000.0;
+		const double Metres = Depths[Step];
+
+		const int32 Filled = Deepest < 0.0
+			? FMath::Clamp(FMath::RoundToInt((Metres / Deepest) * Columns), 0, Columns)
+			: 0;
+
+		Out += FString::Printf(TEXT("%6.0f %6.0f %6.3f   |%s%s\n"),
+			Kilometres, Metres, Offshore[Step],
+			*FString::ChrN(Filled, TEXT('#')),
+			*FString::ChrN(Columns - Filled, TEXT('.')));
+	}
+
+	const FString Path = FPaths::ConvertRelativePathToFull(
+		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("bathymetry.txt")));
+	FFileHelper::SaveStringToFile(Out, *Path);
+	UE_LOG(LogLedger, Log, TEXT("bathymetry -> %s (deepest %.0f m)"), *Path, -Deepest);
 }
 
 void ULedgerWorldBuilder::FrameUnderwater()
@@ -734,10 +827,19 @@ void ULedgerWorldBuilder::FrameUnderwater()
 		return;
 	}
 
-	// Six kilometres out from the beach, which is where the coast search found
-	// its deepest neighbour and therefore the only water nearby with room to
-	// put a camera in.
-	const FVector3d Offshore = (CoastSite + CoastSeaward * 0.00095).GetSafeNormal();
+	// Walk seaward until there is enough water to stand a camera in. A fixed
+	// distance worked while the seabed dropped away at the shoreline; over a
+	// real shelf the first few kilometres are ankle deep.
+	FVector3d Offshore = (CoastSite + CoastSeaward * 0.00095).GetSafeNormal();
+	for (int32 Step = 1; Step <= 200; ++Step)
+	{
+		const FVector3d Candidate = (CoastSite + CoastSeaward * (0.00025 * Step)).GetSafeNormal();
+		Offshore = Candidate;
+		if (Planet->Radius - Planet->SurfaceRadiusAt(Candidate) > 1500.0)
+		{
+			break;
+		}
+	}
 	const FVector Up(Offshore);
 	const double Floor = Planet->SurfaceRadiusAt(Offshore);
 	const double Depth = Planet->Radius - Floor;

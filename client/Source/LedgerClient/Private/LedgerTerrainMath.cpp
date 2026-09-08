@@ -348,6 +348,52 @@ namespace LedgerTerrain
 		return Normalisation > 0.0 ? (Sum / Normalisation) * 2.0 - 1.0 : 0.0;
 	}
 
+	/// Depth as a fraction of the deepest ocean, given how far past the
+	/// coastline the continental field has fallen.
+	///
+	/// Bathymetry is not a bowl. It is a nearly flat shelf, an abrupt break at
+	/// around 140 m, a steep slope down to a few kilometres, and then an
+	/// abyssal plain flatter than any surface on land. What was here before was
+	/// `pow(depth, 0.75)` — a concave curve, steepest at the shore and
+	/// flattening outward, which is that profile turned inside out. It gave
+	/// every coast a drop-off at the waterline and no shelf at all.
+	static double BathymetricProfile(double Offshore)
+	{
+		constexpr double ShelfEnd = 0.10;        // where the break sits
+		constexpr double SlopeEnd = 0.26;        // foot of the continental slope
+		constexpr double ShelfFraction = 0.024;  // 140 m of 5800
+		constexpr double SlopeFraction = 0.60;   // 3500 m of 5800
+
+		if (Offshore < ShelfEnd)
+		{
+			return (Offshore / ShelfEnd) * ShelfFraction;
+		}
+		if (Offshore < SlopeEnd)
+		{
+			const double Along = (Offshore - ShelfEnd) / (SlopeEnd - ShelfEnd);
+			return ShelfFraction
+				+ FMath::SmoothStep(0.0, 1.0, Along) * (SlopeFraction - ShelfFraction);
+		}
+		const double Along = (Offshore - SlopeEnd) / (1.0 - SlopeEnd);
+		return SlopeFraction + Along * (1.0 - SlopeFraction);
+	}
+
+	/// Deepest ocean as a fraction of MaxElevation: 5.8 km against a 9 km
+	/// ceiling, which is roughly the ratio Earth runs.
+	constexpr double AbyssalFraction = 0.644;
+
+	double OffshoreParameter(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	{
+		const uint32 Seed = Params.Seed;
+		const FVector3d Warp(
+			FractalNoise(UnitSphere * 2.1 + FVector3d(19.3, 7.1, 3.7), Seed ^ 0xA1u, 3),
+			FractalNoise(UnitSphere * 2.1 + FVector3d(5.2, 23.9, 11.4), Seed ^ 0xB2u, 3),
+			FractalNoise(UnitSphere * 2.1 + FVector3d(31.7, 2.8, 17.5), Seed ^ 0xC3u, 3));
+		const double Continent = FractalNoise((UnitSphere + Warp * 0.26) * 1.25, Seed, 6);
+		return FMath::Max(0.0,
+			(Params.SeaLevel - Continent) / FMath::Max(0.05, Params.SeaLevel + 1.0));
+	}
+
 	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
 	{
 		const uint32 Seed = Params.Seed;
@@ -384,11 +430,19 @@ namespace LedgerTerrain
 
 		if (Continent < Params.SeaLevel)
 		{
-			// Ocean floor. Deepens away from the coast and stays smooth — an
-			// eroded seabed has no ridges on it.
-			const double Depth = (Params.SeaLevel - Continent) / FMath::Max(0.05, Params.SeaLevel + 1.0);
+			// Ocean floor. See BathymetricProfile: a shelf, a break, a slope and
+			// a plain, rather than one curve from the shore to the bottom.
+			const double Offshore = (Params.SeaLevel - Continent) / FMath::Max(0.05, Params.SeaLevel + 1.0);
+			const double Profile = BathymetricProfile(Offshore);
+
+			// Relief follows the profile. Sediment blankets the shelf, the slope
+			// is the one part of an ocean floor with any gradient worth the
+			// name, and the abyssal plain is the flattest surface on the planet.
+			const double Relief = 0.004 + 0.030 * FMath::Sin(
+				PI * FMath::Clamp((Offshore - 0.06) / 0.22, 0.0, 1.0));
+
 			const double Seabed = FractalNoise(Warped * 60.0, Seed ^ 0x2B2Bu, 3);
-			return (-FMath::Pow(Depth, 0.75) * 0.55 + Seabed * 0.012) * Params.MaxElevation;
+			return (-Profile * AbyssalFraction + Seabed * Relief) * Params.MaxElevation;
 		}
 
 		// Where the ranges are — 3,300 km provinces, so a continent has orogenic

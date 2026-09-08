@@ -121,6 +121,12 @@ namespace LedgerTerrain
 
 	/// Terrain elevation in centimetres above the reference sphere, for a point
 	/// on the unit sphere.
+	/// How far past the coastline the continental field has fallen, in [0,1].
+	/// Zero at the waterline, one at the lowest the field ever goes. The
+	/// bathymetric profile is a function of this and nothing else, so a
+	/// transect that reports it is a transect that can be calibrated against.
+	LEDGERCLIENT_API double OffshoreParameter(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
+
 	LEDGERCLIENT_API double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
 
 	/// Screen-space error for a node, in pixels.

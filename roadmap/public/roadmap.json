@@ -83,7 +83,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 3
+   "doneCount": 4
   },
   {
    "id": "M2",
@@ -975,11 +975,29 @@
    "dependsOn": [
     "T024"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The seabed was pow(depth, 0.75) — a concave curve, steepest at the shore and flattening outward. That is a bathymetric profile inside out: real ocean floor is a nearly flat shelf, an abrupt break around 140 m, a steep slope to a few kilometres, then an abyssal plain flatter than anything on land. Replaced with those four segments as an explicit piecewise function of the offshore parameter."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The first transect showed no break at all and I nearly retuned the thresholds on the strength of it. The thresholds were fine — the coast search picks its seaward direction by probing six kilometres, which distinguishes water from land and not a basin from a lagoon, so the line ran down the length of an archipelago. Scoring 32 directions on the mean depth of the outer half found open ocean and the break appeared where the profile says it should."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T025-2026-09-08T16-41-17-349.txt",
+     "caption": "bathymetry.txt",
+     "source": "../out/bathymetry.txt",
+     "addedAt": "2026-09-08T16:41:17.351Z"
+    }
+   ],
    "plannedStartDay": 39,
    "plannedEndDay": 39.5,
    "plannedStart": "2026-10-30",
@@ -6060,5 +6078,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T16:29:58.374Z"
+ "updatedAt": "2026-09-08T16:41:17.416Z"
 }

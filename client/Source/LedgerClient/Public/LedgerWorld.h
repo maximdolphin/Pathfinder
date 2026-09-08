@@ -133,5 +133,13 @@ private:
 	/// has a captured before and after rather than only a code path.
 	void FrameUnderwater();
 
+	/// Writes a depth transect running seaward from the coast to out/.
+	///
+	/// A shelf break is a feature of the *profile*, not of any one view: from
+	/// the surface it is a line where the colour changes, and from orbit it is
+	/// invisible. The only honest way to see whether one is there is to sample
+	/// the height function along a line and look at the numbers.
+	void DumpBathymetry();
+
 	ALedgerShip* GetShip() const;
 };
