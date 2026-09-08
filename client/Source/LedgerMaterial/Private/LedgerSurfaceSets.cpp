@@ -80,6 +80,16 @@ namespace LedgerSurface
 			return nullptr;
 		}
 
+		/// The sRGB transfer curve, inverted. FLinearColor::FromSRGBColor takes
+		/// an 8-bit FColor and would quantise a measured average back to a
+		/// byte, which is the one thing this number exists to avoid.
+		float SRGBToLinear(float Value)
+		{
+			return Value <= 0.04045f
+				? Value / 12.92f
+				: FMath::Pow((Value + 0.055f) / 1.055f, 2.4f);
+		}
+
 		UTexture2D* Load(const FString& SetName, const TCHAR* Asset)
 		{
 			// The importer names the package after the file, so the path is a
@@ -119,10 +129,19 @@ namespace LedgerSurface
 		const TArray<TSharedPtr<FJsonValue>>* Mean = nullptr;
 		if ((*Entry)->TryGetArrayField(TEXT("mean_albedo"), Mean) && Mean->Num() >= 3)
 		{
+			// Converted to linear, because that is the space the shader divides
+			// in. The mean is measured over the stored PNG, which is sRGB; the
+			// texture sampler hands the shader linear values. Dividing a linear
+			// albedo by an sRGB mean is not a small error: a mid-grey scan
+			// reads 0.51 in sRGB and 0.22 in linear, so the quotient averages
+			// 0.43 instead of 1, and the terrain does it twice — once for
+			// detail and once for the macro breakup. The ground came out at
+			// about one and a half percent reflectance, which looks exactly
+			// like the sun has gone out.
 			Set.MeanAlbedo = FLinearColor(
-				static_cast<float>((*Mean)[0]->AsNumber()),
-				static_cast<float>((*Mean)[1]->AsNumber()),
-				static_cast<float>((*Mean)[2]->AsNumber()));
+				SRGBToLinear(static_cast<float>((*Mean)[0]->AsNumber())),
+				SRGBToLinear(static_cast<float>((*Mean)[1]->AsNumber())),
+				SRGBToLinear(static_cast<float>((*Mean)[2]->AsNumber())));
 		}
 
 		Set.Albedo = Load(Name, TEXT("albedo"));

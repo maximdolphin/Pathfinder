@@ -21,6 +21,7 @@
 #include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionDivide.h"
+#include "Materials/MaterialExpressionFrac.h"
 #include "Materials/MaterialExpressionLinearInterpolate.h"
 #include "Materials/MaterialExpressionMax.h"
 #include "Materials/MaterialExpressionMultiply.h"
@@ -111,6 +112,13 @@ namespace LedgerSurface
 		UMaterialExpression* Scale(UMaterialExpression* A, float Factor)
 		{
 			return Multiply(A, Constant(Factor));
+		}
+
+		UMaterialExpression* Frac(UMaterialExpression* Input)
+		{
+			UMaterialExpressionFrac* Node = Make<UMaterialExpressionFrac>();
+			Node->Input.Expression = Input;
+			return Node;
 		}
 
 		UMaterialExpression* Saturate(UMaterialExpression* Input)

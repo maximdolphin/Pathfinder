@@ -61,12 +61,15 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	// The transect owns the ship when it runs. Two fixtures placing the same
-	// pawn is a fixture that measures neither.
-	if (FParse::Param(FCommandLine::Get(), TEXT("transect")))
+	// Whichever fixture is running owns the ship. Two of them placing the same
+	// pawn is two fixtures measuring neither.
+	for (const TCHAR* Fixture : { TEXT("transect"), TEXT("surfacestudy") })
 	{
-		UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -transect"));
-		return;
+		if (FParse::Param(FCommandLine::Get(), Fixture))
+		{
+			UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -%s"), Fixture);
+			return;
+		}
 	}
 
 	// A scripted reentry: settle in orbit, fly down to the town, and capture

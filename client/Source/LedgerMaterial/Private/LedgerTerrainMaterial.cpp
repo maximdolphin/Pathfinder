@@ -8,6 +8,7 @@
 #include "LedgerMaterialGraph.h"
 #include "LedgerSurfaceSets.h"
 #include "MaterialDomain.h"
+#include "Misc/CommandLine.h"
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionCameraPositionWS.h"
@@ -308,8 +309,28 @@ namespace LedgerSurface
 		EditorData->WorldPositionOffset.Expression =
 			Graph.Multiply(Radial, Graph.Multiply(MorphDelta, MorphFactor));
 
-		EditorData->BaseColor.Expression = BaseColour;
-		EditorData->Normal.Expression = FadedNormal;
+		// `-rawsurface` puts the sampled scan straight into base colour: no biome
+		// tint, no mean division, no macro, no fade. If the ground still reads
+		// as a flat wash under that, the problem is the sampling and not any of
+		// the things layered on top of it — which is a question worth being
+		// able to answer in one run rather than by reasoning about six
+		// multiplications.
+		const bool bRaw = FParse::Param(FCommandLine::Get(), TEXT("rawsurface"));
+
+		// `-surfaceuv` paints the texture coordinate itself. If that comes back
+		// as a flat colour instead of a repeating ramp, the sampling has no
+		// coordinate to work with and nothing layered on top of it can matter.
+		// A picture of the input beats another round of reasoning about the
+		// output.
+		UMaterialExpression* Debug = AlbedoMix;
+		if (FParse::Param(FCommandLine::Get(), TEXT("surfaceuv")))
+		{
+			const float Scale = 1.0f / static_cast<float>(Flat.TilingMetres * 100.0);
+			Debug = Graph.Frac(Graph.Mask(
+				Graph.Multiply(WorldPosition, Graph.Constant(Scale)), true, true, false));
+		}
+		EditorData->BaseColor.Expression = bRaw ? Debug : BaseColour;
+		EditorData->Normal.Expression = bRaw ? NormalMix : FadedNormal;
 		EditorData->Roughness.Expression = FadedRough;
 		EditorData->AmbientOcclusion.Expression = FadedOcclusion;
 		EditorData->Specular.Expression = Graph.Constant(0.05f);
