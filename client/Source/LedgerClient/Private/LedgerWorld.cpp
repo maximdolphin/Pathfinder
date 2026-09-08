@@ -191,13 +191,15 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	Timers.SetTimer(TownCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameTown), 78.0f, false);
 	Timers.SetTimer(AscentTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 112.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 132.0f, false);
 	Timers.SetTimer(CoastCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 96.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 116.0f, false);
+	Timers.SetTimer(SweepTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginRidgeSweep), 82.0f, false);
 	Timers.SetTimer(UnderwaterTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 104.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 124.0f, false);
 	Timers.SetTimer(SpaceCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 126.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 146.0f, false);
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, atmosphere, sun, town, ship"));
 }
@@ -581,6 +583,17 @@ void ULedgerWorldBuilder::BeginAscent()
 
 void ULedgerWorldBuilder::FrameSpace()
 {
+	if (UWorld* Stats = GetWorld())
+	{
+		if (GEngine != nullptr)
+		{
+			// The climb retraces the descent, so the terrain stats logged here
+			// are the cache's report card: every patch on the way up was
+			// generated on the way down.
+			GEngine->Exec(Stats, TEXT("Ledger.Terrain.Stats"));
+		}
+	}
+
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
@@ -608,6 +621,116 @@ void ULedgerWorldBuilder::FrameSpace()
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-space.png")),
 		3.0f,
 		false);
+}
+
+// ------------------------------------------------------------ ridge sweep
+
+namespace
+{
+	/// Half-length of the sweep line, how high above the ground it runs, and
+	/// how long one out-and-back takes.
+	///
+	/// Three kilometres in ten seconds is 300 m/s — fast, and still an aircraft.
+	/// The first attempt swept eighteen kilometres in four, which is Mach 26:
+	/// it covered new ground the entire time, generated thirteen thousand
+	/// patches, and measured the streamer's throughput rather than the cache.
+	/// A cache can only be tested by a path that repeats.
+	constexpr double SweepReach = 150000.0;    // 1.5 km each way
+	constexpr double SweepAltitude = 90000.0;  // 900 m
+	constexpr double SweepPeriod = 10.0;       // one out-and-back
+	constexpr int32 SweepPasses = 3;
+}
+
+void ULedgerWorldBuilder::BeginRidgeSweep()
+{
+	UWorld* World = GetWorld();
+	ALedgerShip* Ship = GetShip();
+	if (World == nullptr || Ship == nullptr || Planet == nullptr)
+	{
+		return;
+	}
+
+	Ship->SetFlightEnabled(false);
+	Ship->SetVelocity(FVector::ZeroVector);
+
+	SweepElapsed = 0.0;
+	SweepStartBuilds = Planet->GetStats().TotalBuilds;
+	SweepStartHits = Planet->GetStats().CacheHits;
+
+	World->GetTimerManager().SetTimer(
+		SweepStepTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::StepRidgeSweep),
+		1.0f / 60.0f, true);
+	World->GetTimerManager().SetTimer(
+		SweepEndTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::EndRidgeSweep),
+		SweepPasses * SweepPeriod, false);
+
+	UE_LOG(LogLedger, Log, TEXT("sweep: %d passes over %.1f km, from %lld patches built"),
+		SweepPasses, SweepReach * 2.0 / 100000.0, SweepStartBuilds);
+}
+
+void ULedgerWorldBuilder::StepRidgeSweep()
+{
+	UWorld* World = GetWorld();
+	ALedgerShip* Ship = GetShip();
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	if (Ship == nullptr || Controller == nullptr || Planet == nullptr)
+	{
+		return;
+	}
+
+	SweepElapsed += 1.0 / 60.0;
+
+	// A triangle wave, not a sine: constant ground speed, so each pass covers
+	// the same patches at the same rate and the second one is comparable with
+	// the first. A sine would dawdle at the ends and hurry through the middle.
+	const double Phase = FMath::Fmod(SweepElapsed / SweepPeriod, 1.0);
+	const double Along = (Phase < 0.5 ? Phase * 4.0 - 1.0 : 3.0 - Phase * 4.0);
+
+	const FVector3d Up = SiteDirection;
+	const FVector3d Track = FVector3d::CrossProduct(Up, FVector3d::UpVector).GetSafeNormal();
+
+	// Offset along the surface, then re-normalised: a straight line in the
+	// tangent plane leaves the sphere, and at nine kilometres that is already
+	// several metres of altitude error.
+	const FVector3d Direction = (Up + Track * (Along * SweepReach / Planet->Radius)).GetSafeNormal();
+	const double Ground = Planet->SurfaceRadiusAt(Direction);
+
+	Ship->SetActorLocation(Planet->GetActorLocation() + FVector(Direction * (Ground + SweepAltitude)));
+
+	const FVector Facing = FVector(Track * (Along >= 0.0 ? 1.0 : -1.0));
+	const FRotator Attitude = FRotationMatrix::MakeFromXZ(Facing, FVector(Direction)).Rotator();
+	Ship->SetActorRotation(Attitude);
+	Controller->SetControlRotation(Attitude);
+}
+
+void ULedgerWorldBuilder::EndRidgeSweep()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || Planet == nullptr)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(SweepStepTimer);
+
+	const int64 Built = Planet->GetStats().TotalBuilds - SweepStartBuilds;
+	const int64 Reused = Planet->GetStats().CacheHits - SweepStartHits;
+	UE_LOG(LogLedger, Log,
+		TEXT("sweep done: %lld patches generated, %lld served from cache (%.0f%% reused)"),
+		Built, Reused,
+		(Built + Reused) > 0 ? 100.0 * static_cast<double>(Reused) / static_cast<double>(Built + Reused) : 0.0);
+
+	if (GEngine != nullptr)
+	{
+		GEngine->Exec(World, TEXT("Ledger.Terrain.Stats"));
+	}
+
+	// The numbers say the geometry was reused; this says it survived the round
+	// trip through the component. A section put back with SetProcMeshSection
+	// that had lost its stitching would show as cracks along the LOD seams.
+	Capture(TEXT("terrain-sweep.png"));
 }
 
 void ULedgerWorldBuilder::FrameCoast()

@@ -83,7 +83,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M2",
@@ -1015,11 +1015,34 @@
    "dependsOn": [
     "T025"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "First version cached at upload time, holding a copy of every patch currently drawn. With ~1000 visible patches at ~700 KB that is most of a gigabyte duplicating what the mesh components already hold, and the budget evicted useful entries to make room for live ones: 4 hits against 4870 generations, 4484 evictions. The cache must hold only what is NOT on screen. Entries are now taken in ReleaseSection and removed again on reuse."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Storing FProcMeshSection rather than the generator's parallel arrays. Taking a copy on release is one memcpy of an interleaved buffer and putting it back is SetProcMeshSection, so nothing is converted in either direction and the arrays the worker produced can still be moved straight into the component."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The first sweep test swept 18 km in 4 seconds — Mach 26. It covered new ground the whole time, generated 13,615 patches and measured streaming throughput, not the cache. A cache can only be tested by a path that repeats: 3 km at 300 m/s gives 86 percent reuse."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T026-2026-09-08T17-11-22-453.png",
+     "caption": "terrain-sweep.png",
+     "source": "../out/terrain-sweep.png",
+     "addedAt": "2026-09-08T17:11:22.455Z"
+    }
+   ],
    "plannedStartDay": 39.5,
    "plannedEndDay": 40.5,
    "plannedStart": "2026-10-30",
@@ -6078,5 +6101,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T16:41:17.416Z"
+ "updatedAt": "2026-09-08T17:11:22.519Z"
 }

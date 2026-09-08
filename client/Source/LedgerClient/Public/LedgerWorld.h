@@ -77,6 +77,13 @@ private:
 	FTimerHandle TownCaptureTimer;
 	FTimerHandle AscentTimer;
 	FTimerHandle ClimbCaptureTimer;
+	FTimerHandle SweepTimer;
+	FTimerHandle SweepStepTimer;
+	FTimerHandle SweepEndTimer;
+	double SweepElapsed = 0.0;
+	int64 SweepStartBuilds = 0;
+	int64 SweepStartHits = 0;
+
 	FTimerHandle UnderwaterTimer;
 	FTimerHandle SpaceCaptureTimer;
 	FTimerHandle CoastCaptureTimer;
@@ -132,6 +139,16 @@ private:
 	/// Drops the camera below the waterline at the same coast, so the crossing
 	/// has a captured before and after rather than only a code path.
 	void FrameUnderwater();
+
+	/// Flies a straight line out from the town and back, three times over.
+	///
+	/// The rest of the sequence is a one-way trip: it descends, crosses the
+	/// site once and climbs out, so it never asks the terrain for ground it has
+	/// already had. Retracing is the case the patch cache exists for and the
+	/// only case that measures it.
+	void BeginRidgeSweep();
+	void StepRidgeSweep();
+	void EndRidgeSweep();
 
 	/// Writes a depth transect running seaward from the coast to out/.
 	///

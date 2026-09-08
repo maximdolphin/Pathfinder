@@ -121,6 +121,58 @@ struct FLedgerPatchJob
 
 using FLedgerPatchJobRef = TSharedPtr<FLedgerPatchJob, ESPMode::ThreadSafe>;
 
+/// What a live section was built from, so that releasing it can be undone.
+///
+/// The stitch flags cannot be recovered from the mesh and cannot be recomputed
+/// at release either — a collapse destroys the node before its section goes
+/// back to the pool. They are recorded on the way in.
+struct FLedgerSectionMeta
+{
+	uint64 Key = 0;
+	FVector3d Centre = FVector3d::ZeroVector;
+	bool bStitchLeft = false;
+	bool bStitchRight = false;
+	bool bStitchBottom = false;
+	bool bStitchTop = false;
+};
+
+/// A patch that has been on screen and is not on screen now.
+///
+/// Flying out over a ridge and back regenerates every patch on the way home,
+/// and the height function does not change between the two passes — the second
+/// generation is guaranteed to reproduce what the first one made. Holding the
+/// geometry costs memory and returns worker-thread seconds.
+///
+/// It holds the component's own section structs rather than the parallel arrays
+/// the generator produced. Taking a copy on release is one memcpy of an
+/// interleaved buffer, and putting it back is `SetProcMeshSection`, so nothing
+/// is converted in either direction. Caching at upload time instead would have
+/// meant a second copy of every patch currently drawn, which for a thousand
+/// visible patches is most of a gigabyte to hold what is already in memory.
+///
+/// The stitch flags live in the entry, not in the key. A patch whose coarser
+/// neighbour has since subdivided needs different edge geometry, and that is
+/// rare enough that checking on lookup and missing beats a wider key.
+struct FLedgerCachedPatch
+{
+	FVector3d Centre = FVector3d::ZeroVector;
+	bool bStitchLeft = false;
+	bool bStitchRight = false;
+	bool bStitchBottom = false;
+	bool bStitchTop = false;
+
+	FProcMeshSection Land;
+	FProcMeshSection Water;
+	bool bHasWater = false;
+
+	/// Monotonic counter, not a timestamp. Wall clock would make eviction
+	/// depend on frame rate; a serial makes it depend on use, which is what
+	/// least-recently-used is supposed to mean.
+	uint64 LastUsed = 0;
+
+	int64 Bytes() const;
+};
+
 /// What the terrain is doing, for the §15.1 build/buy decision.
 USTRUCT()
 struct FLedgerTerrainStats
@@ -163,6 +215,23 @@ struct FLedgerTerrainStats
 
 	UPROPERTY()
 	int32 WaterSections = 0;
+
+	/// Patches served from the cache against patches that had to be generated.
+	/// The ratio of these two is the whole argument for the cache existing.
+	UPROPERTY()
+	int64 CacheHits = 0;
+
+	UPROPERTY()
+	int64 CacheMisses = 0;
+
+	UPROPERTY()
+	int64 CacheEvictions = 0;
+
+	UPROPERTY()
+	int32 CacheEntries = 0;
+
+	UPROPERTY()
+	double CacheMegabytes = 0.0;
 };
 
 UCLASS()
@@ -242,6 +311,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|Collision")
 	double CollisionLeadSeconds = 2.5;
 
+	/// Memory the patch cache may hold, in megabytes.
+	///
+	/// Bounded by bytes rather than by entries because entries are not the same
+	/// size: a patch over open water carries a second mesh section and a patch
+	/// inland does not. A count would be a budget for the average patch and a
+	/// surprise for every other one.
+	///
+	/// A 65-vertex patch is around 700 KB of interleaved vertices, so this holds
+	/// roughly seven hundred of them — a few minutes of flying, which is the
+	/// span over which a player actually retraces ground.
+	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
+	double PatchCacheBudgetMB = 512.0;
+
 	const FLedgerTerrainStats& GetStats() const { return Stats; }
 
 	/// Height of the surface above the reference sphere at a direction.
@@ -268,6 +350,16 @@ private:
 	TMap<uint64, int32> ActiveSections;
 	/// Leaf key -> job, for patches currently being generated.
 	TMap<uint64, FLedgerPatchJobRef> InFlight;
+
+	/// Per-section record of what is loaded there, parallel to `MeshPool`.
+	TArray<FLedgerSectionMeta> SectionMeta;
+
+	/// Leaf key -> geometry, for patches that were drawn and are not drawn now.
+	/// Nothing here is on screen; entries exist so that wanting the patch again
+	/// costs an upload instead of a generation.
+	TMap<uint64, TSharedPtr<FLedgerCachedPatch>> PatchCache;
+	int64 PatchCacheBytes = 0;
+	uint64 CacheClock = 0;
 	TArray<int32> FreeSections;
 
 	FLedgerTerrainStats Stats;
@@ -295,6 +387,12 @@ private:
 
 	/// Uploads whatever finished since last frame, within the budget.
 	void HarvestCompletedPatches();
+
+	/// Serves a leaf from the cache if the geometry is there and still correct.
+	bool UploadFromCache(const FLedgerQuadNode& Node, bool bWithCollision);
+
+	/// Adds an entry, evicting least-recently-used ones until the budget holds.
+	void CachePatch(TSharedPtr<FLedgerCachedPatch> Entry, uint64 Key);
 
 	void ReleaseSection(uint64 Key);
 	void AbandonJob(uint64 Key);

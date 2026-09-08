@@ -413,6 +413,7 @@ void ALedgerPlanet::BeginPlay()
 	FreeSections.Reserve(PoolSize);
 	for (int32 Index = 0; Index < PoolSize; ++Index)
 	{
+		SectionMeta.AddDefaulted();
 		UProceduralMeshComponent* Mesh = NewObject<UProceduralMeshComponent>(this);
 		Mesh->SetupAttachment(Root);
 		Mesh->RegisterComponent();
@@ -452,6 +453,8 @@ void ALedgerPlanet::EndPlay(const EEndPlayReason::Type Reason)
 		}
 	}
 	InFlight.Empty();
+	PatchCache.Empty();
+	PatchCacheBytes = 0;
 
 	for (IConsoleObject* Command : ConsoleCommands)
 	{
@@ -708,6 +711,7 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 
 	FLedgerPatchJobRef Job = MakeShared<FLedgerPatchJob, ESPMode::ThreadSafe>();
 	Job->Key = NodeKey(Node);
+	++Stats.CacheMisses;
 	Job->SectionIndex = FreeSections.Pop();
 	Job->bWithCollision = bWithCollision;
 	Job->Face = Node.Face;
@@ -800,6 +804,10 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		Mesh->SetVisibility(true);
 
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
+		SectionMeta[Job->SectionIndex] = FLedgerSectionMeta{
+			Job->Key, Job->Centre,
+			Job->bStitchLeft, Job->bStitchRight, Job->bStitchBottom, Job->bStitchTop };
+
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
 		++Stats.TotalBuilds;
 
@@ -818,6 +826,140 @@ void ALedgerPlanet::HarvestCompletedPatches()
 	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 }
 
+int64 FLedgerCachedPatch::Bytes() const
+{
+	// GetAllocatedSize rather than Num() times sizeof: TArray over-allocates on
+	// growth, and a budget measured against the useful part of an allocation
+	// overshoots by whatever the slack happens to be.
+	return Land.ProcVertexBuffer.GetAllocatedSize() + Land.ProcIndexBuffer.GetAllocatedSize()
+		+ Water.ProcVertexBuffer.GetAllocatedSize() + Water.ProcIndexBuffer.GetAllocatedSize();
+}
+
+bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithCollision)
+{
+	if (FreeSections.Num() == 0)
+	{
+		return false;
+	}
+
+	const uint64 Key = NodeKey(Node);
+	TSharedPtr<FLedgerCachedPatch>* Found = PatchCache.Find(Key);
+	if (Found == nullptr || !Found->IsValid())
+	{
+		return false;
+	}
+
+	// Neighbour depths, read the same way LaunchPatch reads them. A patch whose
+	// coarser neighbour has subdivided since needs different edge geometry, and
+	// the cached buffers would leave a crack along that edge.
+	FLedgerCachedPatch& Entry = **Found;
+	if (Entry.bStitchLeft != (LeafDepthAt(UnitSphereAt(Node, -0.02, 0.5)) < Node.Depth)
+		|| Entry.bStitchRight != (LeafDepthAt(UnitSphereAt(Node, 1.02, 0.5)) < Node.Depth)
+		|| Entry.bStitchBottom != (LeafDepthAt(UnitSphereAt(Node, 0.5, -0.02)) < Node.Depth)
+		|| Entry.bStitchTop != (LeafDepthAt(UnitSphereAt(Node, 0.5, 1.02)) < Node.Depth))
+	{
+		PatchCacheBytes -= Entry.Bytes();
+		PatchCache.Remove(Key);
+		Stats.CacheEntries = PatchCache.Num();
+		return false;
+	}
+
+	const int32 SectionIndex = FreeSections.Pop();
+	UProceduralMeshComponent* Mesh = MeshPool[SectionIndex];
+	Mesh->SetWorldLocation(GetActorLocation() + FVector(Entry.Centre));
+
+	Entry.Land.bEnableCollision = bWithCollision;
+	Mesh->SetProcMeshSection(0, Entry.Land);
+	if (SurfaceMaterial != nullptr)
+	{
+		Mesh->SetMaterial(0, SurfaceMaterial);
+	}
+
+	if (Entry.bHasWater)
+	{
+		++Stats.WaterSections;
+		Mesh->SetProcMeshSection(1, Entry.Water);
+		if (WaterMaterial != nullptr)
+		{
+			Mesh->SetMaterial(1, WaterMaterial);
+		}
+	}
+	else
+	{
+		Mesh->ClearMeshSection(1);
+	}
+
+	Mesh->SetCollisionEnabled(bWithCollision
+		? ECollisionEnabled::QueryAndPhysics
+		: ECollisionEnabled::NoCollision);
+	Mesh->SetVisibility(true);
+
+	ActiveSections.Add(Key, SectionIndex);
+	SectionMeta[SectionIndex] = FLedgerSectionMeta{
+		Key, Entry.Centre,
+		Entry.bStitchLeft, Entry.bStitchRight, Entry.bStitchBottom, Entry.bStitchTop };
+
+	// Removed, not kept: the geometry is on screen again and holding a second
+	// copy of it is exactly the waste this cache is shaped to avoid.
+	PatchCacheBytes -= Entry.Bytes();
+	PatchCache.Remove(Key);
+
+	Stats.CacheEntries = PatchCache.Num();
+	Stats.CacheMegabytes = static_cast<double>(PatchCacheBytes) / (1024.0 * 1024.0);
+	++Stats.CacheHits;
+	return true;
+}
+
+void ALedgerPlanet::CachePatch(TSharedPtr<FLedgerCachedPatch> Entry, uint64 Key)
+{
+	if (!Entry.IsValid() || PatchCacheBudgetMB <= 0.0)
+	{
+		return;
+	}
+
+	Entry->LastUsed = ++CacheClock;
+
+	if (const TSharedPtr<FLedgerCachedPatch>* Existing = PatchCache.Find(Key))
+	{
+		if (Existing->IsValid())
+		{
+			PatchCacheBytes -= (*Existing)->Bytes();
+		}
+	}
+
+	PatchCacheBytes += Entry->Bytes();
+	PatchCache.Add(Key, Entry);
+
+	// ponytail: linear scan for the least-recently-used entry. Eviction only
+	// runs once the budget is already exceeded, over a few hundred entries, so
+	// it is microseconds — swap in an intrusive list if it ever shows up in a
+	// profile.
+	const int64 Budget = static_cast<int64>(PatchCacheBudgetMB * 1024.0 * 1024.0);
+	while (PatchCacheBytes > Budget && PatchCache.Num() > 1)
+	{
+		uint64 Oldest = 0;
+		uint64 OldestUse = MAX_uint64;
+		for (const TPair<uint64, TSharedPtr<FLedgerCachedPatch>>& Candidate : PatchCache)
+		{
+			if (Candidate.Value.IsValid() && Candidate.Value->LastUsed < OldestUse)
+			{
+				OldestUse = Candidate.Value->LastUsed;
+				Oldest = Candidate.Key;
+			}
+		}
+		if (OldestUse == MAX_uint64)
+		{
+			break;
+		}
+		PatchCacheBytes -= PatchCache[Oldest]->Bytes();
+		PatchCache.Remove(Oldest);
+		++Stats.CacheEvictions;
+	}
+
+	Stats.CacheEntries = PatchCache.Num();
+	Stats.CacheMegabytes = static_cast<double>(PatchCacheBytes) / (1024.0 * 1024.0);
+}
+
 void ALedgerPlanet::ReleaseSection(uint64 Key)
 {
 	int32 SectionIndex = INDEX_NONE;
@@ -827,10 +969,35 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 	}
 	if (MeshPool.IsValidIndex(SectionIndex))
 	{
-		MeshPool[SectionIndex]->ClearMeshSection(0);
-		MeshPool[SectionIndex]->ClearMeshSection(1);
-		MeshPool[SectionIndex]->SetVisibility(false);
-		MeshPool[SectionIndex]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UProceduralMeshComponent* Mesh = MeshPool[SectionIndex];
+
+		// Take the geometry on the way out. This is the only moment it can be
+		// taken: after ClearMeshSection it is gone, and before release it is
+		// still on screen and not worth a second copy.
+		if (const FProcMeshSection* Land = Mesh->GetProcMeshSection(0))
+		{
+			TSharedPtr<FLedgerCachedPatch> Entry = MakeShared<FLedgerCachedPatch>();
+			const FLedgerSectionMeta& Meta = SectionMeta[SectionIndex];
+			Entry->Centre = Meta.Centre;
+			Entry->bStitchLeft = Meta.bStitchLeft;
+			Entry->bStitchRight = Meta.bStitchRight;
+			Entry->bStitchBottom = Meta.bStitchBottom;
+			Entry->bStitchTop = Meta.bStitchTop;
+			Entry->Land = *Land;
+
+			if (const FProcMeshSection* Water = Mesh->GetProcMeshSection(1))
+			{
+				Entry->Water = *Water;
+				Entry->bHasWater = Water->ProcIndexBuffer.Num() > 0;
+			}
+
+			CachePatch(Entry, Key);
+		}
+
+		Mesh->ClearMeshSection(0);
+		Mesh->ClearMeshSection(1);
+		Mesh->SetVisibility(false);
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 	FreeSections.Add(SectionIndex);
 }
@@ -919,6 +1086,14 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	int32 Pending = 0;
 	int32 WithCollision = 0;
 
+	// A cache hit is cheap next to generating a patch and expensive next to
+	// doing nothing: SetProcMeshSection still rebuilds render resources on the
+	// game thread. Unbudgeted, a turn that brings several hundred cached
+	// patches back into view would serve all of them in one frame, and the
+	// cache would have turned a smooth stream of work into a single stall.
+	const double CacheUploadStart = FPlatformTime::Seconds();
+	const double CacheUploadBudgetMs = FMath::Max(0.0, UploadBudgetMs - Stats.LastFrameUploadMs);
+
 	for (const FLedgerQuadNode* Leaf : Leaves)
 	{
 		Stats.DeepestVisibleDepth = FMath::Max(Stats.DeepestVisibleDepth, Leaf->Depth);
@@ -937,11 +1112,22 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			continue;
 		}
 
+		// Cache first. A hit costs an upload; a miss costs a worker thread and
+		// several milliseconds of sampling.
+		if ((FPlatformTime::Seconds() - CacheUploadStart) * 1000.0 < CacheUploadBudgetMs
+			&& UploadFromCache(*Leaf, bWantsCollision))
+		{
+			continue;
+		}
+
 		if (!LaunchPatch(*Leaf, bWantsCollision))
 		{
 			++Pending;
 		}
 	}
+
+	Stats.LastFrameUploadMs += (FPlatformTime::Seconds() - CacheUploadStart) * 1000.0;
+	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 
 	Stats.PendingBuilds = Pending;
 	Stats.NodesWithCollision = WithCollision;
@@ -971,5 +1157,12 @@ void ALedgerPlanet::LogStats() const
 	UE_LOG(LogLedger, Log, TEXT("  generate ms (task) last %.3f"), Stats.LastPatchGenerationMs);
 	UE_LOG(LogLedger, Log, TEXT("  cook ms            worst %.3f"), Stats.WorstFrameCollisionMs);
 	UE_LOG(LogLedger, Log, TEXT("  water sections     %d uploaded"), Stats.WaterSections);
+	UE_LOG(LogLedger, Log, TEXT("  patch cache        %lld hit / %lld generated (%.0f%% reused)"),
+		Stats.CacheHits, Stats.CacheMisses,
+		(Stats.CacheHits + Stats.CacheMisses) > 0
+			? 100.0 * static_cast<double>(Stats.CacheHits) / static_cast<double>(Stats.CacheHits + Stats.CacheMisses)
+			: 0.0);
+	UE_LOG(LogLedger, Log, TEXT("                     %d entries, %.1f MB, %lld evicted"),
+		Stats.CacheEntries, Stats.CacheMegabytes, Stats.CacheEvictions);
 	UE_LOG(LogLedger, Log, TEXT("  camera speed       %.0f m/s"), CameraVelocityLocal.Length() / 100.0);
 }
