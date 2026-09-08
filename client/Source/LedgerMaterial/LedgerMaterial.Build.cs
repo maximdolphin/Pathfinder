@@ -18,6 +18,7 @@ public class LedgerMaterial : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			"Json",
 			"LedgerCore"
 		});
 	}

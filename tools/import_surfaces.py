@@ -39,7 +39,7 @@ import sys
 import zipfile
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageStat
 except ImportError:
     sys.stderr.write(
         "This needs Pillow: python -m pip install Pillow\n"
@@ -268,12 +268,21 @@ def import_one(bundle):
     if "displacement" in found:
         maps["height"] = relative
 
+    # The albedo's own average, in sRGB 0-1. The terrain material tints by a
+    # per-vertex biome colour, so it has to divide the scan's own colour back
+    # out first — otherwise green grass over a green tint is a swamp, and every
+    # biome ends up the colour of whichever scan was chosen for it. Measured
+    # once here rather than guessed at as a constant in the shader.
+    colour = Image.open(io.BytesIO(bundle.read(found["basecolor"]))).convert("RGB")
+    mean = [channel / 255.0 for channel in ImageStat.Stat(colour).mean]
+
     entry = {
         "name": key,
         "display": name,
         "source": "%s, asset id %s" % (SOURCE_PREFIX, asset_id),
         "licence": LICENCE,
         "tiling_metres": metres or 2.0,
+        "mean_albedo": [round(v, 5) for v in mean],
         # Kept because the biome assignment has to come from somewhere, and
         # "brown, quarry, limestone, desert" is what tells three scans that
         # share the name "Rocky Ground" apart.

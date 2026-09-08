@@ -19,8 +19,10 @@
 #include "Materials/MaterialExpressionAdd.h"
 #include "Materials/MaterialExpressionComponentMask.h"
 #include "Materials/MaterialExpressionConstant.h"
+#include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionDivide.h"
 #include "Materials/MaterialExpressionLinearInterpolate.h"
+#include "Materials/MaterialExpressionMax.h"
 #include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionOneMinus.h"
 #include "Materials/MaterialExpressionSaturate.h"
@@ -72,6 +74,21 @@ namespace LedgerSurface
 			UMaterialExpressionAdd* Node = Make<UMaterialExpressionAdd>();
 			Node->A.Expression = A;
 			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Max(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionMax* Node = Make<UMaterialExpressionMax>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Constant3(const FLinearColor& Value)
+		{
+			UMaterialExpressionConstant3Vector* Node = Make<UMaterialExpressionConstant3Vector>();
+			Node->Constant = Value;
 			return Node;
 		}
 

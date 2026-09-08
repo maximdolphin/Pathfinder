@@ -35,7 +35,12 @@
         "roughness": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png",
         "ao": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png",
         "height": "arid_gravel_ground_wkjncjv/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.43045,
+        0.29162,
+        0.24076
+      ]
     },
     {
       "name": "arid_gravel_ground_xboiccd",
@@ -69,7 +74,12 @@
         "roughness": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png",
         "ao": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png",
         "height": "arid_gravel_ground_xboiccd/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.60402,
+        0.47708,
+        0.36682
+      ]
     },
     {
       "name": "dry_sand_xfhsfao",
@@ -103,7 +113,12 @@
         "roughness": "dry_sand_xfhsfao/packed_ao_rough_height.png",
         "ao": "dry_sand_xfhsfao/packed_ao_rough_height.png",
         "height": "dry_sand_xfhsfao/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.53282,
+        0.35004,
+        0.24544
+      ]
     },
     {
       "name": "forest_floor_compost_teiowah",
@@ -126,7 +141,12 @@
         "roughness": "forest_floor_compost_teiowah/packed_ao_rough_height.png",
         "ao": "forest_floor_compost_teiowah/packed_ao_rough_height.png",
         "height": "forest_floor_compost_teiowah/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.19769,
+        0.16151,
+        0.12665
+      ]
     },
     {
       "name": "forest_floor_sfjmafua",
@@ -151,7 +171,12 @@
         "roughness": "forest_floor_sfjmafua/packed_ao_rough_height.png",
         "ao": "forest_floor_sfjmafua/packed_ao_rough_height.png",
         "height": "forest_floor_sfjmafua/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.25077,
+        0.22575,
+        0.05162
+      ]
     },
     {
       "name": "fresh_windswept_snow_ugspafgdy",
@@ -176,7 +201,12 @@
         "roughness": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png",
         "ao": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png",
         "height": "fresh_windswept_snow_ugspafgdy/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.88389,
+        0.88385,
+        0.88454
+      ]
     },
     {
       "name": "grassy_soil_xbklfix",
@@ -208,7 +238,12 @@
         "roughness": "grassy_soil_xbklfix/packed_ao_rough_height.png",
         "ao": "grassy_soil_xbklfix/packed_ao_rough_height.png",
         "height": "grassy_soil_xbklfix/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.50752,
+        0.45776,
+        0.38866
+      ]
     },
     {
       "name": "grassy_soil_xbreair",
@@ -241,7 +276,12 @@
         "roughness": "grassy_soil_xbreair/packed_ao_rough_height.png",
         "ao": "grassy_soil_xbreair/packed_ao_rough_height.png",
         "height": "grassy_soil_xbreair/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.4639,
+        0.39968,
+        0.33699
+      ]
     },
     {
       "name": "gravel_ground_vi0maebg",
@@ -274,7 +314,12 @@
         "roughness": "gravel_ground_vi0maebg/packed_ao_rough_height.png",
         "ao": "gravel_ground_vi0maebg/packed_ao_rough_height.png",
         "height": "gravel_ground_vi0maebg/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.37602,
+        0.35365,
+        0.29581
+      ]
     },
     {
       "name": "icelandic_jagged_slate_rock_shfsaida",
@@ -304,7 +349,12 @@
         "roughness": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png",
         "ao": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png",
         "height": "icelandic_jagged_slate_rock_shfsaida/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.42984,
+        0.44054,
+        0.45621
+      ]
     },
     {
       "name": "icelandic_rock_cliff_sjggaija",
@@ -329,7 +379,12 @@
         "roughness": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png",
         "ao": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png",
         "height": "icelandic_rock_cliff_sjggaija/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.40234,
+        0.38951,
+        0.34698
+      ]
     },
     {
       "name": "layered_rock_cliff_tjtmcg3g",
@@ -352,7 +407,12 @@
         "roughness": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png",
         "ao": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png",
         "height": "layered_rock_cliff_tjtmcg3g/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.44804,
+        0.39823,
+        0.33247
+      ]
     },
     {
       "name": "layered_rock_cliff_ubulehofw",
@@ -373,7 +433,12 @@
         "roughness": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png",
         "ao": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png",
         "height": "layered_rock_cliff_ubulehofw/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.47147,
+        0.30888,
+        0.19968
+      ]
     },
     {
       "name": "mossy_forest_floor_vfylbge",
@@ -411,7 +476,12 @@
         "roughness": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png",
         "ao": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png",
         "height": "mossy_forest_floor_vfylbge/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.1886,
+        0.19875,
+        0.04799
+      ]
     },
     {
       "name": "rippled_sand_vd3lecfs",
@@ -441,7 +511,12 @@
         "roughness": "rippled_sand_vd3lecfs/packed_ao_rough_height.png",
         "ao": "rippled_sand_vd3lecfs/packed_ao_rough_height.png",
         "height": "rippled_sand_vd3lecfs/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.40653,
+        0.37162,
+        0.28619
+      ]
     },
     {
       "name": "rock_cliff_xbknedb",
@@ -472,7 +547,12 @@
         "roughness": "rock_cliff_xbknedb/packed_ao_rough_height.png",
         "ao": "rock_cliff_xbknedb/packed_ao_rough_height.png",
         "height": "rock_cliff_xbknedb/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.30298,
+        0.26619,
+        0.23596
+      ]
     },
     {
       "name": "rock_cliff_xccibbi",
@@ -507,7 +587,12 @@
         "roughness": "rock_cliff_xccibbi/packed_ao_rough_height.png",
         "ao": "rock_cliff_xccibbi/packed_ao_rough_height.png",
         "height": "rock_cliff_xccibbi/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.28775,
+        0.25453,
+        0.22311
+      ]
     },
     {
       "name": "rocky_forest_floor_wjvpaff",
@@ -553,7 +638,12 @@
         "roughness": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png",
         "ao": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png",
         "height": "rocky_forest_floor_wjvpaff/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.42085,
+        0.33277,
+        0.26318
+      ]
     },
     {
       "name": "rocky_ground_wf4mdeen",
@@ -583,7 +673,12 @@
         "roughness": "rocky_ground_wf4mdeen/packed_ao_rough_height.png",
         "ao": "rocky_ground_wf4mdeen/packed_ao_rough_height.png",
         "height": "rocky_ground_wf4mdeen/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.37623,
+        0.36465,
+        0.32414
+      ]
     },
     {
       "name": "rocky_ground_xbkibje",
@@ -618,7 +713,12 @@
         "roughness": "rocky_ground_xbkibje/packed_ao_rough_height.png",
         "ao": "rocky_ground_xbkibje/packed_ao_rough_height.png",
         "height": "rocky_ground_xbkibje/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.49936,
+        0.46064,
+        0.42627
+      ]
     },
     {
       "name": "rocky_ground_xbtfda2",
@@ -649,7 +749,12 @@
         "roughness": "rocky_ground_xbtfda2/packed_ao_rough_height.png",
         "ao": "rocky_ground_xbtfda2/packed_ao_rough_height.png",
         "height": "rocky_ground_xbtfda2/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.61837,
+        0.53443,
+        0.44498
+      ]
     },
     {
       "name": "rocky_sand_vd4pbdt",
@@ -682,7 +787,12 @@
         "roughness": "rocky_sand_vd4pbdt/packed_ao_rough_height.png",
         "ao": "rocky_sand_vd4pbdt/packed_ao_rough_height.png",
         "height": "rocky_sand_vd4pbdt/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.47664,
+        0.4215,
+        0.36695
+      ]
     },
     {
       "name": "rocky_sand_vmkecjj",
@@ -716,7 +826,12 @@
         "roughness": "rocky_sand_vmkecjj/packed_ao_rough_height.png",
         "ao": "rocky_sand_vmkecjj/packed_ao_rough_height.png",
         "height": "rocky_sand_vmkecjj/packed_ao_rough_height.png"
-      }
+      },
+      "mean_albedo": [
+        0.52663,
+        0.49764,
+        0.45852
+      ]
     }
   ],
   "note": "Generated by tools/import_surfaces.py. Every entry records where the asset came from and under what licence; tools/check_surfaces.py fails the build on any texture without one. See docs/asset-licensing.md."

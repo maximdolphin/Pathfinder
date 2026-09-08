@@ -1,0 +1,135 @@
+// Reading surfaces/manifest.json, and loading the assets it names.
+
+#include "LedgerSurfaceSets.h"
+
+#if WITH_EDITOR
+
+#include "Dom/JsonObject.h"
+#include "Engine/Texture2D.h"
+#include "LedgerLog.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "UObject/UObjectGlobals.h"
+
+namespace LedgerSurface
+{
+	namespace
+	{
+		/// The manifest, parsed once. It is small, it does not change while the
+		/// editor is open, and every surface asks for it.
+		const TSharedPtr<FJsonObject>& Manifest()
+		{
+			static TSharedPtr<FJsonObject> Parsed;
+			static bool bTried = false;
+			if (bTried)
+			{
+				return Parsed;
+			}
+			bTried = true;
+
+			// Outside Content on purpose: Content holds the imported .uasset,
+			// and the manifest describes where those came from.
+			const FString Path = FPaths::ConvertRelativePathToFull(
+				FPaths::Combine(FPaths::ProjectDir(), TEXT(".."),
+					TEXT("surfaces"), TEXT("manifest.json")));
+
+			FString Body;
+			if (!FFileHelper::LoadFileToString(Body, *Path))
+			{
+				UE_LOG(LogLedger, Error, TEXT("no surface manifest at %s"), *Path);
+				return Parsed;
+			}
+
+			const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Body);
+			if (!FJsonSerializer::Deserialize(Reader, Parsed))
+			{
+				UE_LOG(LogLedger, Error, TEXT("surface manifest at %s is not valid JSON"), *Path);
+				Parsed.Reset();
+			}
+			return Parsed;
+		}
+
+		const TSharedPtr<FJsonObject>* FindSet(const FString& Name)
+		{
+			const TSharedPtr<FJsonObject>& Root = Manifest();
+			if (!Root.IsValid())
+			{
+				return nullptr;
+			}
+
+			const TArray<TSharedPtr<FJsonValue>>* Sets = nullptr;
+			if (!Root->TryGetArrayField(TEXT("sets"), Sets))
+			{
+				return nullptr;
+			}
+
+			for (const TSharedPtr<FJsonValue>& Value : *Sets)
+			{
+				const TSharedPtr<FJsonObject>& Entry = Value->AsObject();
+				if (Entry.IsValid() && Entry->GetStringField(TEXT("name")) == Name)
+				{
+					// Returned by pointer into the cached document, which
+					// outlives every caller.
+					static TSharedPtr<FJsonObject> Held;
+					Held = Entry;
+					return &Held;
+				}
+			}
+			return nullptr;
+		}
+
+		UTexture2D* Load(const FString& SetName, const TCHAR* Asset)
+		{
+			// The importer names the package after the file, so the path is a
+			// consequence of the manifest rather than a second thing to keep in
+			// step with it.
+			const FString Path = FString::Printf(
+				TEXT("/Game/Surfaces/%s/%s.%s"), *SetName, Asset, Asset);
+			UTexture2D* Texture = LoadObject<UTexture2D>(nullptr, *Path);
+			if (Texture == nullptr)
+			{
+				UE_LOG(LogLedger, Error,
+					TEXT("surface %s: no texture at %s. Run tools/make_import_settings.py "
+					     "and the ImportAssets commandlet."), *SetName, *Path);
+			}
+			return Texture;
+		}
+	}
+
+	FSurfaceSet LoadSurfaceSet(const FString& Name)
+	{
+		FSurfaceSet Set;
+		Set.Name = Name;
+
+		const TSharedPtr<FJsonObject>* Entry = FindSet(Name);
+		if (Entry == nullptr || !Entry->IsValid())
+		{
+			UE_LOG(LogLedger, Error, TEXT("surface %s is not in the manifest"), *Name);
+			return Set;
+		}
+
+		double Metres = 0.0;
+		if ((*Entry)->TryGetNumberField(TEXT("tiling_metres"), Metres) && Metres > 0.0)
+		{
+			Set.TilingMetres = Metres;
+		}
+
+		const TArray<TSharedPtr<FJsonValue>>* Mean = nullptr;
+		if ((*Entry)->TryGetArrayField(TEXT("mean_albedo"), Mean) && Mean->Num() >= 3)
+		{
+			Set.MeanAlbedo = FLinearColor(
+				static_cast<float>((*Mean)[0]->AsNumber()),
+				static_cast<float>((*Mean)[1]->AsNumber()),
+				static_cast<float>((*Mean)[2]->AsNumber()));
+		}
+
+		Set.Albedo = Load(Name, TEXT("albedo"));
+		Set.Normal = Load(Name, TEXT("normal"));
+		Set.Packed = Load(Name, TEXT("packed_ao_rough_height"));
+		return Set;
+	}
+}
+
+#endif
