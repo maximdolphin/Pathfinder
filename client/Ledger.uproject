@@ -1,0 +1,13 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "LEDGER client. C++ only - no Blueprint logic (design 9).",
+	"Modules": [
+		{
+			"Name": "LedgerClient",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
