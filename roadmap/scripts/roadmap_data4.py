@@ -1,192 +1,330 @@
 # -*- coding: utf-8 -*-
-"""Supplementary tasks: the work that is real but rarely gets planned.
+"""M09-M11: embodiment and animation, interiors, rendering fidelity.
 
-Tooling, CI, UI, audio, input, performance and release. Every one of these is a
-thing that has to happen and that a roadmap written only from the design
-document would omit, because the design document is about the game rather than
-about shipping it.
-
-These are appended to their milestones after the primary tasks, so the linear
-order still reads as one narrative per milestone.
+Where the game stops being a camera with a flight model and becomes a place
+with a person in it.
 """
 
-from roadmap_data import task
+# ---------------------------------------------------------------------------
+# M09 - embodiment and animation.
+# ---------------------------------------------------------------------------
 
-SUPPLEMENT = {
-    "M1": [
-        task("GitHub Actions: sim suite on every commit",
-             "Design SS9 says the sim suite runs on every commit and UE builds nightly. Wire it.",
-             "A push runs cargo test and fails the check on a red test.", 2, ["SS9", "SS11"]),
-        task("GitHub Actions: nightly UE build and automation tests",
-             "Build the editor target and run the Tier 6 suite headless on a schedule.",
-             "A nightly run produces a build artifact and a test report.", 3, ["SS9", "SS11"]),
-        task("Nightly Tier 3 fuzz job",
-             "The 1,000,000 tick invariant run, nightly, with failure notification.",
-             "A deliberately broken invariant is caught by the next nightly run.", 2, ["SS11"]),
-        task("Terrain debug visualisation modes",
-             "Wireframe, LOD level as colour, patch age, collision coverage.",
-             "Ledger.Terrain.Debug cycles the modes and each is legible.", 2),
-        task("Frame-time HUD and stat capture",
-             "A permanent overlay recording frame time, patch queue and memory.",
-             "Any capture can be correlated with the frame cost at that moment.", 2, ["SS12"]),
-        task("Crash reporting and symbol retention",
-             "Keep PDBs per build so a crash from a week-old build is still readable.",
-             "A stack from an archived build resolves to source lines.", 2),
-    ],
-    "M2": [
-        task("Screenshot regression harness",
-             "Capture fixed viewpoints each nightly build and diff against a baseline.",
-             "A material change that alters the look is flagged automatically.", 3, ["SS11"]),
-        task("Material complexity budget",
-             "Shader instruction counts tracked per material, with a ceiling.",
-             "Exceeding the ceiling fails the nightly build.", 2),
-        task("Texture memory budget and streaming",
-             "Know what the surface costs in VRAM, and leave room for the narration model.",
-             "Surface textures stay under budget with 4 GB reserved for inference.", 2, ["SS6.4"]),
-        task("Colour grading and tone mapping pass",
-             "One look, applied consistently, rather than per-scene exposure fiddling.",
-             "The same grade reads correctly in orbit, at altitude and on the ground.", 3),
-        task("Time of day and a moving sun",
-             "The sun currently never moves. Drive it from sim time.",
-             "A full day-night cycle runs and the atmosphere responds correctly at dawn.", 4),
-        task("Night side: stars, moonlight, and town lights",
-             "The dark half of the planet has to be worth flying over.",
-             "Town lights are visible from orbit on the night side.", 3),
-    ],
-    "M3": [
-        task("Input remapping and gamepad support",
-             "Axis mappings are hard-coded in config. Support rebinding and a controller.",
-             "A gamepad flies the ship with no keyboard input.", 3),
-        task("Settings menu in C++",
-             "Resolution, quality, input, audio. No UMG assets.",
-             "Settings persist across a restart.", 3, ["SS9"]),
-        task("Pause, save and quit flow",
-             "A session boundary that does not lose state.",
-             "Quitting and resuming restores the ship and the world clock.", 2),
-        task("Ship interior ambient audio",
-             "Hull creak under load, air handling, alarm tones on damage.",
-             "Damage produces an audible cue before the HUD shows it.", 2),
-        task("Accessibility: subtitles, colourblind-safe HUD, motion options",
-             "The HUD encodes state in colour alone in places. Fix that.",
-             "Every HUD state is distinguishable without colour.", 3),
-    ],
-    "M4": [
-        task("OpenTelemetry instrumentation in the sim",
-             "SS9's observability stack, now that there is a service to observe.",
-             "Per-region tick cost and propagation depth export as metrics.", 3, ["SS9", "SS12"]),
-        task("Grafana dashboards for the SS12 metrics",
-             "Every metric in SS12 on one board, with its target band drawn on.",
-             "A metric outside its band is visually obvious without reading numbers.", 2, ["SS12"]),
-        task("Structured logging with correlation ids",
-             "Trace an intent from client to sim to event to consequence.",
-             "One id follows a contract acceptance through every log line it causes.", 2),
-        task("Deployment scripts for the sim service",
-             "SS10's ops/ tree. Run it somewhere that is not a developer laptop.",
-             "The sim runs on a remote host and a local client connects to it.", 3, ["SS10"]),
-        task("Database migration path from file log to Postgres",
-             "ADR-0001 defers this to Phase 1. This is Phase 1.",
-             "The same event log replays identically from a file and from Postgres.",
-             4, ["ADR-0001", "SS9"]),
-    ],
-    "M5": [
-        task("Tutorial-free onboarding",
-             "The first contract has to teach the loop without a tutorial, because the loop is "
-             "the game and a tutorial would tell you the answer.",
-             "A new player completes a first contract without instructions, in a playtest.", 4),
-        task("Playtest harness and session recording",
-             "Record inputs and sim state so a playtest can be replayed and analysed.",
-             "A recorded session replays deterministically.", 3, ["SS5.3"]),
-        task("First external playtest",
-             "Five people who have not seen it. Watch, do not explain.",
-             "Written notes from five sessions, with the points where players stalled.", 3),
-        task("Investigation UI iteration from playtest findings",
-             "Fix whatever the playtest showed, not whatever seemed likely beforehand.",
-             "The top three stall points from the playtest are addressed and retested.", 4),
-    ],
-    "M6": [
-        task("Model evaluation harness",
-             "Compare candidate models on the actual prompts, measuring latency and refusal rate.",
-             "Three models compared on the same 200 prompts with a written recommendation.",
-             3, ["SS6.4"]),
-        task("Dialogue content pipeline",
-             "Authored fallbacks need writing, versioning and coverage measurement.",
-             "Every dialogue surface has at least three authored fallbacks.", 3, ["SS6.4"]),
-        task("Narration failure modes and graceful degradation",
-             "Model missing, VRAM exhausted, service crashed. All three must be survivable.",
-             "Killing the narration service mid-conversation degrades to authored text.",
-             2, ["SS6.4"]),
-    ],
-    "M7": [
-        task("Market UI: charts that do not lie",
-             "Price history with the event that caused each move annotatable.",
-             "A player can click a price move and see the article about it.", 4, ["SS6.5"]),
-        task("Economic tuning harness",
-             "Run parameter sweeps headless and report which land inside the SS12 bands.",
-             "A sweep of 200 parameter sets reports the viable region.", 3, ["SS12"]),
-        task("Economist review of the model",
-             "SS6.5's prior-art warning is explicit: EVE employs professional economists.",
-             "Written review on file with the failure modes it identifies.", 3, ["SS6.5"]),
-    ],
-    "M8": [
-        task("Character rendering and variation",
-             "Crew and NPCs need bodies that differ. Procedural variation over a base mesh.",
-             "Twenty NPCs in one scene, visually distinguishable, at no measurable cost.", 4),
-        task("Character animation: idle, walk, sit, gesture",
-             "Enough that a person standing in a bar reads as a person.",
-             "An NPC transitions between states without a pop.", 4),
-        task("Crew audio: voice barks from the narration layer",
-             "Short lines, generated text, synthesised or authored.",
-             "A crew member's bark reflects a belief they actually hold.", 3, ["SS6.4"]),
-    ],
-    "M9": [
-        task("Mission generation tuning harness",
-             "Sweep the query parameters and report archetype distribution and tension age.",
-             "A sweep reports which parameters keep every archetype under 35%.", 3, ["SS12"]),
-        task("Second external playtest, full loop",
-             "Six archetypes, live economy, crew. Watch for the oatmeal problem.",
-             "Five sessions, with players asked to describe two contracts they did.", 3),
-        task("Content pass on contract presentation",
-             "The board text has to carry the tension. Written from state, not templated.",
-             "No two contracts on the board read as the same sentence with names swapped.",
-             3, ["SS6.6"]),
-    ],
-    "M10": [
-        task("Memory profiling at MVP scale",
-             "2,000 entities, five regions, and a planet. Know where the memory goes.",
-             "A memory report attributing every 10 MB to a subsystem.", 3),
-        task("Sim performance optimisation pass",
-             "Profile the tick and cut the top three costs.",
-             "Per-region full-fidelity tick under 5 ms with 400 entities present.", 4, ["SS12"]),
-        task("Save and load a whole world",
-             "Snapshot plus log, restored to a bit-identical state.",
-             "A save restored on another machine produces the same state fingerprint.",
-             3, ["SS5.3"]),
-    ],
-    "M11": [
-        task("Account and identity handling",
-             "Who a player is, minimally and safely. No credentials stored by us.",
-             "Sign-in works and stores no password or payment data.", 3),
-        task("Anti-cheat posture for a sim-authoritative world",
-             "The sim owns state, so cheating means lying about intents. Validate them.",
-             "A client sending impossible intents is disconnected and logged.", 3, ["SS6.10"]),
-        task("Griefing review across every system",
-             "Not only rumour injection: contracts, markets, crew, and presence.",
-             "A written review naming each surface and its mitigation.", 3, ["SS6.10", "SS15.8"]),
-        task("Third external playtest, multiplayer",
-             "Sixteen people who do not know each other.",
-             "Written notes, plus the belief graph state before and after.", 3),
-    ],
-    "M12": [
-        task("Release build and packaging pipeline",
-             "Cook, package, sign and distribute a build people can install.",
-             "A tester installs and runs the build with no engine present.", 4),
-        task("Telemetry for the pillar tests in the wild",
-             "Instrument the four pillars so they can be measured on real sessions.",
-             "Each pillar has a metric that can be read off a live population.", 3, ["SS2", "SS12"]),
-        task("Phase 3 assessment and funding materials",
-             "SS13.5 is explicit that Phase 3 is not achievable solo. Phase 2 exists to be the "
-             "thing you raise money or recruit on.",
-             "A written assessment with the metrics and recordings that support it.",
-             3, ["SS13.4", "SS13.5"]),
-    ],
-}
+M09 = [
+    dict(title="Character controller with momentum",
+         detail="Acceleration, deceleration, turning radius and footing rather than a "
+                "capsule that changes velocity instantly. A body has mass and the "
+                "controller has to admit it.",
+         acceptance="Stopping from a run takes distance, turning at speed carries momentum, "
+                    "and neither is a curve someone drew.",
+         days=4, refs=["SS6.9"]),
+    dict(title="One skeleton for first and third person",
+         detail="Two skeletons is two sets of bugs and a first person view whose body is a "
+                "lie. One rig, camera attached to the head, IK correcting what the camera "
+                "can see.",
+         acceptance="Look down in first person and see the same body a third-person camera "
+                    "sees, doing the same thing.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Full-body IK and foot placement",
+         detail="Feet land on the ground that is actually there, at the angle it is at, on "
+                "stairs, slopes and debris.",
+         acceptance="Walk across broken terrain and a stairway with no foot sliding and no "
+                    "foot intersecting geometry.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Locomotion state machine and blend framework",
+         detail="Idle, walk, run, sprint, crouch, prone, strafe, turn-in-place, with "
+                "distance-matched transitions rather than fixed blends.",
+         acceptance="No locomotion transition slides the feet, at any speed or direction "
+                    "change.",
+         days=5, refs=["SS6.9"]),
+    dict(title="Locomotion in variable gravity",
+         detail="Walking on a moon, in a station's spin gravity, and in a ship under thrust "
+                "— stride, jump arc and fall speed all derived from local gravity.",
+         acceptance="The same controller produces correct movement at 0.16 g, 1 g and 1.5 g "
+                    "with no special-cased animation.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Zero-gravity movement and EVA",
+         detail="Push off, drift, arrest with a thruster pack, grab handholds. A different "
+                "control problem, not a different character.",
+         acceptance="Cross a compartment in zero gravity by pushing off and catching a "
+                    "handhold, with momentum conserved throughout.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Interaction framework",
+         detail="One mechanism for everything a person can touch: buttons, levers, doors, "
+                "seats, terminals, containers. Highlighting, reach, occlusion and the "
+                "animation that sells it.",
+         acceptance="A new interactable is one data declaration and inherits highlighting, "
+                    "reach and animation with no bespoke code.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Seats, harnesses and vehicle entry",
+         detail="Getting into and out of a seat as a physical transition inside a moving "
+                "frame, with the controller handing off to the vehicle.",
+         acceptance="Board a hovering ship, take the seat and fly, with no teleport and no "
+                    "cut, and get out again while it is still moving.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Ladders, climbing and mantling",
+         detail="Vertical movement that respects the geometry rather than snapping to it.",
+         acceptance="Climb a ladder inside an accelerating ship and mantle onto a ledge, "
+                    "both with correct hand placement.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Carrying and manipulation animation",
+         detail="Two-handed carry, one-handed carry, and the effect of mass on gait. Tied to "
+                "M08's object handling.",
+         acceptance="Carrying a heavy crate visibly changes stance and speed, driven by the "
+                    "object's mass.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Suits, helmets and life support on the body",
+         detail="A person outside a breathable atmosphere needs a suit, and the suit is a "
+                "component set with oxygen, temperature and pressure like any other.",
+         acceptance="Step into vacuum without a sealed suit and die on the modelled "
+                    "schedule, with warnings that come from the suit's components.",
+         days=3, refs=["LW SS7.2"]),
+    dict(title="Damage, injury and incapacitation",
+         detail="Localised injury with effects on movement and capability, and a recovery "
+                "path that is not a health bar refilling.",
+         acceptance="A leg injury changes gait and speed until treated, and treatment "
+                    "consumes something.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Facial and upper-body animation framework",
+         detail="Look-at, gesture, and expression driven by state rather than by canned "
+                "clips, because every NPC in the living world will need it.",
+         acceptance="A character tracks a moving object with head and eyes while walking, "
+                    "with no clip authored for it.",
+         days=4, refs=["LW SS6"]),
+    dict(title="Character definition and variation",
+         detail="Body proportions, faces, clothing and equipment as data, so a crowd is not "
+                "twelve copies of one person.",
+         acceptance="A hundred generated characters are visually distinct and all animate "
+                    "correctly on the shared rig.",
+         days=4, refs=["ARCH Rule 7"]),
+    dict(title="Animation LOD and crowd cost",
+         detail="Full evaluation up close, reduced further out, and something very cheap at "
+                "distance, with transitions nobody sees.",
+         acceptance="Two hundred visible characters stay inside the animation budget with "
+                    "no visible LOD switch.",
+         days=3, refs=["SS14"]),
+    dict(title="Footstep, foley and movement audio",
+         detail="Surface-aware footsteps, cloth, equipment, and breathing that responds to "
+                "exertion and to whether there is air outside.",
+         acceptance="Surface material is identifiable from footstep audio, and audio changes "
+                    "correctly in a suit and in vacuum.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Camera framework",
+         detail="First person, third person, and the transitions, with collision, "
+                "stabilisation and the shake budget that stops it becoming nauseating.",
+         acceptance="Switching view is continuous, the camera never enters geometry, and "
+                    "motion sickness testing passes with three people.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Animation regression suite",
+         detail="Recorded traversals with foot-sliding, penetration and pop metrics computed "
+                "automatically, because animation regressions are invisible in a diff.",
+         acceptance="A deliberately broken blend is caught by CI with a named metric.",
+         days=3, refs=["SS13"]),
+    dict(title="Playable proof: room to cockpit and back",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Out of a room, up a ladder, across a pad in wind, into a ship, into a "
+                    "seat, fly, land, get out — one shot, no cut, nothing sliding.",
+         days=3, refs=["ARCH Rule 6"]),
+]
+
+
+# ---------------------------------------------------------------------------
+# M10 - interiors and modular architecture.
+# ---------------------------------------------------------------------------
+
+M10 = [
+    dict(title="Modular kit framework",
+         detail="Rooms, corridors, junctions and shafts as a connectable kit with sockets, "
+                "so interiors are assembled rather than modelled. The prerequisite for "
+                "generated ships, stations and buildings all at once.",
+         acceptance="An interior assembled from the kit has no gap, no z-fight at any seam, "
+                    "and correct collision throughout.",
+         days=5, refs=["LW SS7"]),
+    dict(title="Interior generation from a layout grammar",
+         detail="A generator that lays out an interior from a purpose and a footprint — "
+                "circulation first, then rooms, then detail — rather than stamping "
+                "prefabs.",
+         acceptance="Twenty generated interiors of the same purpose are all navigable, all "
+                    "different, and none has an unreachable room.",
+         days=5, refs=["LW SS7"]),
+    dict(title="Ship interiors on the modular kit",
+         detail="Ship internals assembled from the same kit, constrained by the hull, with "
+                "the component graph from M05 physically present in them.",
+         acceptance="Every component in a ship's graph has a physical location inside it "
+                    "that can be walked to and worked on.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Station interiors",
+         detail="Larger, with spin gravity, public and private volumes, docking connections "
+                "and the traffic that implies.",
+         acceptance="Walk from a docked ship into a station, across it, and into another "
+                    "docked ship, all in the correct frames.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Building interiors for settlements",
+         detail="Habitation, industry and civic interiors, generated for the settlement "
+                "layer, with the environment-driven composition from LW SS7.2 visible "
+                "inside as well as outside.",
+         acceptance="A habitat on an airless world has an airlock, a pressurised interior "
+                    "and visible life support; the same archetype on a temperate world does "
+                    "not.",
+         days=4, refs=["LW SS7.2"]),
+    dict(title="Portals and interior streaming",
+         detail="Interiors stream and cull through portals, so a city block of walkable "
+                "buildings costs what is visible rather than what exists.",
+         acceptance="A hundred walkable interiors in view cost no more than the handful "
+                    "actually visible through their openings.",
+         days=5, refs=["SS14"]),
+    dict(title="Doors, airlocks and pressure boundaries",
+         detail="Doors as constraints with power, pressure differential and failure. An "
+                "airlock is a state machine that can kill you.",
+         acceptance="Cycling an airlock takes time, equalises pressure, and opening the "
+                    "wrong door vents the compartment.",
+         days=3, refs=["LW SS7.3"]),
+    dict(title="Interior lighting framework",
+         detail="Lights as powered fixtures. When the district loses power, the lights go "
+                "out — which is the first-person tell LW SS7.1 requires.",
+         acceptance="Cutting power to a building darkens its interior and emergency lighting "
+                    "comes up on its own reserve.",
+         days=3, refs=["LW SS7.1"]),
+    dict(title="Interior navigation mesh generation",
+         detail="Navigation built from the assembled kit at runtime, across frames, so NPCs "
+                "can move through interiors that were generated a moment ago and are "
+                "themselves moving.",
+         acceptance="A character navigates from any point in a generated interior to any "
+                    "other, including inside a moving ship.",
+         days=4, refs=["LW SS6"]),
+    dict(title="Interior audio: reverb, occlusion, propagation",
+         detail="Rooms sound like rooms, doors muffle, and a corridor carries sound the way "
+                "a corridor does.",
+         acceptance="Reverb and occlusion change correctly walking between three connected "
+                    "spaces without hand-placed volumes.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Set dressing and clutter framework",
+         detail="Rule-driven placement of the objects that make a room look inhabited, "
+                "responding to the room's purpose and its owner's circumstances.",
+         acceptance="A workshop, a bunk and an office generated from the same kit are "
+                    "immediately distinguishable, and a wealthy one differs from a poor one.",
+         days=4, refs=["LW SS7.1"]),
+    dict(title="Interior collision and traversal quality pass",
+         detail="Every surface a person can reach behaves: no invisible walls, no geometry "
+                "you can walk through, no ledge you catch on.",
+         acceptance="An automated traversal agent covers every reachable point of ten "
+                    "generated interiors without getting stuck.",
+         days=3, refs=["SS13"]),
+    dict(title="Playable proof: street to cockpit through a building",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Street, into a building, up through it, onto a roof pad, into a docked "
+                    "ship, to its cockpit — no load, no fade, no frame over budget.",
+         days=3, refs=["ARCH Rule 6"]),
+]
+
+
+# ---------------------------------------------------------------------------
+# M11 - rendering fidelity.
+# ---------------------------------------------------------------------------
+
+M11 = [
+    dict(title="Material standard and shading model audit",
+         detail="One documented PBR standard: what maps, what ranges, what conventions. "
+                "Half the reason a game looks amateur is materials that disagree about "
+                "what roughness means.",
+         acceptance="Every material in the project conforms, and a validator flags any that "
+                    "does not.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Master material framework with layering",
+         detail="Layered materials with blend masks, so a hull is metal plus paint plus wear "
+                "plus dirt rather than one baked texture.",
+         acceptance="A single hull material produces a clean ship and a filthy one from "
+                    "parameters alone.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Wear, dirt and weathering framework",
+         detail="Procedural edge wear, dirt accumulation by cavity and by exposure, driven "
+                "by an object's actual history rather than authored in.",
+         acceptance="A ship that has flown through dust looks like it, and cleaning it "
+                    "removes exactly that.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Decal framework",
+         detail="Projected detail on hulls, terrain and interiors — markings, damage, "
+                "leaks, signage — with correct normals and a budget.",
+         acceptance="A thousand decals in view cost inside budget and none swims or "
+                    "z-fights.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Lighting: Lumen configuration and fallback",
+         detail="Global illumination that works from a lit cockpit at night to a sunlit "
+                "dune, with a measured decision about where it costs more than it gives. "
+                "Design v1.1 turned it off for the slice; this is where that is revisited "
+                "with numbers.",
+         acceptance="Three reference scenes are correctly lit within budget, and the "
+                    "decision is recorded with measurements.",
+         days=5, refs=["SS6.8", "SS14"]),
+    dict(title="Shadow quality across scales",
+         detail="Contact shadows in a cockpit, cascades across a landscape, and shadows from "
+                "a moon on a planet — three problems that must share one setup.",
+         acceptance="No shadow acne, no peter-panning and no cascade seam at any of the "
+                    "three scales.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Reflection framework",
+         detail="Screen-space, captures and ray-traced where it pays, with a policy for what "
+                "gets which. Water, canopies and polished hulls each want a different "
+                "answer.",
+         acceptance="A reflective hull, a canopy and the sea are all correct from a viewpoint "
+                    "that shows all three.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Exposure, tone mapping and colour pipeline",
+         detail="One colour pipeline from lighting to display, handling a range from "
+                "starlight to a sunlit ice field without clipping or hunting.",
+         acceptance="Flying from a dark hangar into daylight adapts smoothly with no "
+                    "overshoot, and no scene clips.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Anti-aliasing and upscaling",
+         detail="Temporal AA tuned against the specific problems here — thin cockpit "
+                "geometry, high-frequency terrain, particles — plus an upscaler evaluated "
+                "rather than assumed.",
+         acceptance="No ghosting on cockpit instruments during rapid motion and no shimmer "
+                    "on terrain at any distance.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Particle and VFX framework",
+         detail="Thrusters, damage, weather, dust and debris on one budgeted system, with "
+                "LOD and culling and no orphaned emitters.",
+         acceptance="Worst-case effects load stays inside budget and a two-hour session "
+                    "leaks no emitters.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Volumetric lighting and atmospherics in interiors",
+         detail="Light shafts, dust in the air, smoke that fills a compartment — the "
+                "difference between a lit room and a rendered one.",
+         acceptance="A single window lights a dusty interior convincingly at three times of "
+                    "day, inside budget.",
+         days=3, refs=["SS6.8"]),
+    dict(title="LOD and impostor chain for everything",
+         detail="One policy covering ships, buildings, characters and props, with automatic "
+                "generation and no visible switch.",
+         acceptance="No LOD transition is visible at any distance for any asset class.",
+         days=4, refs=["SS14"]),
+    dict(title="Character rendering: skin, cloth, hair, eyes",
+         detail="The hardest thing to make not look like a mannequin, and the thing a player "
+                "looks at closest.",
+         acceptance="A character at conversation distance holds up in three lighting "
+                    "conditions.",
+         days=5, refs=["SS6.8"]),
+    dict(title="Cockpit rendering quality pass",
+         detail="Where the player spends most of their time: glass, displays, backlighting, "
+                "reflections on the canopy, and the sun through it.",
+         acceptance="A cockpit at dawn, at noon and at night each hold up, with legible "
+                    "instruments in all three.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Post-processing chain",
+         detail="Bloom, motion blur, depth of field, aberration and grain, each with a "
+                "reason and a budget, and each defensible against being turned off.",
+         acceptance="Every post effect has a measured cost and a documented reason, and the "
+                    "chain costs no more than its budget.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Reference comparison harness",
+         detail="Fixed shots against reference footage at set distances and lighting "
+                "conditions, reviewed each time the renderer changes.",
+         acceptance="The comparison set is captured automatically and archived per build.",
+         days=3, refs=["SS13"]),
+    dict(title="Playable proof: the reference comparison",
+         detail="Rule 6. The gate: side by side at three distances and three lighting "
+                "conditions.",
+         acceptance="A stranger cannot immediately sort ours from the reference on material "
+                    "and lighting alone.",
+         days=3, refs=["ARCH Rule 6"]),
+]

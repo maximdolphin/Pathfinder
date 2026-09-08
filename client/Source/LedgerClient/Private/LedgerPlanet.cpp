@@ -408,7 +408,7 @@ void ALedgerPlanet::BeginPlay()
 	// Sized against the measured visible-leaf count with headroom for a fast
 	// turn. Undersizing does not degrade gracefully on its own — the parent-hold
 	// rule in `UpdateTree` is what stops a starved pool from punching holes.
-	constexpr int32 PoolSize = 2560;
+	constexpr int32 PoolSize = 3600;
 	MeshPool.Reserve(PoolSize);
 	FreeSections.Reserve(PoolSize);
 	for (int32 Index = 0; Index < PoolSize; ++Index)
@@ -572,11 +572,14 @@ bool ALedgerPlanet::IsBeyondHorizon(const FLedgerQuadNode& Node, const FVector3d
 void ALedgerPlanet::UpdateTree(
 	FLedgerQuadNode& Node,
 	const FVector3d& CameraLocal,
+	const FVector3d& LeadLocal,
 	double ViewportWidth,
 	double FovRadians)
 {
 	// Cull first: a node the horizon hides needs neither geometry nor children.
-	Node.bVisible = !IsBeyondHorizon(Node, CameraLocal);
+	// Against both positions, not just the current one — a node about to rise
+	// over the horizon is a node that should already be building.
+	Node.bVisible = !IsBeyondHorizon(Node, CameraLocal) || !IsBeyondHorizon(Node, LeadLocal);
 	if (!Node.bVisible)
 	{
 		if (Node.bHasChildren)
@@ -593,7 +596,14 @@ void ALedgerPlanet::UpdateTree(
 	// altitude over a mountain the difference is the whole LOD decision.
 	const FVector3d NodeDirection = Node.Centre.GetSafeNormal();
 	const FVector3d NodeSurface = NodeDirection * SurfaceRadiusAt(NodeDirection);
-	const double Distance = FVector3d::Distance(CameraLocal, NodeSurface);
+
+	// The nearer of where the camera is and where it will shortly be. Taking the
+	// minimum rather than replacing one with the other matters: leading alone
+	// would collapse the ground behind a fast mover, and the ground behind is
+	// still on screen.
+	const double Distance = FMath::Min(
+		FVector3d::Distance(CameraLocal, NodeSurface),
+		FVector3d::Distance(LeadLocal, NodeSurface));
 
 	const double Error = LedgerTerrain::ScreenSpaceError(
 		Node.WorldSize, Distance, ViewportWidth, FovRadians);
@@ -608,7 +618,7 @@ void ALedgerPlanet::UpdateTree(
 		{
 			if (Node.Children[Index].IsValid())
 			{
-				UpdateTree(*Node.Children[Index], CameraLocal, ViewportWidth, FovRadians);
+				UpdateTree(*Node.Children[Index], CameraLocal, LeadLocal, ViewportWidth, FovRadians);
 			}
 		}
 
@@ -639,26 +649,52 @@ void ALedgerPlanet::UpdateTree(
 
 	if (Node.bHasChildren)
 	{
-		Collapse(Node);
+		// The mirror of the rule above. A split keeps the parent until every
+		// child has geometry; a collapse has to keep the children until the
+		// parent does. Dropping them first leaves nothing drawing this ground —
+		// which is the whole reason the ascent used to punch three thousand
+		// holes through the planet on the way out.
+		if (ActiveSections.Contains(NodeKey(Node)))
+		{
+			Node.bWantsCollapse = false;
+			Collapse(Node);
+		}
+		else
+		{
+			Node.bWantsCollapse = true;
+		}
+		return;
 	}
+
+	Node.bWantsCollapse = false;
 }
 
-void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out) const
+void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out, bool bAncestorHasGeometry) const
 {
 	if (!Node.bVisible)
 	{
 		return;
 	}
 
+	const bool bHasGeometry = ActiveSections.Contains(NodeKey(Node));
+
 	if (Node.IsLeaf())
 	{
 		Out.Add(&Node);
+		if (!bHasGeometry && !bAncestorHasGeometry)
+		{
+			// Nothing anywhere up the chain is drawing this ground. Not a
+			// coarse patch standing in for a fine one — a hole.
+			++const_cast<ALedgerPlanet*>(this)->Stats.UnfilledNodes;
+		}
 		return;
 	}
 
 	// A split node still holds geometry while its children are being built, so
-	// it counts for rendering purposes until they arrive.
-	if (ActiveSections.Contains(NodeKey(Node)))
+	// it counts for rendering purposes until they arrive. A node waiting to
+	// collapse has none and needs some, and the only way to ask for it is to be
+	// in the list the leaf pass walks.
+	if (bHasGeometry || Node.bWantsCollapse)
 	{
 		Out.Add(&Node);
 	}
@@ -667,7 +703,7 @@ void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLed
 	{
 		if (Node.Children[Index].IsValid())
 		{
-			CollectLeaves(*Node.Children[Index], Out);
+			CollectLeaves(*Node.Children[Index], Out, bAncestorHasGeometry || bHasGeometry);
 		}
 	}
 }
@@ -1056,21 +1092,41 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	}
 	LastCameraLocal = CameraLocal;
 
+	// Where the camera will be in a few seconds, for the LOD to aim at.
+	//
+	// The offset is clamped against altitude rather than taken raw. Coming out
+	// of orbit the camera does kilometres per second, and five seconds of that
+	// is a lead point on the far side of the planet — which would subdivide
+	// ground nobody is going to see and starve the ground in front. Half the
+	// altitude is a lead that scales with how much of the surface is on screen.
+	const double AltitudeAbove = FMath::Max(
+		1.0, CameraLocal.Length() - SurfaceRadiusAt(CameraLocal.GetSafeNormal()));
+	FVector3d LeadOffset = CameraVelocityLocal * GeometryLeadSeconds;
+	const double LeadLength = LeadOffset.Length();
+	const double LeadLimit = AltitudeAbove * 0.5;
+	if (LeadLength > LeadLimit)
+	{
+		LeadOffset *= LeadLimit / LeadLength;
+	}
+	const FVector3d GeometryLead = CameraLocal + LeadOffset;
+
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
-		UpdateTree(*RootNode, CameraLocal, ViewportWidth, Fov);
+		UpdateTree(*RootNode, CameraLocal, GeometryLead, ViewportWidth, Fov);
 	}
 
 	HarvestCompletedPatches();
 
 	TArray<const FLedgerQuadNode*> Leaves;
 	Leaves.Reserve(2048);
+	Stats.UnfilledNodes = 0;
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
-		CollectLeaves(*RootNode, Leaves);
+		CollectLeaves(*RootNode, Leaves, /*bAncestorHasGeometry*/ false);
 	}
 
 	Stats.VisibleNodes = Leaves.Num();
+	Stats.WorstUnfilled = FMath::Max(Stats.WorstUnfilled, Stats.UnfilledNodes);
 	Stats.DeepestVisibleDepth = 0;
 
 	// Where the camera will be shortly, so the cook has landed by the time we
@@ -1151,6 +1207,8 @@ void ALedgerPlanet::LogStats() const
 	UE_LOG(LogLedger, Log, TEXT("  with collision     %d"), Stats.NodesWithCollision);
 	UE_LOG(LogLedger, Log, TEXT("  jobs in flight     %d"), Stats.JobsInFlight);
 	UE_LOG(LogLedger, Log, TEXT("  starved this frame %d"), Stats.PendingBuilds);
+	UE_LOG(LogLedger, Log, TEXT("  holes              %d now, %d worst"),
+		Stats.UnfilledNodes, Stats.WorstUnfilled);
 	UE_LOG(LogLedger, Log, TEXT("  patches total      %lld"), Stats.TotalBuilds);
 	UE_LOG(LogLedger, Log, TEXT("  upload ms (game)   last %.3f  worst %.3f"),
 		Stats.LastFrameUploadMs, Stats.WorstFrameUploadMs);

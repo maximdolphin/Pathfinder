@@ -1,247 +1,405 @@
 # -*- coding: utf-8 -*-
-"""Roadmap content, milestones M4 through M12.
+"""M02-M04: terrain to production standard, planetary bodies, atmosphere.
 
-Split from `roadmap_data.py` only because one file of five hundred authored
-tasks is harder to review than two of two hundred and fifty.
+The first block of the technical model. Everything here is a *framework* — a
+biome system rather than a biome, a weather model rather than a storm — because
+the plan is one system built properly rather than thirty built once.
 """
 
-from roadmap_data import task
+# ---------------------------------------------------------------------------
+# M02 - terrain to production standard.
+# ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------- M4
-M4 = [
-    task("proto/ schema for the wire contract",
-         "Design SS10: proto/ is the only place the sim-client contract is defined, and both "
-         "sides generate from it. Entities, factions, contracts, beliefs, market state.",
-         "Both the Rust sim and the UE client build from the same .proto with no hand-written "
-         "duplicate of any message.", 4, ["SS10", "SS9"]),
-    task("Rust protobuf codegen in the sim build",
-         "prost or equivalent, wired into build.rs so the generated types are never committed.",
-         "Deleting the generated directory and rebuilding produces identical types.", 2, ["SS9"]),
-    task("UE protobuf integration as a third-party module",
-         "The known slog: UE disables exceptions and RTTI, and its check macro collides with "
-         "protobuf headers. Budget it explicitly.",
-         "The client links protobuf and round-trips a message in an automation test.", 4, ["ADR-0001"]),
-    task("Length-prefixed TCP transport",
-         "Phase 1 transport per ADR-0001. Framing, reconnect with backoff, and a heartbeat.",
-         "Killing the sim and restarting it reconnects within two seconds with no client restart.",
-         3, ["ADR-0001"]),
-    task("Sim-side gRPC-free server loop",
-         "A tick loop that accepts connections, streams state deltas, and applies client intents.",
-         "One client connected costs under 0.5 ms per tick of server time.", 4, ["SS5"]),
-    task("World state delta encoding",
-         "Send what changed, not the world. Per-entity dirty flags folded from the event log.",
-         "Steady-state bandwidth under 32 KB/s per client with 2,000 entities simulated.", 4, ["SS5"]),
-    task("Client-side world state cache and interpolation",
-         "The client holds a view of sim state and interpolates between ticks for presentation.",
-         "Entity positions do not jitter at a 10 Hz sim tick and a 60 Hz render.", 3),
-    task("Contract board reading live sim state",
-         "Replace the snapshot file. The board reflects contracts as they are posted.",
-         "A contract posted in the sim appears on the board within one tick round trip.",
-         3, ["SS13.2"]),
-    task("Player intent messages",
-         "Accept a contract, make an inquiry, offer an incentive, redeem a favour. Typed, "
-         "validated server-side.",
-         "A malformed or impossible intent is rejected with a typed error, never applied.", 3),
-    task("Schema versioning and refusal",
-         "The client already refuses a future snapshot schema. Extend that to the wire protocol.",
-         "A client one version behind refuses to connect and says why.", 2),
-    task("Connection state in the UI",
-         "Show connected, reconnecting, and stale-state clearly rather than silently lying.",
-         "Killing the sim shows a visible degraded state within two seconds.", 2),
-    task("Sim as a service: run headless, log, restart",
-         "Process supervision, structured logging, and a clean shutdown that flushes the log.",
-         "SIGTERM produces a replayable log with no truncated event.", 2, ["SS5.3"]),
-    task("Event log persistence to disk",
-         "ADR-0001 defers Postgres; this is the file-backed step before it. Append-only, "
-         "chunked, with a manifest.",
-         "A 1,000,000 tick run writes a log that replays to a bit-identical state.", 4, ["SS5.3"]),
-    task("Replay bisector tool",
-         "Design SS11 wants this early. Replay to tick N, bisect for the first divergence.",
-         "Given a seeded divergence, the bisector finds the exact event in under a minute.",
-         3, ["SS11"]),
-    task("World inspector tool",
-         "A text or web view of live sim state: entities, beliefs, obligations, market.",
-         "Any entity's full belief set is inspectable while the sim runs.", 3, ["SS10"]),
-    task("Bridge integration tests",
-         "Sim and client in one test harness, asserting state agreement after N ticks.",
-         "Client and sim agree on every contract and corp balance after 1,000 ticks.", 3, ["SS11"]),
-    task("M4 evidence: kill-the-sim recording",
-         "Record the client degrading and recovering.",
-         "Recording uploaded as milestone evidence.", 1),
+M02 = [
+    dict(title="Geomorphing across LOD transitions",
+         detail="Vertices interpolate toward their coarser position as the transition "
+                "approaches, so a split is a blend rather than a jump. The current pop is "
+                "small at altitude and unmissable at walking pace.",
+         acceptance="Walk a ridge line at 2 m/s across four LOD boundaries with no visible "
+                    "vertex movement at any of them.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Stitching for the finer-neighbour case",
+         detail="Edge stitching currently handles a coarser neighbour. The mirror case "
+                "arises whenever LOD is driven by anything other than pure distance, which "
+                "it is about to be.",
+         acceptance="A forced-depth region adjacent to a natural one shows no crack from "
+                    "any angle.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Collision streaming with a cook budget",
+         detail="Cooking is the expensive half of a patch. Predictive cook along the "
+                "velocity vector, bounded per frame, with a guarantee rather than a hope.",
+         acceptance="At 900 m/s at 50 m altitude, a downward trace hits terrain on every "
+                    "frame of a 200 km transect.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Climate model: temperature and moisture fields",
+         detail="Latitude, altitude, prevailing wind and distance from water produce "
+                "temperature and moisture as continuous functions. Biomes are read from "
+                "them rather than painted, so they are consistent with the terrain that "
+                "produced them.",
+         acceptance="A pole-to-equator transect shows monotonic temperature and a rain "
+                    "shadow on the lee side of every major range.",
+         days=4, refs=["SS6.8", "LW SS7.2"]),
+    dict(title="Biome definition framework",
+         detail="A biome is a region of climate space with material sets, scatter rules, "
+                "colour response and slope behaviour. Data, not code.",
+         acceptance="Adding a biome is one data file and requires no recompile.",
+         days=3, refs=["ARCH Rule 7"]),
+    dict(title="Biome-blended triplanar materials with real texture sets",
+         detail="Replace generated noise textures with authored albedo, normal, roughness "
+                "and height sets, blended by height rather than by alpha so transitions "
+                "interlock instead of dissolving.",
+         acceptance="Three biomes meet on one slope with no visible blend band and no "
+                    "tiling at any distance.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Runtime Virtual Texture for surface composition",
+         detail="Compose the blended surface into an RVT so the expensive blend happens "
+                "once per texel rather than once per pixel, and so decals and roads have "
+                "something to write into.",
+         acceptance="Frame cost of the terrain material falls measurably and the visual "
+                    "result is unchanged.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Cliff and scree treatment by slope",
+         detail="Slope drives material, not just colour: exposed rock strata on steep "
+                "faces, scree accumulating at the angle of repose below them.",
+         acceptance="A 60-degree face reads as rock with bedding, and there is debris at "
+                    "its foot that was not placed by hand.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Hydrology: flow accumulation and river networks",
+         detail="Rivers derived from the height field by flow accumulation, carving their "
+                "own valleys, reaching the sea. The erosion model already computes slope; "
+                "this is what slope is for.",
+         acceptance="Every river reaches the sea or a basin, none flows uphill, and the "
+                    "same seed produces the same network.",
+         days=5, refs=["SS6.8"]),
+    dict(title="Caves and overhangs",
+         detail="A height field cannot express an overhang. A sparse volumetric layer over "
+                "the height field, meshed only where it is non-trivial, so the cost is paid "
+                "where there are caves and nowhere else.",
+         acceptance="Walk into a cave mouth, through a passage, and out the other side, "
+                    "with collision and lighting correct throughout.",
+         days=6, refs=["SS6.8"]),
+    dict(title="Scatter framework: rocks, vegetation, debris",
+         detail="Deterministic placement from biome rules, GPU-instanced, LOD'd, with "
+                "density that survives the frame budget at ground level.",
+         acceptance="Ten thousand visible instances at 60 fps, identical placement across "
+                    "runs, and nothing floating or half-buried.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Vegetation with wind response",
+         detail="Trees and grass that move with the wind field M04 will provide, and stop "
+                "moving when it stops.",
+         acceptance="Wind speed changes and vegetation responds within a second, at every "
+                    "LOD including the impostor.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Far-field impostors and horizon detail",
+         detail="Beyond the last real LOD, the planet needs to keep its silhouette. "
+                "Impostors for scatter, and a horizon that does not go smooth.",
+         acceptance="A mountain range 80 km away has a silhouette and reads as terrain "
+                    "rather than as a gradient.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Snow, ice and seasonal cover",
+         detail="Cover driven by the climate field and the season, accumulating by altitude "
+                "and latitude, affecting material and scatter.",
+         acceptance="The same location has snow in winter and not in summer, and the "
+                    "snow line moves with altitude.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Terrain sampling API with a stable contract",
+         detail="One place gameplay asks for height, normal, biome, slope and material at a "
+                "point, agreeing exactly with what is rendered. Everything built after this "
+                "depends on it.",
+         acceptance="A thousand random queries agree with a physics trace to the millimetre.",
+         days=2, refs=["ARCH SS3"]),
+    dict(title="Terrain modification API",
+         detail="Levelling, excavation and fill, persisted as a sparse delta over the "
+                "generated field. Construction in M19 needs ground it can flatten.",
+         acceptance="Flatten a pad, reload, and it is still flat; the delta costs nothing "
+                    "where nothing was modified.",
+         days=4, refs=["LW SS7.4"]),
+    dict(title="Streaming budget manager",
+         detail="One authority deciding how much generation, cooking and upload happens per "
+                "frame, with the budget split by priority rather than first come first "
+                "served.",
+         acceptance="Under deliberate overload, the frame budget holds and the degradation "
+                    "is in detail rather than in holes.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Shadow-specific terrain LOD",
+         detail="Shadow casters do not need the LOD the camera needs, and paying full "
+                "resolution into a shadow map is most of a cascade wasted.",
+         acceptance="Shadow cost drops measurably with no visible change in shadow quality.",
+         days=2, refs=["SS14"]),
+    dict(title="Disk cache for generated patches",
+         detail="Generation is deterministic, so it need only happen once per machine. A "
+                "content-addressed on-disk cache under the terrain cache.",
+         acceptance="A second visit to the same ground generates nothing and is bit-identical.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Terrain debug visualisers",
+         detail="LOD level, patch boundaries, collision presence, biome, climate fields, "
+                "cache state, streaming queue — all toggleable in-game.",
+         acceptance="Every terrain bug class in M00's history is diagnosable from the "
+                    "visualisers without adding code.",
+         days=2, refs=["SS13"]),
+    dict(title="Terrain regression suite",
+         detail="Automated flights over fixed seeds producing captures and metrics, "
+                "compared against references. Holes, cracks, popping and budget overruns "
+                "all become build failures.",
+         acceptance="Each of those four failure modes, introduced deliberately, is caught "
+                    "by CI.",
+         days=3, refs=["SS13"]),
+    dict(title="Playable proof: the 200 km transect",
+         detail="Rule 6. The milestone gate, run and recorded.",
+         acceptance="200 km at 300 m and 900 m/s: no holes, no seams, no frame over 16 ms, "
+                    "collision present throughout.",
+         days=2, refs=["ARCH Rule 6"]),
 ]
 
-# ---------------------------------------------------------------- M5
-M5 = [
-    task("Contract board UI with archetype and tension age",
-         "Show who wants what, and how old the grudge is. The age is what makes it read as "
-         "authored rather than generated.",
-         "Every listed contract shows the tick its tension was incurred.", 3, ["SS6.6"]),
-    task("Accept and abandon a contract",
-         "Acceptance is an event that propagates. Abandoning has a cost.",
-         "Accepting a contract is visible to other entities through the belief graph.", 2, ["SS4.2"]),
-    task("NPC entities rendered in the world",
-         "Simulated people need bodies where the player is. Instanced characters placed from "
-         "sim state, at the region the sim says they are in.",
-         "An NPC the sim moves is seen to move, without a teleport.", 4, ["SS6.7"]),
-    task("Approach and conversation entry",
-         "Walk or fly to an NPC and open a conversation. No dialogue content yet.",
-         "Conversation opens against the correct simulated entity, identified by id.", 3),
-    task("Disclosure interaction: the four incentives",
-         "Money, favour redemption, threat, and traded information, per SS6.3.",
-         "Each incentive produces a different disclosure probability, visibly.", 4, ["SS6.3"]),
-    task("Search volume rendered as a region, not a pin",
-         "SS6.3 is explicit: no quest markers. Draw the volume as a shaded region on the map "
-         "and in the world.",
-         "The volume visibly widens when a source contradicts an earlier one.", 4, ["SS6.3"]),
-    task("Inquiry events propagate and the target reacts",
-         "The closing edge of the core loop. Asking is itself an event.",
-         "Asking enough people causes the target to relocate, traceably.", 3, ["SS4"]),
-    task("Stale intelligence and the cost of delay",
-         "A disclosure ages. Its confidence decays, and acting on old information fails.",
-         "Waiting ten in-game days after a disclosure makes the location wrong.", 2, ["SS6.1"]),
-    task("Physical resolution: locating the target on the surface",
-         "Fly to the region, find the target's actual position, and approach.",
-         "The target is physically present at the location the sim holds, not spawned on arrival.",
-         4, ["SS4.2"]),
-    task("Capture alive versus kill",
-         "Alive is worth more and requires approach and preparation. Dead is fast and loud.",
-         "Killing generates worse events than capturing, measurably, in the belief graph.",
-         3, ["SS4.2"]),
-    task("Delivery choice and betrayal",
-         "The posting corp is not the only buyer. A rival may pay more.",
-         "Delivering to the rival is a betrayal event that propagates and changes disposition.",
-         3, ["SS4.2"]),
-    task("Consequence surfacing after the fact",
-         "Show the player what their choice caused, days later, without telling them at the time.",
-         "A betrayal produces a visible consequence at least one session later.", 3, ["SS2"]),
-    task("Witness system and elimination",
-         "Who saw what, and what happens if they do not survive to tell it.",
-         "Removing the only witness measurably slows propagation of the act.", 3, ["SS6.1"]),
-    task("Map view with belief overlay",
-         "Show what the player knows, not what is true. Confidence and provenance visible.",
-         "The map shows a contradicted location as two claims, not an average.", 4, ["SS6.1"]),
-    task("Journal of leads and sources",
-         "A record of who said what, when, and how sure they were.",
-         "A player can reconstruct how they found a target from the journal alone.", 3, ["SS13.2"]),
-    task("Scripted agent parity test",
-         "The headless scripted agent and the player-facing loop must exercise the same code.",
-         "A test drives the full loop headlessly and asserts the same events as a play session.",
-         3, ["SS6.3", "SS11"]),
-    task("Bounty loop balance pass",
-         "Tune disclosure costs, decay rates and flight thresholds against the SS12 bands.",
-         "Favour redemption 40-70%, false beliefs 10-25%, propagation depth 3-6 hops.",
-         4, ["SS12"]),
-    task("M5 evidence: a bounty, start to finish",
-         "Record a full contract from board to delivery, with the journal visible.",
-         "Recording plus journal export uploaded as milestone evidence.", 2, ["SS13.2"]),
+
+# ---------------------------------------------------------------------------
+# M03 - planetary bodies and orbital mechanics.
+# ---------------------------------------------------------------------------
+
+M03 = [
+    dict(title="Body definition: mass, radius, rotation, tilt, orbit",
+         detail="One description a planet, moon, station or asteroid is built from, in "
+                "double precision, deterministic from seed.",
+         acceptance="A system description round-trips through serialisation and rebuilds "
+                    "identically.",
+         days=2, refs=["LW SS8"]),
+    dict(title="Keplerian ephemeris",
+         detail="Position and velocity of every body at any time, from orbital elements. "
+                "Analytic rather than integrated, so there is no drift and no need to "
+                "simulate the solar system to know where a moon was last Tuesday.",
+         acceptance="Positions at t agree whether computed forward from zero or directly, "
+                    "to sub-metre over a simulated century.",
+         days=4, refs=["LW SS8"]),
+    dict(title="Reference frame hierarchy",
+         detail="System, body, surface and vehicle frames with transforms between them. "
+                "Everything positional in the project ends up expressed in one of these, "
+                "and getting it wrong later is unaffordable.",
+         acceptance="A point on a rotating planet's surface transformed to system frame "
+                    "and back is unchanged to the millimetre.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Rotation, day and night from the real rotation rate",
+         detail="Sun position derived from the body's rotation and orbit, not from a "
+                "time-of-day slider.",
+         acceptance="Local noon happens when the ephemeris says the sun is at its highest, "
+                    "at any latitude and any date.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Axial tilt and seasons",
+         detail="Tilt drives insolation, which drives the climate field from M02 and the "
+                "snow line with it.",
+         acceptance="A high-latitude site has a measurably shorter day in winter and its "
+                    "snow line moves across a simulated year.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Multi-body rendering with correct illumination",
+         detail="Other planets and moons visible in the sky, at the right place, with the "
+                "right phase and the right apparent size.",
+         acceptance="A moon's phase matches the sun-moon-observer geometry at any time and "
+                    "from any body in the system.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Eclipses and body shadows",
+         detail="A moon casting a shadow on a planet, a planet eclipsing its moon, and the "
+                "lighting change on the ground when it happens.",
+         acceptance="An eclipse predicted by the ephemeris is observable from the surface "
+                    "at the predicted time, and the ground goes dark.",
+         days=3, refs=["SS6.8"]),
+    dict(title="The star as a physical light",
+         detail="Intensity, colour temperature and angular size from the star's class and "
+                "the observer's distance — so an inner planet is genuinely brighter and an "
+                "outer one genuinely dimmer.",
+         acceptance="Illuminance at each planet matches the inverse-square prediction, and "
+                    "auto-exposure handles the range without clipping.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Star field from a generated catalogue",
+         detail="Stars with position, magnitude and colour, correct for the observer's "
+                "location in the galaxy, and parallax between systems.",
+         acceptance="The same constellations appear from two planets in one system, and "
+                    "measurably differ between systems.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Moons on the shared terrain framework",
+         detail="A moon is a body with a different radius, no atmosphere and different "
+                "climate inputs. If it needs its own renderer, the framework is wrong.",
+         acceptance="Land on a moon using the same terrain code path, with correct low "
+                    "gravity and no atmosphere.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Gas giants",
+         detail="Volumetric banding, storms, and a surface you can descend into until "
+                "pressure ends the attempt.",
+         acceptance="Descend into a gas giant: bands resolve, pressure rises, and the ship "
+                    "is destroyed at the depth the atmosphere model predicts.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Ring systems",
+         detail="Particle rings with self-shadowing and a shadow cast on the planet, "
+                "flyable through rather than a texture on a disc.",
+         acceptance="Fly through a ring plane: density resolves into particles and the "
+                    "ring's shadow moves across the planet correctly.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Asteroid fields and small irregular bodies",
+         detail="Non-spherical bodies need a different mesh path from the cube-sphere, "
+                "and orbits that are individually tracked rather than instanced.",
+         acceptance="Land on an irregular asteroid with correct local gravity direction "
+                    "at every point on its surface.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Orbital stations and platforms",
+         detail="Structures on rails around a body, with their own local frame that things "
+                "can dock to and stand in.",
+         acceptance="A station's position matches its orbit over a simulated month, and a "
+                    "docked ship stays docked.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Gravity field from real masses",
+         detail="Inverse-square from every significant body rather than one hardcoded "
+                "constant, including the transition between spheres of influence.",
+         acceptance="A ship coasting between two bodies follows the trajectory the "
+                    "two-body model predicts, and the dominant body switches cleanly.",
+         days=3, refs=["SS6.9"]),
+    dict(title="System generation from seed",
+         detail="Star class, planet count, orbits, compositions and moons, generated to be "
+                "plausible rather than uniform — hot rocks close in, gas giants further "
+                "out, habitable zones where the star puts them.",
+         acceptance="Twenty generated systems are all physically plausible and none is a "
+                    "rearrangement of another.",
+         days=4, refs=["LW SS8"]),
+    dict(title="Time acceleration for testing",
+         detail="Run the ephemeris and climate at a thousand times normal so a year can be "
+                "inspected in minutes, without the renderer trying to keep up.",
+         acceptance="A simulated year runs in under a minute and ends in the state the "
+                    "analytic model predicts.",
+         days=2, refs=["SS13"]),
+    dict(title="Ephemeris determinism and agreement tests",
+         detail="Two processes, one seed, identical positions; and the sky agrees with the "
+                "ephemeris at a hundred random times and places.",
+         acceptance="Sky and ephemeris agree to the arcminute in every sample.",
+         days=2, refs=["ARCH Rule 5"]),
+    dict(title="System map and query API",
+         detail="What is where, how far, how long to get there. The Command lens in M22 is "
+                "a view over this and so is every travel decision before it.",
+         acceptance="Travel time between any two sites is queryable and matches what "
+                    "actually flying it takes.",
+         days=2, refs=["LW SS4"]),
+    dict(title="Playable proof: watch a moon transit and then fly to it",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="A moon rises, transits and sets on schedule; then it is flown to and "
+                    "landed on, in one session.",
+         days=2, refs=["ARCH Rule 6"]),
 ]
 
-# ---------------------------------------------------------------- M6
-M6 = [
-    task("Narration service skeleton in Python",
-         "Design SS10's narration/ tree. A process that accepts structured state and returns "
-         "text or an enum, batched and off the critical path.",
-         "The sim runs identically with the service absent.", 3, ["SS6.4", "SS10"]),
-    task("llama.cpp integration with a quantised local model",
-         "3-8B at Q4 per SS6.4, with an explicit VRAM budget measured against the renderer.",
-         "Inference runs alongside a 60 fps render without dropping frames.", 4, ["SS6.4"]),
-    task("GBNF grammars for constrained action selection",
-         "The model selects an enum variant, never free text that touches state.",
-         "Every model output parses into a typed variant or is rejected; zero string parsing.",
-         4, ["SS6.4"]),
-    task("Renderers: news article from market state",
-         "State to prose. The article is a lossy, biased rendering of true state.",
-         "Articles lag the price move that caused them.", 3, ["SS6.5"]),
-    task("Renderers: dialogue line from disposition and belief",
-         "What an NPC says derives from what it believes and how it feels, both computed.",
-         "Two NPCs with contradictory beliefs say contradictory things.", 4, ["SS6.4"]),
-    task("Renderers: corporate filings and obligation notices",
-         "Bureaucratic menace as text. The scariest thing in the setting is a compliance division.",
-         "A filing references a real obligation with real numbers from the ledger.", 3, ["SS3"]),
-    task("Authored fallback lines on timeout",
-         "300 ms budget per SS6.4, with a fallback that is never obviously a fallback.",
-         "Forcing every request to time out still produces a playable conversation.", 3, ["SS6.4"]),
-    task("Batching and scheduling off the render thread",
-         "Slow decisions only: faction moves on minutes, board text at refresh, dialogue at open.",
-         "No inference call is made from the render thread, ever, asserted in code.", 3, ["SS6.4"]),
-    task("Tier 5 stub-equivalence test",
-         "A full sim run with narration stubbed must produce byte-identical world state.",
-         "The test is in CI and fails if any narration path writes to authoritative state.",
-         3, ["SS11", "SS6.4"]),
-    task("Prompt and grammar versioning",
-         "Prompts are code. Version them, and record which version produced which text.",
-         "Any generated article can be traced to the prompt and model version that made it.",
-         2, ["SS8.5"]),
-    task("Narration cost and latency dashboard",
-         "Measure tokens, latency and fallback rate per surface.",
-         "Fallback rate is visible and under 5% in normal play.", 2, ["SS12"]),
-    task("Cloud fallback decision and ADR",
-         "SS15.6: local-only, or optional cloud for players without VRAM.",
-         "An ADR recording the decision and its consequences for latency and privacy.",
-         2, ["SS15.6", "SS8.5"]),
-    task("M6 evidence: stubbed versus live equivalence",
-         "Run both, diff the state hashes, capture the result.",
-         "Diff output uploaded as milestone evidence.", 1, ["SS11"]),
-]
 
-# ---------------------------------------------------------------- M7
-M7 = [
-    task("Market instrument design and ADR",
-         "SS15.5: order book, continuous double auction, or corp shares only. This determines "
-         "the anti-bot surface.",
-         "An ADR with the decision and the exploit surface it accepts.", 3, ["SS15.5", "SS8.5"]),
-    task("Commodity supply and demand model",
-         "Production, consumption and stock per region, moved by lanes.",
-         "A blocked lane produces a shortage downstream within a legible number of ticks.",
-         4, ["SS6.5"]),
-    task("Price formation from supply and demand",
-         "simulation event to supply/demand to price. Never the inverse.",
-         "No price moves without a simulation event that caused it, asserted in a test.",
-         3, ["SS6.5"]),
-    task("Corporate balance sheets and share instruments",
-         "Assets, liabilities, and shares outstanding that stay constant per instrument.",
-         "Total shares outstanding per instrument is invariant over 1,000,000 ticks.",
-         4, ["SS6.5", "SS12"]),
-    task("Faucets and sinks, explicitly logged",
-         "Money supply changes only through defined faucets and sinks, and they are logged.",
-         "Every change to the money supply names its faucet or sink in the event log.",
-         3, ["SS6.5"]),
-    task("Bankruptcy and asset transfer to creditors",
-         "Assets transfer; they never delete. The state space is a cycle, not a line.",
-         "A bankrupt corp's assets sum to the same total after the transfer as before.",
-         3, ["SS6.5"]),
-    task("Mean-reversion pressure at scale",
-         "Overhead rises with size; rivals coalesce against a leader.",
-         "Gini over lane holdings oscillates rather than trending over 1,000,000 ticks.",
-         3, ["SS6.5", "SS12"]),
-    task("News feed UI with source bias",
-         "Some outlets are captured. Corporate releases spin.",
-         "Two outlets report the same event differently, and both are wrong in different ways.",
-         4, ["SS6.5"]),
-    task("Article lag behind price movement",
-         "Players who watched the convoy die traded before the news broke.",
-         "Articles are published a measurable number of ticks after the causing event.",
-         2, ["SS6.5"]),
-    task("Player trading interface",
-         "Positions, orders, and a portfolio, in the instrument the ADR chose.",
-         "A player can take a position on a corp and realise a gain from a simulated event.",
-         4, ["SS6.5"]),
-    task("Anti-bot friction, designed not discovered",
-         "Knowledge that only exists inside physical conversations; positions requiring presence.",
-         "A scripted client with full market data cannot outperform a player who travels.",
-         4, ["SS6.5"]),
-    task("Tier 3 fuzz over the economy for 1,000,000 ticks",
-         "Adversarial scripted agent, every invariant asserted continuously, nightly in CI.",
-         "The nightly run is green for seven consecutive nights.", 4, ["SS11", "SS12"]),
-    task("Economy metrics dashboard",
-         "Per-region tick cost, Gini, dominance, money supply, faucet and sink volumes.",
-         "All SS12 economy metrics are visible on one page and alert outside their bands.",
-         3, ["SS12"]),
-    task("Cornering and manipulation testing",
-         "Try to corner a market deliberately and see whether the invariants hold.",
-         "A deliberate corner attempt is either impossible or self-correcting within N ticks.",
-         3, ["SS6.5", "SS14 R4"]),
-    task("M7 evidence: trade ahead of the news",
-         "Record watching a convoy die, taking a position, and the article arriving late.",
-         "Recording uploaded as milestone evidence.", 2, ["SS6.5"]),
+# ---------------------------------------------------------------------------
+# M04 - atmosphere, weather and environment.
+# ---------------------------------------------------------------------------
+
+M04 = [
+    dict(title="Atmosphere profile per body",
+         detail="Composition, surface pressure, scale height and lapse rate as data. "
+                "Earth's numbers become one row rather than the only row.",
+         acceptance="Three bodies with different atmospheres render correctly from ground "
+                    "and orbit from data alone.",
+         days=3, refs=["SS6.8", "LW SS7.2"]),
+    dict(title="Scattering for non-Earth compositions",
+         detail="Rayleigh and Mie coefficients derived from composition, so a CO2 sky is "
+                "the colour physics says and not the colour someone liked.",
+         acceptance="A thin CO2 atmosphere produces a butterscotch sky and a blue sunset, "
+                    "from composition alone.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Volumetric fog that is not planar",
+         detail="Exponential height fog fills space from orbit because it has no notion of "
+                "a sphere. Ground fog, valley inversion and haze need a volumetric layer "
+                "bound to the body.",
+         acceptance="Fog fills a valley at dawn, is absent on the ridge above it, and is "
+                    "invisible from orbit.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Pressure-cell weather model",
+         detail="A coarse global field of pressure cells advected by rotation, producing "
+                "wind, fronts and storm systems that move and evolve. Deterministic from "
+                "seed and time.",
+         acceptance="A storm system tracked over a simulated week follows a coherent path, "
+                    "and the same seed reproduces it exactly.",
+         days=5, refs=["LW SS7.2"]),
+    dict(title="Wind field queryable by everything",
+         detail="Speed and direction at any point and altitude, read by flight, vegetation, "
+                "particles, audio and the settlement layer.",
+         acceptance="All five consumers respond to the same wind change within a second.",
+         days=2, refs=["SS6.9"]),
+    dict(title="Cloud layers at real altitudes",
+         detail="Multiple volumetric decks — low cumulus, mid, high cirrus — at altitudes "
+                "the atmosphere profile determines, advected by the wind field.",
+         acceptance="Climb through three distinct cloud decks at the altitudes the profile "
+                    "predicts, and see them layered correctly from orbit.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Precipitation: rain, snow and dust",
+         detail="Driven by the weather model, rendered volumetrically and as surface "
+                "effects, with the type decided by temperature and composition.",
+         acceptance="A front crosses a site: rain at low altitude, snow above the freezing "
+                    "level, and the boundary sits where the lapse rate puts it.",
+         days=4, refs=["LW SS7.2"]),
+    dict(title="Surface wetness, puddles and drying",
+         detail="Rain changes roughness and colour, water collects where the terrain says "
+                "it should, and it dries at a rate the temperature decides.",
+         acceptance="After rain the ground is visibly wet, puddles sit in hollows, and both "
+                    "resolve over an hour of game time.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Storms: lightning, dust and severe weather",
+         detail="The extreme tail of the weather model, with the visual and audio "
+                "signature to match, and enough force to matter to a ship.",
+         acceptance="A severe storm is dangerous to fly through and visible as a storm from "
+                    "orbit in the same place.",
+         days=4, refs=["LW SS7.2"]),
+    dict(title="Turbulence and wind loading on vehicles",
+         detail="Wind shear, gusts and thermals as forces on the flight model, not as "
+                "camera shake.",
+         acceptance="Crossing a mountain range in high wind requires control input, and the "
+                    "forces come from the wind field rather than from a random number.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Temperature and pressure as physical fields",
+         detail="Queryable at any point, driven by latitude, altitude, season and weather. "
+                "Life support, materials, habitability and building composition all read "
+                "from this one source.",
+         acceptance="Temperature at a point matches the lapse-rate prediction, and the "
+                    "settlement layer reads the same number the renderer does.",
+         days=2, refs=["LW SS7.2"]),
+    dict(title="Re-entry heating from atmospheric density",
+         detail="Heating as a function of density and velocity, with the visual effect and "
+                "the ship damage both derived from it rather than triggered by altitude.",
+         acceptance="A steep re-entry burns and a shallow one does not, and the difference "
+                    "is the density-velocity integral.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Cockpit and visor effects",
+         detail="Rain streaks that respond to airspeed, dust accumulation, icing, fogging, "
+                "and the wipers or heaters that clear them.",
+         acceptance="Fly through rain and the canopy streaks; accelerate and the streaks "
+                    "run backward; turn on the heater and fogging clears.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Environmental audio",
+         detail="Wind by speed and air density, precipitation on surfaces, thunder delayed "
+                "by distance, and silence in vacuum.",
+         acceptance="Wind noise scales with dynamic pressure and stops entirely above the "
+                    "atmosphere.",
+         days=2, refs=["SS6.9"]),
+    dict(title="Aurora at magnetic poles",
+         detail="Driven by the body's magnetic field and stellar activity, visible from "
+                "the ground and from orbit.",
+         acceptance="Aurora appears at high latitude during a modelled solar event and not "
+                    "otherwise.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Weather forecast API",
+         detail="What the weather will be at a place and time. Flight planning, settlement "
+                "shutters and mission generation all need to anticipate rather than react.",
+         acceptance="A forecast issued six hours ahead matches what happens, within the "
+                    "model's stated confidence.",
+         days=2, refs=["LW SS7.1"]),
+    dict(title="Volumetric performance budget",
+         detail="Clouds, fog and precipitation are the easiest way to lose the frame. "
+                "Resolution, temporal reprojection and distance-based quality, under one "
+                "budget.",
+         acceptance="Worst-case weather costs no more than 4 ms and degrades in detail "
+                    "rather than in frame rate.",
+         days=3, refs=["SS14"]),
+    dict(title="Weather determinism and orbit-to-ground agreement",
+         detail="Same seed and time gives the same weather, and the storm seen from orbit "
+                "is the storm flown into.",
+         acceptance="Both properties hold across a hundred sampled times and places.",
+         days=2, refs=["ARCH Rule 5"]),
+    dict(title="Playable proof: fly into a storm front",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Visibility, wind loading and audio change together on entry, and the "
+                    "same storm is in the same place from orbit.",
+         days=2, refs=["ARCH Rule 6"]),
 ]

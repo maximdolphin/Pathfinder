@@ -1,414 +1,501 @@
 # -*- coding: utf-8 -*-
-"""Roadmap content for LEDGER.
+"""Roadmap content for LEDGER. Milestones, plus M00-M01.
 
-Authored as data rather than typed into a UI: the roadmap is a year of
-interdependent work and it belongs in version control next to the code it
-describes, where a change to it shows up in a diff.
+Two rewrites are folded into this plan.
 
-Every task carries an `acceptance` line. A task without a falsifiable finish
-condition is a wish, and a roadmap of wishes cannot tell you whether it is on
-schedule -- which is the whole reason the design document insists on gates
-(design SS2, SS13).
+The first: framework-first instead of feature-first. The prototype answered the
+hard rendering question and left behind three god-modules, and a system that has
+to grow for years cannot be grown out of those. See ARCH SS0.
 
-Design section references point at `docs/design/ledger-design.md`.
+The second: **the technical model comes before the simulation.** Ships, flight,
+planets, travel, physics, bodies and rendering are built to a standard that
+holds up next to Star Citizen, and only then does the living-world simulation go
+on top. The reasoning is that the technical model is the part that can fail
+outright -- seamless travel, local physics grids and planet-scale streaming are
+each capable of being impossible -- and there is no point simulating a galaxy
+that cannot be flown through.
+
+On the comparison, plainly: Star Citizen has had hundreds of engineers for over
+a decade. What is targeted here is the *technical model* at that standard, with
+a fraction of the content breadth. One system done properly beats thirty done
+like a student project, and the plan is built that way.
+
+The total below is about four years. That is what this scope costs with one
+engineer, and a schedule that flatters itself is worse than no schedule.
+
+References:
+  LW SSn    docs/design/living-world.md
+  ARCH SSn  docs/architecture/module-map.md
+  SSn       docs/design/ledger-design.md
 """
 
-# Milestones. Each one is a checkpoint with a gate that can be answered yes or
-# no by looking at a build, plus space for evidence proving it was passed.
 MILESTONES = [
     dict(
-        id="M0", title="Foundations", week_start=-6, week_end=0,
-        goal="A deterministic headless sim and a real-scale planet you can fly to and from.",
-        gate="Read out/world-dump.txt: can you trace a corporate collapse back four causes, "
-             "and do two NPCs disagree about the same fact for legible reasons? "
-             "Separately: does the client fly orbit to ground to orbit with no loading screen?",
+        id="M00", title="Prototype spike (delivered)", week_start=-6, week_end=0,
+        goal="Answer the two questions that could have killed the project: can a "
+             "deterministic belief simulation be made legible, and can one engineer "
+             "render a real-scale planet you fly to and from without a loading screen.",
+        gate="Both answered yes. out/world-dump.txt traces a corporate collapse back "
+             "four causes and shows two NPCs disagreeing for legible reasons; the client "
+             "flies orbit to ground to orbit continuously, with water, weather and a town.",
         refs=["SS13.1", "SS6.8", "SS15.1"],
     ),
     dict(
-        id="M1", title="Terrain to production standard", week_start=1, week_end=5,
-        goal="The terrain stops being a spike: water, stable LOD, collision everywhere it is "
-             "needed, and assets that survive a cook.",
-        gate="Fly a 200 km transect at 300 m altitude at 60 fps with no holes, no popping "
-             "that reads as a seam, and no frame over 20 ms.",
-        refs=["SS6.8", "SS14 R3"],
+        id="M01", title="Architecture and the split", week_start=1, week_end=4,
+        goal="Turn the spike into a structure before building anything complex on it. "
+             "Cargo workspace, Unreal modules, the god-files split along real seams, and "
+             "a build that refuses to compile a layering violation.",
+        gate="No source file over 500 lines; every UE module declares three or fewer "
+             "dependencies except LedgerGame; adding an illegal dependency fails CI with "
+             "a named rule; the scripted flight renders identically to before the split.",
+        refs=["ARCH SS2", "ARCH SS3", "ARCH SS5"],
     ),
     dict(
-        id="M2", title="Surface fidelity", week_start=6, week_end=11,
-        goal="Ground that holds up at walking distance: biome-blended materials, real texture "
-             "sets, and detail that survives every LOD transition.",
-        gate="Stand on the surface at three biomes and at three altitudes. No tiling is "
-             "visible, no shimmer, and the material does not change identity when a patch splits.",
+        id="M02", title="Terrain to production standard", week_start=5, week_end=13,
+        goal="The terrain stops being a spike. Stable LOD with no popping, collision "
+             "wherever a body can be, caves and overhangs, biome-driven material blending, "
+             "and a streaming budget that holds at speed.",
+        gate="Fly a 200 km transect at 300 m and at 900 m/s: no holes, no popping that "
+             "reads as a seam, no frame over 16 ms, and collision present under the ship "
+             "at every point along it.",
         refs=["SS6.8"],
     ),
     dict(
-        id="M3", title="Ship systems and flight", week_start=12, week_end=17,
-        goal="A ship you can actually fly: cockpit, HUD, landing gear, fuel, damage, and a "
-             "flight model that behaves in vacuum and in air.",
-        gate="Take off from the pad, reach orbit, re-enter, and land on the same pad using only "
-             "the cockpit view and the HUD.",
-        refs=["SS6.9", "SS1.1"],
+        id="M03", title="Planetary bodies and orbital mechanics", week_start=14, week_end=21,
+        goal="A solar system that moves. Planets, moons, rings and stations on real "
+             "orbits, axial tilt, rotation, day and night, seasons, eclipses — all "
+             "deterministic from seed and all consistent between the map and the sky.",
+        gate="Stand on a surface and watch a moon rise, transit and set on the schedule "
+             "the orbital model predicts. Fly to it. The ephemeris and the sky agree to "
+             "the arcminute.",
+        refs=["LW SS8", "SS6.8"],
     ),
     dict(
-        id="M4", title="Sim to client bridge", week_start=18, week_end=22,
-        goal="The client stops reading a file. protobuf over TCP, live world state, and a "
-             "contract board that reflects the running simulation.",
-        gate="Kill the sim mid-flight: the client degrades visibly and recovers when it "
-             "restarts, without a crash and without inventing state.",
-        refs=["SS5", "SS9", "ADR-0001"],
+        id="M04", title="Atmosphere, weather and environment", week_start=22, week_end=29,
+        goal="Air that behaves. Layered atmospheres per body, volumetric weather that "
+             "moves and matters, storms with real wind fields, temperature and pressure "
+             "as physical quantities the rest of the game reads.",
+        gate="Fly into a storm front: visibility, wind loading on the ship and cockpit "
+             "audio all change together, and the same storm is visible from orbit in the "
+             "place the weather model puts it.",
+        refs=["SS6.8", "LW SS7.2"],
     ),
     dict(
-        id="M5", title="The bounty loop, end to end", week_start=23, week_end=29,
-        goal="Design SS4.2's canonical mission, built properly: accept, investigate by "
-             "disclosure, narrow a search volume, locate physically, resolve, choose delivery.",
-        gate="Phase 1 gate (SS13.2): does the bounty feel like investigation rather than a quest "
-             "marker? Can a player describe how they found the target?",
-        refs=["SS4.2", "SS6.3", "SS13.2"],
+        id="M05", title="Ship framework: hulls, components, subsystems", week_start=30, week_end=39,
+        goal="Ships as systems, not props. A component graph — power plant, thrusters, "
+             "fuel, cooling, avionics, life support, shields — with real dependencies, "
+             "damage that propagates through it, and hulls assembled from parts.",
+        gate="Shoot out a power coupling and watch thrusters on that bus go dead, heat "
+             "climb, and the affected systems degrade in an order the component graph "
+             "explains. Repair it and the ship comes back.",
+        refs=["SS6.9"],
     ),
     dict(
-        id="M6", title="Narration", week_start=30, week_end=34,
-        goal="A local model that renders state into prose and selects from a closed action "
-             "space. It never decides anything that matters.",
-        gate="Tier 5: a full sim run with narration stubbed produces byte-identical world state "
-             "to one with narration live.",
-        refs=["SS6.4", "SS11"],
+        id="M06", title="Flight model in vacuum and in air", week_start=40, week_end=48,
+        goal="Flight worth doing. Six-degree thruster allocation solved rather than "
+             "faked, aerodynamic lift and drag in atmosphere, control surfaces, landing "
+             "gear, gravity, and the transition between the two regimes.",
+        gate="Take off from a pad, fly aerodynamically to another continent, exit the "
+             "atmosphere, manoeuvre in vacuum, re-enter with heating and buffeting, and "
+             "land on the pad you left. Cockpit view and instruments only.",
+        refs=["SS6.9"],
     ),
     dict(
-        id="M7", title="Economy and the news feed", week_start=35, week_end=40,
-        goal="Markets that move because something happened, and a news feed that is a lossy, "
-             "biased rendering of true underlying state.",
-        gate="Watch a convoy die, then trade on it before the article appears. The article, when "
-             "it appears, is late and slightly wrong.",
-        refs=["SS6.5", "SS12"],
+        id="M07", title="Seamless travel across a system", week_start=49, week_end=57,
+        goal="Distance made crossable without a loading screen. Origin rebasing, "
+             "multi-scale rendering from centimetres to astronomical units, and a "
+             "high-speed travel mode with a real spool, a real interruption, and a real "
+             "cost.",
+        gate="Fly from a planet's surface to a moon of another planet in one continuous "
+             "shot, with no loading screen, no cut, and no precision artefact anywhere "
+             "along the path.",
+        refs=["LW SS8", "SS6.8"],
     ),
     dict(
-        id="M8", title="Crew", week_start=41, week_end=44,
-        goal="Named, simulated people you hire, rely on, and can lose. The losable thing "
-             "(SS2.1).",
-        gate="Lose a crew member to a chain of events that was your fault and was foreseeable, "
-             "and be able to reconstruct the chain afterwards.",
-        refs=["SS2.1", "SS15.4"],
+        id="M08", title="Physics at scale and local grids", week_start=58, week_end=66,
+        goal="The hardest engine problem in the project: walking around inside a ship "
+             "that is itself moving at speed near a rotating planet. Nested reference "
+             "frames, which Chaos does not have.",
+        gate="Walk from the back of a ship to its cockpit while it accelerates, rolls and "
+             "flies through atmosphere. Set a cup down and it stays on the table. Step "
+             "out onto a landing pad on a rotating planet and inherit the right frame.",
+        refs=["SS6.9"],
     ),
     dict(
-        id="M9", title="All six mission archetypes", week_start=45, week_end=48,
-        goal="Audit, Interception, Extraction, Fabrication and Collection, all on the one "
-             "hidden-variable algorithm. No second implementation.",
-        gate="SS12 oatmeal detector: no archetype exceeds 35% of generated contracts over a "
-             "10,000 tick run, and every one uses the same investigation code path.",
-        refs=["SS6.6", "SS6.3", "SS12"],
+        id="M09", title="Embodiment and animation", week_start=67, week_end=77,
+        goal="A body worth being in. Character controller with real momentum, full-body "
+             "IK, procedural foot and hand placement, first and third person from one "
+             "skeleton, interaction, seats, ladders, EVA.",
+        gate="Walk out of a room, climb a ladder, cross a pad in wind, board a ship, take "
+             "a seat, fly, and get out again — one continuous shot, no cut, no teleport, "
+             "no animation that slides.",
+        refs=["SS6.9", "LW SS4"],
     ),
     dict(
-        id="M10", title="Simulation LOD and reification", week_start=49, week_end=52,
-        goal="A world that ticks statistically where nobody is watching and instantiates "
-             "consistently when somebody arrives.",
-        gate="Property test: aggregate(reify(A)) == A for arbitrary aggregate state. And a "
-             "player cannot find the seam by flying between regions.",
-        refs=["SS6.7", "SS15.3"],
+        id="M10", title="Interiors and modular architecture", week_start=78, week_end=86,
+        goal="Insides. Ship interiors, station interiors and building interiors built "
+             "from a modular kit, generated where they should be generated and authored "
+             "where they should be authored, with no door that is a loading screen.",
+        gate="Walk from a city street into a building, up through it, out onto a roof pad, "
+             "into a docked ship and through it to the cockpit, with no load, no fade, and "
+             "no drop below the frame budget.",
+        refs=["LW SS7", "SS6.8"],
     ),
     dict(
-        id="M11", title="Multiplayer foundation", week_start=53, week_end=56,
-        goal="A 16 to 32 player shard, sim-authoritative, with the PvPvE persistence classes "
-             "resolved and IP counsel's review complete.",
-        gate="Sixteen players on one shard for an hour. No desync, no duplicated bounty target, "
-             "and the belief graph survives a coordinated rumour-injection attempt.",
-        refs=["SS6.10", "SS7", "SS15.2"],
+        id="M11", title="Rendering fidelity", week_start=87, week_end=97,
+        goal="The look. A real PBR material pipeline, lighting that works from a lit "
+             "cockpit at night to a sunlit dune, volumetrics, decals, wear, post, and the "
+             "LOD and impostor chain that lets it survive at range.",
+        gate="Side by side against reference footage at three distances and three lighting "
+             "conditions, a stranger cannot immediately sort ours from theirs on material "
+             "and lighting alone.",
+        refs=["SS6.8", "SS14"],
     ),
     dict(
-        id="M12", title="MVP gate", week_start=57, week_end=58,
-        goal="The four pillar tests, on a live build, with real players.",
-        gate="P1: log out for a week, find three causally-explicable changes. P2: reconstruct "
-             "four causes of any world change. P3: two players hold contradictory sincere "
-             "beliefs. P4: lose something you spent twenty hours building, foreseeably.",
-        refs=["SS2", "SS13.3"],
+        id="M12", title="Asset pipeline and world content", week_start=98, week_end=106,
+        goal="A way to get content in that is not a person placing things by hand. "
+             "Import, validation, LOD generation, material assignment, biome and settlement "
+             "generators, and the tooling to author a system.",
+        gate="Add a new ship and a new biome end to end through the pipeline, with no "
+             "manual step outside the tool, and both appear correctly at every LOD.",
+        refs=["SS14"],
+    ),
+    dict(
+        id="M13", title="Performance and optimisation", week_start=107, week_end=114,
+        goal="Budgets met with everything running at once. Rendering, streaming, physics "
+             "and memory, at the densities the design actually asks for.",
+        gate="Sixty frames a second with a full city, a docked ship interior and traffic "
+             "in view, no frame over 16 ms, and a two-hour session with no memory growth.",
+        refs=["SS14"],
+    ),
+    dict(
+        id="M14", title="Technical vertical slice", week_start=115, week_end=122,
+        goal="Prove the model. One system, one planet, one moon, one city, one station, "
+             "three ships — everything above running together and holding up under an "
+             "hour of unscripted play.",
+        gate="An hour of free play with no loading screen, no crash, no frame over 16 ms, "
+             "and nothing that reads as placeholder. This is the milestone the whole "
+             "technical plan exists to reach.",
+        refs=["ARCH Rule 6"],
+    ),
+    dict(
+        id="M15", title="Simulation core and determinism", week_start=123, week_end=130,
+        goal="The substrate the living world is written against: event log, reducer "
+             "contract, snapshots, replay, and a harness that proves reproducibility "
+             "before there is anything complicated to reproduce.",
+        gate="Replay a 100,000-tick log twice from one seed and diff the snapshots byte "
+             "for byte. CI fails on divergence and names the first differing tick.",
+        refs=["SS3", "ARCH Rule 5"],
+    ),
+    dict(
+        id="M16", title="Agent framework", week_start=131, week_end=142,
+        goal="The longest simulation milestone, and the one every other system reduces "
+             "to. Needs, goals, planning, schedules, competence, loyalty — and agents "
+             "that act on their own beliefs rather than on world state.",
+        gate="Run 500 agents for 30 simulated days. Any one agent's whole history is "
+             "explained by its needs and its beliefs, with no appeal to world state it "
+             "never observed, and two agents holding different beliefs act differently.",
+        refs=["LW SS6", "SS4"],
+    ),
+    dict(
+        id="M17", title="Organisation framework", week_start=143, week_end=150,
+        goal="Membership, roles, holdings, treasury, doctrine and span of control. A "
+             "player organisation and an NPC organisation are the same type, founded "
+             "through the same API, subject to the same drift.",
+        gate="Over-extend an organisation and watch drift appear as subordinates pursuing "
+             "their own goals — with no code path in the org layer that asks whether the "
+             "owner is a player.",
+        refs=["LW SS2", "ARCH Rule 4"],
+    ),
+    dict(
+        id="M18", title="Economy and logistics", week_start=151, week_end=158,
+        goal="Goods, markets, production, contracts and convoys. Materials that have to "
+             "physically arrive, which is what turns a build order into a logistics "
+             "problem and a convoy into a target.",
+        gate="A supply shock in one system moves prices three systems away with a lag that "
+             "matches travel time. Ninety days with no negative inventory and no money "
+             "created outside a mint event.",
+        refs=["SS7", "LW SS7.4"],
+    ),
+    dict(
+        id="M19", title="Sites, construction and city life", week_start=159, week_end=168,
+        goal="Claims, construction projects, four utility networks, condition that "
+             "degrades, maintenance crews that respond, and a first-person tell for every "
+             "mechanic.",
+        gate="Build the same habitat archetype on a temperate world and an airless storm "
+             "moon: different composition and cost from one definition. Cut power to a "
+             "district and watch life support fail, crews respond, and people put masks on.",
+        refs=["LW SS7"],
+    ),
+    dict(
+        id="M20", title="Power, threat and coalitions", week_start=169, week_end=176,
+        goal="The ceiling. Threat models built on belief rather than truth, alarm that "
+             "rises with believed power and falls with dependency, and coalitions that "
+             "form because several organisations independently reached one conclusion.",
+        gate="Grow an organisation until rivals independently cross alarm and form a "
+             "coalition against it. Feed one member a fabricated belief about another and "
+             "watch the coalition fracture.",
+        refs=["LW SS3", "SS4"],
+    ),
+    dict(
+        id="M21", title="Missions and directives", week_start=177, week_end=185,
+        goal="Missions generated from tension rather than authored, with stakes that are "
+             "changes to the world. Directives: standing orders resolved by agents whether "
+             "or not anyone is watching.",
+        gate="Every generated mission traces to a named tension between real parties and "
+             "none has a stake that is only money. A directive left alone for a simulated "
+             "week resolves through subordinates, correctly or otherwise.",
+        refs=["LW SS5", "LW SS4.1"],
+    ),
+    dict(
+        id="M22", title="Presence and Command", week_start=186, week_end=192,
+        goal="The second lens. A map of what your organisation is doing, built from what "
+             "your people have reported rather than from ground truth, with directives "
+             "issued from it and your body still standing where you left it.",
+        gate="Open Command mid-flight: the world does not pause and the ship does not "
+             "stop. A report three days stale is visibly stale, and a fact nobody has "
+             "observed does not appear at all.",
+        refs=["LW SS4"],
+    ),
+    dict(
+        id="M23", title="The living world, integrated", week_start=193, week_end=201,
+        goal="Everything at once, for a long time, without supervision. This is where the "
+             "frameworks either compose or they do not.",
+        gate="Run one simulated year unattended. No runaway monopoly, no dead economy, no "
+             "organisation with a thousand ships, no agent stuck in a loop, and a dump "
+             "that still explains itself.",
+        refs=["LW SS3", "SS12"],
+    ),
+    dict(
+        id="M24", title="Vertical slice: nothing to coalition", week_start=202, week_end=212,
+        goal="The game. Arrive with nothing, take work, build a crew, charter an "
+             "organisation, claim ground, build on it, and grow until the galaxy decides "
+             "you are the problem.",
+        gate="A player who has never seen the game goes from nothing to a chartered "
+             "organisation to a coalition forming against them, in one save, with no "
+             "tutorial explaining any of the systems.",
+        refs=["LW SS1", "LW SS3"],
     ),
 ]
 
 
-def task(title, detail, acceptance, days, refs=None):
-    """One unit of work. `acceptance` is what makes it checkable rather than vibes."""
-    return dict(title=title, detail=detail, acceptance=acceptance, days=days, refs=refs or [])
+# ---------------------------------------------------------------------------
+# M00 - the prototype spike. Already delivered; recorded so the burn-up starts
+# from the truth and the evidence attached to these tasks survives the rewrite.
+# Titles stay in this order: the ids are what the evidence refers to.
+# ---------------------------------------------------------------------------
 
-
-# ---------------------------------------------------------------- M0: done
-M0 = [
-    task("Rust workspace and CI-ready sim crate",
-         "Scaffold sim/ as a zero-dependency Rust crate. Event log, deterministic fold, seeded "
-         "PRNG, fixed-point arithmetic.",
-         "cargo test green on an empty suite; replay determinism test exists before any domain logic.",
-         3, ["SS16", "SS5.3"]),
-    task("Fixed-point arithmetic with no floats in authoritative state",
-         "Fx as scaled i64 with i128 intermediates. Display, clamp, exact rational scaling.",
-         "Multiplication at 1e12 does not overflow; display is stable and signed.", 1, ["SS5.2"]),
-    task("Deterministic PRNG seeded per region per tick",
-         "SplitMix64 derived from (world_seed, region_id, tick). Never thread_rng.",
-         "Same seed gives the same sequence; adjacent ticks and regions do not correlate.", 1, ["SS5.3"]),
-    task("Event log and the fold",
-         "Append-only log; World::apply is the only write path; every event carries its cause.",
-         "Causal chain walks back and terminates; every cause points at an earlier event.", 2, ["SS5.3"]),
-    task("Belief graph with propagation, decay and distortion",
-         "Typed Proposition enum, Belief with confidence and provenance, single-hop propagation.",
-         "Confidence never rises without independent corroboration; propagation terminates on a "
-         "cyclic social graph.", 4, ["SS6.1"]),
-    task("Disposition computed, never stored",
-         "Disposition is a pure function of an entity's belief set. No reputation field anywhere.",
-         "grep the codebase for a stored reputation or relationship scalar: zero hits.", 1, ["SS6.1"]),
-    task("Obligation ledger as a consumed-on-redemption multigraph",
-         "Typed ObligationClass; favours are spent, not renewable.",
-         "A redeemed favour cannot be redeemed twice; ordering is deterministic.", 2, ["SS6.2"]),
-    task("Investigation algorithm with search volumes",
-         "Search volume over a hidden variable; disclosures constrain it; contradictions widen it.",
-         "A contradictory claim widens the volume rather than silently picking a winner.", 3, ["SS6.3"]),
-    task("Economy with conservation laws",
-         "Cash and territory move between corps, never evaporate. Mean-reversion via overhead.",
-         "Money supply and lane count constant over 20,000 ticks; no faction ossifies.", 3, ["SS6.5"]),
-    task("Mission generation as a query over existing tension",
-         "find (A,B) where A holds unresolved obligation against B and the tension predates the query.",
-         "Over 90% of contracts reference tension incurred before they were posted.", 2, ["SS6.6"]),
-    task("Text world-dump and the SS12 metrics",
-         "A readable log of what happened and why, with the metrics printed into it.",
-         "A corporate collapse can be traced back four causes from the dump alone.", 3, ["SS13.1", "SS12"]),
-    task("Tier 2 and Tier 4 test suites",
-         "Invariant property tests and bit-identical replay determinism.",
-         "69 tests green; replay from the same seed is identical, from a different seed is not.",
-         3, ["SS11"]),
-    task("UE5 C++ client with a typed snapshot boundary",
-         "No Blueprint logic. Archetypes parse into a UENUM; unknown variants are a parse failure.",
-         "Six automation tests pass headless via UnrealEditor-Cmd.", 3, ["SS9", "SS11"]),
-    task("Cube-sphere quadtree terrain with screen-space error LOD",
-         "Six roots, horizon culling, edge-index stitching, vertices relative to node centres.",
-         "A planet renders from orbit with no cracks at face seams.", 5, ["SS6.8"]),
-    task("Move patch generation to worker threads",
-         "Free functions over copied inputs; the game thread only uploads.",
-         "Worst game-thread cost falls from 53 ms to under 8 ms; zero starved patches at altitude.",
-         3, ["SS6.8", "ADR-0002"]),
-    task("Scale the planet to 6,371 km",
-         "Real radius, MaxDepth 15, noise frequency bands rescaled to the circumference.",
-         "4.8 m quads at the finest LOD; LWC carries the coordinates without precision loss.",
-         2, ["SS6.8"]),
-    task("Sky Atmosphere, volumetric clouds, ozone",
-         "Earth's own scattering values at Earth's radius. Height fog removed as flat-world.",
-         "Sky is black outside the atmosphere and blue from the ground, with no parameter fighting.",
-         3, ["SS6.8"]),
-    task("Analytic erosion via slope-damped octaves",
-         "Exact noise derivatives; each octave damped by the accumulated slope above it.",
-         "Terrain shows drainage. No seams at LOD boundaries, because it is a pure function.",
-         3, ["SS6.8"]),
-    task("Triplanar surface material from generated mipped textures",
-         "256px detail textures with a full mip chain; world-aligned projection; depth fade.",
-         "No aliasing at any distance; no UV seam anywhere on the sphere.", 3, ["SS6.8"]),
-    task("Ship, gravity, and a town",
-         "6-DOF flight, inverse-square gravity, atmospheric drag; 32 buildings and 342 trees.",
-         "The ship lands under gravity and climbs back to orbit through its own flight model.",
-         4, ["SS6.9"]),
-    task("ADR-0001 and ADR-0002",
-         "Stack decision and the terrain build-vs-buy decision, with measurements attached.",
-         "Both ADRs are in docs/adr with Context, Decision, Consequences and rejected alternatives.",
-         1, ["SS8.5", "SS15.1"]),
+M00 = [
+    dict(title="Rust workspace and CI-ready sim crate",
+         detail="Cargo project, zero dependencies, module skeleton.",
+         acceptance="cargo test runs green from a clean checkout.",
+         days=1, refs=["SS9"]),
+    dict(title="Fixed-point arithmetic with no floats in authoritative state",
+         detail="i64 fixed-point type with the operators the sim needs.",
+         acceptance="No f32 or f64 appears in any authoritative struct.",
+         days=1.5, refs=["SS3"]),
+    dict(title="Deterministic PRNG seeded per region per tick",
+         detail="SplitMix64 seeded from (world_seed, region_id, tick), no shared state.",
+         acceptance="Two processes produce identical streams for the same seed triple.",
+         days=1, refs=["SS3"]),
+    dict(title="Event log and the fold",
+         detail="State_n = fold(reduce, State_0, events[0..n]).",
+         acceptance="Replaying the log reproduces the state exactly.",
+         days=2, refs=["SS3"]),
+    dict(title="Belief graph with propagation, decay and distortion",
+         detail="Typed propositions, confidence, provenance, hop count.",
+         acceptance="A fact propagates with latency and arrives degraded.",
+         days=3, refs=["SS4"]),
+    dict(title="Disposition computed, never stored",
+         detail="Attitude is a function of beliefs and obligations at read time.",
+         acceptance="No disposition field exists in any struct.",
+         days=1, refs=["SS4"]),
+    dict(title="Obligation ledger as a consumed-on-redemption multigraph",
+         detail="Favours owed, with expiry and redemption.",
+         acceptance="Redeeming an obligation removes it and changes behaviour.",
+         days=2, refs=["SS4"]),
+    dict(title="Investigation algorithm with search volumes",
+         detail="Finding someone is a search over belief, not a lookup.",
+         acceptance="An investigation narrows over time and can fail.",
+         days=2, refs=["SS4"]),
+    dict(title="Economy with conservation laws",
+         detail="Goods and money conserved except at explicit mint and sink events.",
+         acceptance="A long run conserves both to the unit.",
+         days=2, refs=["SS7"]),
+    dict(title="Mission generation as a query over existing tension",
+         detail="Missions are found in the world, not authored.",
+         acceptance="Every generated mission names the tension it came from.",
+         days=2, refs=["SS8"]),
+    dict(title="Text world-dump and the SS12 metrics",
+         detail="A readable dump of the running world plus the design's metrics.",
+         acceptance="A collapse can be traced back four causes by reading it.",
+         days=2, refs=["SS12"]),
+    dict(title="Tier 2 and Tier 4 test suites",
+         detail="Invariants and diagnostics.",
+         acceptance="69 tests green.",
+         days=2, refs=["SS13"]),
+    dict(title="UE5 C++ client with a typed snapshot boundary",
+         detail="No Blueprint, no .umap content; the world spawns itself.",
+         acceptance="The client builds and runs with no content assets.",
+         days=2, refs=["SS9"]),
+    dict(title="Cube-sphere quadtree terrain with screen-space error LOD",
+         detail="Six roots, edge-index stitching, horizon culling.",
+         acceptance="A planet renders with no cracks at any LOD boundary.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Move patch generation to worker threads",
+         detail="Async over copied inputs; game thread only uploads.",
+         acceptance="Generation cost leaves the game thread entirely.",
+         days=2, refs=["SS6.8", "ADR-0002"]),
+    dict(title="Scale the planet to 6,371 km",
+         detail="Real radius under LWC, vertices relative to patch centres.",
+         acceptance="Terrain holds together from orbit to a metre off the ground.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Sky Atmosphere, volumetric clouds, ozone",
+         detail="Earth values: Rayleigh 8 km, Mie 1.2 km, ozone layer.",
+         acceptance="The sky reads correctly from the ground and from orbit.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Analytic erosion via slope-damped octaves",
+         detail="Exact gradient derivatives; each octave damped by coarser slope.",
+         acceptance="Terrain shows drainage, and there are no LOD seams.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Triplanar surface material from generated mipped textures",
+         detail="Hand-built mip chains; the mips are the anti-aliasing fix.",
+         acceptance="No shimmer at any distance or angle.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Ship, gravity, and a town",
+         detail="6-DOF flight integrated manually, inverse-square gravity, buildings.",
+         acceptance="Fly from orbit to a town and back with no loading screen.",
+         days=3, refs=["SS6.9"]),
+    dict(title="ADR-0001 and ADR-0002",
+         detail="Stack and phasing; terrain build versus buy.",
+         acceptance="Both accepted and dated.",
+         days=1, refs=["SS15.1"]),
+    dict(title="Water surface as a separate render pass",
+         detail="Sea as section 1 of each patch, depth-tinted, opaque for SSR.",
+         acceptance="A shoreline reads as a surface with something under it.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Wave displacement and shoreline foam",
+         detail="Crossed Gerstner-style trains, damped in the shallows.",
+         acceptance="Waves are visible from 200 m and flatten against the shore.",
+         days=1, refs=["SS6.8"]),
+    dict(title="Underwater fog and camera transition",
+         detail="Post-process murk keyed to scene depth, eased on the crossing.",
+         acceptance="Entering the sea transitions without a pop or a flash.",
+         days=0.5, refs=["SS6.8"]),
+    dict(title="Ocean-floor terrain profile",
+         detail="Shelf, break, slope, abyssal plain.",
+         acceptance="A transect from coast to deep ocean shows a shelf break.",
+         days=0.5, refs=["SS6.8"]),
+    dict(title="Patch cache keyed by node id",
+         detail="LRU over released patches, bounded by bytes.",
+         acceptance="Flying back and forth over a ridge regenerates almost nothing.",
+         days=1, refs=["SS6.8"]),
+    dict(title="Predictive patch prefetch along the velocity vector",
+         detail="LOD leads the camera. Descent holes fixed; the ascent path regressed and "
+                "is carried into M01 as the collapse-cascade task.",
+         acceptance="A 300 m/s descent shows no unfilled patches at any point.",
+         days=0.5, refs=["SS6.8"]),
 ]
 
-# ---------------------------------------------------------------- M1
-M1 = [
-    task("Water surface as a separate render pass",
-         "Oceans are currently coloured terrain. Build a sea-level shell mesh with its own "
-         "material: depth-based colour, Fresnel, and a screen-space reflection fallback.",
-         "Standing on a beach, the waterline is a surface with a horizon, not a colour change.",
-         4, ["SS6.8"]),
-    task("Wave displacement and shoreline foam",
-         "Gerstner waves in the water material, amplitude falling off in shallow water. Foam "
-         "where the terrain approaches sea level.",
-         "Waves are visible from 200 m and flatten correctly against the shore.", 3),
-    task("Underwater fog and camera transition",
-         "A post-process volume that engages when the camera crosses the waterline.",
-         "Flying into the sea transitions without a pop and back out without a flash.", 2),
-    task("Ocean-floor terrain profile",
-         "Seabeds currently use one smoothing rule. Add continental shelf, slope and abyssal "
-         "plain so the depth profile reads as bathymetry.",
-         "A cross-section from coast to deep ocean shows a shelf break.", 2, ["SS6.8"]),
-    task("Patch cache keyed by node id",
-         "Regenerating a patch the camera just left is pure waste. LRU cache of recent vertex "
-         "buffers, bounded by memory not count.",
-         "Flying back and forth across a ridge regenerates nothing after the first pass.", 3),
-    task("Predictive patch prefetch along the velocity vector",
-         "The collision cook already leads the camera. Do the same for geometry so a fast "
-         "approach arrives at ground that already exists.",
-         "A 300 m/s descent shows no unfilled patches at any point.", 2, ["SS6.8"]),
-    task("LOD transition blending",
-         "Patches currently swap. Blend between levels over a short distance band using vertex "
-         "morphing toward the parent's surface.",
-         "No visible pop at any LOD boundary during a continuous descent.", 4, ["SS6.8"]),
-    task("Fix stitching for the finer-neighbour case",
-         "Stitching only collapses vertices on the fine side. Verify the coarse side never "
-         "needs it, and add a test that walks every visible edge pair.",
-         "An automated test finds zero cracks over 500 randomised camera positions.", 3, ["SS6.8"]),
-    task("Collision for the town footprint and landing pads",
-         "Terrain collision is camera-radius only. Pin collision permanently around persistent "
-         "structures so a ship cannot fall through an unloaded patch.",
-         "Teleport to the pad from orbit: the ship rests on it immediately.", 2),
-    task("Collision cook budget and instrumentation",
-         "Track cook time per frame and per patch; alert in the stats when the budget is exceeded.",
-         "Ledger.Terrain.Stats reports cook time distribution, not just the worst case.", 2, ["SS6.8"]),
-    task("Save generated terrain material as a real asset",
-         "The material is built at runtime and therefore editor-only. Write an editor commandlet "
-         "that builds it once and saves it to /Game/Materials.",
-         "A packaged build renders the terrain correctly with no runtime shader compilation.",
-         3, ["SS9"]),
-    task("Save generated detail textures as assets",
-         "Same problem, same fix: generate the mipped textures at cook time.",
-         "The packaged build ships the textures; no UTexture2D is created at runtime.", 2),
-    task("Package a standalone game build",
-         "The game target links but has never been cooked. Get a packaged build running.",
-         "Ledger.exe runs the reentry sequence with no editor present.", 3),
-    task("Gauntlet performance test for the descent",
-         "Automate the orbit-to-ground descent as a Gauntlet test that records frame times.",
-         "The test fails if any frame exceeds 20 ms or the 99th percentile exceeds 16.6 ms.",
-         3, ["SS11"]),
-    task("Terrain unit tests for the maths layer",
-         "LedgerTerrainMath has no tests. Cover cube-sphere round-tripping, noise determinism, "
-         "derivative correctness against finite differences, and screen-space error.",
-         "Analytic derivatives agree with central differences to 1e-6 over 10,000 samples.",
-         3, ["SS11", "SS8.1"]),
-    task("Deterministic terrain across machines",
-         "The terrain is a pure function of a seed, so two machines must agree. Hash a grid of "
-         "elevation samples and compare in CI.",
-         "The elevation hash is identical on two machines and across two builds.", 2, ["SS5.2"]),
-    task("Profile and reduce per-patch generation cost",
-         "Erosion doubled the sample cost. Profile the noise inner loop and cut it: cache "
-         "gradients, hoist the hash, consider SIMD.",
-         "Patch generation falls below 4 ms for a 65x65 patch with erosion on.", 4),
-    task("Bound the mesh component pool by memory",
-         "The pool is a fixed 2,560 components. Size it against a memory budget and report when "
-         "it is the limiting factor.",
-         "Stats show whether the pool or the job queue is the binding constraint.", 2),
-    task("Horizon culling correctness test",
-         "Culling silently disabled itself once already. Add a test that asserts the visible set "
-         "matches a brute-force horizon check at many altitudes.",
-         "Culled set matches brute force at 12 altitudes from surface to 3 radii.", 2, ["SS8.1"]),
-    task("Terrain streaming under a moving observer, soak test",
-         "Fly a great-circle route for 30 minutes and assert no leak, no starvation, no crack.",
-         "Memory is flat after the first orbit; zero starved patches; zero cracks.", 3),
-    task("M1 evidence: transect flight recording",
-         "Capture the 200 km transect with frame times overlaid.",
-         "Video and frame-time trace uploaded as milestone evidence.", 1),
-]
 
-# ---------------------------------------------------------------- M2
-M2 = [
-    task("Biome classification from climate rather than altitude",
-         "Colour is keyed to height and slope. Derive latitude, temperature and moisture from "
-         "position and circulation, then classify biome from those.",
-         "A desert appears in a rain shadow, not at a fixed altitude band.", 4, ["SS6.8"]),
-    task("Author a texture set per biome",
-         "Albedo, normal, roughness and height for rock, sand, grass, forest floor, snow.",
-         "Five biomes, each with four maps, all generated procedurally and cooked as assets.", 5),
-    task("Height-blended material layering",
-         "Blend biomes by their height maps rather than by linear interpolation, so transitions "
-         "interlock instead of dissolving.",
-         "A grass-to-rock transition shows grass in the crevices and rock on the high points.",
-         3, ["SS6.8"]),
-    task("Parallax occlusion on the near LOD",
-         "Give close ground depth without geometry, faded out past 30 m.",
-         "Standing still, the ground has relief below the vertex scale; no cost past 30 m.", 3),
-    task("Distance-based macro variation",
-         "Break the tiling that shows up from the air with a low-frequency colour and roughness "
-         "modulation driven by the same noise the terrain uses.",
-         "From 2 km, no repeating pattern is visible anywhere in frame.", 3),
-    task("Triplanar seam reduction on steep slopes",
-         "The three projections blend by normal; sharpen the blend so cliffs do not smear.",
-         "A vertical cliff face shows one dominant projection, not three overlapping.", 2),
-    task("Material LOD continuity across patch splits",
-         "A patch split must not change material identity. Drive everything from world position, "
-         "never from patch UVs.",
-         "Recording a split at 60 fps shows no material change on the frame the split happens.",
-         2, ["SS6.8"]),
-    task("Runtime Virtual Texture evaluation for the surface",
-         "Design SS6.8 proposes RVT. Prototype six RVT volumes on the cube faces and measure "
-         "against the current triplanar path.",
-         "An ADR recording whether RVT beats triplanar here, with measurements.", 4, ["SS6.8", "SS8.5"]),
-    task("Snow and sand accumulation by slope and exposure",
-         "Deposit on shallow slopes and lee faces, expose rock on steep and windward.",
-         "Snow lies in gullies and off cliff faces without being authored.", 3),
-    task("Wetness near the waterline and in valley floors",
-         "Darken albedo and drop roughness where drainage accumulates.",
-         "River valleys read as wet without a water mesh in them.", 2),
-    task("Ambient occlusion baked into vertex colour",
-         "Approximate AO from the local heightfield curvature at generation time.",
-         "Valleys and crevices darken correctly with no screen-space cost.", 3),
-    task("Scatter rocks and vegetation by biome",
-         "Instanced meshes placed from the same deterministic rules the biome uses.",
-         "Ten thousand instances within 500 m at no measurable frame cost.", 4),
-    task("Procedural rock and plant meshes",
-         "Extend the mesh builder: rocks by displaced icosphere, shrubs and grass by billboard "
-         "clusters.",
-         "Six rock variants and four plant variants, all generated from a seed.", 4, ["SS6.9"]),
-    task("Vegetation wind animation",
-         "World-position-offset in the material, driven by a global wind vector.",
-         "Grass and canopies move coherently; nothing is animated per-instance on the CPU.", 2),
-    task("Material parameter collection for global look",
-         "One collection holding wind, wetness, season and time of day, so the whole surface can "
-         "be retuned without touching every material.",
-         "Changing one parameter changes the whole planet's look consistently.", 2),
-    task("Surface fidelity soak test",
-         "Fly a route through every biome at three altitudes and capture stills.",
-         "Fifteen stills, no tiling, no shimmer, no material identity change.", 2),
-    task("M2 evidence: biome gallery",
-         "Capture each biome at walking distance, at 200 m and from orbit.",
-         "Gallery uploaded as milestone evidence.", 1),
-]
+# ---------------------------------------------------------------------------
+# M01 - architecture and the split. Deliberately short: it is the cheapest it
+# will ever be to do this, and everything after it is built on the result.
+# ---------------------------------------------------------------------------
 
-# ---------------------------------------------------------------- M3
-M3 = [
-    task("Parametric ship kit with typed socket interfaces",
-         "Design SS6.9's ~40 components. Hull sections, wings, nacelles, gear, sensors, each "
-         "with a typed socket, assembled at editor time and baked to StaticMesh.",
-         "Three hulls generated from the same kit by changing parameters only.", 5, ["SS6.9"]),
-    task("Editor tooling for ship assembly",
-         "A commandlet that builds a hull from a parameter set and saves the asset.",
-         "Changing hull_length from 24 m to 18 m regenerates in seconds.", 3, ["SS6.9"]),
-    task("Cockpit interior and first-person view",
-         "Cockpit-only interiors per SS6.9. Seat, canopy frame, instrument panel geometry.",
-         "The cockpit view shows a frame and panel that occlude correctly against the world.",
-         4, ["SS6.9"]),
-    task("Flight HUD: attitude, velocity, altitude, throttle",
-         "Drawn in C++ via Slate or a HUD class, no UMG assets.",
-         "Altitude reads correctly from orbit to ground; the horizon indicator is right at every "
-         "point on the sphere.", 4),
-    task("Navigation and target reticle",
-         "A marker for the selected destination that works in a spherical frame.",
-         "The town marker stays correct while flying around the planet.", 3),
-    task("Landing gear with deployment and ground contact",
-         "Gear geometry, animation, and per-leg ground contact rather than a single point.",
-         "The ship rests level on a slope, on three legs, without sinking.", 4),
-    task("Fuel and thrust budget",
-         "Delta-v as a resource. Burn on main thrust, drain faster in atmosphere.",
-         "Reaching orbit from sea level consumes a legible fraction of a full tank.", 3),
-    task("Atmospheric heating on re-entry",
-         "Heat accumulation from velocity and density, with a visual effect and a damage "
-         "threshold.",
-         "A steep fast re-entry damages the hull; a shallow one does not.", 3),
-    task("Hull damage model",
-         "Component-level damage: engines, control surfaces, hull integrity.",
-         "Losing an engine changes the flight model asymmetrically.", 4),
-    task("Flight assist modes",
-         "Full 6-DOF for vacuum, an atmospheric assist that holds attitude against gravity.",
-         "Assist on, the ship holds a hover; assist off, it does not.", 3, ["SS6.9"]),
-    task("Ship-relative camera modes",
-         "Chase, cockpit, and an external orbit camera, all correct in a spherical frame.",
-         "No camera mode gimbal-locks at any point on the planet.", 2),
-    task("Engine and thruster visual effects",
-         "Niagara plumes scaled by throttle, with atmospheric versus vacuum behaviour.",
-         "Plumes shorten and widen in atmosphere and go pencil-thin in vacuum.", 3),
-    task("Sound: engines, atmosphere, and its absence",
-         "Procedural engine tone by throttle, wind noise by dynamic pressure, silence in vacuum.",
-         "Crossing the Karman line, wind noise fades to nothing while the engine stays.", 3),
-    task("Docking and landing pad interaction",
-         "Detect a valid landing, lock the ship, and expose an interaction prompt.",
-         "Landing on the pad within tolerance registers; landing beside it does not.", 3),
-    task("Ship save and restore state",
-         "Position, orientation, velocity, fuel and damage persist across a session boundary.",
-         "Quit in orbit, restart, and the ship is where it was, in the state it was.", 2),
-    task("Flight model unit tests",
-         "Gravity, drag and thrust as pure functions, tested without a world.",
-         "Orbital velocity at 200 km matches the analytic value to within 1%.", 3, ["SS8.1"]),
-    task("M3 evidence: cockpit round trip",
-         "Record a full pad-to-orbit-to-pad flight from the cockpit view.",
-         "Recording uploaded as milestone evidence.", 1),
+M01 = [
+    dict(title="Fix the collapse cascade the prefetch work exposed",
+         detail="A fast ascent wants to collapse many levels at once. Each pending node "
+                "keeps its four children and also requests its own patch, so the visible "
+                "set inflates exactly when it should shrink: 6,029 nodes, 2,429 starved, "
+                "1,444 holes. Collapse has to resolve bottom-up within a frame budget.",
+         acceptance="A full-thrust climb from ground to orbit reports zero holes and a "
+                    "visible set that falls monotonically.",
+         days=2, refs=["SS6.8"]),
+    dict(title="Unreal module split: LedgerCore, LedgerTerrain, LedgerMaterial",
+         detail="Real UE modules with Build.cs files rather than folders, so UBT enforces "
+                "the dependency declarations instead of a convention doing it.",
+         acceptance="The three modules build and LedgerTerrain cannot see LedgerGame.",
+         days=2, refs=["ARCH SS3"]),
+    dict(title="Break up LedgerPlanet.cpp",
+         detail="1,226 lines doing quadtree, LOD policy, patch jobs, section pool, cache, "
+                "stats and console commands. Five files plus a diagnostics file.",
+         acceptance="No file over 500 lines and the scripted flight renders identically.",
+         days=3, refs=["ARCH SS3.1"]),
+    dict(title="Break up LedgerSurface.cpp into one file per material",
+         detail="Terrain, water, underwater and flat, with the graph-building helper as a "
+                "shared header.",
+         acceptance="Each material is its own translation unit and all four compile at "
+                    "runtime with no default-material substitution.",
+         days=1.5, refs=["ARCH SS3.1"]),
+    dict(title="Extract the scripted flight into a development-only harness module",
+         detail="LedgerWorld.cpp is 1,002 lines, most of it a camera script and screenshot "
+                "capture — a test fixture living in production code.",
+         acceptance="A shipping configuration builds with the harness module absent.",
+         days=2, refs=["ARCH SS3.1"]),
+    dict(title="Split the ship into LedgerFlight and LedgerPawn",
+         detail="The flight model has no business knowing about pawns, cameras or input, "
+                "and it is about to get much bigger.",
+         acceptance="The flight model is unit-testable with no Unreal actor involved.",
+         days=1.5, refs=["ARCH SS3.1"]),
+    dict(title="Module dependency test for the Unreal side",
+         detail="A build step asserting each module's declared dependencies against the "
+                "allowed list, with LedgerGame the only exception.",
+         acceptance="Adding an undeclared dependency fails the build with a named rule.",
+         days=1, refs=["ARCH Rule 2"]),
+    dict(title="Cargo workspace with the sim crates",
+         detail="Create the workspace and the crates from ARCH SS2 with their dependency "
+                "edges declared. They stay mostly empty until M15; the walls go up now, "
+                "while there is nothing to move.",
+         acceptance="cargo build succeeds and cargo tree shows exactly the intended edges.",
+         days=1.5, refs=["ARCH SS2"]),
+    dict(title="Split world.rs along its real seams",
+         detail="1,430 lines currently holding economy, obligations, investigations, "
+                "missions and agents. Each moves to its crate; world.rs becomes the "
+                "composition root and nothing else.",
+         acceptance="No file in the workspace exceeds 500 lines and ledger-world contains "
+                    "only wiring.",
+         days=3, refs=["ARCH SS0"]),
+    dict(title="Layering test that fails the build on an upward edge",
+         detail="A test parsing the workspace manifests, asserting the dependency graph "
+                "matches ARCH SS2.1. Documentation nobody enforces is a wish.",
+         acceptance="A dependency from ledger-org to ledger-power fails CI with a message "
+                    "naming the rule.",
+         days=1, refs=["ARCH SS2.1"]),
+    dict(title="CI: build both halves and run both suites on every commit",
+         detail="Rust workspace tests plus Unreal automation tests, headless, plus the "
+                "scripted flight as a smoke test with image comparison.",
+         acceptance="A commit that breaks either half is red within fifteen minutes.",
+         days=2.5, refs=["SS13"]),
+    dict(title="Automated visual regression on the scripted flight",
+         detail="The scripted flight already produces captures. Compare them against "
+                "committed references with a perceptual diff so a rendering regression is "
+                "caught by CI rather than by eye three weeks later.",
+         acceptance="A deliberate one-shade material change fails the comparison; "
+                    "recompiling unchanged code does not.",
+         days=2, refs=["SS13"]),
+    dict(title="Coding standards and formatter configuration",
+         detail="Naming, file layout, comment expectations, the 500-line rule, and where "
+                "each kind of thing goes. Short enough that it gets read.",
+         acceptance="Both halves are formatted by tool and CI fails on unformatted code.",
+         days=1, refs=["ARCH SS4"]),
+    dict(title="ADR-0003: technical model first, and what it costs",
+         detail="Record the decision to build the whole technical model before the "
+                "simulation, the reason (seamless travel and local physics grids can fail "
+                "outright, and a galaxy that cannot be flown through is worth nothing), and "
+                "the risk that the simulation's needs turn out to change the technical "
+                "requirements late.",
+         acceptance="Accepted and dated, with the risk stated rather than argued away.",
+         days=0.5, refs=["ARCH Rule 6"]),
+    dict(title="ADR-0004: framework-first inside each milestone",
+         detail="Every milestone builds a general mechanism, not a specific instance. The "
+                "risk is a year of scaffolding nobody can build a game from; the mitigation "
+                "is Rule 6 and nothing else.",
+         acceptance="Accepted and dated.",
+         days=0.5, refs=["ARCH Rule 6"]),
+    dict(title="Playable proof: the flight still flies",
+         detail="Rule 6. The full scripted sequence after a structural rewrite, compared "
+                "against the captures taken before it.",
+         acceptance="Every capture in out/ matches its pre-split reference.",
+         days=1, refs=["ARCH Rule 6"]),
 ]

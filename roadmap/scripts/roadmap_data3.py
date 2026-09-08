@@ -1,225 +1,499 @@
 # -*- coding: utf-8 -*-
-"""Roadmap content, milestones M8 through M12."""
+"""M05-M08: ships, flight, travel, and physics at scale.
 
-from roadmap_data import task
+The core of the technical model, and the block most likely to contain something
+that turns out to be impossible. M08 in particular is engine-level work that
+Chaos does not support: design SS6.9 flags nested reference frames as the reason
+the flight model was hand-integrated in the first place.
+"""
 
-# ---------------------------------------------------------------- M8
-M8 = [
-    task("Crew as first-class simulated entities",
-         "Design SS2.1: crew are the losable thing. They hold beliefs, owe favours, and have "
-         "their own fears. Not a stat block attached to the player.",
-         "A crew member has a full belief set and can be queried like any other entity.",
-         4, ["SS2.1"]),
-    task("Hiring: finding, negotiating, and the terms",
-         "Who is available depends on who has heard of you and what they believe.",
-         "A crew member with a bad belief about the player refuses, and says why.",
-         4, ["SS2.1", "SS6.1"]),
-    task("Crew skills as access rather than numbers",
-         "A crew member's value is which obligation classes they unlock, not a damage modifier.",
-         "Hiring a port authority contact opens clean landings that were previously unavailable.",
-         3, ["SS6.2"]),
-    task("Crew loyalty derived from obligations, not a bar",
-         "Loyalty is computed from the favour ledger and the belief graph.",
-         "grep for a loyalty scalar: zero hits. Loyalty is a query.", 3, ["SS6.1", "SS6.2"]),
-    task("Crew can be bought, frightened, or turned",
-         "A rival can approach your crew with money, a threat, or information.",
-         "A rival successfully turns a crew member, and the player can find out how.",
-         4, ["SS2.1"]),
-    task("Crew death and its permanence",
-         "SS15.4 is open: how permanent, and is there a mitigation the player can buy?",
-         "An ADR recording the decision, and the behaviour matching it.", 3, ["SS15.4", "SS8.5"]),
-    task("Crew presence in the world",
-         "Crew appear aboard the ship and in the town, positioned from sim state.",
-         "A crew member the sim says is at the town is standing in the town.", 3),
-    task("Crew dialogue driven by their own beliefs",
-         "They tell you what they think is true, which is sometimes wrong.",
-         "A crew member reports a stale location sincerely.", 3, ["SS6.1", "SS6.4"]),
-    task("Crew-initiated missions",
-         "NPCs call in favours on the player. SS6.2 says this is not optional content.",
-         "A crew member's creditor calls in a favour and it becomes a contract the player must "
-         "answer.", 4, ["SS6.2"]),
-    task("Crew roster UI",
-         "Who you have, what they open, what they are owed and by whom.",
-         "The roster shows obligations in both directions, not a loyalty percentage.", 3),
-    task("Crew jeopardy in mission resolution",
-         "Bringing crew on a job risks them. The risk is legible before committing.",
-         "The player can see, before accepting, which crew are exposed and to what.", 3, ["SS2.1"]),
-    task("M8 evidence: losing someone",
-         "Record a chain of events ending in a crew loss that the player caused and could have "
-         "foreseen, and the reconstruction afterwards.",
-         "Recording plus the causal chain from the log, uploaded as milestone evidence.",
-         2, ["SS2", "SS2.1"]),
+# ---------------------------------------------------------------------------
+# M05 - ship framework: hulls, components, subsystems.
+# ---------------------------------------------------------------------------
+
+M05 = [
+    dict(title="Ship definition format",
+         detail="A ship is data: hull geometry, hardpoints, component slots, mass "
+                "distribution, and the topology that connects them. Adding a ship must "
+                "never require a compiler.",
+         acceptance="A new ship is one data file plus art, and it flies.",
+         days=3, refs=["SS6.9", "ARCH Rule 7"]),
+    dict(title="Component graph with typed ports",
+         detail="Components connect through typed ports — power, coolant, fuel, data — and "
+                "the graph is what damage, heat and failure propagate through. This is the "
+                "spine of the whole milestone.",
+         acceptance="A component's inputs and outputs are discoverable at runtime and an "
+                    "unsatisfiable connection is a load error, not a crash.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Power generation and distribution",
+         detail="Plants, buses, priorities and brownouts. Demand exceeding supply sheds "
+                "load in priority order rather than stopping the ship.",
+         acceptance="Overload a bus and the lowest-priority consumers drop first, in the "
+                    "order the configuration states.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Thermal model",
+         detail="Components generate heat, coolant loops move it, radiators reject it, and "
+                "an overheated component throttles or fails. Heat is also a signature.",
+         acceptance="Run at full power with radiators retracted and the ship overheats on "
+                    "the schedule the thermal model predicts.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Fuel: types, tanks, transfer, consumption",
+         detail="Propellant and reactor fuel as separate resources, consumed at rates the "
+                "flight model produces rather than at a rate someone picked.",
+         acceptance="Fuel burn integrated over a flight matches thrust integrated over the "
+                    "same flight, and running dry stops the engines.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Mass, centre of mass and inertia from contents",
+         detail="Computed from hull, components, fuel and cargo, updating as fuel burns and "
+                "cargo moves. An unevenly loaded ship handles unevenly.",
+         acceptance="Load cargo on one side and the ship's handling changes measurably in "
+                    "the direction predicted.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Damage model over the component graph",
+         detail="Hits damage components, damage propagates along ports, and the failure "
+                "order is explained by the topology rather than by a table.",
+         acceptance="Destroying a power coupling kills exactly the components downstream of "
+                    "it and nothing else.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Hull damage: penetration, deformation, breach",
+         detail="Localised hull state, with pressure loss where the hull is breached and "
+                "structural failure where enough of it is gone.",
+         acceptance="A breach vents the compartment behind it and not the rest of the ship.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Component wear and condition",
+         detail="Components degrade with use and with abuse, changing performance before "
+                "they fail. The maintenance loop in M19 reads from this.",
+         acceptance="A neglected thruster loses measurable output over a hundred hours of "
+                    "operation and warns before it fails.",
+         days=2, refs=["LW SS7.6"]),
+    dict(title="Repair and component replacement",
+         detail="Field repair with limited effect, workshop repair with full effect, and "
+                "component swapping with the parts economy in mind.",
+         acceptance="A damaged ship is repaired to a stated condition and the parts are "
+                    "consumed from somewhere.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Life support as a component",
+         detail="Atmosphere, pressure and temperature inside the hull, with consumption, "
+                "reserves and failure. On a breathable world it is a convenience; "
+                "elsewhere it is the thing keeping you alive.",
+         acceptance="Cut life support in vacuum and the internal atmosphere depletes on the "
+                    "modelled schedule, with warnings.",
+         days=3, refs=["LW SS7.2"]),
+    dict(title="Shields",
+         detail="Directional shields with capacity, recharge, and a power draw that competes "
+                "with everything else on the bus.",
+         acceptance="Raising shields measurably reduces power available to thrust, and the "
+                    "trade-off is visible on the instruments.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Signature model: thermal, electromagnetic, cross-section",
+         detail="What a ship looks like to a sensor, derived from what it is doing. Running "
+                "cold and quiet must be a real option, because information is the design's "
+                "scarce commodity.",
+         acceptance="Shutting down non-essential systems measurably reduces detection range, "
+                    "and the numbers come from the thermal and power models.",
+         days=3, refs=["SS4", "SS6.9"]),
+    dict(title="Hardpoints and mount framework",
+         detail="The general mechanism for attaching things to a hull — weapons, mining "
+                "gear, sensors, cargo pods — with size classes and power and cooling draw. "
+                "Not the weapons themselves.",
+         acceptance="A mount accepts any component of its class, refuses others, and its "
+                    "power and heat appear in the ship's totals.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Cargo hold and volumetric stowage",
+         detail="Cargo occupies space and has mass and a position. A full hold is visibly "
+                "full and an unbalanced one is felt.",
+         acceptance="Loading to capacity is limited by volume or mass, whichever binds "
+                    "first, and the contents are visible in the hold.",
+         days=3, refs=["SS7"]),
+    dict(title="Animated ship parts as components",
+         detail="Gear, ramps, doors, radiators and canopies are components with state, "
+                "power draw and failure modes, not animations.",
+         acceptance="Cutting power mid-cycle leaves the gear half-deployed and it stays "
+                    "there until power returns.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Power-on and shutdown sequence",
+         detail="A ship starts cold and comes up in an order the component graph implies. "
+                "This is where a ship stops being a vehicle and becomes a machine.",
+         acceptance="Cold start brings systems up in dependency order, and skipping a step "
+                    "prevents the next one.",
+         days=2, refs=["SS6.9"]),
+    dict(title="Instrumentation framework",
+         detail="Multi-function displays driven by real component state through one data "
+                "path. An instrument that lies is a bug in the instrument, not in the "
+                "display.",
+         acceptance="Every gauge traces to a component reading, and a failed sensor makes "
+                    "its gauge unavailable rather than wrong.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Ship audio from component state",
+         detail="Engine note from throttle and load, coolant pumps under thermal stress, "
+                "alarms from the systems that raised them.",
+         acceptance="A listener can identify which subsystem is in trouble from audio alone.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Damage visuals",
+         detail="Scorching, deformation, venting, sparks and debris tied to the damage "
+                "state rather than played as effects.",
+         acceptance="A ship's exterior condition is readable at a glance and matches its "
+                    "component state.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Ship configuration and outfitting",
+         detail="Swap components within slot and power constraints, with the consequences "
+                "computed rather than listed.",
+         acceptance="Fitting an oversized power plant changes mass, heat and handling, and "
+                    "the configuration screen shows all three before it is fitted.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Ship state persistence",
+         detail="Condition, fuel, cargo, damage and configuration survive a save, a reload "
+                "and eventually a handover to the simulation.",
+         acceptance="A damaged, half-fuelled, oddly configured ship reloads exactly as it "
+                    "was.",
+         days=2, refs=["ARCH Rule 1"]),
+    dict(title="Ship diagnostics and test harness",
+         detail="A headless rig that builds a ship, applies loads and damage, and asserts "
+                "the component graph behaves. Ship bugs are systemic and need systemic "
+                "tests.",
+         acceptance="Every failure mode in this milestone has a test that reproduces it "
+                    "without flying anything.",
+         days=3, refs=["SS13"]),
+    dict(title="Playable proof: shoot out a power coupling",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Thrusters on that bus go dead, heat climbs, systems degrade in graph "
+                    "order, and repair brings the ship back.",
+         days=2, refs=["ARCH Rule 6"]),
 ]
 
-# ---------------------------------------------------------------- M9
-M9 = [
-    task("Audit archetype on the shared algorithm",
-         "Hidden variable: who is skimming. Resolution verb: expose or blackmail.",
-         "Audit uses the identical investigation code path as Bounty, asserted by a test.",
-         4, ["SS6.6", "SS6.3"]),
-    task("Interception archetype",
-         "Hidden variable: route and timing. Resolution: board, destroy or observe.",
-         "Interception constrains a search volume over route-time rather than position, using "
-         "the same algorithm.", 4, ["SS6.6"]),
-    task("Extraction archetype",
-         "Hidden variable: holding location. Resolution: retrieve a person or data.",
-         "Extraction resolves against a physically present target.", 4, ["SS6.6"]),
-    task("Fabrication archetype",
-         "No hidden variable: this one injects. Plant a false belief through the same pipeline "
-         "the truth uses.",
-         "A fabricated belief propagates identically to a true one and carries "
-         "Provenance::Fabricated.", 4, ["SS6.6", "SS6.1"]),
-    task("Collection archetype",
-         "Hidden variable: debtor whereabouts and assets. Resolution: coerce or negotiate.",
-         "Collection surfaces the debtor's assets as a second hidden variable.", 4, ["SS6.6"]),
-    task("Generalise the search volume beyond regions",
-         "The algorithm currently constrains over RegionId. Make the hidden variable generic so "
-         "route-time and identity work without a second implementation.",
-         "One generic implementation serves all six archetypes; the old one is deleted.",
-         5, ["SS6.3", "SS8.4"]),
-    task("Archetype distribution metric in CI",
-         "SS12's oatmeal detector, asserted rather than observed.",
-         "A 10,000 tick run fails CI if any archetype exceeds 35%.", 2, ["SS12", "SS14 R2"]),
-    task("Mission variety from simulation state, not templates",
-         "Verify the variety comes from the world. Freeze the sim and confirm the generator "
-         "produces almost nothing.",
-         "With a static world, contract variety collapses; with a live one it does not.",
-         3, ["SS6.6"]),
-    task("Contract chaining and consequence",
-         "Resolving one contract creates the tension the next one queries.",
-         "A resolved contract is traceably the cause of a later one.", 3, ["SS6.6"]),
-    task("Difficulty from access rather than numbers",
-         "A hard job is one you lack the obligation classes for, not one with more hit points.",
-         "Two contracts with identical parameters differ in difficulty by the player's ledger.",
-         3, ["SS6.2"]),
-    task("M9 evidence: six archetypes, one code path",
-         "Capture one contract of each type, plus the test asserting the shared path.",
-         "Six recordings and the test output uploaded as milestone evidence.", 2, ["SS6.6"]),
+
+# ---------------------------------------------------------------------------
+# M06 - flight model in vacuum and in air.
+# ---------------------------------------------------------------------------
+
+M06 = [
+    dict(title="Rigid-body integration with a real inertia tensor",
+         detail="Replace the prototype's hand-integrated point mass with a proper rigid "
+                "body using the mass distribution M05 computes. Still hand-integrated "
+                "rather than handed to Chaos, for the reasons in SS6.9.",
+         acceptance="Angular response matches the inertia tensor, and an off-axis thrust "
+                    "produces the torque the geometry predicts.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Thruster allocation solver",
+         detail="Given thruster positions, orientations and limits, solve for the "
+                "combination producing the commanded force and torque. This is what makes "
+                "a ship's handling a consequence of its thruster layout rather than of a "
+                "handling number.",
+         acceptance="Disable a thruster and the solver compensates, with the loss of "
+                    "authority in the axis the geometry predicts.",
+         days=5, refs=["SS6.9"]),
+    dict(title="Flight assist and control modes",
+         detail="Assist on, assist off, coupled and decoupled, each a different controller "
+                "over the same allocator rather than a different flight model.",
+         acceptance="Switching modes changes only the controller; the physics underneath "
+                    "is identical and provably so.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Aerodynamics: lift, drag and control surfaces",
+         detail="Real aerodynamic forces from angle of attack, airspeed and the atmospheric "
+                "density M04 provides, with control surfaces that only work in air.",
+         acceptance="A winged ship glides unpowered in atmosphere and does not in vacuum.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Stall, spin and recovery",
+         detail="An aerodynamic envelope with edges. Exceeding them has consequences that "
+                "can be recovered from if the pilot knows how.",
+         acceptance="A deliberate stall departs controlled flight and standard recovery "
+                    "inputs recover it.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Vacuum-to-atmosphere transition",
+         detail="Aerodynamic authority fades in as density rises and thruster authority "
+                "does not, so the handover is continuous rather than a mode change.",
+         acceptance="A re-entry from vacuum to sea level shows no discontinuity in forces "
+                    "at any altitude.",
+         days=3, refs=["SS6.9"]),
+    dict(title="VTOL and hover",
+         detail="Vertical thrust with ground effect, and the fuel cost that makes hovering "
+                "a decision rather than a default.",
+         acceptance="Hovering consumes fuel at the rate thrust-to-weight implies, and "
+                    "ground effect is measurable near the surface.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Landing gear and ground handling",
+         detail="Suspension, contact, friction, braking and steering on the ground. Landing "
+                "is a physical event, not a state change.",
+         acceptance="A hard landing compresses the gear and can damage it; a shallow one "
+                    "does not; the ship stays put on a slope up to the friction limit.",
+         days=4, refs=["SS6.9"]),
+    dict(title="G-force model and pilot effects",
+         detail="Sustained and transient acceleration on the pilot, with the visual and "
+                "physiological limits that make manoeuvres have a cost.",
+         acceptance="A sustained high-g turn greys the view on the modelled schedule and "
+                    "recovery follows the same model.",
+         days=2, refs=["SS6.9"]),
+    dict(title="Flight computer limits and envelope protection",
+         detail="Configurable limits on the allocator — g, angular rate, thermal — that a "
+                "pilot can relax at their own risk.",
+         acceptance="Limits are enforced by the controller, and disabling them lets the "
+                    "airframe be damaged.",
+         days=2, refs=["SS6.9"]),
+    dict(title="Autopilot framework",
+         detail="Hold attitude, hold altitude, hold station, approach and auto-land, as "
+                "controllers over the same allocator. Directives in M21 will drive ships "
+                "through this.",
+         acceptance="Auto-land puts a ship on a pad in wind, repeatably, from any approach.",
+         days=4, refs=["LW SS4.1"]),
+    dict(title="Docking",
+         detail="Approach corridors, alignment, capture and release against a station or "
+                "another ship, with the moving-frame handover M08 will formalise.",
+         acceptance="Dock with a station in orbit and the ship's frame becomes the "
+                    "station's with no jolt.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Ground vehicle framework",
+         detail="Wheeled and tracked vehicles over the same rigid body and the same terrain "
+                "collision, because a settlement needs things that are not ships.",
+         acceptance="A ground vehicle drives across terrain with suspension responding to "
+                    "the surface the renderer draws.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Input framework: HOTAS, gamepad, mouse and keyboard",
+         detail="One binding layer over one command set, with curves, deadzones and "
+                "per-device profiles. Not three control schemes.",
+         acceptance="All three devices produce identical commanded forces for equivalent "
+                    "input, and rebinding requires no code.",
+         days=3, refs=["SS6.9"]),
+    dict(title="HUD and flight instruments",
+         detail="Velocity vector, attitude, target reticle, energy, and the instruments a "
+                "pilot actually flies on — driven through M05's instrumentation path.",
+         acceptance="A full flight is completable on instruments alone with the external "
+                    "view disabled.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Collision response for vehicles",
+         detail="Impacts transfer momentum and damage components through M05's graph, "
+                "rather than triggering a generic effect.",
+         acceptance="A glancing impact damages the components at the point of contact and "
+                    "imparts the momentum the collision implies.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Ship-to-ship physical interaction",
+         detail="Ships push each other, land on each other, and carry each other. The "
+                "prerequisite for M08's nested frames.",
+         acceptance="A small ship lands on a large one and is carried with it.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Flight recorder",
+         detail="Record every input, force and state to a file that can be replayed exactly. "
+                "Flight bugs are transient and unreproducible without this.",
+         acceptance="A recorded flight replays to an identical trajectory.",
+         days=2, refs=["SS13"]),
+    dict(title="Flight model tuning tools",
+         detail="In-editor visualisation of thruster authority, aerodynamic forces, envelope "
+                "and control response, so tuning is measured rather than felt.",
+         acceptance="A ship's envelope can be read off a chart the tool generates.",
+         days=3, refs=["SS13"]),
+    dict(title="Flight regression suite",
+         detail="Recorded flights replayed in CI with trajectory tolerances, so a physics "
+                "change that alters handling is caught immediately.",
+         acceptance="A deliberate one-percent thrust change fails the suite.",
+         days=2, refs=["SS13"]),
+    dict(title="Playable proof: continent, orbit, pad",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Pad to another continent aerodynamically, out to vacuum, manoeuvre, "
+                    "re-enter with heating, land on the pad you left — cockpit only.",
+         days=3, refs=["ARCH Rule 6"]),
 ]
 
-# ---------------------------------------------------------------- M10
-M10 = [
-    task("Aggregate region representation",
-         "Distant regions tick statistically: aggregate flows, no individual agents.",
-         "A region with no observer costs under 0.05 ms per tick.", 5, ["SS6.7"]),
-    task("Reification: aggregate to concrete agents",
-         "When a player arrives, approximate state instantiates into individuals consistently.",
-         "Arriving at a region twice from the same aggregate state produces the same agents.",
-         5, ["SS6.7"]),
-    task("Dereification: concrete back to aggregate",
-         "When they leave, concrete state folds back without losing information.",
-         "Property test: aggregate(reify(A)) == A for arbitrary aggregate state.",
-         5, ["SS6.7", "SS11"]),
-    task("Concurrent arrival determinism",
-         "SS15.3 is open: two players entering a statistical region simultaneously. Who triggers "
-         "the transform, and is it deterministic?",
-         "An ADR, and a test with two simultaneous arrivals producing one consistent result.",
-         4, ["SS15.3", "SS8.5"]),
-    task("Belief propagation across the LOD boundary",
-         "A rumour must cross from aggregate to concrete and back without being lost or doubled.",
-         "A belief injected in an aggregate region is present after reification, at the right "
-         "confidence.", 4, ["SS6.7", "SS6.1"]),
-    task("Per-region tick cost budget and enforcement",
-         "SS12: under 5 ms full fidelity. Measure per region and alert.",
-         "The metrics dashboard shows per-region cost and flags any region over budget.",
-         3, ["SS12"]),
-    task("Server cost per region-tick, measured",
-         "SS14 R7: simulation cost scales with world size, not player count. Know the number.",
-         "Cost per region-tick is reported continuously and tracked over time.", 3, ["SS14 R7"]),
-    task("Scale to 2,000 simulated entities across 5 regions",
-         "The MVP scale from SS3, running with LOD.",
-         "2,000 entities, 5 regions, under 5 ms per full-fidelity region tick.", 4, ["SS3", "SS12"]),
-    task("Seam hunting: find the LOD boundary as a player",
-         "Fly between regions repeatedly and try to catch the transform.",
-         "No observable discontinuity in entity behaviour across 50 crossings.", 3, ["SS6.7"]),
-    task("M10 evidence: the reification property test",
-         "Capture the property test output over 100,000 arbitrary aggregate states.",
-         "Test output uploaded as milestone evidence.", 1, ["SS11"]),
+
+# ---------------------------------------------------------------------------
+# M07 - seamless travel across a system.
+# ---------------------------------------------------------------------------
+
+M07 = [
+    dict(title="Origin rebasing",
+         detail="Move the world under the camera so float precision never has to express "
+                "an astronomical unit. The prototype avoids this by keeping vertices "
+                "patch-relative; everything else in the game will not have that luxury.",
+         acceptance="At one AU from origin, a one-millimetre movement is still one "
+                    "millimetre, for every actor and every particle system.",
+         days=5, refs=["SS6.8"]),
+    dict(title="Depth precision across twelve orders of magnitude",
+         detail="A cockpit instrument at 40 cm and a planet at 400,000 km in one frame. "
+                "Reversed-Z with cascaded depth ranges, or a logarithmic buffer, chosen by "
+                "measurement rather than by preference.",
+         acceptance="No z-fighting anywhere from a hand-held object to a planet on the same "
+                    "screen.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Scale-aware camera and rendering",
+         detail="Near and far rendering passes composited, so distant bodies are drawn at a "
+                "scale the depth buffer can hold.",
+         acceptance="A planet, its moon and a ship's own hull are all correctly occluded "
+                    "against each other.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Entity relevance and streaming by distance",
+         detail="What exists, what is simulated, what is rendered, and what is a dot — with "
+                "explicit bands and explicit transitions between them.",
+         acceptance="A ship a thousand kilometres away is a dot; approach it and it becomes "
+                    "a ship with no pop and no state loss.",
+         days=4, refs=["ARCH SS3"]),
+    dict(title="High-speed travel mode",
+         detail="The thing that makes a system crossable in minutes rather than weeks: "
+                "spool time, alignment, a speed that scales with distance, and a real cost.",
+         acceptance="Cross the system in a few minutes, with every phase interruptible and "
+                    "the ship in a legal physical state at every instant.",
+         days=4, refs=["LW SS8"]),
+    dict(title="Interdiction and interruption",
+         detail="High-speed travel can be pulled out of, by mass, by another ship, or by "
+                "failure — otherwise the entire strategic layer has no chokepoints.",
+         acceptance="A ship in transit is pulled out at the position and velocity the model "
+                    "predicts, and the pursuer arrives with it.",
+         days=3, refs=["LW SS3"]),
+    dict(title="Route planning and navigation",
+         detail="Plot a route between any two sites, with time, fuel and hazard estimates "
+                "that match what flying it actually costs.",
+         acceptance="Estimated and actual travel time agree within five percent over twenty "
+                    "sampled routes.",
+         days=3, refs=["LW SS4"]),
+    dict(title="Interstellar travel",
+         detail="Between systems: whatever mechanism the fiction settles on, with a duration "
+                "that keeps information genuinely slow. Design SS8: instant travel means "
+                "instant information and there is no game left.",
+         acceptance="An interstellar transit takes a stated time, is interruptible, and "
+                    "leaves the destination system correctly streamed on arrival.",
+         days=4, refs=["LW SS8"]),
+    dict(title="Arrival and approach handling",
+         detail="Deceleration, traffic separation, approach clearance and the transition "
+                "into a body's frame — the part where seamlessness usually breaks.",
+         acceptance="Arrive at a planet from high speed and descend to a pad without a "
+                    "single frame over budget.",
+         days=3, refs=["SS6.8"]),
+    dict(title="Cross-scale physics stability",
+         detail="Physics at 200 m/s near a rotating planet and at high speed between them, "
+                "without tunnelling, jitter or integration blow-up.",
+         acceptance="A twenty-minute transit ends with position error inside tolerance and "
+                    "no jitter at any point.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Bookmarks, waypoints and the navigation UI",
+         detail="Somewhere to point the ship at, including places the player named and "
+                "places they were told about.",
+         acceptance="A waypoint set from the map is flyable to and arrives where it said.",
+         days=2, refs=["LW SS4"]),
+    dict(title="Traffic: other ships going about their business",
+         detail="Ships on routes, arriving and departing, at a density the streaming budget "
+                "supports. Placeholder behaviour now; the simulation drives it from M16.",
+         acceptance="Twenty ships operate in one system without a frame cost that reads on "
+                    "a graph.",
+         days=3, refs=["LW SS6"]),
+    dict(title="Precision and seam regression suite",
+         detail="Automated traversals at many scales asserting no precision artefact, no "
+                "hitch over a threshold, and no discontinuity in position or velocity.",
+         acceptance="A deliberately reintroduced precision bug is caught by CI.",
+         days=3, refs=["SS13"]),
+    dict(title="Hitch elimination pass",
+         detail="Every remaining stall over 4 ms during traversal, found and removed. "
+                "Seamless is a property that is destroyed by one hitch.",
+         acceptance="A full system traversal shows no frame over 16 ms and no allocation "
+                    "spike over the budget.",
+         days=4, refs=["SS14"]),
+    dict(title="Playable proof: surface to a moon of another planet",
+         detail="Rule 6. The gate, run and recorded in one continuous shot.",
+         acceptance="No loading screen, no cut, no precision artefact anywhere on the path.",
+         days=3, refs=["ARCH Rule 6"]),
 ]
 
-# ---------------------------------------------------------------- M11
-M11 = [
-    task("IP counsel review against SS6.1 and SS6.10",
-         "SS7 requires this before Phase 2. The Nemesis patent expires August 2036; our "
-         "differentiator is structural, not cosmetic.",
-         "Written counsel opinion on file, and any required changes implemented.", 5, ["SS7"]),
-    task("Sim-authoritative multiplayer session",
-         "One shard, sim owns all world state, clients hold views.",
-         "Two clients see the same world state and cannot disagree about it.", 5, ["SS6.10"]),
-    task("Target persistence classes",
-         "SS15.2 is open. Unique, Regional and Personal, declared on the contract board.",
-         "An ADR, and the board declaring the class of every contract up front.",
-         4, ["SS6.10", "SS15.2", "SS8.5"]),
-    task("Contested targets and intentional races",
-         "A Unique target is shared and the race is the point.",
-         "Two players hunting one target both see it move, and only one can resolve it.",
-         4, ["SS6.10"]),
-    task("Fabrication rate limits and traceability",
-         "SS6.10: rumour injection is a griefing surface. Rate-limit per source, require "
-         "corroboration above a confidence ceiling.",
-         "A coordinated injection attempt by four accounts fails to move a target's standing "
-         "past the ceiling.", 4, ["SS6.10", "SS15.8"]),
-    task("Client-predicted combat with server validation",
-         "Standard posture per SS6.10. No custom netcode before MVP.",
-         "Combat feels responsive at 120 ms RTT and the server rejects impossible outcomes.",
-         5, ["SS6.10"]),
-    task("Presence and region handoff",
-         "Players entering and leaving regions drive the LOD transform correctly.",
-         "Sixteen players spread across five regions with correct fidelity in each.",
-         4, ["SS6.7", "SS6.10"]),
-    task("Shard topology decision and ADR",
-         "SS15.7: one shard or several with separate world state? It decides whether the world "
-         "that lives without you is one world or many.",
-         "An ADR with the decision and its consequence for the premise.", 3, ["SS15.7", "SS8.5"]),
-    task("Sixteen-player soak test",
-         "Sixteen clients, one hour, scripted behaviour plus humans.",
-         "No desync, no crash, no duplicated target, memory flat.", 4, ["SS6.10"]),
-    task("Server cost model at 32 players",
-         "Measure what a shard actually costs, so the revenue relationship is known.",
-         "Cost per player-hour reported, with the region-tick component separated out.",
-         3, ["SS14 R7"]),
-    task("M11 evidence: sixteen players, one hour",
-         "Record the soak test with the server metrics alongside.",
-         "Recording and metrics uploaded as milestone evidence.", 2),
-]
 
-# ---------------------------------------------------------------- M12
-M12 = [
-    task("Pillar P1: the world does not wait for you",
-         "Log out for a week of world time. Come back. Find three specific, causally-explicable "
-         "changes that had nothing to do with you.",
-         "Three changes found and each traced to its cause in the log.", 3, ["SS2"]),
-    task("Pillar P2: consequence legible in hindsight",
-         "Take any world-state change and reconstruct the four preceding causes from information "
-         "available in-game before it happened.",
-         "Four causes reconstructed from in-game information only, not from the event log.",
-         3, ["SS2"]),
-    task("Pillar P3: knowledge is asymmetric",
-         "Two players in the same system holding contradictory, sincerely-held, non-buggy "
-         "beliefs about the same fact.",
-         "Two players demonstrate the contradiction and both can justify their belief.",
-         3, ["SS2"]),
-    task("Pillar P4: you are a participant, not a protagonist",
-         "A player permanently loses something they spent twenty hours building, through a chain "
-         "that was their fault and was foreseeable.",
-         "The loss happens, and the player can name the decision that caused it.", 3, ["SS2"]),
-    task("Full SS12 metrics run at MVP scale",
-         "Every metric in the band, on a live build, with real players.",
-         "All nine SS12 metrics inside their target ranges over a 24-hour live run.",
-         3, ["SS12"]),
-    task("Fresh-agent review pass over the whole codebase",
-         "SS8.7, capped at two rounds. Fresh context, checking against SS8.1 to SS8.6 and every "
-         "invariant in SS6.",
-         "Two rounds complete; everything surviving is recorded as a judgement call.",
-         5, ["SS8.7"]),
-    task("Architecture documentation refresh",
-         "Every ADR current, every architecture doc matching the code.",
-         "No ADR describes a decision that has since been reversed without a superseding ADR.",
-         3, ["SS8.5"]),
-    task("MVP gate review and go/no-go",
-         "The four pillar tests, the metrics, and an honest assessment of Phase 3 feasibility.",
-         "A written gate decision with evidence for each pillar.", 2, ["SS13.3", "SS13.5"]),
-    task("M12 evidence: the four pillar tests",
-         "Capture each pillar test being passed, with the supporting reconstruction.",
-         "Four recordings and their causal chains uploaded as milestone evidence.", 2, ["SS2"]),
+# ---------------------------------------------------------------------------
+# M08 - physics at scale and local grids.
+#
+# The riskiest milestone in the plan. Design SS6.9 identifies nested reference
+# frames as engine-level surgery, and it is the reason the prototype's flight
+# model integrates itself rather than using Chaos.
+# ---------------------------------------------------------------------------
+
+M08 = [
+    dict(title="Spike: three approaches to nested reference frames",
+         detail="Chaos with a moving kinematic parent, a second physics scene per grid with "
+                "transform bridging, or a custom solver for grid-local bodies. Build enough "
+                "of each to measure, then decide in an ADR. Choosing wrong here is a year.",
+         acceptance="Three prototypes, measured on stability, cost and integration risk, and "
+                    "an ADR that picks one and says why.",
+         days=8, refs=["SS6.9", "ARCH SS5"]),
+    dict(title="Local physics grid framework",
+         detail="A grid is a moving frame with its own physics content. Bodies inside it "
+                "are simulated in grid-local coordinates, so a ship at 3,000 m/s is a room "
+                "at rest.",
+         acceptance="An object at rest inside a manoeuvring ship stays at rest relative to "
+                    "the ship, at any speed the ship can reach.",
+         days=6, refs=["SS6.9"]),
+    dict(title="Frame entry and exit",
+         detail="Walking onto a ship, stepping off onto a pad, a ship entering another "
+                "ship's hold — velocity and angular velocity transferred correctly at every "
+                "boundary.",
+         acceptance="Step from a landing pad onto a hovering ship and back with no jolt, "
+                    "no launch, and no lost velocity.",
+         days=5, refs=["SS6.9"]),
+    dict(title="Character controller inside a moving frame",
+         detail="Walking, standing and falling relative to a frame that is itself "
+                "accelerating and rotating, with the apparent forces that implies.",
+         acceptance="Walk the length of a ship while it accelerates and rolls, without "
+                    "sliding and without the controller fighting the frame.",
+         days=5, refs=["SS6.9"]),
+    dict(title="Apparent forces: acceleration, rotation, Coriolis",
+         detail="Inertia felt inside an accelerating ship, and centrifugal gravity inside a "
+                "rotating station with the Coriolis effect that comes with it.",
+         acceptance="A dropped object inside a spinning station lands where the rotating "
+                    "frame predicts, not directly below.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Nested grids",
+         detail="A vehicle inside a ship inside a station. Depth-limited, but the limit must "
+                "be a decision rather than an accident.",
+         acceptance="Two levels of nesting are stable and the limit is enforced with a "
+                    "clear error rather than a failure.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Gravity generation inside grids",
+         detail="Artificial gravity as a per-grid field with orientation, plus what happens "
+                "when it fails and everything inside becomes free-floating.",
+         acceptance="Cutting grid gravity leaves loose objects and characters floating with "
+                    "the velocity they had.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Continuous collision detection at high speed",
+         detail="Nothing may pass through a hull because it moved far in one step. Sweeps "
+                "for fast bodies, with a budget.",
+         acceptance="A projectile at any modelled speed always hits the surface it should, "
+                    "over ten thousand trials.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Collision geometry for large structures",
+         detail="Ships and stations need collision at a fidelity that supports walking "
+                "inside them, streamed, without cooking a battleship every time one appears.",
+         acceptance="A large ship's interior collision streams in ahead of the character and "
+                    "never blocks a frame.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Constraint and joint framework",
+         detail="Doors, ramps, turrets, elevators, landing gear and cargo clamps as "
+                "constraints driven by M05's components rather than as animations.",
+         acceptance="A ramp lowered under load moves at the rate the actuator provides and "
+                    "stops when the power does.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Object handling: pick up, carry, place, throw",
+         detail="Loose objects with mass that behave inside moving frames, because a cup on "
+                "a table in a manoeuvring ship is the whole promise of this milestone.",
+         acceptance="Set a cup on a table, fly a barrel roll, and the cup behaves the way "
+                    "the frame and the friction say it should.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Ragdoll and character physics",
+         detail="Bodies that fall, are thrown and collide, correctly inside a moving frame.",
+         acceptance="A ragdoll inside an accelerating ship slides toward the stern at the "
+                    "rate the acceleration implies.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Destruction framework",
+         detail="Structural damage to ships, buildings and terrain features, with debris "
+                "that is physical and then is not, on a budget.",
+         acceptance="A destroyed structure produces debris that settles and is cleaned up "
+                    "without a frame cost that reads on a graph.",
+         days=5, refs=["SS6.9"]),
+    dict(title="Physics determinism and stability harness",
+         detail="Fixed-step physics with recorded scenarios replayed in CI. Frame-rate "
+                "dependent physics is a bug that only shows on someone else's machine.",
+         acceptance="A recorded scenario replays identically at 30, 60 and 144 fps.",
+         days=3, refs=["ARCH Rule 5"]),
+    dict(title="Physics performance budget",
+         detail="Grid count, body count and substep cost under one budget, with degradation "
+                "that is a decision rather than a stutter.",
+         acceptance="Ten active grids with two hundred bodies each stays inside the physics "
+                    "budget.",
+         days=3, refs=["SS14"]),
+    dict(title="Playable proof: walk to the cockpit at speed",
+         detail="Rule 6. The gate, run and recorded.",
+         acceptance="Walk from the stern to the cockpit while the ship accelerates, rolls "
+                    "and flies through atmosphere; a cup set down stays on the table; step "
+                    "out onto a pad on a rotating planet and inherit the right frame.",
+         days=3, refs=["ARCH Rule 6"]),
 ]

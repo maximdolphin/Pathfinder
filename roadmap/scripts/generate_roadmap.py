@@ -21,10 +21,13 @@ from datetime import date, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from roadmap_data import MILESTONES, M0, M1, M2, M3
-from roadmap_data2 import M4, M5, M6, M7
-from roadmap_data3 import M8, M9, M10, M11, M12
-from roadmap_data4 import SUPPLEMENT
+from roadmap_data import MILESTONES, M00, M01
+from roadmap_data2 import M02, M03, M04
+from roadmap_data3 import M05, M06, M07, M08
+from roadmap_data4 import M09, M10, M11
+from roadmap_data5 import M12, M13, M14
+from roadmap_data6 import M15, M16, M17, M18
+from roadmap_data7 import M19, M20, M21, M22, M23, M24
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT = os.path.join(ROOT, "public", "roadmap.json")
@@ -33,9 +36,11 @@ OUTPUT = os.path.join(ROOT, "public", "roadmap.json")
 PROJECT_START = date(2026, 9, 7)
 
 GROUPS = [
-    ("M0", M0), ("M1", M1), ("M2", M2), ("M3", M3), ("M4", M4), ("M5", M5),
-    ("M6", M6), ("M7", M7), ("M8", M8), ("M9", M9), ("M10", M10),
-    ("M11", M11), ("M12", M12),
+    ("M00", M00), ("M01", M01), ("M02", M02), ("M03", M03), ("M04", M04),
+    ("M05", M05), ("M06", M06), ("M07", M07), ("M08", M08), ("M09", M09),
+    ("M10", M10), ("M11", M11), ("M12", M12), ("M13", M13), ("M14", M14),
+    ("M15", M15), ("M16", M16), ("M17", M17), ("M18", M18), ("M19", M19),
+    ("M20", M20), ("M21", M21), ("M22", M22), ("M23", M23), ("M24", M24),
 ]
 
 
@@ -47,7 +52,7 @@ def build():
     for milestone_id, group in GROUPS:
         # Primary tasks first, then the supplementary ones, so each milestone
         # still reads as one narrative rather than as two interleaved lists.
-        for entry in list(group) + SUPPLEMENT.get(milestone_id, []):
+        for entry in group:
             index += 1
             task_id = "T%03d" % index
             tasks.append(dict(
@@ -62,9 +67,9 @@ def build():
                 dependsOn=[previous_id] if previous_id else [],
                 # M0 is history: it is already built, and recording it as done is
                 # what makes the burn-up chart start from the truth.
-                status="done" if milestone_id == "M0" else "todo",
+                status="done" if milestone_id == "M00" else "todo",
                 startedAt=None,
-                completedAt="2026-09-07" if milestone_id == "M0" else None,
+                completedAt="2026-09-07" if milestone_id == "M00" else None,
                 notes=[],
                 evidence=[],
             ))
@@ -96,15 +101,19 @@ def build():
             estimateDays=sum(t["estimateDays"] for t in owned),
             plannedStart=owned[0]["plannedStart"] if owned else None,
             plannedEnd=owned[-1]["plannedEnd"] if owned else None,
-            status="done" if entry["id"] == "M0" else "todo",
-            gatePassedAt="2026-09-07" if entry["id"] == "M0" else None,
+            status="done" if entry["id"] == "M00" else "todo",
+            gatePassedAt="2026-09-07" if entry["id"] == "M00" else None,
             evidence=[],
         ))
 
     return dict(
         project="LEDGER",
-        subtitle="A corporate-feudal galaxy where information is the scarcest commodity.",
+        subtitle="Star Citizen's technical model, GTA's climb, Hearts of Iron at the "
+                 "corporate scale. Information is the scarce commodity and attention is "
+                 "the one you cannot buy.",
         designDoc="docs/design/ledger-design.md",
+        livingWorldDoc="docs/design/living-world.md",
+        architectureDoc="docs/architecture/module-map.md",
         projectStart=PROJECT_START.isoformat(),
         generatedAt=date.today().isoformat(),
         totalTasks=len(tasks),
