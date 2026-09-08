@@ -1,1 +1,7 @@
 /target
+/out
+/client/Binaries
+/client/Intermediate
+/client/Saved
+/client/DerivedDataCache
+/client/.vs
