@@ -1,4 +1,4 @@
-# LEDGER — Coding standards
+# Coding standards
 
 Short on purpose. A standard nobody finishes reading is a standard nobody
 follows, and most of what would go in a long one is already enforced by the

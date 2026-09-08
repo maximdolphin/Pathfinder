@@ -1,0 +1,88 @@
+// The flight model: gravity, drag and ground contact, integrated by hand.
+//
+// **Not Chaos, and not an actor.** Design §6.9 gives the first reason: Chaos is
+// a single simulation space with no nested reference frames, so a ship near a
+// planet is engine-level surgery rather than a physics body. This header gives
+// the second: a model that is a plain struct can be integrated ten thousand
+// times in a unit test in a millisecond, with no world, no actor and no frame.
+//
+// Everything it needs about the planet arrives through FLedgerGravityField,
+// which is an interface with exactly one implementation today and will have a
+// second the first time a ship flies near two bodies at once (M03). It exists
+// now because it is what removes the dependency on ALedgerPlanet, and that
+// dependency is the whole reason this was untestable.
+//
+// This is where M05's component graph and M06's thruster allocation land. It is
+// deliberately small today and will not stay that way.
+
+#pragma once
+
+#include "CoreMinimal.h"
+
+/// What the flight model needs to know about the body it is near.
+///
+/// Two functions rather than a pointer to the planet: gravity at a distance,
+/// and the radius of the ground under a direction. A test supplies a sphere;
+/// the game supplies the terrain's own height function, which is the same
+/// function the mesh was built from and therefore never disagrees with it.
+struct LEDGERFLIGHT_API FLedgerGravityField
+{
+	/// Centre of the body, in world space.
+	FVector3d Centre = FVector3d::ZeroVector;
+
+	/// Reference radius, centimetres.
+	double Radius = 0.0;
+
+	/// Acceleration at the reference radius, cm/s^2. Earth is 981.
+	double SurfaceGravity = 981.0;
+
+	/// Scale height of the atmospheric density falloff, centimetres.
+	double DragScaleHeight = 800000.0;
+
+	/// Fraction of velocity bled off per second at sea-level density.
+	double AtmosphericDrag = 0.55;
+
+	/// Ground radius under a unit direction. Defaults to the reference sphere;
+	/// the game replaces it with the terrain's height function.
+	TFunction<double(const FVector3d&)> SurfaceRadiusAt;
+
+	double GroundAt(const FVector3d& UnitDirection) const
+	{
+		return SurfaceRadiusAt ? SurfaceRadiusAt(UnitDirection) : Radius;
+	}
+};
+
+/// State the model owns and integrates.
+struct LEDGERFLIGHT_API FLedgerFlightState
+{
+	FVector3d Position = FVector3d::ZeroVector;
+	FVector3d Velocity = FVector3d::ZeroVector;
+
+	/// Set by the model when the ship is resting on the ground, cleared once it
+	/// is clear of it by a margin — a single threshold would flicker.
+	bool bLanded = false;
+
+	/// Height of the landing gear above the hull's origin, centimetres.
+	double GearHeight = 140.0;
+
+	/// Speed retained per contact with the ground.
+	double GroundFriction = 0.86;
+};
+
+namespace LedgerFlight
+{
+	/// Advances the state by one step under gravity, drag and ground contact.
+	///
+	/// Thrust is applied by the caller before this is called: the model does not
+	/// know what a throttle is, which is what keeps it independent of input,
+	/// of autopilots, and of whatever M21's directives turn out to want.
+	LEDGERFLIGHT_API void Integrate(
+		FLedgerFlightState& State,
+		const FLedgerGravityField& Field,
+		double DeltaSeconds);
+
+	/// Height above the ground beneath, in centimetres.
+	LEDGERFLIGHT_API double AltitudeAbove(
+		const FLedgerFlightState& State,
+		const FLedgerGravityField& Field);
+}

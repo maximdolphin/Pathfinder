@@ -1,4 +1,4 @@
-# LEDGER — Design & Engineering Plan
+# Design & Engineering Plan
 
 > **Status:** Draft v1.1 — pre-POC
 > **Changes in v1.1:** UE5 corrections (§6.8 Nanite/RVT, §6.9 bake timing, §9 stack, §13.2 Lumen); wire transport split from wire contract (§5, §9, §13.2); Phase 0 persistence trimmed to in-process (§9, §13.1); §8.2/§8.1 and §8.7 termination conflicts resolved; terrain spike carved out of the Phase 0 freeze (§13.1).

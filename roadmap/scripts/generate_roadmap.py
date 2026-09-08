@@ -107,10 +107,12 @@ def build():
         ))
 
     return dict(
-        project="LEDGER",
+        # The game has no name yet. "Ledger" below and throughout the source is
+        # a codename — see docs/naming.md. Nothing here is a decision.
+        project="UNTITLED",
         subtitle="Star Citizen's technical model, GTA's climb, Hearts of Iron at the "
                  "corporate scale. Information is the scarce commodity and attention is "
-                 "the one you cannot buy.",
+                 "the one you cannot buy. Codename Ledger; the name is undecided.",
         designDoc="docs/design/ledger-design.md",
         livingWorldDoc="docs/design/living-world.md",
         architectureDoc="docs/architecture/module-map.md",

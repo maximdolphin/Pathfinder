@@ -1,6 +1,6 @@
 {
- "project": "LEDGER",
- "subtitle": "Star Citizen's technical model, GTA's climb, Hearts of Iron at the corporate scale. Information is the scarce commodity and attention is the one you cannot buy.",
+ "project": "UNTITLED",
+ "subtitle": "Star Citizen's technical model, GTA's climb, Hearts of Iron at the corporate scale. Information is the scarce commodity and attention is the one you cannot buy. Codename Ledger; the name is undecided.",
  "designDoc": "docs/design/ledger-design.md",
  "livingWorldDoc": "docs/design/living-world.md",
  "architectureDoc": "docs/architecture/module-map.md",
@@ -49,7 +49,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 11
+   "doneCount": 13
   },
   {
    "id": "M02",
@@ -1607,10 +1607,21 @@
    "dependsOn": [
     "T034"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "The flight model is now a plain struct in its own module: FLedgerFlightState integrated against FLedgerGravityField, with no actor, no world and no frame. The pawn translates between the two and does no physics. Six tests cover free fall at one g, inverse-square falloff, landing and settling, never sinking through terrain at 3 km/s, drag only inside the atmosphere, and determinism — all of which previously needed a minute of scripted flight and a person looking."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Did NOT create LedgerPawn. ALedgerShip stays in LedgerClient until M09 gives that module a second inhabitant — creating a module for one class is the speculative scaffolding I refused for the Rust crates an hour ago, and consistency matters more than matching the task title. LedgerFlight is different: it is where M05's component graph and M06's thruster allocator land."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 45.5,
    "plannedEndDay": 47,
@@ -1631,10 +1642,16 @@
    "dependsOn": [
     "T035"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "tools/check_modules.py parses every Build.cs and asserts two things: no undeclared edge, and no edge pointing up the layering. Verified by breaking it deliberately — adding LedgerHarness to LedgerTerrain fails with both rules named and the advice that the shared thing moves down rather than getting an extra edge."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 47,
    "plannedEndDay": 48,
@@ -10584,5 +10601,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T21:10:18.924Z"
+ "updatedAt": "2026-09-08T21:15:52.306Z"
 }

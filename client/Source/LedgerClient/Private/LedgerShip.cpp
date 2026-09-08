@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "LedgerMeshBuilder.h"
+#include "LedgerFlightModel.h"
 #include "LedgerPlanet.h"
 #include "LedgerLog.h"
 #include "LedgerSurface.h"
@@ -261,66 +262,42 @@ void ALedgerShip::Integrate(float DeltaSeconds)
 		return;
 	}
 
-	const FVector Centre = Planet->GetActorLocation();
-	const FVector3d Radial = FVector3d(GetActorLocation() - Centre);
-	const double Distance = FMath::Max(Radial.Length(), 1.0);
-	const FVector3d Up = Radial / Distance;
+	// The pawn's job here is translation, not physics. It hands the model where
+	// it is, how fast, and what it needs to know about the planet; the model
+	// integrates and hands back a position. Everything that used to be in this
+	// function is in LedgerFlight, where it can be tested without a world.
+	FLedgerGravityField Field;
+	Field.Centre = FVector3d(Planet->GetActorLocation());
+	Field.Radius = Planet->Radius;
+	Field.SurfaceGravity = SurfaceGravity;
+	Field.DragScaleHeight = DragScaleHeight;
+	Field.AtmosphericDrag = AtmosphericDrag;
 
-	// Inverse square, so leaving is expensive near the ground and cheap once
-	// you are up. Newton, not a constant.
-	const double GravityHere = SurfaceGravity * FMath::Square(Planet->Radius / Distance);
-	Velocity -= FVector(Up) * static_cast<float>(GravityHere) * DeltaSeconds;
-
-	// Drag, exponential in altitude. Above a few scale heights this is zero and
-	// the ship coasts; below it, the air is something you feel.
-	const double SurfaceRadius = Planet->SurfaceRadiusAt(Up);
-	const double Altitude = Distance - SurfaceRadius;
-	if (Altitude < DragScaleHeight * 6.0)
+	// The terrain's own height function, not a collision trace. A trace would
+	// miss wherever the patch underneath has not cooked yet, which is exactly
+	// when a ship is moving fast enough to need the answer.
+	ALedgerPlanet* Body = Planet;
+	Field.SurfaceRadiusAt = [Body](const FVector3d& Direction)
 	{
-		const double Density = FMath::Exp(-FMath::Max(Altitude, 0.0) / DragScaleHeight);
-		const float Damping = FMath::Clamp(
-			1.0f - static_cast<float>(AtmosphericDrag * Density) * DeltaSeconds, 0.0f, 1.0f);
-		Velocity *= Damping;
-	}
+		return Body->SurfaceRadiusAt(Direction);
+	};
 
-	FVector NewLocation = GetActorLocation() + Velocity * DeltaSeconds;
+	FLedgerFlightState State;
+	State.Position = FVector3d(GetActorLocation());
+	State.Velocity = FVector3d(Velocity);
+	State.bLanded = bLanded;
 
-	// Ground contact. A ray against the streaming collision would miss whenever
-	// the patch under us has not cooked yet, so the *surface height function* is
-	// the authority — it is the same function the mesh was built from, it is
-	// always available, and it never disagrees with the geometry.
-	const FVector3d NewRadial = FVector3d(NewLocation - Centre);
-	const double NewDistance = FMath::Max(NewRadial.Length(), 1.0);
-	const FVector3d NewUp = NewRadial / NewDistance;
-	const double GroundRadius = Planet->SurfaceRadiusAt(NewUp) + 140.0; // landing gear
+	LedgerFlight::Integrate(State, Field, DeltaSeconds);
 
-	if (NewDistance < GroundRadius)
+	Velocity = FVector(State.Velocity);
+	SetActorLocation(FVector(State.Position));
+
+	if (State.bLanded && !bLanded)
 	{
-		NewLocation = Centre + FVector(NewUp * GroundRadius);
-
-		// Kill the component of velocity into the ground, keep the rest, and
-		// scrub the remainder off as friction.
-		const FVector UpVector(NewUp);
-		const float Into = FVector::DotProduct(Velocity, UpVector);
-		if (Into < 0.0f)
-		{
-			Velocity -= UpVector * Into;
-		}
-		Velocity *= 0.86f;
-
-		if (!bLanded)
-		{
-			bLanded = true;
-			UE_LOG(LogLedger, Log, TEXT("ship down at %.0f m, %.0f m/s"),
-				AltitudeMetres(), Velocity.Size() / 100.0f);
-		}
+		UE_LOG(LogLedger, Log, TEXT("ship down at %.0f m, %.0f m/s"),
+			AltitudeMetres(), Velocity.Size() / 100.0f);
 	}
-	else if (NewDistance > GroundRadius + 500.0)
-	{
-		bLanded = false;
-	}
-
-	SetActorLocation(NewLocation);
+	bLanded = State.bLanded;
 }
 
 void ALedgerShip::Tick(float DeltaSeconds)

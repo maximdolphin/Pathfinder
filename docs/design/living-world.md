@@ -1,4 +1,4 @@
-# LEDGER — The Living World
+# The Living World
 
 *Companion to `ledger-design.md`. That document describes a galaxy where
 information is the scarce commodity. This one describes what the player does in

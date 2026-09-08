@@ -29,6 +29,7 @@ public class LedgerClient : ModuleRules
 			"ProceduralMeshComponent",
 			"PhysicsCore",
 			"LedgerCore",
+			"LedgerFlight",
 			"LedgerMaterial",
 			"LedgerTerrain",
 			// The frame-time recorder reads the engine's own thread and GPU

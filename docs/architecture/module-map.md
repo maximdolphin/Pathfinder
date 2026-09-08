@@ -1,4 +1,4 @@
-# LEDGER — Module map and layering rules
+# Module map and layering rules
 
 *How the code is arranged, and what is not allowed. Companion to
 `docs/design/living-world.md`, which says what we are building and why.*

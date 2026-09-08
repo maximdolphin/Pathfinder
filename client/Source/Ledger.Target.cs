@@ -10,7 +10,8 @@ public class LedgerTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		ExtraModuleNames.AddRange(new string[] {
-			"LedgerCore", "LedgerMaterial", "LedgerTerrain", "LedgerClient" });
+			"LedgerCore", "LedgerMaterial", "LedgerTerrain",
+			"LedgerFlight", "LedgerClient" });
 		if (Configuration != UnrealTargetConfiguration.Shipping)
 		{
 			// The scripted flight is a fixture. A shipping build has no

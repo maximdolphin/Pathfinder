@@ -1,0 +1,105 @@
+# Continuous integration.
+#
+# The cheap checks run on any runner. The Unreal build and the scripted flight
+# need the engine and a GPU, so they run on a self-hosted runner — which does
+# not exist yet, and the job says so rather than pretending.
+#
+# Order matters: the checks that take seconds run first, so a layering violation
+# is reported in under a minute instead of after a nine-minute compile.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  layering:
+    name: Module layering
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies flow down only
+        run: python tools/check_modules.py
+
+  standards:
+    name: File sizes and formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No file over 500 lines
+        run: |
+          # docs/coding-standards.md: a file past 500 lines has stopped having a
+          # subject. The three god-modules in this project were each built one
+          # reasonable addition at a time.
+          over=$(find client/Source -name '*.cpp' -o -name '*.h' \
+            | xargs wc -l | awk '$1 > 500 && $2 != "total" {print $2" ("$1" lines)"}')
+          if [ -n "$over" ]; then
+            echo "Files over the 500-line limit:"
+            echo "$over"
+            echo
+            echo "Ask what two things the file is doing, not how to fit."
+            exit 1
+          fi
+          echo "every file under 500 lines"
+      - name: Formatting
+        run: |
+          if ! command -v clang-format >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq clang-format
+          fi
+          find client/Source -name '*.cpp' -o -name '*.h' \
+            | xargs clang-format --dry-run --Werror
+
+  simulation:
+    name: Phase 0 simulation (frozen)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # Frozen, not abandoned: it still has to compile and its invariant tests
+      # still have to pass, because it is the M00 gate evidence. See
+      # src/README.md for why it is not being extended.
+      - run: cargo test --locked
+
+  client:
+    name: Unreal build and scripted flight
+    runs-on: [self-hosted, windows, unreal]
+    # No self-hosted runner is configured yet. The job is written so that
+    # standing one up is a runner registration rather than a CI project.
+    if: ${{ false }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: >
+          & "$env:UE_ROOT\Engine\Build\BatchFiles\Build.bat"
+          LedgerEditor Win64 Development -Project="$PWD\client\Ledger.uproject" -WaitMutex
+      - name: Automation tests
+        run: >
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe"
+          "$PWD\client\Ledger.uproject" -ExecCmds="Automation RunTests Ledger; Quit"
+          -unattended -nopause -nullrhi -testexit="Automation Test Queue Empty"
+      - name: Scripted flight
+        run: >
+          & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe"
+          "$PWD\client\Ledger.uproject" -game -windowed -ResX=1600 -ResY=900
+      - name: Captures match the reference
+        run: python tools/compare_captures.py
+      - name: Frame budget
+        run: |
+          # The verdict is computed by the harness, which knows the budget.
+          # Anything else on this machine is measured as part of it, which is
+          # why this is a dedicated runner and not somebody's desktop.
+          Get-Content out/performance.txt
+          if (Select-String -Path out/performance.txt -Pattern "VERDICT: FAIL") {
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captures
+          path: |
+            out/*.png
+            out/performance.txt
