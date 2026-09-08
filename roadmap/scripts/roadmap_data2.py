@@ -25,9 +25,12 @@ M02 = [
     # texture samples per pixel from textures with hand-built mip chains;
     # authored sets composited through a virtual texture are sampled once.
     dict(title="Source a PBR surface library and audit its licences",
-         detail="Quixel Megascans through Fab, decided 2026-09-08: photogrammetry scans "
-                "are the highest realism ceiling available and are free for Unreal use. "
-                "Needs an Epic sign-in and the Fab plugin once, which is a manual step. "
+         detail="Quixel Megascans through Fab, decided 2026-09-08. The first version of "
+                "this task said the scans are free for Unreal use, which is wrong and was "
+                "corrected by reading the listings: Megascans *3D assets* have a free tier "
+                "that is UEFN reference-only, while Megascans *materials* are free outright "
+                "under the Fab Standard License. Materials are what terrain needs. See "
+                "docs/asset-licensing.md. Needs an Epic sign-in once, which is manual. "
                 "Twelve to sixteen ground surfaces spanning the biomes the climate model "
                 "will produce: sand, gravel, scree, granite, sandstone, grass, moss, snow, "
                 "mud, clay. Every set records its source and licence in a manifest as it "

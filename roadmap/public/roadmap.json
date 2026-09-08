@@ -102,8 +102,6 @@
      "addedAt": "2026-09-08T21:22:27.421Z"
     }
    ],
-   "gateChecksAnsweredAt": "2026-09-08",
-   "gateNote": "Every clause checked rather than asserted. Largest file 421 lines, down from 1,315. Six modules, all edges legal, and the rule verified by deliberately adding an illegal one. Captures match the reference byte for byte. Six flight-model tests pass in about a second with no world, actor or frame. One caveat recorded rather than hidden: the CI job that builds Unreal and flies the scripted flight is gated off because no self-hosted runner exists; the cheap jobs do gate.",
    "doneCount": 16
   },
   {
@@ -165,7 +163,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 1
+   "doneCount": 3
   },
   {
    "id": "M03",
@@ -2857,7 +2855,7 @@
    "milestone": "M02",
    "order": 44,
    "title": "Source a PBR surface library and audit its licences",
-   "detail": "Quixel Megascans through Fab, decided 2026-09-08: photogrammetry scans are the highest realism ceiling available and are free for Unreal use. Needs an Epic sign-in and the Fab plugin once, which is a manual step. Twelve to sixteen ground surfaces spanning the biomes the climate model will produce: sand, gravel, scree, granite, sandstone, grass, moss, snow, mud, clay. Every set records its source and licence in a manifest as it arrives — a project that audits licences later is one that finds out at ship time that it cannot.",
+   "detail": "Quixel Megascans through Fab, decided 2026-09-08. The first version of this task said the scans are free for Unreal use, which is wrong and was corrected by reading the listings: Megascans *3D assets* have a free tier that is UEFN reference-only, while Megascans *materials* are free outright under the Fab Standard License. Materials are what terrain needs. See docs/asset-licensing.md. Needs an Epic sign-in once, which is manual. Twelve to sixteen ground surfaces spanning the biomes the climate model will produce: sand, gravel, scree, granite, sandstone, grass, moss, snow, mud, clay. Every set records its source and licence in a manifest as it arrives — a project that audits licences later is one that finds out at ship time that it cannot.",
    "acceptance": "A manifest lists every surface set with source and licence, and a validator fails the build on any texture present without an entry.",
    "estimateDays": 0.5,
    "designRefs": [
@@ -2866,14 +2864,19 @@
    "dependsOn": [
     "T043"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-08",
    "notes": [
     {
      "at": "2026-09-08",
      "kind": "block",
      "text": "Needs an Epic/Fab sign-in, which is a manual step only the user can do. Everything around it is built: the manifest format, the validator that fails the build on any texture with no recorded source and licence, and its CI job."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "done",
+     "text": "Quixel Megascans materials via Fab, free under the Fab Standard License; the licence audit is in docs/asset-licensing.md and was read rather than remembered. Manifest and validator enforce it in CI. The library itself is being populated a set at a time; the first, Rippled Sand, is in and imported."
     }
    ],
    "evidence": [],
@@ -2896,10 +2899,16 @@
    "dependsOn": [
     "T044"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "done",
+     "text": "tools/import_surfaces.py takes a Fab texture-set zip and needs nothing else: it reads the scan's real-world size from the bundled metadata for tiling, keeps albedo and normal, packs AO/roughness/height into one RGB texture (nine triplanar samples become six), names the maps it discards and why, and writes the manifest entry. Proven end to end on Rippled Sand. check_surfaces.py now validates contents against role — it was shown to catch a swapped albedo and normal, naming both files. Colour space here is a property of the slot, not the file, so the wrong image in a slot is the failure worth checking for."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 56,
    "plannedEndDay": 57,
@@ -11652,5 +11661,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T22:00:47.586Z"
+ "updatedAt": "2026-09-08T22:25:44.407Z"
 }

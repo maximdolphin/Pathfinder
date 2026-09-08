@@ -10,6 +10,7 @@
 #include "LedgerShip.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerWorld.h"
+#include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
@@ -59,6 +60,14 @@ ALedgerShip* ULedgerFlightHarness::GetShip() const
 void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
+
+	// The transect owns the ship when it runs. Two fixtures placing the same
+	// pawn is a fixture that measures neither.
+	if (FParse::Param(FCommandLine::Get(), TEXT("transect")))
+	{
+		UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -transect"));
+		return;
+	}
 
 	// A scripted reentry: settle in orbit, fly down to the town, and capture
 	// along the way. One continuous world, one continuous camera, no seam.

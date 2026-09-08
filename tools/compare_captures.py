@@ -48,15 +48,28 @@ OFFSET_TOLERANCE = 14.0
 CHANGED_FRACTION = 0.06  # fraction of pixels allowed to differ by more than 24
 
 
-def read_png(path):
-    """Returns (width, height, rows of RGB bytes) for a truecolour PNG."""
+def read_png(path, max_rows=None):
+    """Returns (width, height, rows of RGB bytes, channels) for a truecolour PNG.
+
+    `max_rows` stops after that many rows. Undoing PNG's filters is a byte at
+    a time in Python, so a full 4K texture is fifty million iterations; a
+    caller that only wants channel statistics can ask for a strip instead.
+    Rows must still be decoded from the top, because each filter references
+    the row above it."""
     data = io.open(path, "rb").read()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError("%s is not a PNG" % path)
 
     position = 8
     header = None
-    pixels = b""
+    # Decompressed incrementally rather than all at once: a caller that only
+    # wants the top strip of a 30 MB texture should not pay to inflate all of
+    # it, and stopping early is the difference between six seconds and one.
+    inflater = zlib.decompressobj()
+    raw = b""
+    enough = None
+    channels = stride = None
+
     while position < len(data):
         length = struct.unpack(">I", data[position:position + 4])[0]
         kind = data[position + 4:position + 8]
@@ -65,24 +78,31 @@ def read_png(path):
 
         if kind == b"IHDR":
             header = struct.unpack(">IIBBBBB", body)
+            width, height, depth, colour, _compression, _filt, interlace = header
+            if depth != 8 or interlace != 0 or colour not in (2, 6):
+                raise ValueError(
+                    "%s: unsupported PNG (depth %d, colour %d, interlace %d)"
+                    % (path, depth, colour, interlace))
+            channels = 3 if colour == 2 else 4
+            stride = width * channels
+            if max_rows is not None:
+                enough = min(height, max_rows) * (stride + 1)
         elif kind == b"IDAT":
-            pixels += body
+            raw += inflater.decompress(body)
+            if enough is not None and len(raw) >= enough:
+                break
         elif kind == b"IEND":
             break
 
-    width, height, depth, colour, compression, filt, interlace = header
-    if depth != 8 or interlace != 0 or colour not in (2, 6):
-        raise ValueError("%s: unsupported PNG (depth %d, colour %d, interlace %d)"
-                         % (path, depth, colour, interlace))
-
-    channels = 3 if colour == 2 else 4
-    stride = width * channels
-    raw = zlib.decompress(pixels)
+    if header is None:
+        raise ValueError("%s: no IHDR" % path)
+    width, height = header[0], header[1]
 
     rows = []
     previous = bytearray(stride)
     offset = 0
-    for _ in range(height):
+    wanted = height if max_rows is None else min(height, max_rows)
+    for _ in range(wanted):
         method = raw[offset]
         line = bytearray(raw[offset + 1:offset + 1 + stride])
         offset += 1 + stride

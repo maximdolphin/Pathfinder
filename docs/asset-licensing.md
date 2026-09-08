@@ -1,0 +1,96 @@
+# Asset licensing — what was actually checked
+
+*Read before adding any third-party asset. Every claim here was verified on
+2026-09-08 by reading the listing and the EULA, not from memory.*
+
+## Scope
+
+**This project is single-player and personal.** Stated by the owner on
+2026-09-08: not distributed, not commercial. That is the least restricted case
+there is, and it makes most of what follows moot in practice.
+
+It is written down anyway, and the manifest is still enforced, for one reason:
+scope changes are quiet. A project that becomes something else two years from
+now cannot reconstruct where its textures came from, and the cost of recording
+it as we go is a line of JSON. If it never matters, nothing was lost.
+
+## The short version
+
+**Quixel Megascans *materials* on Fab are free and usable in a commercial
+game.** Quixel Megascans *3D assets* are not — their free tier is UEFN
+reference-only. These are two different things sold on the same storefront and
+the difference is easy to miss.
+
+## What was found
+
+Searching Fab for Quixel Megascans shows most items at "From $4.99", which is
+where the roadmap's original claim — "free for Unreal use" — turned out to be
+wrong. It is wrong for 3D assets and right for materials.
+
+### 3D assets (e.g. "Beach Sand With Pebbles" — a scanned mesh)
+
+| Tier | Terms | Price |
+|---|---|---|
+| UEFN – Reference only | Unreal Editor for Fortnite; reference version only, not the source asset | Free |
+| Personal | Individual or small team, under $100k revenue **or funding** in the last 12 months | $2.99 |
+| Professional | Above that threshold | higher |
+
+The free tier gives a *reference asset*: a snapshot plus a URI that a compatible
+platform resolves. Not source files, and not usable in a standalone UE5 game.
+
+**We do not need these.** A scanned rock mesh is not a tiling ground surface.
+
+### Materials and textures (e.g. "Rippled Sand")
+
+Listed simply as **Free**, with a Download button and no tier selector, under the
+**Fab Standard License**. Formats: texture set, glTF. Maps: base colour, normal,
+roughness, AO, displacement, cavity, gloss, specular, bump.
+
+The Standard License expressly permits:
+
+- using the assets commercially or privately
+- modifying them to incorporate into projects
+- **commercially distributing projects with the assets incorporated**
+- use with any compatible tools, not limited to Unreal Engine
+
+It prohibits reselling or redistributing an asset standalone, which is not
+something we would do.
+
+**This is what the terrain needs, and it is genuinely free** — for personal use
+and, if it ever mattered, commercial use too.
+
+## Two things to be careful about
+
+### 1. NoAI
+
+These assets are tagged **"Allows usage with AI: No"**, which makes them *NoAI
+Content* under EULA §6(b)(vii) and §16(l). That clause prohibits using them:
+
+- in datasets used by Generative AI Programs
+- in the development of Generative AI Programs
+- as training inputs to Generative AI Programs
+
+Using a texture *as a texture in a game* is none of those — the game is not a
+Generative AI Program. The EULA also carves out programs that "solely operate on
+the original content", which covers an importer that packs channels and builds
+mip chains.
+
+Recorded here rather than assumed, because the tag exists to be read and this
+project's whole reason for having a manifest is not to discover a licence
+problem at ship time.
+
+### 2. The EULA has to be accepted by a person
+
+Fab requires accepting the End User License Agreement before downloading. That
+is an agreement between the account holder and Epic. It is not something an
+assistant should click on somebody's behalf, and it was not clicked.
+
+## The rule going forward
+
+Every texture in `client/Content/Surfaces` has an entry in `manifest.json`
+naming its source and licence, and `tools/check_surfaces.py` fails the build on
+any that does not. That check runs in CI beside the module layering.
+
+When adding an asset from anywhere, the question to answer in the manifest is
+not "is it free" but "free to do *what*" — the two Megascans tiers above are
+exactly why.

@@ -7,3 +7,14 @@
 /client/.vs
 /client/Plugins/McpAutomationBridge/Binaries
 /client/Plugins/McpAutomationBridge/Intermediate
+
+# Surface textures and the archives they come from. Roughly 80 MB a set, and a
+# gigabyte across the biome list — none of it authored here, all of it
+# re-fetchable from the asset ids the manifest records. That is what the
+# manifest is for. manifest.json itself is committed: it is the provenance, and
+# losing it is the thing that cannot be undone.
+/incoming
+/client/Content/Surfaces/*/
+
+__pycache__/
+*.pyc
