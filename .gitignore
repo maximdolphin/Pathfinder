@@ -8,13 +8,22 @@
 /client/Plugins/McpAutomationBridge/Binaries
 /client/Plugins/McpAutomationBridge/Intermediate
 
-# Surface textures and the archives they come from. Roughly 80 MB a set, and a
+# Surface textures and the archives they come from. They live outside
+# client/Content on purpose: Content is for cooked .uasset, and loose
+# source files under it are a directory the editor watches and reimports. Roughly 80 MB a set, and a
 # gigabyte across the biome list — none of it authored here, all of it
 # re-fetchable from the asset ids the manifest records. That is what the
 # manifest is for. manifest.json itself is committed: it is the provenance, and
 # losing it is the thing that cannot be undone.
 /incoming
-/client/Content/Surfaces/*/
+/surfaces/*/
 
 __pycache__/
 *.pyc
+
+# Imported texture assets and build intermediates. Both are derived: the
+# .uasset come from surfaces/ via tools/make_import_settings.py and Unreal's
+# ImportAssets commandlet, and surfaces/ comes from the Fab vault. Everything
+# needed to rebuild them is committed; 2.3 GB of derived binaries is not.
+/client/Content/Surfaces
+/build

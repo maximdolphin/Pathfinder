@@ -45,7 +45,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from compare_captures import read_png
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SURFACES = os.path.join(ROOT, "client", "Content", "Surfaces")
+SURFACES = os.path.join(ROOT, "surfaces")
 MANIFEST = os.path.join(SURFACES, "manifest.json")
 
 TEXTURE_SUFFIXES = (".png", ".tga", ".exr", ".jpg", ".jpeg", ".tif", ".tiff")
