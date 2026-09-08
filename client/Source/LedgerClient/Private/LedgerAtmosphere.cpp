@@ -90,17 +90,25 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		const float TerrainTopKm = static_cast<float>(MaxElevationCm / CentimetresPerKilometre);
 		Clouds->LayerBottomAltitude = FMath::Max(CloudBaseAltitudeKm, TerrainTopKm * 1.1f);
 		Clouds->LayerHeight = CloudLayerHeightKm;
-		// Thinner coverage than the engine default, which is near-overcast. A
-		// solid deck puts the whole landscape in shadow, and the terrain is the
-		// thing being looked at.
-		Clouds->ViewSampleCountScale = 2.0f;
-		Clouds->ShadowViewSampleCountScale = 2.0f;
+		// **These two numbers were 68% of the frame.**
+		//
+		// A sample scale of 2.0 against a 400 km tracing distance is twice the
+		// engine's sample count over eight times its distance, and the cost is
+		// the product: 90 ms of a 130 ms frame, spent on a 334x188 buffer. It
+		// was invisible because a screenshot does not have a frame time in it,
+		// which is why the flight now records one.
+		//
+		// The distance was set to cover the horizon so the deck would not end
+		// in mid-air on approach. It still does not: from a kilometre up the
+		// horizon is 113 km, and past that the deck is a band a few pixels
+		// high that the atmosphere is already fading out.
+		// Second pass: 0.8 over 100 km still cost 32 ms. The deck is a texture
+		// on the sky from more than a few tens of kilometres out, and paying
+		// full sample counts to resolve it there buys nothing a person can see.
+		Clouds->ViewSampleCountScale = 0.35f;
+		Clouds->ShadowViewSampleCountScale = 0.35f;
 		Clouds->PlanetRadius = RadiusKm;
-		// Tracing distance has to cover the horizon or the cloud deck visibly
-		// ends in mid-air on the approach.
-		// Earth's cloud deck is visible to the horizon; 400 km covers it from
-		// altitude without tracing halfway round the planet.
-		Clouds->TracingMaxDistance = 400.0f;
+		Clouds->TracingMaxDistance = 55.0f;
 		Clouds->MarkRenderStateDirty();
 	}
 

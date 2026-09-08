@@ -77,6 +77,13 @@ private:
 	FTimerHandle TownCaptureTimer;
 	FTimerHandle AscentTimer;
 	FTimerHandle ClimbCaptureTimer;
+	/// Names the phase the frame-time recorder attributes subsequent frames to.
+	void MarkPhase(const TCHAR* Name);
+
+	/// Writes out/performance.txt at the end of the run.
+	void WritePerformanceReport();
+
+	FTimerHandle PerformanceTimer;
 	FTimerHandle SweepTimer;
 	FTimerHandle SweepStepTimer;
 	FTimerHandle SweepEndTimer;

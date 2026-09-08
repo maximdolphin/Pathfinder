@@ -22,7 +22,11 @@ public class LedgerClient : ModuleRules
 			// and it already does budgeted async cooks, which is the one thing
 			// the terrain architecture must get right.
 			"ProceduralMeshComponent",
-			"PhysicsCore"
+			"PhysicsCore",
+			// The frame-time recorder reads the engine's own thread and GPU
+			// counters. "It felt smooth" is not a measurement.
+			"RenderCore",
+			"RHI"
 		});
 	}
 }

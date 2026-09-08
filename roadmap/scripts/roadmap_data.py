@@ -412,6 +412,21 @@ M01 = [
          acceptance="A full-thrust climb from ground to orbit reports zero holes and a "
                     "visible set that falls monotonically.",
          days=2, refs=["SS6.8"]),
+    dict(title="Frame-time recording in the scripted flight",
+         detail="Every run writes out/performance.txt: per-phase mean, median, p95, p99 "
+                "and max, with game, render and GPU thread time beside them, and a verdict "
+                "against the budget. A screenshot has no frame time in it, which is how a "
+                "run at nineteen frames a second passed twenty-six task reviews.",
+         acceptance="Every scripted run produces a report with a PASS or FAIL verdict, and "
+                    "a stall over 33 ms is logged with its timestamp and phase.",
+         days=1, refs=["SS14"]),
+    dict(title="Cut the volumetric cloud cost",
+         detail="ProfileGPU at the worst point put VolumetricCloud at 90 ms of a 130 ms "
+                "frame — 68 percent — from a sample scale of 2.0 against a 400 km tracing "
+                "distance. Twice the engine's samples over eight times its distance.",
+         acceptance="Cloud cost falls below 15 ms at ground level with no visible change in "
+                    "the deck from a kilometre up.",
+         days=0.5, refs=["SS14", "SS6.8"]),
     dict(title="Unreal module split: LedgerCore, LedgerTerrain, LedgerMaterial",
          detail="Real UE modules with Build.cs files rather than folders, so UBT enforces "
                 "the dependency declarations instead of a convention doing it.",

@@ -427,6 +427,19 @@ void ALedgerPlanet::BeginPlay()
 	}
 
 	ConsoleCommands.Add(IConsoleManager::Get().RegisterConsoleCommand(
+		TEXT("Ledger.Terrain.ResetPeaks"),
+		TEXT("Clear the worst-case counters, so the next phase is measured on its own."),
+		FConsoleCommandDelegate::CreateWeakLambda(this, [this]
+		{
+			ALedgerPlanet* Self = const_cast<ALedgerPlanet*>(this);
+			Self->Stats.WorstUnfilled = 0;
+			Self->Stats.WorstUnfilledAt = 0.0;
+			Self->Stats.WorstFrameUploadMs = 0.0;
+			Self->Stats.WorstFrameCollisionMs = 0.0;
+		}),
+		ECVF_Default));
+
+	ConsoleCommands.Add(IConsoleManager::Get().RegisterConsoleCommand(
 		TEXT("Ledger.Terrain.Stats"),
 		TEXT("Report terrain LOD, generation and collision timings."),
 		FConsoleCommandDelegate::CreateWeakLambda(this, [this] { LogStats(); }),
@@ -574,7 +587,8 @@ void ALedgerPlanet::UpdateTree(
 	const FVector3d& CameraLocal,
 	const FVector3d& LeadLocal,
 	double ViewportWidth,
-	double FovRadians)
+	double FovRadians,
+	bool bForceCollapse)
 {
 	// Cull first: a node the horizon hides needs neither geometry nor children.
 	// Against both positions, not just the current one — a node about to rise
@@ -608,7 +622,7 @@ void ALedgerPlanet::UpdateTree(
 	const double Error = LedgerTerrain::ScreenSpaceError(
 		Node.WorldSize, Distance, ViewportWidth, FovRadians);
 
-	if (Error > ErrorThresholdPixels && Node.Depth < MaxDepth)
+	if (!bForceCollapse && Error > ErrorThresholdPixels && Node.Depth < MaxDepth)
 	{
 		if (!Node.bHasChildren)
 		{
@@ -618,7 +632,7 @@ void ALedgerPlanet::UpdateTree(
 		{
 			if (Node.Children[Index].IsValid())
 			{
-				UpdateTree(*Node.Children[Index], CameraLocal, LeadLocal, ViewportWidth, FovRadians);
+				UpdateTree(*Node.Children[Index], CameraLocal, LeadLocal, ViewportWidth, FovRadians, false);
 			}
 		}
 
@@ -649,24 +663,58 @@ void ALedgerPlanet::UpdateTree(
 
 	if (Node.bHasChildren)
 	{
-		// The mirror of the rule above. A split keeps the parent until every
-		// child has geometry; a collapse has to keep the children until the
-		// parent does. Dropping them first leaves nothing drawing this ground —
-		// which is the whole reason the ascent used to punch three thousand
-		// holes through the planet on the way out.
+		// The mirror of the split rule above. A split keeps the parent until
+		// every child has geometry; a collapse has to keep the children until
+		// the parent has some. Dropping them first leaves nothing drawing this
+		// ground, which is what punched three thousand holes through the planet
+		// on the way out to orbit.
 		if (ActiveSections.Contains(NodeKey(Node)))
 		{
 			Node.bWantsCollapse = false;
+			Node.CollapseWaitFrames = 0;
 			Collapse(Node);
+			return;
 		}
-		else
+
+		// The wait is bounded, and it has to be. The four children being held
+		// occupy sections from the same pool this node needs one from, so a
+		// subtree that waits indefinitely is not waiting — it is holding the
+		// resource that would end the wait. Under a starved pool that is a
+		// deadlock, and it showed up as fifteen hundred patches of unfillable
+		// demand that grew for as long as the climb lasted.
+		//
+		// Past the deadline, collapse regardless and accept a hole for a few
+		// frames. A transient hole is a worse frame; a deadlock is a worse game.
+		if (++Node.CollapseWaitFrames > 90)
 		{
-			Node.bWantsCollapse = true;
+			Node.bWantsCollapse = false;
+			Node.CollapseWaitFrames = 0;
+			Collapse(Node);
+			return;
+		}
+
+		// Waiting on our own patch. Push the same decision down rather than
+		// stopping here: a climb wants to collapse ten levels at once, and a
+		// subtree that stays whole while its root waits is a visible set that
+		// grows exactly when it should be shrinking. With the intent pushed
+		// down, the tree converges from the bottom.
+		//
+		// Only the level whose children are already leaves actually asks for
+		// geometry — see CollectLeaves. One extra level in flight, not ten.
+		Node.bWantsCollapse = true;
+		for (int32 Index = 0; Index < 4; ++Index)
+		{
+			if (Node.Children[Index].IsValid())
+			{
+				UpdateTree(*Node.Children[Index], CameraLocal, LeadLocal,
+					ViewportWidth, FovRadians, /*bForceCollapse*/ true);
+			}
 		}
 		return;
 	}
 
 	Node.bWantsCollapse = false;
+	Node.CollapseWaitFrames = 0;
 }
 
 void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out, bool bAncestorHasGeometry) const
@@ -691,10 +739,28 @@ void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLed
 	}
 
 	// A split node still holds geometry while its children are being built, so
-	// it counts for rendering purposes until they arrive. A node waiting to
-	// collapse has none and needs some, and the only way to ask for it is to be
-	// in the list the leaf pass walks.
-	if (bHasGeometry || Node.bWantsCollapse)
+	// it counts for rendering purposes until they arrive.
+	//
+	// A node waiting to collapse has none and needs some, and the only way to
+	// ask for it is to be in the list the leaf pass walks — but only once its
+	// children are leaves. Requesting at every level of a collapsing subtree at
+	// once is ten levels of geometry in flight to replace one; requesting only
+	// at the bottom edge is one, and the subtree walks up a level at a time.
+	bool bCollapseFront = Node.bWantsCollapse;
+	if (bCollapseFront)
+	{
+		for (int32 Index = 0; Index < 4; ++Index)
+		{
+			const FLedgerQuadNode* Child = Node.Children[Index].Get();
+			if (Child != nullptr && !Child->IsLeaf())
+			{
+				bCollapseFront = false;
+				break;
+			}
+		}
+	}
+
+	if (bHasGeometry || bCollapseFront)
 	{
 		Out.Add(&Node);
 	}
@@ -1094,16 +1160,26 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 
 	// Where the camera will be in a few seconds, for the LOD to aim at.
 	//
-	// The offset is clamped against altitude rather than taken raw. Coming out
-	// of orbit the camera does kilometres per second, and five seconds of that
-	// is a lead point on the far side of the planet — which would subdivide
-	// ground nobody is going to see and starve the ground in front. Half the
-	// altitude is a lead that scales with how much of the surface is on screen.
+	// Clamped twice, and both clamps were learned the hard way.
+	//
+	// Against altitude, because a lead point below the surface asks for detail
+	// underground. Against an absolute distance, because scaling the lead with
+	// altitude means that at 300 km up, three seconds of climb is a lead point
+	// 150 km away — and the LOD then subdivides a region nobody is flying to,
+	// at a depth chosen by proximity to a point in empty space. That produced
+	// fifteen hundred patches of demand that never fell, on a pool of 3,600,
+	// growing for as long as the climb continued.
+	//
+	// Prefetch earns its keep near the ground, where a patch is metres across
+	// and arriving before it exists is the whole problem. Five kilometres is
+	// sixteen seconds at cruise and more than the deepest LOD ever needs.
+	constexpr double MaxLeadDistance = 500000.0;   // 5 km
 	const double AltitudeAbove = FMath::Max(
 		1.0, CameraLocal.Length() - SurfaceRadiusAt(CameraLocal.GetSafeNormal()));
+
 	FVector3d LeadOffset = CameraVelocityLocal * GeometryLeadSeconds;
 	const double LeadLength = LeadOffset.Length();
-	const double LeadLimit = AltitudeAbove * 0.5;
+	const double LeadLimit = FMath::Min(MaxLeadDistance, AltitudeAbove * 0.5);
 	if (LeadLength > LeadLimit)
 	{
 		LeadOffset *= LeadLimit / LeadLength;
@@ -1112,7 +1188,7 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
-		UpdateTree(*RootNode, CameraLocal, GeometryLead, ViewportWidth, Fov);
+		UpdateTree(*RootNode, CameraLocal, GeometryLead, ViewportWidth, Fov, false);
 	}
 
 	HarvestCompletedPatches();
@@ -1126,7 +1202,11 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	}
 
 	Stats.VisibleNodes = Leaves.Num();
-	Stats.WorstUnfilled = FMath::Max(Stats.WorstUnfilled, Stats.UnfilledNodes);
+	if (Stats.UnfilledNodes > Stats.WorstUnfilled)
+	{
+		Stats.WorstUnfilled = Stats.UnfilledNodes;
+		Stats.WorstUnfilledAt = World->GetTimeSeconds();
+	}
 	Stats.DeepestVisibleDepth = 0;
 
 	// Where the camera will be shortly, so the cook has landed by the time we
@@ -1186,13 +1266,16 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 
 	Stats.PendingBuilds = Pending;
+	Stats.SectionsActive = ActiveSections.Num();
+	Stats.SectionsFree = FreeSections.Num();
+	Stats.SectionsPending = InFlight.Num();
 	Stats.NodesWithCollision = WithCollision;
 	Stats.JobsInFlight = InFlight.Num();
 
 	// Trace every few seconds for the first minute. Under motion this is the
 	// only way to see whether the pipeline is keeping up (§6.8).
 	const double Now = World->GetTimeSeconds();
-	if (Now >= NextTraceAt && Now < 90.0)
+	if (Now >= NextTraceAt)
 	{
 		NextTraceAt = Now + 5.0;
 		LogStats();
@@ -1207,8 +1290,10 @@ void ALedgerPlanet::LogStats() const
 	UE_LOG(LogLedger, Log, TEXT("  with collision     %d"), Stats.NodesWithCollision);
 	UE_LOG(LogLedger, Log, TEXT("  jobs in flight     %d"), Stats.JobsInFlight);
 	UE_LOG(LogLedger, Log, TEXT("  starved this frame %d"), Stats.PendingBuilds);
-	UE_LOG(LogLedger, Log, TEXT("  holes              %d now, %d worst"),
-		Stats.UnfilledNodes, Stats.WorstUnfilled);
+	UE_LOG(LogLedger, Log, TEXT("  sections           %d active, %d in flight, %d free of %d"),
+		Stats.SectionsActive, Stats.SectionsPending, Stats.SectionsFree, MeshPool.Num());
+	UE_LOG(LogLedger, Log, TEXT("  holes              %d now, %d worst at t=%.0fs"),
+		Stats.UnfilledNodes, Stats.WorstUnfilled, Stats.WorstUnfilledAt);
 	UE_LOG(LogLedger, Log, TEXT("  patches total      %lld"), Stats.TotalBuilds);
 	UE_LOG(LogLedger, Log, TEXT("  upload ms (game)   last %.3f  worst %.3f"),
 		Stats.LastFrameUploadMs, Stats.WorstFrameUploadMs);

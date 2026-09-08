@@ -58,6 +58,11 @@ struct FLedgerQuadNode
 	/// nothing at all drawing this ground.
 	bool bWantsCollapse = false;
 
+	/// Frames spent waiting for that geometry. Bounded, because the children
+	/// being held hold sections from the same pool the parent needs one from,
+	/// and an unbounded wait is a deadlock rather than a delay.
+	int32 CollapseWaitFrames = 0;
+
 	bool IsLeaf() const { return !bHasChildren; }
 };
 
@@ -229,6 +234,22 @@ struct FLedgerTerrainStats
 	UPROPERTY()
 	int32 WorstUnfilled = 0;
 
+	/// When the worst happened. A peak with no timestamp cannot be attributed,
+	/// and the difference between a climb and a teleport is the whole question.
+	UPROPERTY()
+	double WorstUnfilledAt = 0.0;
+
+	/// Section pool accounting. A starved frame is either too much demand or a
+	/// pool that is not being returned to, and the two have nothing in common.
+	UPROPERTY()
+	int32 SectionsActive = 0;
+
+	UPROPERTY()
+	int32 SectionsFree = 0;
+
+	UPROPERTY()
+	int32 SectionsPending = 0;
+
 	UPROPERTY()
 	int32 WaterSections = 0;
 
@@ -395,7 +416,7 @@ private:
 	double NextTraceAt = 0.0;
 
 	void BuildRoots();
-	void UpdateTree(FLedgerQuadNode& Node, const FVector3d& CameraLocal, const FVector3d& LeadLocal, double ViewportWidth, double FovRadians);
+	void UpdateTree(FLedgerQuadNode& Node, const FVector3d& CameraLocal, const FVector3d& LeadLocal, double ViewportWidth, double FovRadians, bool bForceCollapse);
 	void CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out, bool bAncestorHasGeometry) const;
 	void Split(FLedgerQuadNode& Node);
 	void Collapse(FLedgerQuadNode& Node);

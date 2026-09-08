@@ -10,6 +10,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "LedgerPerf.h"
 #include "Misc/FileHelper.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAtmosphere.h"
@@ -200,6 +201,8 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameUnderwater), 124.0f, false);
 	Timers.SetTimer(SpaceCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 146.0f, false);
+	Timers.SetTimer(PerformanceTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::WritePerformanceReport), 152.0f, false);
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, atmosphere, sun, town, ship"));
 }
@@ -376,6 +379,7 @@ void ULedgerWorldBuilder::Capture(const TCHAR* Name)
 
 void ULedgerWorldBuilder::CaptureOrbit()
 {
+	MarkPhase(TEXT("orbit"));
 	if (UWorld* World = GetWorld())
 	{
 		if (GEngine != nullptr)
@@ -388,11 +392,24 @@ void ULedgerWorldBuilder::CaptureOrbit()
 
 void ULedgerWorldBuilder::CaptureEntry()
 {
+	MarkPhase(TEXT("atmospheric entry"));
 	Capture(TEXT("terrain-entry.png"));
 }
 
 void ULedgerWorldBuilder::CaptureSurface()
 {
+	MarkPhase(TEXT("surface"));
+
+	// A per-pass GPU breakdown at the worst point in the flight. The surface is
+	// where frame time is a hundred milliseconds and the game thread is twenty,
+	// so the answer is a render pass and guessing which one is not a method.
+	if (UWorld* World = GetWorld())
+	{
+		if (GEngine != nullptr)
+		{
+			GEngine->Exec(World, TEXT("ProfileGPU"));
+		}
+	}
 	if (UWorld* World = GetWorld())
 	{
 		if (GEngine != nullptr)
@@ -412,6 +429,7 @@ void ULedgerWorldBuilder::CaptureTown()
 
 void ULedgerWorldBuilder::BeginDescent()
 {
+	MarkPhase(TEXT("descent"));
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	if (World == nullptr || Ship == nullptr || Planet == nullptr)
@@ -505,6 +523,7 @@ void ULedgerWorldBuilder::StepDescent()
 
 void ULedgerWorldBuilder::FrameTown()
 {
+	MarkPhase(TEXT("town"));
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
@@ -553,11 +572,29 @@ void ULedgerWorldBuilder::FrameTown()
 
 void ULedgerWorldBuilder::BeginAscent()
 {
+	MarkPhase(TEXT("ascent"));
 	ALedgerShip* Ship = GetShip();
 	APlayerController* Controller = GetWorld() != nullptr ? GetWorld()->GetFirstPlayerController() : nullptr;
 	if (Ship == nullptr || Controller == nullptr || Planet == nullptr)
 	{
 		return;
+	}
+
+	// Measure the climb on its own, three seconds in. Everything before it in
+	// this sequence teleports the camera, and the ascent itself starts by
+	// swinging the boom fifty metres and pitching the nose up — neither of
+	// which is a streaming failure, and both of which would otherwise be
+	// counted as the climb's worst moment.
+	if (UWorld* World = GetWorld())
+	{
+		FTimerHandle Settle;
+		World->GetTimerManager().SetTimer(Settle, FTimerDelegate::CreateLambda([this]
+		{
+			if (GEngine != nullptr)
+			{
+				GEngine->Exec(GetWorld(), TEXT("Ledger.Terrain.ResetPeaks"));
+			}
+		}), 3.0f, false);
 	}
 
 	// Back onto the chase boom, which the underwater shot pulled in to the nose.
@@ -583,6 +620,7 @@ void ULedgerWorldBuilder::BeginAscent()
 
 void ULedgerWorldBuilder::FrameSpace()
 {
+	MarkPhase(TEXT("space"));
 	if (UWorld* Stats = GetWorld())
 	{
 		if (GEngine != nullptr)
@@ -623,6 +661,32 @@ void ULedgerWorldBuilder::FrameSpace()
 		false);
 }
 
+void ULedgerWorldBuilder::MarkPhase(const TCHAR* Name)
+{
+	if (UWorld* World = GetWorld())
+	{
+		if (ULedgerPerfSubsystem* Perf = World->GetSubsystem<ULedgerPerfSubsystem>())
+		{
+			Perf->BeginPhase(FString(Name));
+		}
+	}
+}
+
+void ULedgerWorldBuilder::WritePerformanceReport()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+	if (ULedgerPerfSubsystem* Perf = World->GetSubsystem<ULedgerPerfSubsystem>())
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("performance.txt")));
+		Perf->WriteReport(Path);
+	}
+}
+
 // ------------------------------------------------------------ ridge sweep
 
 namespace
@@ -643,6 +707,7 @@ namespace
 
 void ULedgerWorldBuilder::BeginRidgeSweep()
 {
+	MarkPhase(TEXT("ridge sweep"));
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	if (World == nullptr || Ship == nullptr || Planet == nullptr)
@@ -735,6 +800,7 @@ void ULedgerWorldBuilder::EndRidgeSweep()
 
 void ULedgerWorldBuilder::FrameCoast()
 {
+	MarkPhase(TEXT("coast"));
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
@@ -941,6 +1007,7 @@ void ULedgerWorldBuilder::DumpBathymetry()
 
 void ULedgerWorldBuilder::FrameUnderwater()
 {
+	MarkPhase(TEXT("underwater"));
 	UWorld* World = GetWorld();
 	ALedgerShip* Ship = GetShip();
 	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
