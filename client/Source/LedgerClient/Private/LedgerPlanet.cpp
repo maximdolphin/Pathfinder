@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "LedgerAtmosphere.h"
 #include "LedgerSimSubsystem.h"
 #include "Materials/MaterialInterface.h"
 #include "ProceduralMeshComponent.h"
@@ -23,6 +24,43 @@ namespace
 			| (static_cast<uint64>(Node.Depth) << 52)
 			| (X << 26)
 			| Y;
+	}
+
+	FColor Blend(const FColor& A, const FColor& B, double T)
+	{
+		const double Alpha = FMath::Clamp(T, 0.0, 1.0);
+		return FColor(
+			static_cast<uint8>(FMath::Lerp<double>(A.R, B.R, Alpha)),
+			static_cast<uint8>(FMath::Lerp<double>(A.G, B.G, Alpha)),
+			static_cast<uint8>(FMath::Lerp<double>(A.B, B.B, Alpha)),
+			255);
+	}
+
+	/// Base colour by height above sea level. Deliberately dark: these values are
+	/// albedo, and albedo near 1.0 blows out the moment a sun hits it.
+	FColor ElevationColour(double Elevation, double MaxElevation)
+	{
+		if (Elevation < 0.0)
+		{
+			// Shallows to deep water.
+			const double Depth = FMath::Clamp(-Elevation / (MaxElevation * 0.35), 0.0, 1.0);
+			return Blend(FColor(38, 78, 110), FColor(9, 22, 46), Depth);
+		}
+
+		const double Height = FMath::Clamp(Elevation / MaxElevation, 0.0, 1.0);
+		if (Height < 0.06)
+		{
+			return Blend(FColor(120, 110, 82), FColor(58, 84, 44), Height / 0.06);   // sand -> grass
+		}
+		if (Height < 0.42)
+		{
+			return Blend(FColor(58, 84, 44), FColor(74, 68, 54), (Height - 0.06) / 0.36); // grass -> rock
+		}
+		if (Height < 0.72)
+		{
+			return Blend(FColor(74, 68, 54), FColor(96, 94, 92), (Height - 0.42) / 0.30); // rock -> scree
+		}
+		return Blend(FColor(96, 94, 92), FColor(214, 218, 224), (Height - 0.72) / 0.28);  // scree -> snow
 	}
 
 	/// Which cube face a direction points at, and where on it.
@@ -102,26 +140,38 @@ void ALedgerPlanet::BeginPlay()
 	// No content of our own (§13.1: no art through Phase 0), so borrow an
 	// engine material. A null result is fine — the default material still shows
 	// the silhouette, and the silhouette is what the spike is measuring.
-	// WorldGridMaterial ignores vertex colour, so the elevation banding the mesh
-	// carries was invisible. The debug vertex-colour material shows it. Neither
-	// is art — §13.1 has no art in it — but one of them tells you whether the
-	// heightfield is doing anything.
-	SurfaceMaterial = LoadObject<UMaterialInterface>(
-		nullptr, TEXT("/Engine/EngineDebugMaterials/VertexColorViewMode_ColorOnly"));
+	// A lit material driven by vertex colour. The debug vertex-colour material
+	// this used before is *unlit*, which is why the planet read as a flat
+	// cut-out — none of the normals the LOD works to get right were shading
+	// anything. Falls back to the debug material, then to the world grid, so a
+	// failure here costs colour rather than geometry.
+	SurfaceMaterial = LedgerMaterials::CreateTerrainMaterial(this);
+	if (SurfaceMaterial == nullptr)
+	{
+		SurfaceMaterial = LoadObject<UMaterialInterface>(
+			nullptr, TEXT("/Engine/EngineDebugMaterials/VertexColorViewMode_ColorOnly"));
+	}
 	if (SurfaceMaterial == nullptr)
 	{
 		SurfaceMaterial = LoadObject<UMaterialInterface>(
 			nullptr, TEXT("/Engine/EngineMaterials/WorldGridMaterial"));
 	}
+	UE_LOG(LogLedger, Log, TEXT("terrain material: %s"),
+		SurfaceMaterial != nullptr ? *SurfaceMaterial->GetName() : TEXT("<none, using engine default>"));
 
 	BuildRoots();
 
 	// A pool large enough for the visible set at the error threshold, with room
 	// to spare so a fast turn does not stall on allocation.
-	// Sized against the visible-leaf count at the default error threshold, with
-	// headroom for a fast turn. At 256 the pool starved and a third of the
-	// visible set never got geometry.
-	constexpr int32 PoolSize = 1024;
+	// Sized against the *measured* visible-leaf count during a reentry (2,693 at
+	// two kilometres), with headroom for a fast turn. Undersizing this does not
+	// degrade gracefully: leaves with no component are simply not drawn, and the
+	// result is black holes punched through the planet.
+	//
+	// The real fix is to keep a parent's geometry until all four children have
+	// been built, so a starved pool costs detail rather than holes. That is a
+	// restructure of the split path, not a constant.
+	constexpr int32 PoolSize = 3072;
 	MeshPool.Reserve(PoolSize);
 	FreeSections.Reserve(PoolSize);
 	for (int32 Index = 0; Index < PoolSize; ++Index)
@@ -426,13 +476,10 @@ void ALedgerPlanet::BuildSection(const FLedgerQuadNode& Node, int32 SectionIndex
 			Vertices[Index] = FVector(Surface - Node.Centre);
 			UVs[Index] = FVector2D(LocalU, LocalV);
 
-			// Elevation as vertex colour, so the shape reads even with no
-			// authored material. Green low, grey-white high.
-			const double Normalised = FMath::Clamp((Elevation / MaxElevation) * 0.5 + 0.5, 0.0, 1.0);
-			const uint8 Shade = static_cast<uint8>(Normalised * 255.0);
-			Colors[Index] = Elevation < 0.0
-				? FColor(20, 40, 90, 255)
-				: FColor(Shade, static_cast<uint8>(120 + Shade / 3), Shade / 2, 255);
+			// Elevation ramp: water, grass, rock, snow. The previous version was
+			// a single bright shade that saturated to white under any real
+			// lighting, which hid the terrain rather than showing it.
+			Colors[Index] = ElevationColour(Elevation, MaxElevation);
 		}
 	}
 
@@ -578,7 +625,8 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			continue;
 		}
 
-		if (Stats.BuildsThisFrame >= BuildBudgetPerFrame || FreeSections.Num() == 0)
+		const double SpentMs = (FPlatformTime::Seconds() - BuildStart) * 1000.0;
+		if (SpentMs >= BuildBudgetMs || FreeSections.Num() == 0)
 		{
 			++Pending;
 			continue;

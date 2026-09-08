@@ -15,6 +15,7 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "LedgerWorld.generated.h"
 
+class ALedgerAtmosphere;
 class ALedgerPlanet;
 
 /// Free flight for surveying the planet. Design §6.9 keeps ships out of scope
@@ -73,6 +74,9 @@ private:
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;
 
+	UPROPERTY()
+	TObjectPtr<ALedgerAtmosphere> Atmosphere;
+
 	/// One marker per region in the sim snapshot, placed on the surface. The
 	/// point is not the geometry — it is that the world the player flies over
 	/// is the same world the ledger is about.
@@ -82,14 +86,24 @@ private:
 	/// like. Verifying a renderer by reading its log is not verifying it.
 	FTimerHandle CaptureTimer;
 	FTimerHandle DescendTimer;
+	FTimerHandle DescentStepTimer;
+	FTimerHandle MidCaptureTimer;
 	FTimerHandle SurfaceCaptureTimer;
 
-	void CaptureAndReport();
+	/// Descent state. The camera is *flown* down rather than teleported: a
+	/// teleport proves nothing about whether the transition holds together, and
+	/// the whole claim being made here is that there is no seam to hide.
+	double DescentStartAltitude = 0.0;
+	double DescentEndAltitude = 0.0;
+	double DescentElapsed = 0.0;
+	FVector3d DescentDirection = FVector3d::UnitZ();
 
-	/// Drop the camera to low altitude. This is the moment the terrain system is
-	/// actually being judged on: the LOD has to refine several levels and the
-	/// collision cook has to keep up, which is precisely where §6.8 says every
-	/// implementation of this hitches.
-	void DescendToSurface();
+	UPROPERTY(EditAnywhere, Category = "Ledger|Descent")
+	double DescentDuration = 22.0;
+
+	void Capture(const TCHAR* Name);
+	void CaptureAndReport();
+	void BeginDescent();
+	void StepDescent();
 	void CaptureSurface();
 };

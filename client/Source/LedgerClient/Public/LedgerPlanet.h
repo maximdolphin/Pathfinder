@@ -147,18 +147,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	double ErrorThresholdPixels = 96.0;
 
-	/// Node builds allowed per frame. The budget *is* the anti-hitch mechanism.
+	/// Milliseconds per frame the terrain may spend generating geometry.
+	///
+	/// A *time* budget, not a node count. A count cannot know that eight nodes
+	/// cost 53 ms this frame and two cost 12 ms the next, and the count version
+	/// of this produced exactly that spread.
 	///
 	/// Measured: a 33x33 patch costs roughly 5-8 ms on the game thread, almost
-	/// all of it in vertex generation and tangent calculation. That is the real
-	/// ceiling on this implementation — at two per frame the visible set takes
-	/// seconds to fill after a fast descent, and raising the budget trades holes
-	/// for hitches. The fix is not a bigger number here: it is generating the
-	/// heightfield on the GPU (§6.8's "GPU compute pass over layered noise") or
-	/// buying a plugin that already has. **This measurement is the deliverable
-	/// of the §15.1 spike.**
+	/// all of it in height sampling and tangent calculation. That is the real
+	/// ceiling on this implementation — the budget can buy smooth frames or a
+	/// filled-in horizon, not both. The fix is not a bigger number here: it is
+	/// generating the heightfield on the GPU (§6.8's "GPU compute pass over
+	/// layered noise") or buying a plugin that already has. **This measurement
+	/// is the deliverable of the §15.1 spike.**
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
-	int32 BuildBudgetPerFrame = 3;
+	double BuildBudgetMs = 6.0;
 
 	/// Cook collision within this distance of the camera.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Collision")

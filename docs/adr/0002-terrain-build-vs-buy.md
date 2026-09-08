@@ -81,6 +81,39 @@ compute shader and re-run this trace. If the worst-frame build cost drops below
 2 ms, build. If it does not, buy — and accept the architectural lock-in with
 open eyes.
 
+## Addendum — atmosphere, and a budget that works
+
+Sky Atmosphere, volumetric clouds and height fog were added afterwards. §6.8 is
+right that this part is configuration rather than construction, but the
+parameters do not survive being copied from Earth:
+
+- **Scale height is the setting that decides whether you can see.** Earth's
+  Rayleigh scale height is 13% of its atmosphere; that ratio on a 5 km shell
+  puts nearly all the air in the bottom 650 m, and everything past a couple of
+  kilometres washes to flat pale green. It reads as a broken material and is in
+  fact a correctly-rendered soup. Half the shell restores ground visibility.
+- **Scattering coefficient scales inversely with path length.** A twelfth of
+  Earth's atmosphere needs several times Earth's coefficient for the sky to be
+  blue from the ground, not less.
+- **Exposure clamps must be wide.** Clamped to 0.25–4.0 the ground could not be
+  exposed down; left unclamped the auto-exposure hunts empty space and blows the
+  planet to white. 0.03–8.0 with a −1 bias spans orbit and surface, and the
+  ~2 s adaptation is itself the transition the eye reads.
+
+The build budget was also changed from a node count to **6 ms per frame**. A
+count cannot know that eight nodes cost 53 ms this frame and two cost 12 ms the
+next; the count version produced exactly that spread. Worst frame fell from
+53 ms to 12.9 ms. The queue did not shrink — 1,360 nodes still outstanding at
+low altitude — which is the same finding stated more precisely: **the budget can
+buy smooth frames or a filled horizon, not both, until generation moves off the
+game thread.**
+
+One structural flaw worth naming: an undersized component pool does not degrade
+gracefully. Leaves with no component are simply not drawn, so a starved pool
+punches black holes through the planet rather than showing coarser ground. The
+fix is to keep a parent's geometry until all four children exist — a restructure
+of the split path, not a constant.
+
 ## Consequences
 
 **Good.** The spike is cheap to keep either way: the LOD, horizon culling,
