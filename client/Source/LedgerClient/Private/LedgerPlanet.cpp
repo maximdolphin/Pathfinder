@@ -314,11 +314,23 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 				Job.WaterTangents[Index] = FProcMeshTangent(
 					FVector::CrossProduct(Reference, Job.WaterNormals[Index]).GetSafeNormal(), false);
 
-				// Depth in the alpha channel, so the material can shade shallows
-				// differently from open ocean without a second texture lookup.
+				// Two different depth encodings, because the two consumers need
+				// wildly different ranges.
+				//
+				// Alpha is depth over kilometres, for the colour gradient from
+				// shallows to open ocean. Red is depth over the first three
+				// metres, for waves and foam: on the alpha scale, standing in
+				// knee-deep water reads as 0.02 and everything at the shoreline
+				// is indistinguishable from everything else.
 				const double Depth = FMath::Clamp(
 					-Elevations[Index] / (Job.Params.MaxElevation * 0.30), 0.0, 1.0);
-				Job.WaterColors[Index] = FColor(255, 255, 255,
+				const double ShoreProximity = 1.0 - FMath::Clamp(
+					-Elevations[Index] / 300.0, 0.0, 1.0);
+
+				Job.WaterColors[Index] = FColor(
+					static_cast<uint8>(ShoreProximity * 255.0),
+					255,
+					255,
 					static_cast<uint8>(FMath::Pow(Depth, 0.5) * 255.0));
 			}
 		}

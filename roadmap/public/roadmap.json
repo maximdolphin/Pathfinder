@@ -83,7 +83,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 1
+   "doneCount": 2
   },
   {
    "id": "M2",
@@ -882,11 +882,29 @@
    "dependsOn": [
     "T022"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Wave phase is Frac(AbsoluteWorldPosition / wavelength), not a plain divide. At a 6371 km radius a world coordinate is ~6.4e8 and float32 has no fractional part left there, so sin() of it returns a staircase. Frac on an absolute world position is the one operation LWC keeps exact. It also rules out the camera-relative position the terrain material uses, which would make the wave field swim with the camera."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "First pass keyed foam off a shore band 8 m deep with pow(x,4): a shallow inlet is almost entirely under 8 m, so the whole lagoon went white and read as pack ice. 3 m and pow(x,6) gives a surf line instead. The band doubles as wave damping, so the same number decides where the swell flattens."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T023-2026-09-08T16-09-05-097.png",
+     "caption": "terrain-coast.png",
+     "source": "../out/terrain-coast.png",
+     "addedAt": "2026-09-08T16:09:05.099Z"
+    }
+   ],
    "plannedStartDay": 37.5,
    "plannedEndDay": 38.5,
    "plannedStart": "2026-10-28",
@@ -6013,5 +6031,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T15:53:20.156Z"
+ "updatedAt": "2026-09-08T16:09:05.162Z"
 }
