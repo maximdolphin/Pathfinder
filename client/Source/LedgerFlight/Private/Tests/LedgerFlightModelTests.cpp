@@ -70,17 +70,24 @@ bool FLedgerFlightGravityFallsOff::RunTest(const FString&)
 {
 	const FLedgerGravityField Field = EarthLike();
 
-	// At two radii, gravity is a quarter. Newton, and the reason leaving is
-	// expensive near the ground and cheap once you are up.
-	FLedgerFlightState Near = AtAltitude(Field, 0.0);
+	// At twice the distance, gravity is a quarter. Newton, and the reason
+	// leaving is expensive near the ground and cheap once you are up.
+	//
+	// Both samples are well clear of the surface, because the first version of
+	// this test put the near one *at* it — where ground contact zeroed the
+	// velocity before it could be measured, and the test failed for the one
+	// reason that would have meant the model was right.
+	FLedgerFlightState Near;
+	Near.Position = FVector3d(0.0, 0.0, Field.Radius * 2.0);
 	FLedgerFlightState Far;
-	Far.Position = FVector3d(0.0, 0.0, Field.Radius * 2.0);
+	Far.Position = FVector3d(0.0, 0.0, Field.Radius * 4.0);
 
 	LedgerFlight::Integrate(Near, Field, 1.0);
 	LedgerFlight::Integrate(Far, Field, 1.0);
 
 	const double Ratio = Near.Velocity.Length() / Far.Velocity.Length();
-	TestTrue(TEXT("gravity at two radii is a quarter"), FMath::Abs(Ratio - 4.0) < 0.05);
+	TestTrue(TEXT("gravity at twice the distance is a quarter"),
+		FMath::Abs(Ratio - 4.0) < 0.05);
 	return true;
 }
 
