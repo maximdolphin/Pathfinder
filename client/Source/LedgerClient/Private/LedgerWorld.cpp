@@ -190,9 +190,9 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	Timers.SetTimer(TownCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameTown), 78.0f, false);
 	Timers.SetTimer(AscentTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 88.0f, false);
-	Timers.SetTimer(ClimbCaptureTimer,
-		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-climb.png")), 96.0f, false);
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::BeginAscent), 112.0f, false);
+	Timers.SetTimer(CoastCaptureTimer,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameCoast), 96.0f, false);
 	Timers.SetTimer(SpaceCaptureTimer,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::FrameSpace), 126.0f, false);
 
@@ -601,5 +601,116 @@ void ULedgerWorldBuilder::FrameSpace()
 		Shot,
 		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-space.png")),
 		3.0f,
+		false);
+}
+
+void ULedgerWorldBuilder::FrameCoast()
+{
+	UWorld* World = GetWorld();
+	ALedgerShip* Ship = GetShip();
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	if (Ship == nullptr || Controller == nullptr || Planet == nullptr)
+	{
+		return;
+	}
+
+	const FLedgerTerrainParams Params = Planet->TerrainParams();
+
+	// Find a beach: land, in daylight, with open water within a few kilometres.
+	// Scoring on "just above sea level with a deep neighbour" finds a shoreline
+	// rather than a lake edge or a cliff over a shallow shelf.
+	FVector3d Best = SiteDirection;
+	FVector3d BestSeaward = FVector3d::ZeroVector;
+	double BestScore = -MAX_dbl;
+
+	constexpr int32 Samples = 8192;
+	const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
+
+	for (int32 Index = 0; Index < Samples; ++Index)
+	{
+		const double Y = 1.0 - (static_cast<double>(Index) / (Samples - 1)) * 2.0;
+		const double RadiusAtY = FMath::Sqrt(FMath::Max(0.0, 1.0 - Y * Y));
+		const double Theta = GoldenAngle * static_cast<double>(Index);
+		const FVector3d Candidate = FVector3d(
+			FMath::Cos(Theta) * RadiusAtY, Y, FMath::Sin(Theta) * RadiusAtY).GetSafeNormal();
+
+		if (FVector3d::DotProduct(Candidate, SunFacing) < 0.80)
+		{
+			continue;
+		}
+
+		const double Height = LedgerTerrain::Elevation(Candidate, Params);
+		// Just above the waterline: a beach, not a headland.
+		if (Height < 0.0 || Height > Params.MaxElevation * 0.012)
+		{
+			continue;
+		}
+
+		const FVector3d Tangent = FVector3d::CrossProduct(Candidate, FVector3d::UpVector).GetSafeNormal();
+		const FVector3d Bitangent = FVector3d::CrossProduct(Candidate, Tangent);
+
+		// Probe outward for the deepest water within about 6 km.
+		double Deepest = 0.0;
+		FVector3d Seaward = Tangent;
+		for (int32 Probe = 0; Probe < 8; ++Probe)
+		{
+			const double Angle = (Probe / 8.0) * 2.0 * PI;
+			const FVector3d Direction = (Tangent * FMath::Cos(Angle) + Bitangent * FMath::Sin(Angle));
+			const FVector3d Sample = (Candidate + Direction * 0.00095).GetSafeNormal();
+			const double SampleHeight = LedgerTerrain::Elevation(Sample, Params);
+			if (SampleHeight < Deepest)
+			{
+				Deepest = SampleHeight;
+				Seaward = Direction;
+			}
+		}
+
+		if (Deepest >= 0.0)
+		{
+			continue;
+		}
+
+		const double Score = -Deepest - Height * 3.0;
+		if (Score > BestScore)
+		{
+			BestScore = Score;
+			Best = Candidate;
+			BestSeaward = Seaward;
+		}
+	}
+
+	if (BestSeaward.IsNearlyZero())
+	{
+		UE_LOG(LogLedger, Warning, TEXT("no coastline found in daylight"));
+		return;
+	}
+
+	const FVector Up(Best);
+	const double SurfaceRadius = Planet->SurfaceRadiusAt(Best);
+
+	// Sixty metres up and a little back from the waterline, looking out to sea
+	// with the horizon in frame. Low enough that the surface reads as a surface.
+	const FVector Location = Planet->GetActorLocation()
+		+ FVector(Best * (SurfaceRadius + 6000.0))
+		- FVector(BestSeaward.GetSafeNormal()) * 12000.0;
+
+	const FVector Look = (FVector(BestSeaward.GetSafeNormal()) - Up * 0.14f).GetSafeNormal();
+
+	Ship->SetFlightEnabled(false);
+	Ship->SetVelocity(FVector::ZeroVector);
+	Ship->SetActorLocation(Location);
+
+	const FRotator Attitude = FRotationMatrix::MakeFromXZ(Look, Up).Rotator();
+	Ship->SetActorRotation(Attitude);
+	Controller->SetControlRotation(Attitude);
+
+	UE_LOG(LogLedger, Log, TEXT("coast: shore at %.0f m elevation, water %.0f m deep nearby"),
+		LedgerTerrain::Elevation(Best, Params) / 100.0, -BestScore / 100.0);
+
+	FTimerHandle Shot;
+	World->GetTimerManager().SetTimer(
+		Shot,
+		FTimerDelegate::CreateUObject(this, &ULedgerWorldBuilder::Capture, TEXT("terrain-coast.png")),
+		6.0f,
 		false);
 }

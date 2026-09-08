@@ -15,6 +15,7 @@
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionDivide.h"
 #include "Materials/MaterialExpressionDotProduct.h"
+#include "Materials/MaterialExpressionFresnel.h"
 #include "Materials/MaterialExpressionLinearInterpolate.h"
 #include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionPixelDepth.h"
@@ -390,6 +391,91 @@ namespace LedgerSurface
 		return Material;
 	}
 
+	UMaterialInterface* CreateWaterMaterial(UObject* Outer)
+	{
+		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
+		if (Material == nullptr)
+		{
+			return nullptr;
+		}
+
+		Material->MaterialDomain = MD_Surface;
+		Material->SetShadingModel(MSM_DefaultLit);
+
+		FGraph Graph;
+		Graph.Material = Material;
+
+		// Depth comes in on vertex alpha: shallow water over a sandbar is a
+		// different colour from open ocean, and that gradient at the shoreline is
+		// most of what tells you it is a surface with something under it.
+		UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
+
+		UMaterialExpressionConstant3Vector* Shallow = Graph.Make<UMaterialExpressionConstant3Vector>();
+		Shallow->Constant = FLinearColor(0.075f, 0.220f, 0.245f);
+		UMaterialExpressionConstant3Vector* Deep = Graph.Make<UMaterialExpressionConstant3Vector>();
+		Deep->Constant = FLinearColor(0.012f, 0.048f, 0.098f);
+
+		// Depth arrives on vertex alpha, and alpha is a **separate output pin**
+		// on the vertex-colour node — pin 0 is float3 RGB with no alpha in it.
+		//
+		// Masking pin 0 for alpha is what broke this material: it compiled to
+		// "not enough components in float3 for component mask 0001", and UE's
+		// response to a material that will not compile is one warning line and a
+		// silent swap to the default. The sea therefore rendered as grey
+		// WorldGridMaterial, and every subsequent change to the water shader
+		// appeared to do nothing whatsoever. Worth knowing: a material that does
+		// not react to any edit is usually not being used.
+		constexpr int32 VertexAlphaPin = 4;
+
+		UMaterialExpressionLinearInterpolate* Body = Graph.Make<UMaterialExpressionLinearInterpolate>();
+		Body->A.Expression = Shallow;
+		Body->B.Expression = Deep;
+		Body->Alpha.Expression = VertexColour;
+		Body->Alpha.OutputIndex = VertexAlphaPin;
+
+
+		// Fresnel: water is nearly a mirror at grazing angles and nearly clear
+		// looking straight down. Without it the sea is the same colour to the
+		// horizon and reads as painted.
+		UMaterialExpressionFresnel* Fresnel = Graph.Make<UMaterialExpressionFresnel>();
+		Fresnel->Exponent = 4.0f;
+		Fresnel->BaseReflectFraction = 0.02f;
+
+		// At a grazing angle water shows the sky, which near the horizon is bright.
+		// The first pass used a dark grey here and the sea came back nearly black
+		// from any low viewpoint, which is every viewpoint that matters.
+		UMaterialExpressionConstant3Vector* Grazing = Graph.Make<UMaterialExpressionConstant3Vector>();
+		Grazing->Constant = FLinearColor(0.42f, 0.52f, 0.62f);
+		UMaterialExpression* BaseColour = Graph.Lerp(Body, Grazing, Fresnel);
+
+		// Roughness matters more than it looks.
+		//
+		// At 0.012 the surface is a mirror, and a mirror renders black unless
+		// something is in front of it: screen-space reflection can only return
+		// what is already on screen, and looking out to sea that is mostly sky
+		// it cannot sample. Around 0.09 the sea picks up the sky light's ambient
+		// specular instead, which is what gives it colour at all, and still sits
+		// under the SSR roughness cutoff so real reflections work where they can.
+		UMaterialExpressionLinearInterpolate* Roughness = Graph.Make<UMaterialExpressionLinearInterpolate>();
+		Roughness->A.Expression = Graph.Constant(0.11f);
+		Roughness->B.Expression = Graph.Constant(0.07f);
+		Roughness->Alpha.Expression = VertexColour;
+		Roughness->Alpha.OutputIndex = VertexAlphaPin;
+
+		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
+		if (EditorData == nullptr)
+		{
+			return nullptr;
+		}
+		EditorData->BaseColor.Expression = BaseColour;
+		EditorData->Roughness.Expression = Roughness;
+		EditorData->Specular.Expression = Graph.Constant(0.85f);
+		EditorData->Metallic.Expression = Graph.Constant(0.0f);
+
+		Material->PostEditChange();
+		return Material;
+	}
+
 	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness)
 	{
 		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
@@ -434,6 +520,11 @@ namespace LedgerSurface
 	}
 
 	UMaterialInterface* CreateFlatMaterial(UObject*, const FLinearColor&, float)
+	{
+		return nullptr;
+	}
+
+	UMaterialInterface* CreateWaterMaterial(UObject*)
 	{
 		return nullptr;
 	}

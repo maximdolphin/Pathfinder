@@ -83,7 +83,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 1
   },
   {
    "id": "M2",
@@ -831,11 +831,40 @@
    "dependsOn": [
     "T021"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-08",
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Water rides the terrain quadtree as mesh section 1, inheriting its LOD; quads emitted only where a corner is below sea level"
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "Bug: VertexColor pin 0 is float3 RGB, so masking it for alpha failed to compile. UE logs one line and silently swaps the default material, so every edit to the water shader appeared to do nothing"
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "done",
+     "text": "opaque water, depth-tinted from vertex alpha, Fresnel, SSR-compatible roughness"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T022-2026-09-08T15-53-19-893.png",
+     "caption": "Waterline at a shoreline: turquoise shallows, deeper channel, sand — a surface with a horizon",
+     "source": "../out/terrain-coast.png",
+     "addedAt": "2026-09-08T15:53:19.895Z"
+    },
+    {
+     "file": "evidence/T022-2026-09-08T15-53-19-959.png",
+     "caption": "Ocean from orbit with specular sun glint and depth gradient",
+     "source": "../out/terrain-entry.png",
+     "addedAt": "2026-09-08T15:53:19.961Z"
+    }
+   ],
    "plannedStartDay": 36,
    "plannedEndDay": 37.5,
    "plannedStart": "2026-10-27",
@@ -5984,5 +6013,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T15:22:19.346Z"
+ "updatedAt": "2026-09-08T15:53:20.156Z"
 }

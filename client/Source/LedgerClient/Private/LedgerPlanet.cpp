@@ -263,6 +263,92 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			FVector::CrossProduct(Reference, Normal).GetSafeNormal(), false);
 	}
 
+	// ---- sea surface ----------------------------------------------------
+	//
+	// Sea level is exactly the reference sphere: `Elevation` returns negative
+	// below the waterline, so the shell sits at `Radius` plus a couple of
+	// centimetres to keep it off the terrain at the shoreline, where the two
+	// meet at the same height by definition and would otherwise z-fight.
+	constexpr double WaterLift = 3.0;
+
+	bool bAnyWater = false;
+	for (int32 Index = 0; Index < VertexCount; ++Index)
+	{
+		if (Elevations[Index] < 0.0)
+		{
+			bAnyWater = true;
+			break;
+		}
+	}
+
+	if (bAnyWater)
+	{
+		Job.bHasWater = true;
+		Job.WaterVertices.SetNumUninitialized(VertexCount);
+		Job.WaterNormals.SetNumUninitialized(VertexCount);
+		Job.WaterUVs.SetNumUninitialized(VertexCount);
+		Job.WaterColors.SetNumUninitialized(VertexCount);
+		Job.WaterTangents.SetNumUninitialized(VertexCount);
+
+		const FVector LocalUpForWater = FVector(Job.Centre.GetSafeNormal());
+
+		for (int32 Y = 0; Y < Side; ++Y)
+		{
+			for (int32 X = 0; X < Side; ++X)
+			{
+				const int32 Index = Y * Side + X;
+				const double LocalU = static_cast<double>(X) * Inverse;
+				const double LocalV = static_cast<double>(Y) * Inverse;
+				const FVector3d UnitSphere = LedgerTerrain::CubeToSphere(
+					LedgerTerrain::FaceToCube(
+						Job.Face, Job.U + LocalU * Job.Extent, Job.V + LocalV * Job.Extent));
+
+				const FVector3d Surface = UnitSphere * (Job.Params.Radius + WaterLift);
+				Job.WaterVertices[Index] = FVector(Surface - Job.Centre);
+				Job.WaterUVs[Index] = FVector2D(LocalU, LocalV);
+				// The sea is a sphere, so its normal is the radial direction.
+				Job.WaterNormals[Index] = FVector(UnitSphere);
+
+				const FVector Reference = FMath::Abs(Job.WaterNormals[Index].Z) < 0.9f
+					? FVector::UpVector : FVector::ForwardVector;
+				Job.WaterTangents[Index] = FProcMeshTangent(
+					FVector::CrossProduct(Reference, Job.WaterNormals[Index]).GetSafeNormal(), false);
+
+				// Depth in the alpha channel, so the material can shade shallows
+				// differently from open ocean without a second texture lookup.
+				const double Depth = FMath::Clamp(
+					-Elevations[Index] / (Job.Params.MaxElevation * 0.30), 0.0, 1.0);
+				Job.WaterColors[Index] = FColor(255, 255, 255,
+					static_cast<uint8>(FMath::Pow(Depth, 0.5) * 255.0));
+			}
+		}
+
+		// Only emit a quad where some corner is actually underwater. Without
+		// this the sea is a continuous sheet laid over the continents.
+		Job.WaterTriangles.Reset();
+		for (int32 Y = 0; Y < Side - 1; ++Y)
+		{
+			for (int32 X = 0; X < Side - 1; ++X)
+			{
+				const int32 A = Y * Side + X;
+				const int32 B = A + 1;
+				const int32 C = A + Side;
+				const int32 D = C + 1;
+
+				if (Elevations[A] >= 0.0 && Elevations[B] >= 0.0 &&
+					Elevations[C] >= 0.0 && Elevations[D] >= 0.0)
+				{
+					continue;
+				}
+
+				Job.WaterTriangles.Add(A); Job.WaterTriangles.Add(C); Job.WaterTriangles.Add(B);
+				Job.WaterTriangles.Add(B); Job.WaterTriangles.Add(C); Job.WaterTriangles.Add(D);
+			}
+		}
+
+		Job.bHasWater = Job.WaterTriangles.Num() > 0;
+	}
+
 	Job.GenerationMs = (FPlatformTime::Seconds() - Started) * 1000.0;
 	// Release: everything written above is visible to whoever sees this true.
 	Job.bComplete.store(true, std::memory_order_release);
@@ -299,8 +385,11 @@ void ALedgerPlanet::BeginPlay()
 		SurfaceMaterial = LoadObject<UMaterialInterface>(
 			nullptr, TEXT("/Engine/EngineDebugMaterials/VertexColorViewMode_ColorOnly"));
 	}
-	UE_LOG(LogLedger, Log, TEXT("terrain material: %s"),
-		SurfaceMaterial != nullptr ? *SurfaceMaterial->GetName() : TEXT("<none, engine default>"));
+	WaterMaterial = LedgerSurface::CreateWaterMaterial(this);
+
+	UE_LOG(LogLedger, Log, TEXT("materials: terrain %s, water %s"),
+		SurfaceMaterial != nullptr ? *SurfaceMaterial->GetName() : TEXT("<none>"),
+		WaterMaterial != nullptr ? *WaterMaterial->GetName() : TEXT("<none>"));
 
 	BuildRoots();
 
@@ -680,6 +769,22 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		{
 			Mesh->SetMaterial(0, SurfaceMaterial);
 		}
+
+		// Section 1 is the sea. Same component, so it moves and culls with the
+		// land it belongs to and costs no extra transform.
+		Mesh->ClearMeshSection(1);
+		if (Job->bHasWater)
+		{
+			++Stats.WaterSections;
+			Mesh->CreateMeshSection(
+				1, Job->WaterVertices, Job->WaterTriangles, Job->WaterNormals,
+				Job->WaterUVs, Job->WaterColors, Job->WaterTangents, /*bCreateCollision*/ false);
+			if (WaterMaterial != nullptr)
+			{
+				Mesh->SetMaterial(1, WaterMaterial);
+			}
+		}
+
 		Mesh->SetVisibility(true);
 
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
@@ -711,6 +816,7 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 	if (MeshPool.IsValidIndex(SectionIndex))
 	{
 		MeshPool[SectionIndex]->ClearMeshSection(0);
+		MeshPool[SectionIndex]->ClearMeshSection(1);
 		MeshPool[SectionIndex]->SetVisibility(false);
 		MeshPool[SectionIndex]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
@@ -852,5 +958,6 @@ void ALedgerPlanet::LogStats() const
 		Stats.LastFrameUploadMs, Stats.WorstFrameUploadMs);
 	UE_LOG(LogLedger, Log, TEXT("  generate ms (task) last %.3f"), Stats.LastPatchGenerationMs);
 	UE_LOG(LogLedger, Log, TEXT("  cook ms            worst %.3f"), Stats.WorstFrameCollisionMs);
+	UE_LOG(LogLedger, Log, TEXT("  water sections     %d uploaded"), Stats.WaterSections);
 	UE_LOG(LogLedger, Log, TEXT("  camera speed       %.0f m/s"), CameraVelocityLocal.Length() / 100.0);
 }

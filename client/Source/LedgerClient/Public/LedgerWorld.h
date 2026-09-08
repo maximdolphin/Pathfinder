@@ -73,6 +73,7 @@ private:
 	FTimerHandle AscentTimer;
 	FTimerHandle ClimbCaptureTimer;
 	FTimerHandle SpaceCaptureTimer;
+	FTimerHandle CoastCaptureTimer;
 
 	/// Descent state. The ship is *flown* down rather than teleported: a teleport
 	/// proves nothing about whether the transition holds together, and the whole
@@ -113,6 +114,14 @@ private:
 	/// Climbing straight out leaves the camera pointed at empty sky, which
 	/// proves the ascent worked and shows nothing at all.
 	void FrameSpace();
+
+	/// Flies to a coastline and looks out to sea.
+	///
+	/// The landing site is chosen for relief and is therefore inland, so none of
+	/// the other captures can answer the only question that matters about the
+	/// water: whether the waterline is a surface with a horizon or a change of
+	/// colour on the terrain.
+	void FrameCoast();
 
 	ALedgerShip* GetShip() const;
 };

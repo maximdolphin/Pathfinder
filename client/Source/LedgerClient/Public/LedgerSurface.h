@@ -44,4 +44,15 @@ namespace LedgerSurface
 
 	/// A plain lit material of a given colour, for the buildings and trees.
 	LEDGERCLIENT_API UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
+
+	/// The sea. Depth-tinted from vertex alpha, Fresnel toward a sky-facing
+	/// tint at grazing angles, and smooth enough that screen-space reflections
+	/// have something to work with.
+	///
+	/// **Opaque, not translucent.** Translucent surfaces do not write depth and
+	/// so are skipped by screen-space reflection, which is the effect that makes
+	/// an ocean read as water rather than as a blue plane. Depth-tinting the
+	/// albedo gets most of what transparency would have bought, and keeps the
+	/// reflection.
+	LEDGERCLIENT_API UMaterialInterface* CreateWaterMaterial(UObject* Outer);
 }
