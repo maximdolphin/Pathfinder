@@ -80,7 +80,7 @@
    "estimateDays": 21,
    "plannedStart": "2026-10-27",
    "plannedEnd": "2026-11-25",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
    "doneCount": 0
@@ -5984,5 +5984,5 @@
    "plannedEnd": "2027-12-06"
   }
  ],
- "updatedAt": "2026-09-08T15:20:45.963Z"
+ "updatedAt": "2026-09-08T15:22:19.346Z"
 }
