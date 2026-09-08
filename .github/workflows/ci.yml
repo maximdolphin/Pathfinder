@@ -24,6 +24,8 @@ jobs:
           python-version: "3.12"
       - name: Dependencies flow down only
         run: python tools/check_modules.py
+      - name: Every texture has a licence
+        run: python tools/check_surfaces.py
 
   standards:
     name: File sizes and formatting
