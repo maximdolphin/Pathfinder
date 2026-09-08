@@ -1,0 +1,5 @@
+# Defaults, with the one exception that matters: the sim's comments carry the
+# reasoning and rewrapping them loses paragraph structure.
+edition = "2021"
+max_width = 100
+wrap_comments = false

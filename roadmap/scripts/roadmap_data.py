@@ -458,29 +458,22 @@ M01 = [
                 "allowed list, with LedgerGame the only exception.",
          acceptance="Adding an undeclared dependency fails the build with a named rule.",
          days=1, refs=["ARCH Rule 2"]),
-    dict(title="Cargo workspace with the sim crates",
-         detail="Create the workspace and the crates from ARCH SS2 with their dependency "
-                "edges declared. They stay mostly empty until M15; the walls go up now, "
-                "while there is nothing to move.",
-         acceptance="cargo build succeeds and cargo tree shows exactly the intended edges.",
-         days=1.5, refs=["ARCH SS2"]),
-    dict(title="Split world.rs along its real seams",
-         detail="1,430 lines currently holding economy, obligations, investigations, "
-                "missions and agents. Each moves to its crate; world.rs becomes the "
-                "composition root and nothing else.",
-         acceptance="No file in the workspace exceeds 500 lines and ledger-world contains "
-                    "only wiring.",
-         days=3, refs=["ARCH SS0"]),
-    dict(title="Layering test that fails the build on an upward edge",
-         detail="A test parsing the workspace manifests, asserting the dependency graph "
-                "matches ARCH SS2.1. Documentation nobody enforces is a wish.",
-         acceptance="A dependency from ledger-org to ledger-power fails CI with a message "
-                    "naming the rule.",
-         days=1, refs=["ARCH SS2.1"]),
-    dict(title="CI: build both halves and run both suites on every commit",
-         detail="Rust workspace tests plus Unreal automation tests, headless, plus the "
-                "scripted flight as a smoke test with image comparison.",
-         acceptance="A commit that breaks either half is red within fifteen minutes.",
+    dict(title="Freeze the Phase 0 simulation as a spike",
+         detail="Fifteen flat files, one of them 1,430 lines. Splitting it into the ARCH "
+                "SS2 crates was planned here and is withdrawn: it is four days of "
+                "restructuring code that gets rewritten in M15, against a design that has "
+                "already changed underneath it — organisations, the power ceiling, "
+                "coalitions, sites and directives all postdate it. Label it frozen, record "
+                "what is worth keeping from it, and check in the snapshot so the client "
+                "stops depending on a Rust build.",
+         acceptance="src/README.md states the freeze and what survives it; the client runs "
+                    "with no Rust toolchain present.",
+         days=0.5, refs=["ARCH SS2", "ADR-0003"]),
+    dict(title="CI: build the client and run its tests on every commit",
+         detail="Unreal automation tests, headless, plus the scripted flight as a smoke "
+                "test with image comparison. The frozen sim builds but is not on the "
+                "critical path.",
+         acceptance="A commit that breaks the client is red within fifteen minutes.",
          days=2.5, refs=["SS13"]),
     dict(title="Automated visual regression on the scripted flight",
          detail="The scripted flight already produces captures. Compare them against "

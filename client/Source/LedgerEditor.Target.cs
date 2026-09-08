@@ -9,5 +9,11 @@ public class LedgerEditorTarget : TargetRules
 		IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 		ExtraModuleNames.AddRange(new string[] {
 			"LedgerCore", "LedgerMaterial", "LedgerTerrain", "LedgerClient" });
+		if (Configuration != UnrealTargetConfiguration.Shipping)
+		{
+			// The scripted flight is a fixture. A shipping build has no
+			// business containing a camera that teleports the ship.
+			ExtraModuleNames.Add("LedgerHarness");
+		}
 	}
 }

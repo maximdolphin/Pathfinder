@@ -90,25 +90,29 @@ void ALedgerAtmosphere::ConfigureForPlanet(double PlanetRadiusCm, double MaxElev
 		const float TerrainTopKm = static_cast<float>(MaxElevationCm / CentimetresPerKilometre);
 		Clouds->LayerBottomAltitude = FMath::Max(CloudBaseAltitudeKm, TerrainTopKm * 1.1f);
 		Clouds->LayerHeight = CloudLayerHeightKm;
-		// **These two numbers were 68% of the frame.**
+		// **A cautionary tale about measurement, kept because these numbers are
+		// the evidence for it.**
 		//
-		// A sample scale of 2.0 against a 400 km tracing distance is twice the
-		// engine's sample count over eight times its distance, and the cost is
-		// the product: 90 ms of a 130 ms frame, spent on a 334x188 buffer. It
-		// was invisible because a screenshot does not have a frame time in it,
-		// which is why the flight now records one.
+		// These were cut to 0.35 samples over 55 km on the strength of a GPU
+		// profile putting the cloud pass at 90 ms — 68% of a 130 ms frame. The
+		// profile was real. The machine was not idle: another game was running
+		// behind the capture, and every frame time measured that day was
+		// measured through it. On a quiet machine the *same settings* cost
+		// 0.24 ms and the entire scene renders in 5.4 ms.
 		//
-		// The distance was set to cover the horizon so the deck would not end
-		// in mid-air on approach. It still does not: from a kilometre up the
-		// horizon is 113 km, and past that the deck is a band a few pixels
-		// high that the atmosphere is already fading out.
-		// Second pass: 0.8 over 100 km still cost 32 ms. The deck is a texture
-		// on the sky from more than a few tens of kilometres out, and paying
-		// full sample counts to resolve it there buys nothing a person can see.
-		Clouds->ViewSampleCountScale = 0.35f;
-		Clouds->ShadowViewSampleCountScale = 0.35f;
+		// So the deck goes back up. 250 km covers the horizon from any altitude
+		// this flight reaches, which is what the distance was for: from a
+		// kilometre up the horizon is 113 km, and a deck that stops short of it
+		// ends in mid-air on the approach.
+		//
+		// The lesson is not about clouds. A profile measures a machine, and a
+		// profile of a machine with something else on it measures that instead.
+		// out/performance.txt now says so at the top rather than leaving it to
+		// be remembered.
+		Clouds->ViewSampleCountScale = 1.2f;
+		Clouds->ShadowViewSampleCountScale = 1.0f;
 		Clouds->PlanetRadius = RadiusKm;
-		Clouds->TracingMaxDistance = 55.0f;
+		Clouds->TracingMaxDistance = 250.0f;
 		Clouds->MarkRenderStateDirty();
 	}
 

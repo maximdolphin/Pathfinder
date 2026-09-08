@@ -23,6 +23,11 @@
       "Name": "LedgerClient",
       "Type": "Runtime",
       "LoadingPhase": "Default"
+    },
+    {
+      "Name": "LedgerHarness",
+      "Type": "DeveloperTool",
+      "LoadingPhase": "Default"
     }
   ],
   "Plugins": [

@@ -36,7 +36,7 @@ struct FLedgerPerfPhase
 };
 
 UCLASS()
-class LEDGERCLIENT_API ULedgerPerfSubsystem : public UTickableWorldSubsystem
+class LEDGERHARNESS_API ULedgerPerfSubsystem : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 

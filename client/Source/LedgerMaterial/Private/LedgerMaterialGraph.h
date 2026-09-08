@@ -1,0 +1,154 @@
+// A tiny builder over UMaterialExpression nodes.
+//
+// Building a material in C++ means allocating an expression, registering it
+// with the material, and wiring its input pins by hand. Written out at every
+// site that is four lines of ceremony per node and a material is fifty nodes,
+// which is how the first version of the water shader ended up with a Fresnel
+// term connected to nothing.
+//
+// A header rather than a file, because it is used by all four materials and
+// owned by none of them. Private to the module: nothing outside builds graphs.
+
+#pragma once
+
+#include "CoreMinimal.h"
+
+#if WITH_EDITOR
+
+#include "Materials/Material.h"
+#include "Materials/MaterialExpressionAdd.h"
+#include "Materials/MaterialExpressionComponentMask.h"
+#include "Materials/MaterialExpressionConstant.h"
+#include "Materials/MaterialExpressionDivide.h"
+#include "Materials/MaterialExpressionLinearInterpolate.h"
+#include "Materials/MaterialExpressionMultiply.h"
+#include "Materials/MaterialExpressionOneMinus.h"
+#include "Materials/MaterialExpressionSaturate.h"
+#include "Materials/MaterialExpressionSubtract.h"
+#include "Materials/MaterialExpressionTextureSample.h"
+
+namespace LedgerSurface
+{
+	struct FGraph
+	{
+		UMaterial* Material = nullptr;
+
+		template <typename T>
+		T* Make()
+		{
+			T* Expression = NewObject<T>(Material);
+			Material->GetExpressionCollection().AddExpression(Expression);
+			return Expression;
+		}
+
+		UMaterialExpression* Constant(float Value)
+		{
+			UMaterialExpressionConstant* Node = Make<UMaterialExpressionConstant>();
+			Node->R = Value;
+			return Node;
+		}
+
+		UMaterialExpression* Mask(UMaterialExpression* Input, bool R, bool G, bool B)
+		{
+			UMaterialExpressionComponentMask* Node = Make<UMaterialExpressionComponentMask>();
+			Node->Input.Expression = Input;
+			Node->R = R;
+			Node->G = G;
+			Node->B = B;
+			Node->A = false;
+			return Node;
+		}
+
+		UMaterialExpression* Multiply(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionMultiply* Node = Make<UMaterialExpressionMultiply>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Add(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionAdd* Node = Make<UMaterialExpressionAdd>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Divide(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionDivide* Node = Make<UMaterialExpressionDivide>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Subtract(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionSubtract* Node = Make<UMaterialExpressionSubtract>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Scale(UMaterialExpression* A, float Factor)
+		{
+			return Multiply(A, Constant(Factor));
+		}
+
+		UMaterialExpression* Saturate(UMaterialExpression* Input)
+		{
+			UMaterialExpressionSaturate* Node = Make<UMaterialExpressionSaturate>();
+			Node->Input.Expression = Input;
+			return Node;
+		}
+
+		UMaterialExpression* OneMinus(UMaterialExpression* Input)
+		{
+			UMaterialExpressionOneMinus* Node = Make<UMaterialExpressionOneMinus>();
+			Node->Input.Expression = Input;
+			return Node;
+		}
+
+		UMaterialExpression* Lerp(UMaterialExpression* A, UMaterialExpression* B, UMaterialExpression* Alpha)
+		{
+			UMaterialExpressionLinearInterpolate* Node = Make<UMaterialExpressionLinearInterpolate>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			Node->Alpha.Expression = Alpha;
+			return Node;
+		}
+
+		UMaterialExpression* Sample(UTexture2D* Texture, UMaterialExpression* Coordinates, EMaterialSamplerType Type)
+		{
+			UMaterialExpressionTextureSample* Node = Make<UMaterialExpressionTextureSample>();
+			Node->Texture = Texture;
+			Node->SamplerType = Type;
+			Node->Coordinates.Expression = Coordinates;
+			return Node;
+		}
+
+		/// World-aligned projection along all three axes, blended by the
+		/// surface normal. No UVs, no seams, no pinching at the poles.
+		UMaterialExpression* Triplanar(
+			UTexture2D* Texture,
+			UMaterialExpression* ScaledPosition,
+			UMaterialExpression* WeightX,
+			UMaterialExpression* WeightY,
+			UMaterialExpression* WeightZ,
+			EMaterialSamplerType Type)
+		{
+			UMaterialExpression* PlaneYZ = Mask(ScaledPosition, false, true, true);
+			UMaterialExpression* PlaneXZ = Mask(ScaledPosition, true, false, true);
+			UMaterialExpression* PlaneXY = Mask(ScaledPosition, true, true, false);
+
+			UMaterialExpression* SampleX = Multiply(Sample(Texture, PlaneYZ, Type), WeightX);
+			UMaterialExpression* SampleY = Multiply(Sample(Texture, PlaneXZ, Type), WeightY);
+			UMaterialExpression* SampleZ = Multiply(Sample(Texture, PlaneXY, Type), WeightZ);
+
+			return Add(Add(SampleX, SampleY), SampleZ);
+		}
+	};
+}
+
+#endif

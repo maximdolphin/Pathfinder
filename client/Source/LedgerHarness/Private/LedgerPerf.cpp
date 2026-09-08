@@ -92,6 +92,12 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 
 	FString Body;
 	Body += TEXT("Frame times for the scripted flight.\n");
+	Body += TEXT("\n");
+	Body += TEXT("VALID ONLY ON AN IDLE MACHINE. Anything else using the GPU is measured\n");
+	Body += TEXT("as part of this. A day went into optimising a cloud pass that costs\n");
+	Body += TEXT("0.24 ms, because the profile saying 90 ms was taken through another\n");
+	Body += TEXT("game running behind the capture.\n");
+	Body += TEXT("\n");
 	Body += FString::Printf(TEXT("budget %.1f ms (%.0f fps), warm-up %.0f s excluded from the verdict\n\n"),
 		BudgetMs, 1000.0 / BudgetMs, WarmupSeconds);
 

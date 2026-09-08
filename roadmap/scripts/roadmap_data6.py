@@ -12,6 +12,22 @@ that gets rebuilt.
 # ---------------------------------------------------------------------------
 
 M15 = [
+    dict(title="Cargo workspace and the crate layering test",
+         detail="The crates from ARCH SS2, created as the real simulation is written "
+                "rather than as a refactor of the frozen Phase 0 spike. Plus the test that "
+                "parses the workspace manifests and fails the build on a dependency "
+                "pointing upward — documentation nobody enforces is a wish.",
+         acceptance="cargo tree shows exactly the intended edges, and adding one from "
+                    "ledger-org to ledger-power fails CI with a message naming the rule.",
+         days=2, refs=["ARCH SS2.1"]),
+    dict(title="Port what the Phase 0 spike proved",
+         detail="Fixed-point arithmetic, the seeded generator, the event fold with causes, "
+                "and the belief graph with its tuned constants — moved into their crates "
+                "and re-tested. src/README.md lists what is worth carrying; the structure "
+                "is not on the list.",
+         acceptance="The belief propagation tests from the spike pass against the new "
+                    "crates, with the same constants and the same metric outcomes.",
+         days=4, refs=["SS4", "SS3"]),
     dict(title="Event type registry with stable wire ids",
          detail="Events are the log format and the log outlives every refactor. Each event "
                 "gets an id that never changes and a version.",

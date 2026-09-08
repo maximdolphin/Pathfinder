@@ -228,7 +228,14 @@ inside the structure rather than refactored into one later.
    a precision problem with several ways to lose. A simulation built first would
    be rebuilt against whatever those turned out to allow.
 
-3. **The simulation (M15-M23).** Event core and determinism, then agents —
+3. **The simulation (M15-M23).** The crates above are created *here*, as the
+   real simulation is written — not as a refactor of the Phase 0 spike. That
+   spike is frozen (see `src/README.md`): splitting fifteen flat files into
+   thirteen crates so that they can later be replaced is work for nobody, and
+   the design it implements has already changed underneath it. What carries
+   forward from it is a short list of decisions, not a structure.
+
+   Event core and determinism, then agents —
    the longest single milestone, because everything in `living-world.md` reduces
    to agents — then organisations, economy, sites, power, missions and the
    Command lens, in that order, because each is written in the vocabulary of the

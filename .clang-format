@@ -1,0 +1,17 @@
+# Unreal's conventions, so engine code and project code read the same. Nothing
+# in here is worth an argument, which is the point of automating it.
+BasedOnStyle: LLVM
+Language: Cpp
+UseTab: Always
+TabWidth: 4
+IndentWidth: 4
+ColumnLimit: 100
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+NamespaceIndentation: All
+AccessModifierOffset: -4
+PointerAlignment: Left
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
