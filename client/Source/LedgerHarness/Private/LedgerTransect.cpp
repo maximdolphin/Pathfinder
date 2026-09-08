@@ -34,7 +34,7 @@ namespace
 	constexpr double TransectSpeed = 90000.0;
 
 	/// How far, in centimetres.
-	constexpr double TransectDistance = 2000000000.0; // 200 km
+	constexpr double TransectDistance = 20000000.0; // 200 km
 
 	/// The trace looks this far down. Generous: it is asking whether *any*
 	/// collision exists beneath, not measuring a height.

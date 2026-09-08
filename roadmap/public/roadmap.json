@@ -163,7 +163,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 3
+   "doneCount": 4
   },
   {
    "id": "M03",
@@ -3047,6 +3047,11 @@
      "at": "2026-09-08",
      "kind": "block",
      "text": "Metric corrected twice and not yet re-measured. Whether the tree needs a balancing pass at all is still an open question, and building one before the measurement is trustworthy would be building it on a number I have already been wrong about twice."
+    },
+    {
+     "at": "2026-09-08",
+     "kind": "note",
+     "text": "[2026-09-08] A third reading, from the 900 m/s 200 km collision transect rather than the scripted descent: 6495 imbalanced edges against 1736 active sections, so roughly 94% of edges, worst depth gap 12. Not evidence the tree is unbalanced. At 900 m/s the camera outruns patch upload, so LeafDepthAt keeps stopping at a shallow ancestor that is still the drawn node — the deep neighbour exists in the tree and has not arrived. That is a streaming-rate fact wearing a stitching metric's clothes. The metric needs to distinguish 'the neighbour is coarser' from 'the neighbour has not uploaded yet' before any number from it means anything, and until it does, this stays blocked rather than becoming the third wrong number I build on."
     }
    ],
    "evidence": [],
@@ -3069,10 +3074,16 @@
    "dependsOn": [
     "T049"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-08",
+   "notes": [
+    {
+     "at": "2026-09-08",
+     "kind": "done",
+     "text": "Measured, not assumed. 200 km at 900 m/s and 50 m altitude, tracing downward every frame: 16128 frames, 0 misses, longest gap 0. out/transect.txt. Predictive cook along the velocity vector was already in place — collision is requested for any node within CollisionRadius of either the camera now or its predicted position — and this is the first run that proves it holds at speed rather than hoping. The per-frame cook budget in the task description was NOT built: worst cook cost across the whole run was 1.227 ms with ~320 nodes carrying collision, so a budget would cap a cost that never approaches a cap. Add one when cook ms starts appearing in the frame-time tail, and not before. Two bugs found running it: TransectDistance was 2e9 cm, which is 20000 km and not the 200 km its own comment claimed, a six-hour run; and the flight harness and the transect were both placing the same pawn, so neither measured anything."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 62.5,
    "plannedEndDay": 64.5,
@@ -11661,5 +11672,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T22:25:44.407Z"
+ "updatedAt": "2026-09-08T22:38:37.251Z"
 }
