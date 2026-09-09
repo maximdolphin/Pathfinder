@@ -18,6 +18,8 @@
 #include "Materials/Material.h"
 #include "UObject/Package.h"
 #include "Materials/MaterialExpressionAdd.h"
+#include "Materials/MaterialExpressionAppendVector.h"
+#include "Materials/MaterialExpressionNormalize.h"
 #include "Materials/MaterialExpressionComponentMask.h"
 #include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
@@ -145,6 +147,15 @@ namespace LedgerSurface
 			return Multiply(A, Constant(Factor));
 		}
 
+		/// Two expressions into one wider one, for building a swizzle.
+		UMaterialExpression* Append(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionAppendVector* Node = Make<UMaterialExpressionAppendVector>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
 		UMaterialExpression* Frac(UMaterialExpression* Input)
 		{
 			UMaterialExpressionFrac* Node = Make<UMaterialExpressionFrac>();
@@ -251,6 +262,75 @@ namespace LedgerSurface
 			UMaterialExpression* SampleZ = Multiply(Sample(Texture, PlaneXY, Type), WeightZ);
 
 			return Add(Add(SampleX, SampleY), SampleZ);
+		}
+
+		/// A triplanar normal, which is not the same thing as a triplanar
+		/// anything else and was being treated as one.
+		///
+		/// Each projection's normal map is in ITS OWN tangent frame: the X
+		/// projection reads the YZ plane, so its red channel points along world
+		/// Y and its blue along world X. Adding three of those together
+		/// weighted -- which is what `Triplanar` does, correctly, for scalars
+		/// and colours -- adds three vectors that are not in the same space.
+		///
+		/// Measured before it was fixed, on the ground the game actually draws:
+		/// the mean normal handed to the shading model decoded to
+		/// (-0.26, -0.26, 0.11). Length 0.39 instead of 1, pointing mostly
+		/// sideways instead of up. Every lit pixel of terrain was shaded with
+		/// that.
+		///
+		/// A planet makes it worse than it would be on a level. Triplanar
+		/// weights come from the surface normal, and on a sphere that is the
+		/// radial direction -- so all three projections carry real weight
+		/// almost everywhere, and the incoherent sum is the common case rather
+		/// than the edge case.
+		///
+		/// So: swizzle each projection into world space, then blend, then
+		/// normalise. The result is a world-space normal, and the material has
+		/// to say so (`bTangentSpaceNormal = false`).
+		///
+		/// ponytail: the sign of each projection's axis is not applied, so a
+		/// surface facing -X gets the normal of one facing +X. That is what
+		/// whiteout blending does too, the weights are already `abs`, and no
+		/// measurement has yet shown it.
+		UMaterialExpression* TriplanarNormalParameter(
+			const TCHAR* ParameterName,
+			UTexture2D* Default,
+			UMaterialExpression* ScaledPosition,
+			UMaterialExpression* WeightX,
+			UMaterialExpression* WeightY,
+			UMaterialExpression* WeightZ)
+		{
+			UMaterialExpression* PlaneYZ = Mask(ScaledPosition, false, true, true);
+			UMaterialExpression* PlaneXZ = Mask(ScaledPosition, true, false, true);
+			UMaterialExpression* PlaneXY = Mask(ScaledPosition, true, true, false);
+
+			UMaterialExpression* TangentX =
+				SampleParameter(ParameterName, Default, PlaneYZ, SAMPLERTYPE_Normal);
+			UMaterialExpression* TangentY =
+				SampleParameter(ParameterName, Default, PlaneXZ, SAMPLERTYPE_Normal);
+			UMaterialExpression* TangentZ =
+				SampleParameter(ParameterName, Default, PlaneXY, SAMPLERTYPE_Normal);
+
+			// X reads (y, z), so its (r, g, b) is world (y, z, x) -> (b, r, g).
+			UMaterialExpression* WorldX = Append(
+				Append(Mask(TangentX, false, false, true), Mask(TangentX, true, false, false)),
+				Mask(TangentX, false, true, false));
+			// Y reads (x, z), so its (r, g, b) is world (x, z, y) -> (r, b, g).
+			UMaterialExpression* WorldY = Append(
+				Append(Mask(TangentY, true, false, false), Mask(TangentY, false, false, true)),
+				Mask(TangentY, false, true, false));
+			// Z reads (x, y), which is already world order.
+			UMaterialExpression* WorldZ = TangentZ;
+
+			UMaterialExpression* Blended = Add(Add(
+				Multiply(WorldX, WeightX),
+				Multiply(WorldY, WeightY)),
+				Multiply(WorldZ, WeightZ));
+
+			UMaterialExpressionNormalize* Unit = Make<UMaterialExpressionNormalize>();
+			Unit->VectorInput.Expression = Blended;
+			return Unit;
 		}
 
 		/// The same projection, with the texture as a parameter. All three

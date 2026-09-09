@@ -4657,11 +4657,48 @@
    "dependsOn": [
     "T432"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "All five channels isolated behind -channel= and checked. Three scalars (roughness 0.77, AO 0.83, height 0.47 linear) arrive grey to within 3 of 255, which is the check that they are not being read from the wrong channel of the packed map. Albedo arrives coloured at a plausible sandy value. The normal was WRONG: FGraph::Triplanar weights and adds three projections, which is right for a scalar and wrong for a normal because each projection is in its own tangent frame -- and on a sphere the weights come from the radial direction, so all three always carry weight and the incoherent sum is the common case. Now swizzled into world space, blended, normalised, with bTangentSpaceNormal false and the fade going to the vertex normal rather than +Z. Verified against something known: the channel decodes to (0.53,0.76,0.35) against the site's actual radial (0.55,0.75,0.37). Two earlier versions of this table were wrong and are documented -- auto exposure, then AEM_Manual which passed every check on five black images."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T433-2026-09-09T22-59-30-816.png",
+     "caption": "normal, isolated after every mix and fade, exposure pinned.",
+     "source": "../out/channel-normal.png",
+     "addedAt": "2026-09-09T22:59:30.818Z"
+    },
+    {
+     "file": "evidence/T433-2026-09-09T22-59-30-909.png",
+     "caption": "albedo, isolated after every mix and fade, exposure pinned.",
+     "source": "../out/channel-albedo.png",
+     "addedAt": "2026-09-09T22:59:30.911Z"
+    },
+    {
+     "file": "evidence/T433-2026-09-09T22-59-31-003.png",
+     "caption": "roughness, isolated after every mix and fade, exposure pinned.",
+     "source": "../out/channel-roughness.png",
+     "addedAt": "2026-09-09T22:59:31.005Z"
+    },
+    {
+     "file": "evidence/T433-2026-09-09T22-59-31-096.png",
+     "caption": "ao, isolated after every mix and fade, exposure pinned.",
+     "source": "../out/channel-ao.png",
+     "addedAt": "2026-09-09T22:59:31.098Z"
+    },
+    {
+     "file": "evidence/T433-2026-09-09T22-59-31-190.png",
+     "caption": "height, isolated after every mix and fade, exposure pinned.",
+     "source": "../out/channel-height.png",
+     "addedAt": "2026-09-09T22:59:31.192Z"
+    }
+   ],
    "plannedStartDay": 153,
    "plannedEndDay": 155,
    "plannedStart": "2027-04-08",
@@ -13116,5 +13153,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T22:44:19.702Z"
+ "updatedAt": "2026-09-09T22:59:31.284Z"
 }

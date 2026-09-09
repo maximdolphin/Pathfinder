@@ -263,6 +263,41 @@ void ULedgerNearField::Park()
 			ACameraActor::StaticClass(), Eye, Look, SpawnParams);
 		if (Camera != nullptr)
 		{
+			// With `-channel=`, exposure is pinned and the tone curve is off.
+			//
+			// The channel views exist to read a number off a picture, and auto
+			// exposure plus a film tone curve means the number in the file is
+			// the channel put through two nonlinear functions. The first
+			// reading taken this way said the terrain's normals had a mean
+			// length of 0.4 -- alarming, and an artefact of the exposure rather
+			// than a fact about the normals. A debug view that lies is worse
+			// than no debug view.
+			FString Channel;
+			if (FParse::Value(FCommandLine::Get(), TEXT("channel="), Channel))
+			{
+				if (UCameraComponent* Component = Camera->GetCameraComponent())
+				{
+					FPostProcessSettings& Post = Component->PostProcessSettings;
+					// Min == max is how you pin exposure: the histogram method
+					// still runs and is clamped to one value, so the mapping is
+					// exactly 1.0 in -> 1.0 out. AEM_Manual was tried first and
+					// is a different thing entirely -- it derives exposure from
+					// the physical camera's aperture, shutter and ISO, whose
+					// defaults rendered every channel between 0 and 7 of 255.
+					Post.bOverride_AutoExposureMethod = true;
+					Post.AutoExposureMethod = EAutoExposureMethod::AEM_Histogram;
+					Post.bOverride_AutoExposureMinBrightness = true;
+					Post.AutoExposureMinBrightness = 1.0f;
+					Post.bOverride_AutoExposureMaxBrightness = true;
+					Post.AutoExposureMaxBrightness = 1.0f;
+					Post.bOverride_AutoExposureBias = true;
+					Post.AutoExposureBias = 0.0f;
+					Post.bOverride_ToneCurveAmount = true;
+					Post.ToneCurveAmount = 0.0f;
+					Post.bOverride_ExpandGamut = true;
+					Post.ExpandGamut = 0.0f;
+				}
+			}
 			Controller->SetViewTarget(Camera);
 		}
 	}

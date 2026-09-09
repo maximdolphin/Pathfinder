@@ -130,8 +130,8 @@ namespace LedgerSurface
 			FSampled Out;
 			Out.Albedo = Graph.TriplanarParameter(*SlotParameter(Slot, TEXT("Albedo")),
 				Default.Albedo, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color);
-			Out.Normal = Graph.TriplanarParameter(*SlotParameter(Slot, TEXT("Normal")),
-				Default.Normal, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Normal);
+			Out.Normal = Graph.TriplanarNormalParameter(*SlotParameter(Slot, TEXT("Normal")),
+				Default.Normal, Position, WeightX, WeightY, WeightZ);
 
 			UMaterialExpression* Packed = Graph.TriplanarParameter(
 				*SlotParameter(Slot, TEXT("Packed")),
@@ -158,8 +158,11 @@ namespace LedgerSurface
 			FSampled Out;
 			Out.Albedo = Graph.Triplanar(
 				Set.Albedo, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color);
-			Out.Normal = Graph.Triplanar(
-				Set.Normal, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Normal);
+			// A set rather than a slot, so no parameter name -- but the same
+			// blend, because the arithmetic does not care who owns the texture.
+			Out.Normal = Graph.TriplanarNormalParameter(
+				*FString::Printf(TEXT("%sNormal"), *Set.Name),
+				Set.Normal, Position, WeightX, WeightY, WeightZ);
 
 			// One sample, three masks: ambient occlusion in red, roughness in
 			// green, height in blue. Separately they would be three triplanar
@@ -196,6 +199,10 @@ namespace LedgerSurface
 
 		Material->MaterialDomain = MD_Surface;
 		Material->SetShadingModel(MSM_DefaultLit);
+
+		// World space, because the triplanar blend produces one. See
+		// FGraph::TriplanarNormalParameter for why it has to.
+		Material->bTangentSpaceNormal = false;
 		Material->TwoSided = false;
 
 		FGraph Graph;
@@ -576,9 +583,10 @@ namespace LedgerSurface
 
 		// Normal, faded to flat over the same distance. A normal map that
 		// survives past its mip range is the other half of the shimmer.
-		UMaterialExpressionConstant3Vector* FlatNormal = Graph.Make<UMaterialExpressionConstant3Vector>();
-		FlatNormal->Constant = FLinearColor(0.0f, 0.0f, 1.0f);
-		UMaterialExpression* FadedNormal = Graph.Lerp(NormalMix, FlatNormal, Fade);
+		// Faded to the *vertex* normal, not to +Z. In world space "flat" means
+		// the surface the mesh describes, and on a sphere +Z is flat in exactly
+		// one place.
+		UMaterialExpression* FadedNormal = Graph.Lerp(NormalMix, Normal, Fade);
 
 		// Roughness and occlusion fade to their far-field values too: at a
 		// kilometre the per-texel variation is below a pixel, and holding it
@@ -671,6 +679,64 @@ namespace LedgerSurface
 		EditorData->Roughness.Expression = FadedRough;
 		EditorData->AmbientOcclusion.Expression = FadedOcclusion;
 		EditorData->Specular.Expression = Graph.Constant(0.05f);
+
+		// ---- one channel at a time, unlit. T433 --------------------------
+		//
+		// `-channel=albedo|normal|roughness|ao|height`.
+		//
+		// Every one of these is a one-line bug that costs the whole surface its
+		// realism and none of them announce themselves: AO reaching base colour
+		// instead of the AO input, a normal map sampled as sRGB, roughness that
+		// was authored as gloss. All five look like "the ground is a bit off".
+		//
+		// Emissive and unlit, so what is photographed is the channel and not
+		// the channel times a sun angle. Routed after every mix and fade, so
+		// this shows what the shading model is actually handed rather than what
+		// the scan contains -- which is the question, and is why this is here
+		// rather than in a texture viewer.
+		FString Channel;
+		if (FParse::Value(FCommandLine::Get(), TEXT("channel="), Channel))
+		{
+			UMaterialExpression* Isolated = nullptr;
+			if (Channel == TEXT("albedo"))
+			{
+				Isolated = BaseColour;
+			}
+			else if (Channel == TEXT("normal"))
+			{
+				// Remapped from [-1,1] to [0,1] the way a normal map is stored,
+				// so a correct one photographs as the familiar lilac.
+				Isolated = Graph.Add(
+					Graph.Multiply(FadedNormal, Graph.Constant(0.5f)),
+					Graph.Constant(0.5f));
+			}
+			else if (Channel == TEXT("roughness"))
+			{
+				Isolated = FadedRough;
+			}
+			else if (Channel == TEXT("ao"))
+			{
+				Isolated = FadedOcclusion;
+			}
+			else if (Channel == TEXT("height"))
+			{
+				Isolated = Soil.Height;
+			}
+
+			if (Isolated != nullptr)
+			{
+				Material->SetShadingModel(MSM_Unlit);
+				EditorData->EmissiveColor.Expression = Isolated;
+				UE_LOG(LogLedger, Log,
+					TEXT("terrain material: isolating %s, unlit"), *Channel);
+			}
+			else
+			{
+				UE_LOG(LogLedger, Error,
+					TEXT("terrain material: -channel=%s is not one of "
+					     "albedo, normal, roughness, ao, height"), *Channel);
+			}
+		}
 
 		Material->PostEditChange();
 
