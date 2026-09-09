@@ -22,6 +22,52 @@ namespace LedgerTerrain
 		}
 	}
 
+	void SphereToFace(const FVector3d& UnitSphere, ELedgerCubeFace& OutFace,
+		double& OutU, double& OutV)
+	{
+		// The face is safe to take from the gnomonic answer: the warp scales
+		// each axis by a factor that depends only on the other two, and at a
+		// corner all three factors are equal, so it never changes which
+		// component is largest.
+		double TargetU = 0.0;
+		double TargetV = 0.0;
+		DirectionToFace(UnitSphere, OutFace, TargetU, TargetV);
+
+		// Then undo the warp. Damped rather than multiplicative because the
+		// correction passes through zero at the face centre and at its edges,
+		// where a ratio would be zero over zero.
+		double U = TargetU;
+		double V = TargetV;
+		// Forty and undamped rather than twelve at 0.8. The warp's derivative in
+		// these coordinates runs about 0.7 to 1.3, so an undamped step
+		// converges by a factor of at most 0.3 an iteration and a damped one is
+		// slower, not safer. Twelve damped steps left 8e-7 of a face -- eight
+		// metres, which is enough to put a probe in the wrong patch at the
+		// finest LOD, where a patch is 305 m.
+		for (int32 Iteration = 0; Iteration < 40; ++Iteration)
+		{
+			ELedgerCubeFace Landed = OutFace;
+			double GotU = 0.0;
+			double GotV = 0.0;
+			DirectionToFace(CubeToSphere(FaceToCube(OutFace, U, V)), Landed, GotU, GotV);
+			if (Landed != OutFace)
+			{
+				break;
+			}
+			const double ErrorU = TargetU - GotU;
+			const double ErrorV = TargetV - GotV;
+			U += ErrorU;
+			V += ErrorV;
+			if (FMath::Abs(ErrorU) < 1e-13 && FMath::Abs(ErrorV) < 1e-13)
+			{
+				break;
+			}
+		}
+
+		OutU = U;
+		OutV = V;
+	}
+
 	/// Which cube face a direction points at, and where on it.
 	void DirectionToFace(const FVector3d& Direction, ELedgerCubeFace& OutFace, double& OutU, double& OutV)
 	{

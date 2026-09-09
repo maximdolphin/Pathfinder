@@ -318,13 +318,35 @@ void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLed
 	}
 }
 
+int32 ALedgerPlanet::LeafDepthAtFace(ELedgerCubeFace Face, double U, double V) const
+{
+	// An out-of-range coordinate names a point on this face's extended plane,
+	// and which face it really belongs to is whichever cube coordinate is now
+	// largest -- which is what DirectionToFace decides. No sphere in this, so
+	// no warp to undo.
+	if (U < 0.0 || U > 1.0 || V < 0.0 || V > 1.0)
+	{
+		LedgerTerrain::DirectionToFace(
+			LedgerTerrain::FaceToCube(Face, U, V), Face, U, V);
+	}
+	return LeafDepthAtResolved(Face, U, V);
+}
+
 int32 ALedgerPlanet::LeafDepthAt(const FVector3d& UnitDirection) const
 {
 	ELedgerCubeFace Face = ELedgerCubeFace::PositiveX;
 	double U = 0.0;
 	double V = 0.0;
-	LedgerTerrain::DirectionToFace(UnitDirection, Face, U, V);
+	// SphereToFace, not DirectionToFace. DirectionToFace inverts FaceToCube and
+	// not CubeToSphere's warp, so a sphere direction comes back as face
+	// coordinates up to 0.066 of a face out -- 657 km on a cube edge of 10,008.
+	LedgerTerrain::SphereToFace(UnitDirection, Face, U, V);
 
+	return LeafDepthAtResolved(Face, U, V);
+}
+
+int32 ALedgerPlanet::LeafDepthAtResolved(ELedgerCubeFace Face, double U, double V) const
+{
 	const FLedgerQuadNode* Node = Roots.IsValidIndex(static_cast<int32>(Face))
 		? Roots[static_cast<int32>(Face)].Get()
 		: nullptr;

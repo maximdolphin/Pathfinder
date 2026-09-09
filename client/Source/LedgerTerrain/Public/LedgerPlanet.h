@@ -600,6 +600,21 @@ private:
 	/// than from a face-local coordinate.
 	int32 LeafDepthAt(const FVector3d& UnitDirection) const;
 
+	/// The same, from face coordinates, which may run outside [0,1] to reach a
+	/// neighbouring face.
+	///
+	/// **The one the stitch probes want.** They know the face position they are
+	/// asking about; going out to a sphere direction and back needs the inverse
+	/// of CubeToSphere's warp, which is a forty-step fixed point, and putting
+	/// that in this path took the terrain's game-thread cost from 6.6 ms to 16.
+	/// Resolving an out-of-range face coordinate onto its real face is exact
+	/// and costs a divide.
+	int32 LeafDepthAtFace(ELedgerCubeFace Face, double U, double V) const;
+
+	/// The tree descent both entry points share, on coordinates already known
+	/// to belong to this face.
+	int32 LeafDepthAtResolved(ELedgerCubeFace Face, double U, double V) const;
+
 	/// Launches generation on a worker thread. Returns false if the pool or the
 	/// in-flight cap is exhausted.
 	bool LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision);

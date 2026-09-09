@@ -326,7 +326,7 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		const double Probes[4][2] = { {-0.02, 0.5}, {1.02, 0.5}, {0.5, -0.02}, {0.5, 1.02} };
 		for (const double(&Probe)[2] : Probes)
 		{
-			const int32 Difference = Leaf->Depth - LeafDepthAt(UnitSphereAt(*Leaf, Probe[0], Probe[1]));
+			const int32 Difference = Leaf->Depth - LeafDepthAtFace(Leaf->Face, Leaf->U + Probe[0] * Leaf->Extent, Leaf->V + Probe[1] * Leaf->Extent);
 			if (Difference > 1)
 			{
 				++Stats.ImbalancedEdges;

@@ -53,7 +53,30 @@ namespace LedgerTerrain
 	/// Which cube face a direction points at, and where on it. The inverse
 	/// of FaceToCube, and the way anything holding a direction finds the
 	/// node that contains it.
+	/// Which cube face a direction points at, and where on that face's *plane*.
+	///
+	/// **This is the inverse of `FaceToCube`, and not of `CubeToSphere`.** Given
+	/// a point on the cube it is exact. Given a point on the sphere it is not:
+	/// `CubeToSphere` applies an area-evening warp on top of the projection and
+	/// this does not undo it, so
+	/// `DirectionToFace(CubeToSphere(FaceToCube(f, u, v)))` comes back with
+	/// coordinates that are wrong by up to 0.066 of a face -- 657 km on this
+	/// planet, worst at the quarter points and zero at the centre and the
+	/// edges. Use `SphereToFace` for anything that started on the sphere.
 	LEDGERTERRAIN_API void DirectionToFace(const FVector3d& Direction, ELedgerCubeFace& OutFace, double& OutU, double& OutV);
+
+	/// Which cube face a *sphere* direction belongs to, and where on it.
+	///
+	/// The one that round-trips: `SphereToFace(CubeToSphere(FaceToCube(f, u, v)))`
+	/// returns (f, u, v). `CubeToSphere` has no closed-form inverse, so this is
+	/// a damped fixed point -- twelve iterations, converging to well under a
+	/// micro-face.
+	///
+	/// Anything that asks "which patch is under this point" wants this one.
+	/// `DirectionToFace` answered that question in the quadtree's neighbour
+	/// probes for as long as they existed, which meant edge stitching was
+	/// decided by looking at ground up to six hundred kilometres away.
+	LEDGERTERRAIN_API void SphereToFace(const FVector3d& UnitSphere, ELedgerCubeFace& OutFace, double& OutU, double& OutV);
 
 
 	/// Terrain elevation in centimetres above the reference sphere, for a point

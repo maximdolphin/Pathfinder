@@ -55,10 +55,10 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 
 	// Neighbour depths are read here, on the game thread, while the tree is
 	// stable. The worker never touches the tree.
-	Job->bStitchLeft = LeafDepthAt(UnitSphereAt(Node, -0.02, 0.5)) < Node.Depth;
-	Job->bStitchRight = LeafDepthAt(UnitSphereAt(Node, 1.02, 0.5)) < Node.Depth;
-	Job->bStitchBottom = LeafDepthAt(UnitSphereAt(Node, 0.5, -0.02)) < Node.Depth;
-	Job->bStitchTop = LeafDepthAt(UnitSphereAt(Node, 0.5, 1.02)) < Node.Depth;
+	Job->bStitchLeft = LeafDepthAtFace(Node.Face, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
+	Job->bStitchRight = LeafDepthAtFace(Node.Face, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
+	Job->bStitchBottom = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth;
+	Job->bStitchTop = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth;
 
 	InFlight.Add(Job->Key, Job);
 
@@ -180,10 +180,10 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	// coarser neighbour has subdivided since needs different edge geometry, and
 	// the cached buffers would leave a crack along that edge.
 	FLedgerCachedPatch& Entry = *Found;
-	if (Entry.bStitchLeft != (LeafDepthAt(UnitSphereAt(Node, -0.02, 0.5)) < Node.Depth)
-		|| Entry.bStitchRight != (LeafDepthAt(UnitSphereAt(Node, 1.02, 0.5)) < Node.Depth)
-		|| Entry.bStitchBottom != (LeafDepthAt(UnitSphereAt(Node, 0.5, -0.02)) < Node.Depth)
-		|| Entry.bStitchTop != (LeafDepthAt(UnitSphereAt(Node, 0.5, 1.02)) < Node.Depth))
+	if (Entry.bStitchLeft != (LeafDepthAtFace(Node.Face, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth)
+		|| Entry.bStitchRight != (LeafDepthAtFace(Node.Face, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth)
+		|| Entry.bStitchBottom != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth)
+		|| Entry.bStitchTop != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth))
 	{
 		PatchCache.Remove(Key);
 		Stats.CacheEntries = PatchCache.Num();
