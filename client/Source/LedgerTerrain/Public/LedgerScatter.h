@@ -44,20 +44,29 @@ namespace LedgerScatter
 	/// biome says, and this is the cheap guard before the biome is even asked.
 	constexpr double MaxSlopeDegrees = 34.0;
 
-	/// The largest patch that gets scattered, in centimetres of world size.
-	///
-	/// **The finest LOD only, and this is a frame-budget decision measured
-	/// rather than guessed.** Scattering every patch that carries collision
-	/// gave 71,286 instances over 391 patches at a forest site, and rebuilding
-	/// the instanced components took 10.5 ms -- most of a frame, every frame,
-	/// while streaming. Restricting it to the finest patches keeps the
-	/// instances where they are more than a pixel across and takes the count
-	/// down with the cost.
-	constexpr double MaxScatterWorldSize = 40000.0;
+	/// The finest patch size, in centimetres of world size. Everything is
+	/// measured relative to this.
+	constexpr double FinestWorldSize = 40000.0;
 
-	/// Fills the job's scatter list. Empty unless the patch carries collision
-	/// and is fine enough -- the planet's own definition of "near enough to
-	/// matter", and the framework never touches the 99% of patches nobody can
-	/// reach.
+	/// How many times that a patch may be and still be scattered.
+	///
+	/// **One, and the attempt to make it four is worth recording.** Scatter
+	/// that stops at the finest LOD leaves an edge, so the obvious move is to
+	/// carry on for a couple of size steps with fewer candidates per patch as
+	/// the patch grows. That was tried: 97,777 instances over 905 patches, well
+	/// inside the frame budget at 1.5 ms and still sixty -- and it looked far
+	/// worse, because a fixed candidate count over a patch means the density
+	/// per unit area falls by the square of the patch's size, so patches one
+	/// LOD step apart differ eightfold and the forest comes out in rectangular
+	/// blocks with bare ground between them. The patch grid, drawn in trees.
+	///
+	/// Density has to be a function of *position*, not of which patch a point
+	/// happens to fall in, and that means a candidate lattice fixed to the
+	/// world rather than to the patch. That is real work and it is T059's, so
+	/// this stays at one and the edge stays until then.
+	constexpr double MaxSizeRatio = 1.0;
+
+	/// Fills the job's scatter list. Empty for any patch more than MaxSizeRatio
+	/// times the finest, which is the great majority of them.
 	LEDGERTERRAIN_API void ScatterPatch(FLedgerPatchJob& Job);
 }

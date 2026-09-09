@@ -37,14 +37,16 @@ namespace LedgerScatter
 	{
 		Job.Scatter.Reset();
 
-		// Only near patches, and only the finest of those. `bWithCollision` is
-		// the planet's own statement that this patch is close enough to stand
-		// on; the size limit is what keeps the instance count and the rebuild
-		// cost in the frame. See MaxScatterWorldSize.
-		if (!Job.bWithCollision || Job.WorldSize > MaxScatterWorldSize)
+		// Near patches, and the two size steps beyond them. See MaxSizeRatio:
+		// the candidate count falls as the patch grows, so the forest thins
+		// with distance instead of ending at a line.
+		const double SizeRatio = FMath::Max(1.0, Job.WorldSize / FinestWorldSize);
+		if (SizeRatio > MaxSizeRatio)
 		{
 			return;
 		}
+		const int32 Cells = FMath::Max(4,
+			FMath::RoundToInt32(CellsAcross / FMath::Sqrt(SizeRatio)));
 
 		const TArray<FLedgerBiome>* Biomes = Job.Biomes.IsValid() ? Job.Biomes.Get() : nullptr;
 		if (Biomes == nullptr || Biomes->Num() == 0)
@@ -87,14 +89,14 @@ namespace LedgerScatter
 
 		// The patch's own footprint in metres, for the slope estimate below.
 		const double PatchMetres = Job.WorldSize / 100.0;
-		const double CellMetres = FMath::Max(1.0, PatchMetres / CellsAcross);
+		const double CellMetres = FMath::Max(1.0, PatchMetres / Cells);
 
 		TArray<double> Weights;
-		for (int32 CellV = 0; CellV < CellsAcross; ++CellV)
+		for (int32 CellV = 0; CellV < Cells; ++CellV)
 		{
-			for (int32 CellU = 0; CellU < CellsAcross; ++CellU)
+			for (int32 CellU = 0; CellU < Cells; ++CellU)
 			{
-				const int32 Cell = CellV * CellsAcross + CellU;
+				const int32 Cell = CellV * Cells + CellU;
 
 				// Jitter inside the cell, so the result is not a grid. A grid
 				// is the single loudest tell that ground was generated, and it
@@ -102,8 +104,8 @@ namespace LedgerScatter
 				const double JitterU = Uniform(CellHash(Job.Key, Cell, 1u));
 				const double JitterV = Uniform(CellHash(Job.Key, Cell, 2u));
 
-				const double LocalU = (CellU + JitterU) / CellsAcross;
-				const double LocalV = (CellV + JitterV) / CellsAcross;
+				const double LocalU = (CellU + JitterU) / Cells;
+				const double LocalV = (CellV + JitterV) / Cells;
 				const FVector3d Direction = LedgerTerrain::CubeToSphere(
 					LedgerTerrain::FaceToCube(Job.Face,
 						Job.U + LocalU * Job.Extent, Job.V + LocalV * Job.Extent));

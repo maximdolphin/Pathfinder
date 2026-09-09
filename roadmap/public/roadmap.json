@@ -4035,10 +4035,16 @@
    "dependsOn": [
     "T057"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Blocked on two things that do not exist, and the acceptance names both. It asks that vegetation respond to a wind speed change 'at every LOD including the impostor'. There is no wind field: the task's own detail says 'the wind field M04 will provide', and that is T093 (Wind field queryable by everything), sixty tasks away and not started. LedgerClimate::PrevailingWind is a fixed banded direction for the moisture march, not a field with a speed that changes. And there is no impostor: that is T059, the very next task. The mechanism could be built against a stand-in -- a material with world position offset driven by a wind weight painted into the tree meshes, plus a global speed and direction parameter -- but it would be responding to a parameter nothing sets, at an LOD tier that does not exist, and the acceptance could not be run either way. Recorded rather than half-built so the shape of it is on the record: the work is a wind weight in tools/generate_assets.py's tree meshes and a foliage material, and it wants doing after T059 and T093."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 117,
    "plannedEndDay": 119.5,
@@ -12605,5 +12611,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T17:58:31.293Z"
+ "updatedAt": "2026-09-09T17:59:02.916Z"
 }
