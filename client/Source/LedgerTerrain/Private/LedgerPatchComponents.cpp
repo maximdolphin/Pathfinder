@@ -200,10 +200,13 @@ namespace LedgerTerrain
 		// in place, which is a large part of what this comparison measures.
 		UStaticMesh* Built = NewObject<UStaticMesh>(
 			GetTransientPackage(), NAME_None, RF_Transient);
-		Built->GetStaticMaterials().Add(FStaticMaterial(Land, LandSlot, LandSlot));
+		// Two arguments, not three. The third is the imported slot name, which
+		// only exists WITH_EDITORONLY_DATA -- so the three-argument form builds
+		// in the editor and fails the moment anybody packages.
+		Built->GetStaticMaterials().Add(FStaticMaterial(Land, LandSlot));
 		if (Job.bHasWater)
 		{
-			Built->GetStaticMaterials().Add(FStaticMaterial(Water, WaterSlot, WaterSlot));
+			Built->GetStaticMaterials().Add(FStaticMaterial(Water, WaterSlot));
 		}
 
 		FMeshDescription Description;

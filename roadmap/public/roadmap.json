@@ -3333,6 +3333,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "CORRECTED DIAGNOSIS. My first explanation was that captures fired before terrain had streamed, and it was wrong. Captures now wait for PendingBuilds and JobsInFlight to reach zero before firing, and seven of eight settle on the first 0.1 s poll -- the terrain was already idle. The comparison barely moved: coast 8.26 to 7.93, sweep 14.70 to 14.68, town 4.16 to 4.16. THE ACTUAL CAUSE, with evidence: the packaged run logs 926 stalls against the editor's 543, from the same seed and the same start position. The flight model integrates at a fixed 120 Hz step with a capped catch-up -- MaxStepsPerFrame 16, accumulator zeroed when capped -- so a stall DROPS simulated time rather than spiralling, which is deliberate and is what the SurvivesAHitch test protects. A build that stalls more has flown less far by any given timestamp, so a time-triggered capture photographs a different place. Nothing to do with rendering, and nothing a settle can fix. THE FIX is to trigger captures on ship state -- altitude crossed, distance travelled -- so the image is a function of where the camera is rather than of how fast the machine is. That is a rewrite of the harness's scheduling, which is timer-driven throughout, and it is worth doing because it also makes the editor-to-editor comparison mean something stronger. The settle wait is kept: it is correct on its own terms, and it is now labelled as not having been the problem."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "THIRD DIAGNOSIS, and this one was tested before it was written. Both previous explanations were about the packaged build. Neither was checked against the obvious control: run the EDITOR build twice and compare it with itself. Seven of eight shots disagree, coast by a mean of 7.67 -- against the 8.26 that had been blamed on the packaged build. The fixture cannot reproduce itself, so no comparison against it meant anything. Cause: the flight is driven by game time, game time advances by however long the last frame took, so position, LOD state and Lumen history are all functions of the frame rate. -useFixedTimeStep -fps=60 takes the worst channel across the set from 128 to 21 and six of eight shots pass outright. Evidence in docs/comparisons/repeatability/."
     }
    ],
    "evidence": [],
@@ -12376,5 +12381,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T12:13:54.324Z"
+ "updatedAt": "2026-09-09T12:39:52.762Z"
 }
