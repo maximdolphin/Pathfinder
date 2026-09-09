@@ -18,6 +18,7 @@
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionCameraPositionWS.h"
+#include "Materials/MaterialExpressionCameraVectorWS.h"
 #include "Materials/MaterialExpressionDistance.h"
 #include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialExpressionNormalize.h"
@@ -238,9 +239,86 @@ namespace LedgerSurface
 		UMaterialExpression* WeightY = Graph.Mask(Weights, false, true, false);
 		UMaterialExpression* WeightZ = Graph.Mask(Weights, false, false, true);
 
-		const FSampled Rock = SampleSet(Graph, Steep, WorldPosition, WeightX, WeightY, WeightZ);
+		// ---- parallax: the ground gets to have a thickness -----------------
+		//
+		// Every scan ships a height map. Until now all three were sampled and
+		// used only to decide which layer won a blend -- nothing was ever
+		// displaced, so the surface was a photograph of gravel printed on
+		// glass. A normal map relights a flat surface; it never moves it, so
+		// nothing slides against anything as the camera does, and there is no
+		// depth cue at all at the distance a person actually stands.
+		//
+		// **Offset in world space, not in UV space.** The ground is triplanar:
+		// three projections of the same position, blended. Offsetting a UV
+		// would move one projection and leave the others where they were, and
+		// the seams between them would swim. Displacing the *position* every
+		// projection is derived from moves all three by the same amount, in the
+		// same direction, and the blend stays put.
+		//
+		// One step, not a ray march. This is parallax offset mapping and not
+		// parallax occlusion mapping, and the difference is honest: it makes
+		// the surface parallax correctly under a moving camera and it does not
+		// make a pebble occlude the pebble behind it. Occlusion needs a loop
+		// per pixel, which is a rung further up and is measured before it is
+		// taken. One extra triplanar sample buys the first thing; the second
+		// costs a marched loop and is not free at a thousand pixels of ground.
+		UMaterialExpression* ProbePosition = Graph.Multiply(WorldPosition,
+			Graph.ScalarParameter(*SlotParameter(0, TEXT("Tiling")),
+				1.0f / static_cast<float>(Flat.TilingMetres * 100.0)));
+		UMaterialExpression* ProbeHeight = Graph.Mask(
+			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Packed")),
+				Flat.Packed, ProbePosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Masks),
+			false, false, true);
+
+		// From the surface towards the eye.
+		UMaterialExpressionCameraVectorWS* EyeDirection =
+			Graph.Make<UMaterialExpressionCameraVectorWS>();
+
+		// Only the part lying in the surface. The component along the normal
+		// does not shift anything -- looking straight down at ground, there is
+		// no parallax to have, which is exactly what this arithmetic says.
+		UMaterialExpressionDotProduct* FacingDot = Graph.Make<UMaterialExpressionDotProduct>();
+		FacingDot->A.Expression = EyeDirection;
+		FacingDot->B.Expression = Normal;
+		UMaterialExpression* Tangential = Graph.Subtract(
+			EyeDirection, Graph.Multiply(Normal, FacingDot));
+
+		// Divided by how square-on the surface is, floored so a grazing angle
+		// does not divide by nothing and throw the sample across the texture.
+		// Grazing is where parallax is largest in reality too.
+		UMaterialExpression* Facing = Graph.Max(FacingDot, Graph.Constant(0.30f));
+
+		// Height is 0..1 out of the scan; centred so the mean surface stays
+		// where the mesh put it and only the relief moves.
+		UMaterialExpressionScalarParameter* Depth3D =
+			Graph.Make<UMaterialExpressionScalarParameter>();
+		Depth3D->ParameterName = TEXT("ParallaxDepth");
+		// Centimetres. Three is about what a gravel scan's height map covers,
+		// and past five the offset outruns the sample it was measured from and
+		// the surface starts to smear.
+		// `-noparallax` sets it to nothing, which is the control arm: a
+		// difference between two runs is only attributable to parallax if the
+		// other run is the same build with parallax switched off.
+		Depth3D->DefaultValue =
+			FParse::Param(FCommandLine::Get(), TEXT("noparallax")) ? 0.0f : 3.0f;
+
+		// Off beyond fifteen metres. A three-centimetre displacement is under a
+		// pixel by then, and the sample it costs is not.
+		UMaterialExpressionSaturate* ParallaxFade = Graph.Make<UMaterialExpressionSaturate>();
+		ParallaxFade->Input.Expression = Graph.Divide(
+			Graph.Subtract(Graph.Make<UMaterialExpressionPixelDepth>(), Graph.Constant(300.0f)),
+			Graph.Constant(1200.0f));
+
+		UMaterialExpression* ParallaxAmount = Graph.Multiply(
+			Graph.Multiply(Graph.Subtract(ProbeHeight, Graph.Constant(0.5f)), Depth3D),
+			Graph.OneMinus(ParallaxFade));
+
+		UMaterialExpression* ParallaxPosition = Graph.Subtract(WorldPosition,
+			Graph.Multiply(Graph.Divide(Tangential, Facing), ParallaxAmount));
+
+		const FSampled Rock = SampleSet(Graph, Steep, ParallaxPosition, WeightX, WeightY, WeightZ);
 		const FSampled ScreeSampled =
-			SampleSet(Graph, Scree, WorldPosition, WeightX, WeightY, WeightZ);
+			SampleSet(Graph, Scree, ParallaxPosition, WeightX, WeightY, WeightZ);
 
 		// ---- three grounds, weighted by the mesh --------------------------
 		//
@@ -268,7 +346,7 @@ namespace LedgerSurface
 		UMaterialExpression* SlotBid[GroundSlots] = {};
 		for (int32 Index = 0; Index < GroundSlots; ++Index)
 		{
-			Slot[Index] = SampleSlot(Graph, Index, Flat, WorldPosition, WeightX, WeightY, WeightZ);
+			Slot[Index] = SampleSlot(Graph, Index, Flat, ParallaxPosition, WeightX, WeightY, WeightZ);
 			SlotMean[Index] = Graph.VectorParameter(
 				*SlotParameter(Index, TEXT("Mean")), Flat.MeanAlbedo);
 			SlotTint[Index] = Graph.VectorParameter(
