@@ -3,6 +3,12 @@
 // Dogfood #38: add_animation_keyframe used to refuse with NOT_SUPPORTED. It now finds or creates the
 // widget binding + property track, adds a section, and writes real channel keys for RenderOpacity,
 // ColorAndOpacity and (in AnimationKeysTransform.cpp) the RenderTransform.
+// Matching header first: UBT enforces it, and this file included only the
+// Internal one, so the plugin failed to build the moment anything caused it
+// to be recompiled. Vendored plugin, one-line fix, noted here because it
+// will be lost if the plugin is updated.
+#include "Domains/WidgetAuthoring/Support/McpAutomationBridge_WidgetAuthoringAnimationKeys.h"
+
 #include "Domains/WidgetAuthoring/Support/McpAutomationBridge_WidgetAuthoringAnimationKeysInternal.h"
 
 #include "Animation/WidgetAnimation.h"
