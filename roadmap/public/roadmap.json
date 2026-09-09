@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 14
+   "doneCount": 15
   },
   {
    "id": "M03",
@@ -4399,11 +4399,54 @@
    "dependsOn": [
     "T065"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Six modes behind -terrainvis=, written into vertex colour at generation time (the only place that knows whether a patch came off disk, carries collision, or how deep it is) and drawn unlit by the material. Painted after the disk store, so a diagnostic run does not poison the cache. lod shows the rings exactly where T429's arithmetic puts them; collision is green where a body can stand and red on the far mountain. It earned itself on the first run: the collision view shows the scatter chains crossing ground that is uniformly green, which disproves the assumption -- written down twice tonight -- that the stones were banding at the collision-ring boundary. Streaming queue and pool counters stay in LogStats; a single number is a worse picture than a sentence."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T066-2026-09-09T23-49-17-864.png",
+     "caption": "-terrainvis=lod",
+     "source": "../out/vis-lod.png",
+     "addedAt": "2026-09-09T23:49:17.866Z"
+    },
+    {
+     "file": "evidence/T066-2026-09-09T23-49-17-955.png",
+     "caption": "-terrainvis=collision",
+     "source": "../out/vis-collision.png",
+     "addedAt": "2026-09-09T23:49:17.957Z"
+    },
+    {
+     "file": "evidence/T066-2026-09-09T23-49-18-046.png",
+     "caption": "-terrainvis=patch",
+     "source": "../out/vis-patch.png",
+     "addedAt": "2026-09-09T23:49:18.048Z"
+    },
+    {
+     "file": "evidence/T066-2026-09-09T23-49-18-142.png",
+     "caption": "-terrainvis=cache",
+     "source": "../out/vis-cache.png",
+     "addedAt": "2026-09-09T23:49:18.144Z"
+    },
+    {
+     "file": "evidence/T066-2026-09-09T23-49-18-233.png",
+     "caption": "-terrainvis=biome",
+     "source": "../out/vis-biome.png",
+     "addedAt": "2026-09-09T23:49:18.235Z"
+    },
+    {
+     "file": "evidence/T066-2026-09-09T23-49-18-329.png",
+     "caption": "-terrainvis=climate",
+     "source": "../out/vis-climate.png",
+     "addedAt": "2026-09-09T23:49:18.331Z"
+    }
+   ],
    "plannedStartDay": 135.5,
    "plannedEndDay": 137,
    "plannedStart": "2027-03-15",
@@ -13231,5 +13274,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T23:25:13.149Z"
+ "updatedAt": "2026-09-09T23:49:18.433Z"
 }

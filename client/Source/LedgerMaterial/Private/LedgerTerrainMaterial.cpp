@@ -694,6 +694,26 @@ namespace LedgerSurface
 		// this shows what the shading model is actually handed rather than what
 		// the scan contains -- which is the question, and is why this is here
 		// rather than in a texture viewer.
+		// ---- the terrain diagnostic, straight through. T066 ---------------
+		//
+		// The generator has already replaced every vertex colour with whatever
+		// -terrainvis was asked for. All this has to do is not shade it: a LOD
+		// ramp multiplied by a sun angle is not a LOD ramp.
+		// The switch is read here rather than through LedgerTerrainVis, which
+		// owns it: this module does not depend on LedgerTerrain and inverting
+		// that to share one bool would be a worse trade than naming the switch
+		// twice. The modes themselves live in LedgerTerrainVis.h.
+		FString VisMode;
+		if (FParse::Value(FCommandLine::Get(), TEXT("terrainvis="), VisMode))
+		{
+			Material->SetShadingModel(MSM_Unlit);
+			EditorData->EmissiveColor.Expression =
+				Graph.Make<UMaterialExpressionVertexColor>();
+			Material->PostEditChange();
+			UE_LOG(LogLedger, Log, TEXT("terrain material: -terrainvis, unlit"));
+			return Material;
+		}
+
 		FString Channel;
 		if (FParse::Value(FCommandLine::Get(), TEXT("channel="), Channel))
 		{

@@ -94,8 +94,13 @@ goes; the sparse biomes this was originally tuned on do not move.
 
 ## What is still wrong
 
-Stones still band along the collision-ring boundary rather than thinning out,
-because that ring is where scatter is allowed to exist at all -- T059.
+Stones band into chains rather than spreading evenly, and **it is not the
+collision ring**, which is what this said until T066's visualiser was pointed at
+it. `-terrainvis=collision` shows the chains crossing ground that is uniformly
+green out to the far mountain, so scatter is allowed everywhere it is banding.
+Whatever is lining them up is something else, and the assumption that it was the
+ring boundary was written down here twice before a picture disproved it in one
+glance.
 
 The black squares that once held this open are resolved: they were a **stale
 baked material**. `-bakematerials` after a material change is part of the loop,

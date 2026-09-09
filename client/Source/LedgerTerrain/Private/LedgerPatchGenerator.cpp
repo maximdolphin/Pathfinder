@@ -3,6 +3,7 @@
 #include "LedgerBiome.h"
 #include "LedgerCaveMesh.h"
 #include "LedgerPatchDisk.h"
+#include "LedgerTerrainVis.h"
 #include "LedgerCaves.h"
 #include "LedgerLog.h"
 #include "LedgerScatter.h"
@@ -646,6 +647,17 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	if (!bFromDisk)
 	{
 		LedgerPatchDisk::Store(Job);
+	}
+
+	// The diagnostic, painted last and after the store.
+	//
+	// After the store deliberately: what goes on disk is the real patch, so a
+	// run with -terrainvis does not poison the cache for the next run without
+	// it. And after everything else, because it overwrites the colours the
+	// climate produced and nothing downstream should still be reading them.
+	if (LedgerTerrainVis::IsOn())
+	{
+		LedgerTerrainVis::Paint(Job, bFromDisk);
 	}
 
 	Job.GenerationMs = (FPlatformTime::Seconds() - Started) * 1000.0;
