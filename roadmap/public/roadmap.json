@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 7
+   "doneCount": 8
   },
   {
    "id": "M03",
@@ -3887,11 +3887,24 @@
    "dependsOn": [
     "T054"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Five automation tests green, and the acceptance is three of them rather than a claim beside a screenshot: NoCellFlowsUphill, EveryCellReachesTheSeaOrABasin, SameSeedSameNetwork. The other two earn their place -- FlowIsConserved catches a wrong accumulation, which would otherwise give a plausible network with every river the wrong size, and SameSeedSameNetwork is the only place a race in the parallel neighbour pass could show up. A fixed lattice rather than the quadtree, because which way a river runs depends on ground a thousand kilometres away and two patches at different LODs would answer differently; 256 per cube face, 39 km cells, 393,216 of them, built in 0.1 s. The bug worth recording: neighbours were found through the sphere, and DirectionToFace inverts FaceToCube but not CubeToSphere's area-evening warp, so every neighbour link joined cells that do not touch. Every test passed -- the graph was consistent, downhill, acyclic, conserved and deterministic. It just was not a map, and the tell was in the report (32,605 basins, longest river 0 km), not the tests. Neighbours are now resolved in cube space and CellRoundTripsThroughItsCentre is the test that was missing. The corrected planet drains 46.6% to the sea and 53.4% into 1,985 closed basins against Earth's 18% endorheic, which is what a height field with no erosion looks like; pit-filling is left undone because the acceptance allows a basin as a terminus. Commit 2d45266, write-up in docs/comparisons/hydrology/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T055-2026-09-09T17-07-57-228.txt",
+     "caption": "Whole-planet drainage: 393,216 cells, 1,985 basins, largest catchment 394,000 km2, longest river 1,173 km.",
+     "source": "../docs/comparisons/hydrology/hydrology.txt",
+     "addedAt": "2026-09-09T17:07:57.229Z"
+    }
+   ],
    "plannedStartDay": 104,
    "plannedEndDay": 108,
    "plannedStart": "2027-01-29",
@@ -12560,5 +12573,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T17:00:04.446Z"
+ "updatedAt": "2026-09-09T17:07:57.327Z"
 }
