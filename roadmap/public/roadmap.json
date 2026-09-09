@@ -163,7 +163,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M03",
@@ -2929,10 +2929,16 @@
    "dependsOn": [
     "T045"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Two photogrammetric scans, grassy soil at its own 2 m tiling over rock cliff at 1 m, chosen by slope and interlocked by height rather than cross-faded. Captured at three distances (1.7 m, 12 m, 140 m) under two sun elevations (20 and 62 degrees) with exposure PINNED -- auto exposure exists to cancel differences in scene brightness, which is the one thing a two-lighting-condition comparison is trying to show. Frames in docs/comparisons/surface-study/. Beside the noise version: docs/comparisons/noise-before/ holds the old reference captures, and compare_captures puts the change at 4.23 structural residual on the town frame and 62 on orbit, against a 2.5 regression threshold. NOT done: a side-by-side against independent reference photography. The scans are themselves photogrammetry of real ground, so the comparison would be against their own source, and I did not fake one. Frame cost measured, not assumed: GPU 5.2-8.6 ms across the low-altitude phases with Lumen on, roughly 3 ms of that being Lumen. The terrain material is not the frame budget problem -- the game thread is, at 20-31 ms through every low-altitude phase, and none of this material runs there."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 57,
    "plannedEndDay": 58.5,
@@ -11672,5 +11678,5 @@
    "plannedEnd": "2030-11-01"
   }
  ],
- "updatedAt": "2026-09-08T22:38:37.251Z"
+ "updatedAt": "2026-09-09T00:05:25.065Z"
 }
