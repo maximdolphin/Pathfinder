@@ -3063,6 +3063,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "The ship hull is now a static mesh asset at /Game/Meshes/SM_ShipHull, baked by 'UnrealEditor.exe <project> -game -bakemeshes' and by tools/generate_assets.py as a step. LedgerMesh::Bake takes the same FLedgerMeshBuilder arrays the runtime uses and hands them to Unreal's own static mesh build, so the shape is described once and has two destinations. EVIDENCE, read back from a FRESH PROCESS rather than from the process that set it -- 'I set the flag' and 'the asset has it' are different claims: tools/verify_meshes.py opens the saved asset and reports '144 tris, nanite on, lods 1, collision yes, dist field yes, by LedgerMesh::Bake'. VERDICT PASS. Kept at docs/comparisons/project-level/verify-meshes.txt. Both things this unlocks were previously impossible: Nanite cannot be enabled on a procedural mesh component at all, and the mesh distance field is what Lumen's software tracing needs -- its absence across the whole project is why Lumen had to be forced onto hardware ray tracing in the first place. On 'a full LOD chain': the asset has one source model, and that is the right answer for a Nanite mesh rather than a shortfall. Nanite does LOD per cluster, so a hand-built chain would be both redundant and, on 144 triangles, meaningless. Said plainly rather than counted as met. NOT DONE: only the hull is baked. The settlement's buildings and trees are still runtime procedural meshes, because they want a material instance per colour and that is the instancing task."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "[2026-09-09] CORRECTION. This task reported 'nanite on' for SM_ShipHull, read back from the saved asset -- which was true of the asset and false of the running game. Both the editor and the packaged build were on Shader Model 5, and Nanite requires SM6, so Nanite was configured and not running. Found by packaging: a packaged build states its feature level in the first hundred lines of its log, and the editor had been saying the same thing for two days. DefaultGraphicsRHI is DX12 with PCD3D_SM6 now, and the editor reports 'Using Highest Feature Level of D3D12: SM6' with raytracing=1. The asset-level verification in this task was correct as far as it went; it just did not go as far as asking whether the feature was available at all."
     }
    ],
    "evidence": [],
@@ -3351,6 +3356,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "Two photogrammetric scans, grassy soil at its own 2 m tiling over rock cliff at 1 m, chosen by slope and interlocked by height rather than cross-faded. Captured at three distances (1.7 m, 12 m, 140 m) under two sun elevations (20 and 62 degrees) with exposure PINNED -- auto exposure exists to cancel differences in scene brightness, which is the one thing a two-lighting-condition comparison is trying to show. Frames in docs/comparisons/surface-study/. Beside the noise version: docs/comparisons/noise-before/ holds the old reference captures, and compare_captures puts the change at 4.23 structural residual on the town frame and 62 on orbit, against a 2.5 regression threshold. NOT done: a side-by-side against independent reference photography. The scans are themselves photogrammetry of real ground, so the comparison would be against their own source, and I did not fake one. Frame cost measured, not assumed: GPU 5.2-8.6 ms across the low-altitude phases with Lumen on, roughly 3 ms of that being Lumen. The terrain material is not the frame budget problem -- the game thread is, at 20-31 ms through every low-altitude phase, and none of this material runs there."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "[2026-09-09] CORRECTION to the Lumen claim. This task recorded a GPU cost 'with Lumen on, roughly 3 ms of that being Lumen', and the commit enabling Lumen said hardware ray tracing was doing the work because software tracing needs distance fields the project has none of. Both builds were on Shader Model 5 at the time and Lumen hardware ray tracing requires SM6 -- raytracing was 0. So whatever those numbers measured, it was not Lumen HWRT. With SM6 and raytracing=1 the town phase costs 5.5 ms of GPU against 3.5 before, and every frame-time figure recorded between those two dates should be read as 'Lumen without hardware tracing'."
     }
    ],
    "evidence": [],
@@ -12294,5 +12304,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T07:03:39.055Z"
+ "updatedAt": "2026-09-09T07:12:20.968Z"
 }

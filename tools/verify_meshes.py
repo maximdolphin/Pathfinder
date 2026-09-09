@@ -13,7 +13,10 @@ import os
 
 import unreal
 
-EXPECTED = {"SM_ShipHull": True, "SM_Tree_A": True, "SM_Tree_B": True}
+# Nanite where it was asked for, and off where it was deliberately declined.
+# The trees are forty-six triangles and their colour is per-slot; Nanite
+# would buy nothing and does not carry mesh vertex colours through.
+EXPECTED = {"SM_ShipHull": True, "SM_Tree_A": False, "SM_Tree_B": False}
 
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
 registry.scan_paths_synchronous(["/Game/Meshes"], force_rescan=True)
@@ -42,8 +45,10 @@ for data in assets:
                     "yes" if body else "NO", "yes" if distance_field else "NO",
                     generator or "UNRECORDED"))
 
-    if EXPECTED.get(name) and not nanite:
-        problems.append("%s: Nanite is not enabled on the saved asset" % name)
+    wanted = EXPECTED.get(name)
+    if wanted is not None and bool(nanite) != wanted:
+        problems.append("%s: Nanite is %s and should be %s"
+                        % (name, "on" if nanite else "off", "on" if wanted else "off"))
     if not distance_field:
         problems.append("%s: no mesh distance field" % name)
     if not body:

@@ -1,0 +1,39 @@
+Frame times for the scripted flight.
+
+VALID ONLY ON AN IDLE MACHINE. Anything else using the GPU is measured
+as part of this. A day went into optimising a cloud pass that costs
+0.24 ms, because the profile saying 90 ms was taken through another
+game running behind the capture.
+
+budget 16.7 ms (60 fps), warm-up 6 s excluded from the verdict
+
+phase              frames    mean   median     p95     p99     max   over    game  render     gpu
+startup              1159    12.1    16.6    16.8    29.2   400.0    29%     4.4   369.9     2.3   (warm-up)
+orbit                 218    18.3    16.7    16.8    16.9   393.3    60%     2.8    16.6     2.8
+descent              1436    16.7    16.7    16.8    17.0    22.0    59%     2.7    16.7     4.2
+atmospheric entry    1298    20.0    16.7    26.6    39.1   400.0    64%    10.8    17.9     5.9
+surface               535    18.7    17.7    20.6    22.4   198.4   100%    18.7     0.1     5.4
+town                  552    18.1    17.3    19.9    20.7   174.1    98%    18.1     0.0     5.5
+ridge sweep          1121    32.1    31.6    40.6    44.8   223.9   100%    32.1     0.0     9.8
+coast                 228    35.2    27.0    67.1   281.1   400.0    89%    37.4     0.0    14.6
+underwater            282    28.4    31.1    38.8    49.6   306.3    80%    26.9     0.0    10.1
+ascent                820    17.1    16.7    16.9    28.4   117.4    57%     9.4     0.0     3.0
+space                 351    17.1    16.7    16.8    17.0   185.0    57%     5.8     0.0     5.3
+
+overall  6841 frames, mean 21.3 ms (47 fps), p99 42.4 ms, max 400.0 ms
+         74.7% of frames over budget
+
+p99 per phase, one column per millisecond:
+  startup              29.2 |#############################
+  orbit                16.9 |#################
+  descent              17.0 |#################
+  atmospheric entry    39.1 |#################################
+  surface              22.4 |######################
+  town                 20.7 |#####################
+  ridge sweep          44.8 |#################################
+  coast               281.1 |#################################
+  underwater           49.6 |#################################
+  ascent               28.4 |############################
+  space                17.0 |#################
+
+VERDICT: FAIL (p99 42.4 ms against a 16.7 ms budget)
