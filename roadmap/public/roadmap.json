@@ -4611,11 +4611,30 @@
    "dependsOn": [
     "T433"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "active",
+   "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Mesh done and tested: 320-face noise-displaced icosahedron, three variants, flat shaded, clast sizes 0.15+u^2*0.85. Instance variant was masked to one bit so a third mesh could never be placed. Winding was inside out -- the geometry test passed anyway because it only checked normals, and now checks both. Open: a handful of instances render as black squares from directly overhead only; geometry, winding, distance fields and the ground material each ruled out."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T434-2026-09-09T22-11-52-036.png",
+     "caption": "Eye height after the change: clean ground, no cone forest. The scatter had been placing an 18 m tree at full size as its rock.",
+     "source": "../out/near-field-standing.png",
+     "addedAt": "2026-09-09T22:11:52.040Z"
+    },
+    {
+     "file": "evidence/T434-2026-09-09T22-11-52-127.png",
+     "caption": "Straight down from 8 m. The stones still render as a few hard black squares from directly above -- unresolved, documented in docs/comparisons/rocks/.",
+     "source": "../out/near-field-down.png",
+     "addedAt": "2026-09-09T22:11:52.129Z"
+    }
+   ],
    "plannedStartDay": 155,
    "plannedEndDay": 159,
    "plannedStart": "2027-04-12",
@@ -13015,5 +13034,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T21:43:46.138Z"
+ "updatedAt": "2026-09-09T22:11:52.224Z"
 }

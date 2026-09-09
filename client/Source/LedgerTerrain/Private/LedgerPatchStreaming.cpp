@@ -391,7 +391,8 @@ void ALedgerPlanet::AbandonJob(uint64 Key)
 }
 
 
-void ALedgerPlanet::SetScatterMeshes(const TArray<UStaticMesh*>& Meshes)
+void ALedgerPlanet::SetScatterMeshes(
+	const TArray<UStaticMesh*>& Meshes, UMaterialInterface* Material)
 {
 	for (UHierarchicalInstancedStaticMeshComponent* Component : ScatterComponents)
 	{
@@ -421,6 +422,21 @@ void ALedgerPlanet::SetScatterMeshes(const TArray<UStaticMesh*>& Meshes)
 			// when something can.
 			Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			Component->SetCastShadow(true);
+
+			// No distance field, and this is the fix for a visible artefact
+			// rather than an optimisation.
+			//
+			// The bake gives every static mesh a distance field, and Lumen
+			// resolves small instanced meshes through theirs at a resolution
+			// that cannot describe a stone: from directly overhead a field of
+			// cobbles rendered as a scatter of hard-edged black rectangles
+			// several times their own size. A 320-triangle stone gains nothing
+			// from a distance field and loses its shape to one.
+			Component->bAffectDistanceFieldLighting = false;
+			if (Material != nullptr)
+			{
+				Component->SetMaterial(0, Material);
+			}
 			Component->RegisterComponent();
 			ScatterComponents.Add(Component);
 		}
@@ -492,11 +508,16 @@ void ALedgerPlanet::RebuildScatter()
 			const FVector Base = PlanetOrigin + FVector(Patch.Value.Centre);
 			for (const FLedgerScatterInstance& Instance : Patch.Value.Instances)
 			{
-				if (!ByVariant.IsValidIndex(Instance.Variant))
+				// Folded, not range-checked. The scatter emits a whole byte and
+				// does not know how many meshes were loaded; rejecting the ones
+				// that do not happen to land in range would silently drop most
+				// of the field.
+				if (ByVariant.Num() == 0)
 				{
 					continue;
 				}
-				ByVariant[Instance.Variant].Add(FTransform(
+				const int32 Variant = Instance.Variant % ByVariant.Num();
+				ByVariant[Variant].Add(FTransform(
 					FQuat(Instance.Rotation),
 					Base + FVector(Instance.Position),
 					FVector(Instance.Scale)));

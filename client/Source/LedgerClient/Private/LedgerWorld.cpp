@@ -23,6 +23,7 @@
 #include "LedgerBiomeSurfaces.h"
 #include "LedgerPlanet.h"
 #include "LedgerSettlement.h"
+#include "LedgerRock.h"
 #include "LedgerShip.h"
 #include "LedgerSimSubsystem.h"
 #include "LedgerTerrainMath.h"
@@ -242,16 +243,18 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			{
 				Planet->SetBiomes(Biomes);
 
-				// The same two trees the settlement plants, for now. Scatter
-				// wants its own rocks and shrubs, and the biome files already
-				// have somewhere to name them; until those meshes exist,
-				// borrowing these is honest about what is placed and lets the
-				// placement itself be measured.
+				// Stones. Until T434 this borrowed the settlement's tree --
+				// an eighteen metre cone scaled down to the size of a cobble --
+				// which from directly above rendered as a field of small black
+				// shards, and is what the overhead capture in
+				// docs/comparisons/near-field/ was actually showing.
 				TArray<UStaticMesh*> ScatterMeshes;
-				for (const TCHAR* Name : { TEXT("SM_Tree_A"), TEXT("SM_Tree_B") })
+				for (int32 Variant = 0; Variant < LedgerRock::Variants; ++Variant)
 				{
+					const FString Name = FString::Printf(TEXT("SM_Rock_%c"),
+						static_cast<TCHAR>('A' + Variant));
 					const FString Path = FString::Printf(TEXT("%s%s.%s"),
-						LedgerMesh::MeshPackageRoot, Name, Name);
+						LedgerMesh::MeshPackageRoot, *Name, *Name);
 					if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path))
 					{
 						ScatterMeshes.Add(Mesh);
@@ -263,7 +266,13 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 							     "tools/generate_assets.py --only meshes"), *Path);
 					}
 				}
-				Planet->SetScatterMeshes(ScatterMeshes);
+
+				// Lit, and not the engine default. Instanced components take
+				// the mesh's own material slots, the bake assigns none, and the
+				// default material is what those shards were being drawn with.
+				Planet->SetScatterMeshes(ScatterMeshes,
+					LedgerSurface::CreateFlatMaterial(
+						Planet, FLinearColor::White, 0.86f));
 				ALedgerPlanet* Owner = Planet;
 				Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
 					[Owner, Surface](const FLedgerBiomePalette& Palette,
@@ -456,8 +465,32 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			Body += Line + TEXT("\n");
 		}
 
-		Body += FString::Printf(TEXT("\n  %d of 3 saved\n\n"), Saved);
-		Body += FString::Printf(TEXT("VERDICT: %s\n"), Saved == 3 ? TEXT("PASS") : TEXT("FAIL"));
+		// Three stones. Angular, mixed, and water-worn -- the one axis of
+		// variety that reads at the size these are drawn at. T434.
+		for (int32 Variant = 0; Variant < LedgerRock::Variants; ++Variant)
+		{
+			FLedgerMeshBuilder Builder;
+			LedgerRock::Describe(Builder, 0x0C0B15u + Variant * 7919u,
+				Variant / static_cast<double>(LedgerRock::Variants - 1));
+			const FString Name = FString::Printf(TEXT("SM_Rock_%c"),
+				static_cast<TCHAR>('A' + Variant));
+			FString Line;
+			// No Nanite, same reason as the trees: the colour is per-vertex and
+			// Nanite does not carry mesh vertex colours to the material. At 320
+			// triangles there is nothing for it to do anyway.
+			if (LedgerMesh::Bake(Builder,
+				FString(LedgerMesh::MeshPackageRoot) + Name, *Name, Line,
+				/*bNanite*/ false) != nullptr)
+			{
+				++Saved;
+			}
+			Body += Line + TEXT("\n");
+		}
+
+		constexpr int32 Expected = 3 + LedgerRock::Variants;
+		Body += FString::Printf(TEXT("\n  %d of %d saved\n\n"), Saved, Expected);
+		Body += FString::Printf(TEXT("VERDICT: %s\n"),
+			Saved == Expected ? TEXT("PASS") : TEXT("FAIL"));
 
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),

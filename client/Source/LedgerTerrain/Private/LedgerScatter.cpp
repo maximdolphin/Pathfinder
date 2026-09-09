@@ -1,5 +1,7 @@
 #include "LedgerScatter.h"
 
+#include "Misc/CommandLine.h"
+
 #include "LedgerBiome.h"
 #include "LedgerClimate.h"
 #include "LedgerPlanet.h"
@@ -45,8 +47,15 @@ namespace LedgerScatter
 		// The size limit is about how big an instance is on screen;
 		// bWithCollision is the planet's own statement about how close the
 		// patch is, and they are not the same set.
+		// `-noscatter` places nothing. A control arm, not a setting: when
+		// something on the ground looks wrong, the first question is whether it
+		// is the ground or the things standing on it, and that is not
+		// answerable by looking harder at a photograph containing both.
+		static const bool bDisabled =
+			FParse::Param(FCommandLine::Get(), TEXT("noscatter"));
+
 		const double SizeRatio = FMath::Max(1.0, Job.WorldSize / FinestWorldSize);
-		if (!Job.bWithCollision || SizeRatio > MaxSizeRatio)
+		if (bDisabled || !Job.bWithCollision || SizeRatio > MaxSizeRatio)
 		{
 			return;
 		}
@@ -193,10 +202,27 @@ namespace LedgerScatter
 				Instance.Position = FVector3f(Surface - Job.Centre);
 				Instance.Rotation = FQuat4f(FRotationMatrix::MakeFromZX(
 					FVector(Normal), FVector(Facing)).ToQuat());
-				Instance.Scale = static_cast<float>(
-					0.75 + Uniform(CellHash(Job.Key, Cell, 5u)) * 0.7);
+				// Squared, so most stones are small.
+				//
+				// This was 0.75 to 1.45, which was right when the scatter mesh
+				// was an eighteen metre tree and is wrong now it is a one metre
+				// stone: it made every instance a boulder, and a field of
+				// identically-sized boulders is the one distribution real
+				// ground never has. Squaring a uniform puts the mass at the
+				// bottom -- half the stones under 36 cm, one in ten over 70 cm,
+				// none over a metre -- which is roughly how a clast size
+				// distribution actually sorts. Cubed was tried first and was an
+				// overcorrection: it put half the field under 22 cm, which at
+				// three metres is not a stone, it is a speckle.
+				const double Roll = Uniform(CellHash(Job.Key, Cell, 5u));
+				Instance.Scale = static_cast<float>(0.15 + Roll * Roll * 0.85);
+
+				// The whole byte. How many meshes there actually are is the
+				// planet's business, not this function's -- it was masked to
+				// one bit for the two tree variants, which silently meant a
+				// third rock could never be placed.
 				Instance.Variant = static_cast<uint8>(
-					CellHash(Job.Key, Cell, 6u) & 1ull);
+					CellHash(Job.Key, Cell, 6u) & 0xFFull);
 				Job.Scatter.Add(Instance);
 			}
 		}

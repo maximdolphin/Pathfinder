@@ -38,5 +38,6 @@ private:
 
 	bool bRunning = false;
 	bool bCaptured = false;
+	bool bLookedDown = false;
 	double Waited = 0.0;
 };

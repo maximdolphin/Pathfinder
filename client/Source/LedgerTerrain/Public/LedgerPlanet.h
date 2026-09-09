@@ -566,7 +566,13 @@ public:
 	/// The meshes a scatter variant can be. Set beside the materials, for the
 	/// same reason: the quadtree decides where things go and not what they are.
 	/// An empty array means no scatter at all.
-	void SetScatterMeshes(const TArray<UStaticMesh*>& Meshes);
+	/// The meshes the scatter instances, and the material to draw them with.
+	///
+	/// The material is passed in rather than built here because LedgerTerrain
+	/// does not depend on LedgerMaterial and should not: the composition root
+	/// is the only place that gets to know about both.
+	void SetScatterMeshes(
+		const TArray<UStaticMesh*>& Meshes, class UMaterialInterface* Material = nullptr);
 
 private:
 	UPROPERTY()

@@ -153,6 +153,24 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// Straight down from eight metres, once the standing shot is taken.
+	//
+	// A grazing view cannot answer whether the ground tiles: perspective makes
+	// the tile's period on screen a function of distance, so it smears any
+	// repeat into a gradient. Looking straight down, one metre of ground is one
+	// number of pixels everywhere in frame, and a 2 m tile repeated across a
+	// patch shows up as a peak in the autocorrelation at exactly 2 m. That is
+	// the before and after for T431.
+	if (bCaptured && !bLookedDown)
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				TEXT("near-field-down.png")));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		bLookedDown = true;
+		return;
+	}
+
 	// The photograph first, so the numbers below describe the frame that was
 	// captured rather than one after it.
 	if (!bCaptured)
@@ -162,6 +180,11 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 				TEXT("near-field-standing.png")));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
 		bCaptured = true;
+		return;
+	}
+
+	if (!bLookedDown)
+	{
 		return;
 	}
 
@@ -211,7 +234,6 @@ void ULedgerNearField::Park()
 	// person standing on this ground would be looking at. The first version of
 	// this fixture left the player's boom camera alone, which meant the
 	// "standing" capture was a top-down shot of the parked ship.
-	const FVector Eye = FVector(Origin + Eye3d * (Ground + EyeMetres * 100.0));
 	const FVector3d Ahead = ProfileDirection(Eye3d);
 	const FVector3d TargetDirection =
 		(Eye3d + Ahead * (LookingAtMetres * 100.0 / Planet->Radius)).GetSafeNormal();
@@ -221,7 +243,17 @@ void ULedgerNearField::Park()
 	// From the local up. FVector::Rotation() has zero roll in world terms, which
 	// on a sphere puts the horizon down the side of the frame everywhere but one
 	// longitude.
-	const FRotator Look = FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Eye3d)).Rotator();
+	// Down the radial for the overhead shot, out along the profile for the
+	// standing one. Eight metres up, which frames about sixteen metres of
+	// ground at 90 degrees -- eight tile repeats of a 2 m scan.
+	const bool bDown = bCaptured && !bLookedDown;
+	const FVector Eye = bDown
+		? FVector(Origin + Eye3d * (Ground + 800.0 * 100.0))
+		: FVector(Origin + Eye3d * (Ground + EyeMetres * 100.0));
+	const FRotator Look = bDown
+		? FRotationMatrix::MakeFromXZ(
+			FVector(-Eye3d), FVector(ProfileDirection(Eye3d))).Rotator()
+		: FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Eye3d)).Rotator();
 
 	if (Camera == nullptr)
 	{

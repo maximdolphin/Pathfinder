@@ -28,9 +28,11 @@ namespace LedgerPatchDisk
 	/// Bumped whenever the payload's layout or meaning changes, so an old cache
 	/// is ignored rather than misread. 2: T429's near-field band, which changes
 	/// every elevation in every fine patch without changing the format at all
-	/// -- exactly the case a layout check would have missed. It is in the key, not a header check:
+	/// -- exactly the case a layout check would have missed. 3: T434's stone
+	/// sizes, which are stored in the payload and would otherwise have been
+	/// served from disk at the old tree-sized distribution forever. It is in the key, not a header check:
 	/// a stale entry then simply never matches and is evicted in its turn.
-	constexpr uint32 FormatVersion = 2;
+	constexpr uint32 FormatVersion = 3;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.
