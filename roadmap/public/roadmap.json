@@ -3218,10 +3218,16 @@
    "dependsOn": [
     "T425"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "docs/asset-strategy.md. Answers, for any new asset type, which of the three tiers it belongs in and what producing one involves, with a worked example for each: a new prop and a new material for baked, a new placed actor for placed, and for streamed the honest answer that there is no example and the test is 'write down how big the file would be'. It also carries the five traps this milestone actually hit, each of which cost an afternoon and none of which is guessable: vertex colours do not survive the trip from procedural mesh to baked-and-instanced; a material without bUsedWithInstancedStaticMeshes is silently swapped for the default; BuildFromMeshDescriptions creates no material slots so SetMaterial succeeds and draws nothing; generators must be idempotent because new_level and SavePackage both refuse to overwrite; and a number taken straight after a re-bake measures the first load of freshly built derived data, which is how the settlement read 38.9 ms, then 8.8, then 3.0 with nothing changed. Plus what is and is not in version control, why .uasset files are not byte-reproducible, and a closing section naming the seams that are still open."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 78.5,
    "plannedEndDay": 79.5,
@@ -12282,5 +12288,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T06:42:41.479Z"
+ "updatedAt": "2026-09-09T06:43:43.377Z"
 }
