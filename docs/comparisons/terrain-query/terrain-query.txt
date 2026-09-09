@@ -1,0 +1,7 @@
+The terrain sampling API against a physics trace (T061).
+
+1000 queries over a 2 km disc: 996 traced and sampled, 4 hit nothing, 0 hit ground the API could not answer about
+agreement: 996 of 996 within a millimetre (100.0%)
+error: mean 0.0060 mm, worst 0.0225 mm (at 891 m from the ship)
+
+VERDICT: PASS

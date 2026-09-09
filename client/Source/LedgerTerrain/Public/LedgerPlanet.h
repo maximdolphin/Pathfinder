@@ -23,6 +23,7 @@
 #include "LedgerBiome.h"
 #include "LedgerQuadNode.h"
 #include "LedgerScatter.h"
+#include "LedgerTerrainSample.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerPatchComponents.h"
 #include "ProceduralMeshComponent.h"
@@ -430,6 +431,19 @@ public:
 	/// Height of the surface above the reference sphere at a direction.
 	double SurfaceRadiusAt(const FVector3d& UnitDirection) const;
 
+	/// What the ground is at a world point. T061.
+	///
+	/// The one place gameplay asks. It answers from the patch that is drawn --
+	/// the same vertices, the same triangles the collision was cooked from --
+	/// so it agrees with a physics trace rather than with the height function
+	/// the trace does not know about. False where nothing is loaded.
+	// No LEDGERTERRAIN_API: the class already carries it, and a member of a
+	// dll-interface class may not repeat it.
+	bool SampleTerrain(const FVector3d& WorldPoint, FLedgerTerrainSample& Out) const;
+
+	/// Where in the year this planet is, 0 to 1. Set from -season=.
+	double SeasonPhase() const;
+
 	FLedgerTerrainParams TerrainParams() const;
 
 	/// Set before BeginPlay by whoever spawns the planet. The quadtree's
@@ -614,6 +628,9 @@ private:
 	/// The tree descent both entry points share, on coordinates already known
 	/// to belong to this face.
 	int32 LeafDepthAtResolved(ELedgerCubeFace Face, double U, double V) const;
+
+	/// The node whose geometry is on screen at these face coordinates.
+	const FLedgerQuadNode* DrawnNodeAt(ELedgerCubeFace Face, double U, double V) const;
 
 	/// Launches generation on a worker thread. Returns false if the pool or the
 	/// in-flight cap is exhausted.
