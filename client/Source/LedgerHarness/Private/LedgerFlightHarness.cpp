@@ -1,6 +1,7 @@
 #include "LedgerFlightHarness.h"
 
 #include "Engine/Engine.h"
+#include "HAL/PlatformMisc.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "LedgerLog.h"
@@ -491,4 +492,15 @@ void ULedgerFlightHarness::WritePerformanceReport()
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("performance.txt")));
 		Perf->WriteReport(Path);
 	}
+
+	// And then stop.
+	//
+	// The flight has never ended: it wrote its report and sat there until
+	// somebody killed it. That is two bugs. The CI job runs the flight and
+	// then compares the captures, which cannot happen while the step is still
+	// running. And anything the engine flushes on shutdown never got flushed
+	// -- the recorded PSO log among it, which is the input to the shipped
+	// pipeline cache T424 needs.
+	UE_LOG(LogLedger, Log, TEXT("flight complete, exiting"));
+	FPlatformMisc::RequestExit(false);
 }
