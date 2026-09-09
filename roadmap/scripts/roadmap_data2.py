@@ -223,6 +223,125 @@ M02 = [
 # M03 - planetary bodies and orbital mechanics.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------- M2W
+#
+# ADR-0006. Everything in this project is built at runtime, and that was never
+# decided -- it is what the prototype did to answer a rendering question, and it
+# has been the architecture ever since. The bill: a packaged build has no
+# materials at all, Nanite is unavailable to every object in the world, nothing
+# has a mesh distance field, and generation runs on the game thread, which is
+# where the frame budget is failing.
+
+M2W = [
+    dict(title="A project level, with the world placed in it",
+         detail="The project loads /Engine/Maps/Entry -- an empty engine map -- and a "
+                "subsystem spawns the planet, the sun, the atmosphere and the ship into "
+                "it. So the world exists only while code is running, and there is nothing "
+                "to open, look at or select. A real map, with the things that are not "
+                "generated placed as actors, and the generated ones attached to something "
+                "a person can find.",
+         acceptance="The project opens on its own map, the world's fixed actors are "
+                    "visible and selectable in the editor, and the scripted flight runs "
+                    "from it unchanged.",
+         days=2, refs=["ARCH Rule 1"]),
+    dict(title="Materials as saved assets, generated once",
+         detail="Every material is RF_Transient and built as a node graph on each launch "
+                "inside an editor-only block, which is why LedgerSurfaceCooked.cpp "
+                "returns null for all of them and a packaged build has no look at all. "
+                "The graphs stay in C++ and stay the source of truth -- that is what "
+                "makes them diffable and is worth keeping. A commandlet runs them once "
+                "and saves the result, and the game loads assets. The same arrangement "
+                "the surface textures already use.",
+         acceptance="Every material in the game is a saved asset; a build with the editor "
+                    "stripped renders the terrain, water and underwater passes correctly; "
+                    "and regenerating produces no diff unless the C++ changed.",
+         days=3, refs=["ARCH Rule 1", "SS14"]),
+    dict(title="Asset generation as an editor commandlet",
+         detail="The mechanism the generators of ADR-0005 plug into: a generator is a "
+                "function from parameters to geometry, and this is what runs it offline, "
+                "names the package, saves it, and records what produced it. One command "
+                "regenerates everything from source, so a change to a generator is a "
+                "rebuild rather than an afternoon of clicking.",
+         acceptance="One command regenerates every generated asset from its definition; a "
+                    "second run produces no diff; and every generated asset records the "
+                    "generator and parameters that made it.",
+         days=3, refs=["SS14"]),
+    dict(title="Static mesh output with Nanite, LODs and collision",
+         detail="What the commandlet actually emits. Nanite enabled where it belongs, "
+                "automatic LOD chains, simplified collision matching the silhouette, and "
+                "distance-field generation. None of this is available to a procedural "
+                "mesh and all of it is free once the output is a static mesh, which is "
+                "the whole argument of ADR-0006 in one task.",
+         acceptance="A generated hull comes out as a static mesh with Nanite on, a full "
+                    "LOD chain, collision matching its silhouette and a mesh distance "
+                    "field, with no manual step.",
+         days=3, refs=["SS14"]),
+    dict(title="Instanced rendering for repeated and scattered assets",
+         detail="Three hundred and forty-two trees are three hundred and forty-two "
+                "procedural mesh components today, each with its own draw and its own "
+                "generation cost on the game thread. Once assets are static meshes they "
+                "instance, and a forest becomes one draw. The scatter framework in M02 "
+                "decides where they go; this decides what they are placed as.",
+         acceptance="A settlement's trees and props render as instanced draws, the draw "
+                    "count is independent of the instance count, and the measured "
+                    "game-thread cost of placing them falls against the current build.",
+         days=2, refs=["SS6.8", "SS14"]),
+    dict(title="Asset layout, naming and ownership in the content tree",
+         detail="Where generated assets live, what they are called, and how a stale one "
+                "is found. Boring, and the alternative is a content directory nobody can "
+                "navigate in two years and a set of orphans nobody dares delete.",
+         acceptance="Every asset's package path is derived from its definition rather "
+                    "than typed, and a generated asset with no definition behind it is "
+                    "reported by a validator naming the file.",
+         days=1, refs=["ARCH Rule 1"]),
+    dict(title="Terrain component type, measured rather than assumed",
+         detail="After this milestone the terrain is the only runtime-generated geometry "
+                "left, and it owns the game-thread cost failing the frame budget: 20 to "
+                "31 ms through every low-altitude phase against 16.7, with the GPU at 5 "
+                "to 9. UProceduralMeshComponent was the prototype's choice and has never "
+                "been compared against anything. Measure it against the alternatives on "
+                "generation, upload and draw cost before deciding to keep it.",
+         acceptance="A written comparison of at least two component types over the same "
+                    "flight, with generation, upload and draw cost measured for each, and "
+                    "a decision recorded with its numbers.",
+         days=4, refs=["SS6.8"]),
+    dict(title="Shader compilation and PSO caching",
+         detail="Building material graphs at runtime means compiling shaders at runtime, "
+                "which is a stall the moment anything new comes into view. Once materials "
+                "are assets their shaders cook, and the pipeline state objects need "
+                "collecting so that first sight of a surface is not a hitch.",
+         acceptance="A packaged build shows no compilation stall on first sight of any "
+                    "material, and a first run's frame-time trace matches a second run's "
+                    "within the stated tolerance.",
+         days=2, refs=["SS14"]),
+    dict(title="Package the technical slice and run it without the editor",
+         detail="The narrow version of what M12 does properly later: prove it packages "
+                "and runs at all. Today it cannot, and every milestone spent adding "
+                "content on top of a build that has never shipped once is a milestone "
+                "spent finding out later.",
+         acceptance="A packaged Windows build launches with no editor present, flies the "
+                    "scripted flight, and writes its captures and frame-time report.",
+         days=3, refs=["SS14"]),
+    dict(title="Write down the asset creation strategy",
+         detail="What is baked, what is streamed, what is placed, and how a new kind of "
+                "thing gets added to each. ADR-0006 records the decision; this is the "
+                "document somebody follows. It exists because the current architecture "
+                "was never chosen -- it is what the prototype happened to do -- and the "
+                "way that happens again is by leaving the choice implicit.",
+         acceptance="A document that answers, for any new asset type, which tier it "
+                    "belongs in and what producing one involves, with a worked example "
+                    "for each of the three tiers.",
+         days=1, refs=["SS14"]),
+    dict(title="Playable proof: the packaged build flies the same flight",
+         detail="Per ARCH Rule 6 the milestone ends with something that runs: a build with "
+                "no editor, flying orbit to ground to orbit, producing captures that "
+                "match the editor build.",
+         acceptance="Captures from the packaged build match the committed references "
+                    "within the perceptual tolerance, and its frame-time report is no "
+                    "worse than the editor build's.",
+         days=1, refs=["ARCH Rule 6"]),
+]
+
 M03 = [
     dict(title="Body definition: mass, radius, rotation, tilt, orbit",
          detail="One description a planet, moon, station or asteroid is built from, in "

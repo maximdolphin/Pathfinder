@@ -419,6 +419,17 @@
   "M24:playable proof: nothing to coalition, one save": "T407",
   "M24:the coalition": "T401",
   "M24:the command transition": "T400",
-  "M24:the early loop: work, information, a little money": "T395"
+  "M24:the early loop: work, information, a little money": "T395",
+  "M2W:a project level, with the world placed in it": "T417",
+  "M2W:asset generation as an editor commandlet": "T419",
+  "M2W:asset layout, naming and ownership in the content tree": "T422",
+  "M2W:instanced rendering for repeated and scattered assets": "T421",
+  "M2W:materials as saved assets, generated once": "T418",
+  "M2W:package the technical slice and run it without the editor": "T425",
+  "M2W:playable proof: the packaged build flies the same flight": "T427",
+  "M2W:shader compilation and pso caching": "T424",
+  "M2W:static mesh output with nanite, lods and collision": "T420",
+  "M2W:terrain component type, measured rather than assumed": "T423",
+  "M2W:write down the asset creation strategy": "T426"
  }
 }

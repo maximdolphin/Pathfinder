@@ -41,8 +41,9 @@ M12 = [
                 "waiting on art.",
          acceptance="A generated building's exterior openings correspond exactly to its "
                     "interior layout; three buildings of different purpose read as "
-                    "different building types rather than as one shape rescaled; and none "
-                    "reads as a box with a texture on it at street framing.",
+                    "different building types rather than as one shape rescaled; none "
+                    "reads as a box with a texture on it at street framing; and each is a "
+                    "saved static mesh rather than a runtime one.",
          days=8, refs=["LW SS7.2"]),
     dict(title="Settlement layout generator",
          detail="Districts, streets, utilities and pads laid out from terrain, resources and "
@@ -72,8 +73,9 @@ M12 = [
                 "their ruleset, not by two people having modelled them.",
          acceptance="Three ships of visibly different design language come out of three "
                     "data files with no mesh editing, each closes into watertight "
-                    "geometry, and each survives the turntable at silhouette framing "
-                    "without reading as the same ship rescaled.",
+                    "geometry, each is saved as a static mesh with Nanite and a full "
+                    "LOD chain per ADR-0006, and each survives the turntable at "
+                    "silhouette framing without reading as the same ship rescaled.",
          days=6, refs=["SS6.9"]),
     dict(title="Panel decomposition and seam generation",
          detail="Breaking a hull into plates with recessed seams, respecting curvature so "

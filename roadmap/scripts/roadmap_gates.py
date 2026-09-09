@@ -51,6 +51,20 @@ GATE_CHECKS = {
     ("Ten thousand scatter instances render inside the frame budget, placed identically across runs.", "measured"),
 ],
 
+"M2W": [
+    ("A packaged build with no editor present flies the scripted flight to completion.", "auto"),
+    ("Its captures match the committed references within the perceptual tolerance.", "auto"),
+    ("Its frame-time report is no worse than the editor build's.", "measured"),
+    ("No material in the project is constructed at runtime; every one is a saved asset.", "auto"),
+    ("The project opens on its own map, not on an engine map.", "auto"),
+    ("One command regenerates every generated asset, and a second run produces no diff.", "auto"),
+    ("A generated hull is a static mesh with Nanite, a full LOD chain, matching collision and a distance field.", "auto"),
+    ("Draw count for a settlement's scattered props is independent of the instance count.", "measured"),
+    ("A generated asset with no definition behind it is reported by a validator, naming the file.", "auto"),
+    ("The terrain component comparison is written down with measured generation, upload and draw costs for each candidate.", "measured"),
+    ("A packaged build shows no shader compilation stall on first sight of any material.", "measured"),
+],
+
 "M03": [
     ("A moon rises, transits and sets within one arcminute of the ephemeris prediction.", "auto"),
     ("Sky and ephemeris agree to the arcminute at 100 sampled times and locations.", "auto"),
