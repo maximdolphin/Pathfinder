@@ -22,7 +22,7 @@ namespace
 	/// patch cache starts empty and a photograph taken before it fills is a
 	/// photograph of the coarse LOD, which has none of the detail the
 	/// acceptance is about.
-	constexpr double SettleSeconds = 6.0;
+	constexpr double BiomeSettleSeconds = 6.0;
 
 	/// Three framings of the same boundary, in metres of look-ahead. Close
 	/// enough to see whether the two grounds interlock, far enough to see
@@ -60,7 +60,7 @@ namespace
 		}
 	}
 
-	FVector3d OnSphere(double LatitudeDegrees, double LongitudeDegrees)
+	FVector3d BiomeOnSphere(double LatitudeDegrees, double LongitudeDegrees)
 	{
 		const double Lat = FMath::DegreesToRadians(LatitudeDegrees);
 		const double Lon = FMath::DegreesToRadians(LongitudeDegrees);
@@ -138,7 +138,7 @@ bool ULedgerBiomeSite::FindSite()
 	{
 		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 0.5)
 		{
-			const FVector3d Point = OnSphere(Latitude, Longitude);
+			const FVector3d Point = BiomeOnSphere(Latitude, Longitude);
 			if (!IsLit(Point))
 			{
 				continue;
@@ -234,7 +234,7 @@ bool ULedgerBiomeSite::FindSite()
 		{
 			for (double Longitude2 = 0.0; Longitude2 < 360.0; Longitude2 += 1.0)
 			{
-				const FVector3d Point = OnSphere(Latitude2, Longitude2);
+				const FVector3d Point = BiomeOnSphere(Latitude2, Longitude2);
 				if (!IsLit(Point)
 					|| LedgerTerrain::Elevation(Point, Params) / 100.0 <= 20.0)
 				{
@@ -525,7 +525,7 @@ void ULedgerBiomeSite::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < SettleSeconds)
+	if (Settle < BiomeSettleSeconds)
 	{
 		return;
 	}

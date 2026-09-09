@@ -189,8 +189,34 @@ namespace LedgerTerrain
 	}
 
 	/// The generated field, before anything anybody did to it.
+	/// How much of the near-field band a given vertex spacing can carry.
+	///
+	/// Nyquist, applied honestly. The band's finest octave has a wavelength of
+	/// about 1.9 m, so a grid with 1 m between vertices resolves it and a grid
+	/// with 5 m between them samples it at random and turns it into noise that
+	/// changes every time the LOD does. Full strength up to a metre, gone by
+	/// four, smooth in between -- which lines up with the quadtree: depth 18
+	/// (0.60 m) and 17 (1.19 m) carry all of it, 16 (2.39 m) about half, and 15
+	/// (4.77 m) and coarser none.
+	///
+	/// Zero spacing means "no grid, give me the field" -- what SurfaceRadiusAt
+	/// and every query wants.
+	///
+	/// ponytail: one fade for the whole band rather than one per octave. Per
+	/// octave is more correct and the band is under 1.5 m of amplitude, which
+	/// the LOD morph already blends across; revisit if a transition is visible.
+	double NearFieldStrength(double SampleSpacingMetres)
+	{
+		if (SampleSpacingMetres <= 0.0)
+		{
+			return 1.0;
+		}
+		return 1.0 - FMath::SmoothStep(1.0, 4.0, SampleSpacingMetres);
+	}
+
 	double GeneratedElevation(
-		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SampleSpacingMetres)
 	{
 		const uint32 Seed = Params.Seed;
 
@@ -281,18 +307,48 @@ namespace LedgerTerrain
 		// near the mountain band's turned the whole surface into uniform
 		// crumpled foil — busy everywhere, structured nowhere. Each band here is
 		// roughly a fifth of the one above it.
-		const double Height =
+		double Height =
 			Land * 0.26
 			+ Mountains * 0.64
 			+ Mid * (0.014 + Mountains * 0.034)
 			+ Micro * (0.0010 + Mountains * 0.0030);
 
+		// Near field -- 30 m down to about 1.9 m. T429.
+		//
+		// Everything above stops at a 33 m wavelength, which is why the ground
+		// was a plane for thirty metres in every direction from wherever you
+		// were standing. Nothing in the height function described anything
+		// smaller than a house.
+		//
+		// The amplitude is deliberately tiny: 0.00017 of MaxElevation is about
+		// 1.5 m, and it wants to stay that way. This band is the difference
+		// between ground and a plane at walking distance and it is invisible
+		// from a kilometre up; making it larger would put bumps on mountains
+		// that are supposed to read as mountains.
+		//
+		// **It is skipped entirely on any grid too coarse to resolve it**, and
+		// that is a load-bearing early-out rather than an optimisation. A patch
+		// at 4.8 m spacing sampling a 1.9 m wavelength does not get less
+		// detail, it gets a different random surface each time it is rebuilt at
+		// a different depth -- which is a shimmer, not a texture. See
+		// NearFieldStrength, and docs/comparisons/near-field/.
+		const double Near = NearFieldStrength(SampleSpacingMetres);
+		if (Near > 0.0)
+		{
+			const double Detail = LedgerNoise::Eroded(
+				UnitSphere * 1334000.0, Seed ^ 0x4D4Du, 5, 2.0);
+			Height += Detail * Near * 0.00017;
+		}
+
 		return Height * Params.MaxElevation;
 	}
 
-	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	double Elevation(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SampleSpacingMetres)
 	{
-		const double Generated = GeneratedElevation(UnitSphere, Params);
+		const double Generated =
+			GeneratedElevation(UnitSphere, Params, SampleSpacingMetres);
 		if (!Params.Delta.IsValid())
 		{
 			// The overwhelmingly common case, and the second half of T062's

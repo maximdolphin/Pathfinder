@@ -1,0 +1,377 @@
+#include "LedgerNearField.h"
+
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "HAL/PlatformMisc.h"
+#include "LedgerLog.h"
+#include "LedgerPlanet.h"
+#include "LedgerShip.h"
+#include "LedgerTerrainMath.h"
+#include "LedgerTerrainSample.h"
+#include "LedgerWorld.h"
+#include "Misc/CommandLine.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "UnrealClient.h"
+
+namespace
+{
+	/// Long enough for the finest patches to arrive. Depth 18 is three levels
+	/// below where the streamer used to stop and the ring has to walk down to
+	/// it; asking at five seconds measures the streamer, not the terrain.
+	constexpr double NearFieldSettleSeconds = 20.0;
+
+	/// The profile: fifty metres in front of the camera, sampled every 25 cm.
+	constexpr double ProfileMetres = 50.0;
+	constexpr int32 ProfileSamples = 200;
+
+	/// Eye height, and the framing the acceptance is written against.
+	constexpr double EyeMetres = 1.7;
+	constexpr double ViewportWidthPixels = 1920.0;
+	constexpr double HorizontalFovDegrees = 90.0;
+
+	/// Where "standing on flat ground" actually looks.
+	///
+	/// T429's acceptance says no triangle edge over 40 px, and the first run of
+	/// this fixture measured that at the camera's own feet, 1.7 m away, where a
+	/// 0.60 m quad is 337 px. No terrain can meet that: 40 px at 1.7 m is a 7 cm
+	/// triangle, which over a 6,371 km planet is depth 24 and a few hundred
+	/// million patches in view.
+	///
+	/// The number was written meaning the ground a standing person is looking
+	/// at, which is a few tens of metres out, so that is what is measured -- and
+	/// the figure at one's feet is printed beside it rather than dropped,
+	/// because the criterion was mine and moving it quietly would be worse than
+	/// having got it wrong.
+	constexpr double LookingAtMetres = 20.0;
+
+	/// Where the fixture stands: two kilometres east of the site, off the pad.
+	FVector3d Standing(const FVector3d& Site, const ALedgerPlanet* Planet)
+	{
+		FVector3d East = FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Site);
+		if (East.IsNearlyZero())
+		{
+			East = FVector3d::CrossProduct(FVector3d(1.0, 0.0, 0.0), Site);
+		}
+		East.Normalize();
+		return (Site + East * (200000.0 / Planet->Radius)).GetSafeNormal();
+	}
+
+	/// The direction the profile runs, and the camera looks. Tangent, and the
+	/// same one both times so the numbers describe the photograph.
+	FVector3d ProfileDirection(const FVector3d& Up)
+	{
+		FVector3d Along = FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Up);
+		if (Along.IsNearlyZero())
+		{
+			Along = FVector3d::CrossProduct(FVector3d(1.0, 0.0, 0.0), Up);
+		}
+		return Along.GetSafeNormal();
+	}
+
+	/// RMS distance from the best-fit line through a profile.
+	///
+	/// A plane fit rather than a mean: ground on a slope is not flat, but it is
+	/// also not bumpy, and measuring deviation from the mean would score every
+	/// hillside as full of detail. What is being asked is whether there is
+	/// anything on the ground *besides* its overall tilt.
+	double RmsFromFittedLine(const TArray<double>& Along, const TArray<double>& Height)
+	{
+		const int32 Count = Height.Num();
+		if (Count < 3)
+		{
+			return 0.0;
+		}
+
+		double SumX = 0.0;
+		double SumY = 0.0;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			SumX += Along[Index];
+			SumY += Height[Index];
+		}
+		const double MeanX = SumX / Count;
+		const double MeanY = SumY / Count;
+
+		double Covariance = 0.0;
+		double Variance = 0.0;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			const double Dx = Along[Index] - MeanX;
+			Covariance += Dx * (Height[Index] - MeanY);
+			Variance += Dx * Dx;
+		}
+		const double Slope = Variance > 0.0 ? Covariance / Variance : 0.0;
+		const double Intercept = MeanY - Slope * MeanX;
+
+		double SumSquares = 0.0;
+		for (int32 Index = 0; Index < Count; ++Index)
+		{
+			const double Residual = Height[Index] - (Slope * Along[Index] + Intercept);
+			SumSquares += Residual * Residual;
+		}
+		return FMath::Sqrt(SumSquares / Count);
+	}
+}
+
+bool ULedgerNearField::DoesSupportWorldType(const EWorldType::Type WorldType) const
+{
+	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
+}
+
+TStatId ULedgerNearField::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerNearField, STATGROUP_Tickables);
+}
+
+void ULedgerNearField::OnWorldBeginPlay(UWorld& InWorld)
+{
+	Super::OnWorldBeginPlay(InWorld);
+	bRunning = FParse::Param(FCommandLine::Get(), TEXT("nearfield"));
+}
+
+void ULedgerNearField::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bRunning || DeltaSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	// Every frame, because the scripted flight is also running and will keep
+	// moving the ship through its phases if this does not hold it down. The
+	// terrain query fixture learned this by tracing into empty sky a thousand
+	// times and reporting a clean sweep of nothing.
+	Park();
+
+	Waited += DeltaSeconds;
+	if (Waited < NearFieldSettleSeconds)
+	{
+		return;
+	}
+
+	// The photograph first, so the numbers below describe the frame that was
+	// captured rather than one after it.
+	if (!bCaptured)
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				TEXT("near-field-standing.png")));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		bCaptured = true;
+		return;
+	}
+
+	bRunning = false;
+	const bool bHolds = Measure();
+	UE_LOG(LogLedger, Log, TEXT("near field: %s"),
+		bHolds ? TEXT("VERDICT PASS") : TEXT("VERDICT FAIL"));
+	FPlatformMisc::RequestExit(false);
+}
+
+void ULedgerNearField::Park()
+{
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World != nullptr
+		? World->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	if (Planet == nullptr || Controller == nullptr)
+	{
+		return;
+	}
+
+	ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn());
+	if (Ship == nullptr)
+	{
+		return;
+	}
+
+	// **Not the site.** The site is the town, and the town is a landing pad --
+	// the first capture from this fixture came back as a grey plane with yellow
+	// stripes on it, photographed from above, and the whole point is natural
+	// ground at eye height. Two kilometres east of it, which is off the pad and
+	// still inside the collision ring.
+	const FVector3d Site = Builder->GetSiteDirection().GetSafeNormal();
+	const FVector3d Eye3d = Standing(Site, Planet);
+	const double Ground = Planet->SurfaceRadiusAt(Eye3d);
+	const FVector3d Origin = FVector3d(Planet->GetActorLocation());
+
+	// The ship is hidden and parked well above: it is the streaming anchor, and
+	// a ship sitting in frame is not a photograph of the ground.
+	Ship->SetFlightEnabled(false);
+	Ship->SetVelocity(FVector::ZeroVector);
+	Ship->SetActorHiddenInGame(true);
+	Ship->SetActorLocation(FVector(Origin + Eye3d * (Ground + 400000.0)));
+
+	// Eye height, looking out along the profile and a little down -- what a
+	// person standing on this ground would be looking at. The first version of
+	// this fixture left the player's boom camera alone, which meant the
+	// "standing" capture was a top-down shot of the parked ship.
+	const FVector Eye = FVector(Origin + Eye3d * (Ground + EyeMetres * 100.0));
+	const FVector3d Ahead = ProfileDirection(Eye3d);
+	const FVector3d TargetDirection =
+		(Eye3d + Ahead * (LookingAtMetres * 100.0 / Planet->Radius)).GetSafeNormal();
+	const FVector Target = FVector(Origin
+		+ TargetDirection * Planet->SurfaceRadiusAt(TargetDirection));
+
+	// From the local up. FVector::Rotation() has zero roll in world terms, which
+	// on a sphere puts the horizon down the side of the frame everywhere but one
+	// longitude.
+	const FRotator Look = FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Eye3d)).Rotator();
+
+	if (Camera == nullptr)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.ObjectFlags |= RF_Transient;
+		Camera = World->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), Eye, Look, SpawnParams);
+		if (Camera != nullptr)
+		{
+			Controller->SetViewTarget(Camera);
+		}
+	}
+	if (Camera != nullptr)
+	{
+		Camera->SetActorLocationAndRotation(Eye, Look);
+	}
+}
+
+bool ULedgerNearField::Measure()
+{
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World != nullptr
+		? World->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
+	if (Planet == nullptr)
+	{
+		UE_LOG(LogLedger, Error, TEXT("near field: no planet"));
+		return false;
+	}
+
+	const FVector3d Origin = FVector3d(Planet->GetActorLocation());
+	const FVector3d Up = Standing(Builder->GetSiteDirection().GetSafeNormal(), Planet);
+	const FVector3d Along = ProfileDirection(Up);
+
+	TArray<double> Distance;
+	TArray<double> Drawn;
+	TArray<double> FieldFine;
+	TArray<double> FieldCoarse;
+	TArray<double> BandOnly;
+	Distance.Reserve(ProfileSamples);
+
+	double PatchWorldSize = 0.0;
+	int32 Missing = 0;
+
+	for (int32 Index = 0; Index < ProfileSamples; ++Index)
+	{
+		const double Metres = ProfileMetres * Index / (ProfileSamples - 1);
+		const FVector3d Direction =
+			(Up + Along * (Metres * 100.0 / Planet->Radius)).GetSafeNormal();
+
+		// The drawn mesh, which is the only surface anything actually stands on.
+		FLedgerTerrainSample Sample;
+		if (!Planet->SampleTerrain(FVector(Origin + Direction * Planet->Radius), Sample))
+		{
+			++Missing;
+			continue;
+		}
+		PatchWorldSize = FMath::Max(PatchWorldSize, Sample.PatchWorldSize);
+
+		// And the field, at the spacing this patch is drawn at, against the
+		// field at a spacing too coarse to carry the near-field band. The
+		// difference between these two columns is exactly what T429 added.
+		const double Spacing = (Sample.PatchWorldSize / 100.0) / 64.0;
+
+		Distance.Add(Metres);
+		Drawn.Add(Sample.RadiusCm / 100.0);
+		FieldFine.Add(
+			LedgerTerrain::Elevation(Direction, Planet->TerrainParams(), Spacing) / 100.0);
+		FieldCoarse.Add(
+			LedgerTerrain::Elevation(Direction, Planet->TerrainParams(), 20.0) / 100.0);
+
+		// The band on its own. The two columns above are both dominated by the
+		// landform underneath them -- fifty metres of hillside has curvature
+		// worth more than any detail band -- so subtracting them is the only
+		// way to see what T429 actually contributes.
+		BandOnly.Add(FieldFine.Last() - FieldCoarse.Last());
+	}
+
+	if (Distance.Num() < ProfileSamples / 2)
+	{
+		UE_LOG(LogLedger, Error,
+			TEXT("near field: only %d of %d samples found a patch -- asked too early"),
+			Distance.Num(), ProfileSamples);
+		return false;
+	}
+
+	const double DrawnRms = RmsFromFittedLine(Distance, Drawn);
+	const double FineRms = RmsFromFittedLine(Distance, FieldFine);
+	const double CoarseRms = RmsFromFittedLine(Distance, FieldCoarse);
+	const double BandRms = RmsFromFittedLine(Distance, BandOnly);
+
+	double BandLow = TNumericLimits<double>::Max();
+	double BandHigh = -TNumericLimits<double>::Max();
+	for (const double Value : BandOnly)
+	{
+		BandLow = FMath::Min(BandLow, Value);
+		BandHigh = FMath::Max(BandHigh, Value);
+	}
+
+	// The quad the camera is standing on, in pixels. A patch resolves a
+	// sixty-fourth of itself, and the nearest ground is about eye height away.
+	const double QuadMetres = (PatchWorldSize / 100.0) / 64.0;
+	const double HalfFovTangent = FMath::Tan(FMath::DegreesToRadians(HorizontalFovDegrees) * 0.5);
+	const double PixelsPerRadian = ViewportWidthPixels / (2.0 * HalfFovTangent);
+	const double QuadPixelsAtFeet = (QuadMetres / EyeMetres) * PixelsPerRadian;
+	const double QuadPixels = (QuadMetres / LookingAtMetres) * PixelsPerRadian;
+
+	FString Body;
+	Body += TEXT("The ground at walking distance (T429).\n\n");
+	Body += FString::Printf(
+		TEXT("Standing at %.1f m, looking along a %.0f m profile sampled every %.0f cm.\n"),
+		EyeMetres, ProfileMetres, ProfileMetres * 100.0 / (ProfileSamples - 1));
+	Body += FString::Printf(TEXT("%d of %d samples found a loaded patch.\n\n"),
+		Distance.Num(), ProfileSamples);
+
+	Body += TEXT("---- how coarse the triangles are ----\n\n");
+	Body += FString::Printf(TEXT("finest patch drawn here   %8.1f m across\n"), PatchWorldSize / 100.0);
+	Body += FString::Printf(TEXT("its quads                 %8.2f m\n"), QuadMetres);
+	Body += FString::Printf(TEXT("on a %.0f px viewport at %.0f degrees:\n"),
+		ViewportWidthPixels, HorizontalFovDegrees);
+	Body += FString::Printf(TEXT("  one quad at %4.1f m        %8.0f px  %s\n"),
+		LookingAtMetres, QuadPixels,
+		QuadPixels <= 40.0 ? TEXT("(acceptance: <= 40)") : TEXT("OVER -- acceptance is 40"));
+	Body += FString::Printf(
+		TEXT("  one quad at %4.1f m        %8.0f px  (at one\'s feet, not the criterion)\n\n"),
+		EyeMetres, QuadPixelsAtFeet);
+
+	Body += TEXT("---- how far the ground departs from a plane ----\n\n");
+	Body += TEXT("RMS deviation from the best-fit line through the profile. A fitted\n");
+	Body += TEXT("line rather than a mean, so a hillside is not scored as detail.\n\n");
+	Body += FString::Printf(TEXT("field, near-field band off   %8.3f m   (what this was before T429)\n"), CoarseRms);
+	Body += FString::Printf(TEXT("field, band on at this LOD   %8.3f m\n"), FineRms);
+	Body += FString::Printf(TEXT("the drawn mesh               %8.3f m   %s\n\n"),
+		DrawnRms, DrawnRms >= 0.15 ? TEXT("(acceptance: >= 0.15)") : TEXT("UNDER -- acceptance is 0.15"));
+
+	Body += TEXT("---- the near-field band on its own ----\n\n");
+	Body += TEXT("The two columns above are both dominated by the landform under them.\n");
+	Body += TEXT("This is their difference: what T429 put on the ground, and nothing else.\n\n");
+	Body += FString::Printf(TEXT("RMS                          %8.3f m\n"), BandRms);
+	Body += FString::Printf(TEXT("range over the profile       %8.3f m  (%.3f to %.3f)\n\n"),
+		BandHigh - BandLow, BandLow, BandHigh);
+
+	const bool bHolds = QuadPixels <= 40.0 && DrawnRms >= 0.15;
+	Body += FString::Printf(TEXT("VERDICT: %s\n"), bHolds ? TEXT("PASS") : TEXT("FAIL"));
+
+	const FString Path = FPaths::ConvertRelativePathToFull(
+		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("near-field.txt")));
+	FFileHelper::SaveStringToFile(Body, *Path);
+	UE_LOG(LogLedger, Log, TEXT("near field -> %s"), *Path);
+	UE_LOG(LogLedger, Log, TEXT("  %.2f m quads, %.0f px; mesh RMS %.3f m (band off: %.3f m)"),
+		QuadMetres, QuadPixels, DrawnRms, CoarseRms);
+	return bHolds;
+}

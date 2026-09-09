@@ -412,9 +412,19 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
 	int32 GridResolution = 65;
 
-	/// 15 levels of 64-quad patches over a 6,371 km planet: ~4.8 m quads.
+	/// 18 levels of 64-quad patches over a 6,371 km planet: 0.60 m quads.
+	///
+	/// It was 15, which is 4.77 m, and that was the hard floor on how good the
+	/// ground could ever look. Standing twenty metres from a quad at 1920 px
+	/// and 90 degrees horizontal, one triangle edge was 229 pixels wide. No
+	/// amount of material work fixes a surface made of quarter-screen facets.
+	///
+	/// Three levels rather than more because the near-field band that gives
+	/// these triangles something to describe bottoms out around 1.9 m (T429),
+	/// and triangles finer than the field they sample are triangles
+	/// interpolating a plane more expensively.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Planet")
-	int32 MaxDepth = 15;
+	int32 MaxDepth = 18;
 
 	/// Subdivide when a node's projected error exceeds this many pixels.
 	/// Paired with the patch resolution above: together they set how many

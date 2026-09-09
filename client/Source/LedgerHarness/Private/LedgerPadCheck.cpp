@@ -22,7 +22,7 @@ namespace
 
 	/// Long enough for the collision ring to fill, twice: once before the edit
 	/// and once after it, because levelling drops every patch.
-	constexpr double SettleSeconds = 12.0;
+	constexpr double PadSettleSeconds = 12.0;
 
 	/// How flat is flat. The mesh resolves 4.8 m at the finest LOD and the pad
 	/// is a plane, so the only error is the interpolation of a plane, which is
@@ -79,7 +79,7 @@ void ULedgerPadCheck::Tick(float DeltaSeconds)
 	}
 
 	Waited += DeltaSeconds;
-	if (Waited < SettleSeconds)
+	if (Waited < PadSettleSeconds)
 	{
 		return;
 	}
@@ -237,11 +237,11 @@ bool ULedgerPadCheck::Report()
 	// the delta. Far, because near it the delta is doing real work and the
 	// question is what it costs where it is not.
 	const FVector3d Elsewhere = FVector3d(-Site.Y, Site.Z, -Site.X).GetSafeNormal();
-	constexpr int32 Samples = 200000;
+	constexpr int32 PadSamples = 200000;
 
 	double Sink = 0.0;
 	const double BareStarted = FPlatformTime::Seconds();
-	for (int32 Index = 0; Index < Samples; ++Index)
+	for (int32 Index = 0; Index < PadSamples; ++Index)
 	{
 		const FVector3d Point =
 			(Elsewhere + FVector3d(Index * 1e-9, Index * 2e-9, 0.0)).GetSafeNormal();
@@ -250,7 +250,7 @@ bool ULedgerPadCheck::Report()
 	const double BareMs = (FPlatformTime::Seconds() - BareStarted) * 1000.0;
 
 	const double DeltaStarted = FPlatformTime::Seconds();
-	for (int32 Index = 0; Index < Samples; ++Index)
+	for (int32 Index = 0; Index < PadSamples; ++Index)
 	{
 		const FVector3d Point =
 			(Elsewhere + FVector3d(Index * 1e-9, Index * 2e-9, 0.0)).GetSafeNormal();
@@ -261,7 +261,7 @@ bool ULedgerPadCheck::Report()
 	Body += FString::Printf(
 		TEXT("%d height samples away from the pad: %.1f ms without the delta, "
 		     "%.1f ms with it (%+.1f%%)\n"),
-		Samples, BareMs, DeltaMs,
+		PadSamples, BareMs, DeltaMs,
 		BareMs > 0.0 ? 100.0 * (DeltaMs - BareMs) / BareMs : 0.0);
 	Body += FString::Printf(TEXT("(checksum %.0f, so neither loop was optimised away)\n"),
 		FMath::Abs(Sink));

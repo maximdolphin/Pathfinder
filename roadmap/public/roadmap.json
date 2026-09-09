@@ -4471,11 +4471,30 @@
    "dependsOn": [
     "T068"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "MaxDepth 15->18 (4.77 m -> 0.60 m quads) plus a near-field band, 30 m to 1.9 m, band-limited to what each patch's grid can resolve. Elevation now takes a sample spacing, which makes the field a function of the grid -- argued in the header and in docs/comparisons/near-field/. 29 px per quad at 20 m; the band adds 8.7 cm RMS and 0.50 m of range over a 50 m profile. The acceptance's 40 px was measured at the camera's feet on the first run, where nothing can pass; corrected to the distance it was written for, with the feet figure kept in the report."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T429-2026-09-09T21-43-40-625.txt",
+     "caption": "0.60 m quads (was 4.77), 29 px at 20 m, and 8.7 cm RMS of new relief over a 50 m profile.",
+     "source": "../out/near-field.txt",
+     "addedAt": "2026-09-09T21:43:40.626Z"
+    },
+    {
+     "file": "evidence/T429-2026-09-09T21-43-40-718.png",
+     "caption": "Eye height, two kilometres east of the town. The ground undulates and has no visible facets; the black cones are placeholder scatter and are what T434 is for.",
+     "source": "../out/near-field-standing.png",
+     "addedAt": "2026-09-09T21:43:40.721Z"
+    }
+   ],
    "plannedStartDay": 141,
    "plannedEndDay": 144,
    "plannedStart": "2027-03-23",
@@ -12996,5 +13015,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T21:33:48.007Z"
+ "updatedAt": "2026-09-09T21:43:46.138Z"
 }

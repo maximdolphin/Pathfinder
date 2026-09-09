@@ -17,7 +17,7 @@
 
 namespace
 {
-	constexpr double SettleSeconds = 6.0;
+	constexpr double CliffSettleSeconds = 6.0;
 
 	/// The spacing slope is measured at: the finest the mesh resolves, a node
 	/// edge of 305 m over 64 quads. A slope finer than that is a slope no
@@ -50,7 +50,7 @@ namespace
 		{ TEXT("cliff-wide.png"),   1.60,  0.55 },
 	};
 
-	FVector3d OnSphere(double LatitudeDegrees, double LongitudeDegrees)
+	FVector3d CliffOnSphere(double LatitudeDegrees, double LongitudeDegrees)
 	{
 		const double Lat = FMath::DegreesToRadians(LatitudeDegrees);
 		const double Lon = FMath::DegreesToRadians(LongitudeDegrees);
@@ -92,7 +92,7 @@ bool ULedgerCliffSite::FindFace()
 	{
 		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 0.2)
 		{
-			const FVector3d Point = OnSphere(Latitude, Longitude);
+			const FVector3d Point = CliffOnSphere(Latitude, Longitude);
 
 			// Lit, because a black frame cannot tell rock from nothing -- three
 			// captures were misread that way in one session before every
@@ -258,7 +258,7 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < SettleSeconds)
+	if (Settle < CliffSettleSeconds)
 	{
 		return;
 	}

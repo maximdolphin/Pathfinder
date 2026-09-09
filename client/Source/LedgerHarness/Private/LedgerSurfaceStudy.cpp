@@ -34,7 +34,7 @@ namespace
 	// shadow of a rise a few hundred metres away -- correct, and a photograph
 	// of a shadow. Twenty still rakes hard enough to throw the surface into
 	// relief and clears the terrain's own shadowing.
-	constexpr double SettleSeconds = 4.0;
+	constexpr double StudySettleSeconds = 4.0;
 
 	/// One photograph: where the camera stands, what it looks at, where the sun is.
 	struct FStudyShot
@@ -72,7 +72,7 @@ void ULedgerSurfaceStudy::OnWorldBeginPlay(UWorld& InWorld)
 
 	bRunning = true;
 	UE_LOG(LogLedger, Log, TEXT("surface study: %d shots, %.0f s settle each"),
-		UE_ARRAY_COUNT(StudyShots), SettleSeconds);
+		UE_ARRAY_COUNT(StudyShots), StudySettleSeconds);
 }
 
 void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
@@ -107,7 +107,7 @@ void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < SettleSeconds)
+	if (Settle < StudySettleSeconds)
 	{
 		return;
 	}

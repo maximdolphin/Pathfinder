@@ -21,7 +21,7 @@ namespace
 	/// disagreement between the API and the trace -- it is a question asked too
 	/// early. Both are supposed to say "nothing here", and this waits so that
 	/// the run measures the interesting case.
-	constexpr double SettleSeconds = 12.0;
+	constexpr double QuerySettleSeconds = 12.0;
 
 	constexpr int32 Queries = 1000;
 
@@ -89,7 +89,7 @@ void ULedgerTerrainQueryCheck::Tick(float DeltaSeconds)
 	}
 
 	Waited += DeltaSeconds;
-	if (Waited < SettleSeconds)
+	if (Waited < QuerySettleSeconds)
 	{
 		return;
 	}

@@ -1,0 +1,31 @@
+The ground at walking distance (T429).
+
+Standing at 1.7 m, looking along a 50 m profile sampled every 25 cm.
+200 of 200 samples found a loaded patch.
+
+---- how coarse the triangles are ----
+
+finest patch drawn here       38.2 m across
+its quads                     0.60 m
+on a 1920 px viewport at 90 degrees:
+  one quad at 20.0 m              29 px  (acceptance: <= 40)
+  one quad at  1.7 m             337 px  (at one's feet, not the criterion)
+
+---- how far the ground departs from a plane ----
+
+RMS deviation from the best-fit line through the profile. A fitted
+line rather than a mean, so a hillside is not scored as detail.
+
+field, near-field band off      0.137 m   (what this was before T429)
+field, band on at this LOD      0.183 m
+the drawn mesh                  0.179 m   (acceptance: >= 0.15)
+
+---- the near-field band on its own ----
+
+The two columns above are both dominated by the landform under them.
+This is their difference: what T429 put on the ground, and nothing else.
+
+RMS                             0.087 m
+range over the profile          0.500 m  (-0.389 to 0.111)
+
+VERDICT: PASS

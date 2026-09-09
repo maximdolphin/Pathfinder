@@ -129,7 +129,30 @@ namespace LedgerTerrain
 	/// transect that reports it is a transect that can be calibrated against.
 	LEDGERTERRAIN_API double OffshoreParameter(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
 
-	LEDGERTERRAIN_API double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
+	/// `SampleSpacingMetres` is the distance between neighbouring vertices on
+	/// the grid this sample belongs to, and it band-limits the near-field
+	/// detail band (30 m down to 1.9 m, under 1.5 m of amplitude) to what that
+	/// grid can actually resolve.
+	///
+	/// **This makes the height field a function of the grid as well as the
+	/// position, which is a change to an invariant and is deliberate.** Two
+	/// patches at different depths now disagree about the ground between them
+	/// by up to a metre and a half. The alternatives were worse: without a
+	/// near-field band the ground is a plane for thirty metres in every
+	/// direction, and with an unlimited one a coarse patch samples a 1.9 m
+	/// wavelength at 4.8 m spacing and produces a different random surface
+	/// every time it is rebuilt at a different depth.
+	///
+	/// The disagreement is bounded and already handled: LOD transitions morph
+	/// (T048), and SampleTerrain reads the drawn mesh rather than this function
+	/// (T061), so collision and queries agree with what is on screen by
+	/// construction rather than by luck.
+	///
+	/// Zero -- the default -- means no grid: the full field, which is what
+	/// SurfaceRadiusAt and the diagnostics want.
+	LEDGERTERRAIN_API double Elevation(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SampleSpacingMetres = 0.0);
 
 	/// The pieces Elevation multiplies together, for diagnosis.
 	///

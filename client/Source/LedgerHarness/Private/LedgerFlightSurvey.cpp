@@ -151,12 +151,12 @@ void ULedgerFlightHarness::FrameCoast()
 	FVector3d BestSeaward = FVector3d::ZeroVector;
 	double BestScore = -MAX_dbl;
 
-	constexpr int32 Samples = 8192;
+	constexpr int32 SurveySamples = 8192;
 	const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
 
-	for (int32 Index = 0; Index < Samples; ++Index)
+	for (int32 Index = 0; Index < SurveySamples; ++Index)
 	{
-		const double Y = 1.0 - (static_cast<double>(Index) / (Samples - 1)) * 2.0;
+		const double Y = 1.0 - (static_cast<double>(Index) / (SurveySamples - 1)) * 2.0;
 		const double RadiusAtY = FMath::Sqrt(FMath::Max(0.0, 1.0 - Y * Y));
 		const double Theta = GoldenAngle * static_cast<double>(Index);
 		const FVector3d Candidate = FVector3d(

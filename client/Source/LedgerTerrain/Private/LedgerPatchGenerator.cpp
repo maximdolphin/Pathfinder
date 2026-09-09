@@ -127,6 +127,12 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	// Everything expensive about this patch, if this machine has built it
 	// before: the elevation grid, the vertex colours the climate produced, the
 	// palette and the scatter. What is left below is arithmetic.
+	// What this patch can resolve, which decides how much of the near-field
+	// detail band it is allowed to see (T429). WorldSize is centimetres across
+	// the whole patch; Side vertices leave Side-1 gaps.
+	const double SpacingMetres =
+		(Job.WorldSize / 100.0) / FMath::Max(1, FMath::Max(3, Job.Side | 1) - 1);
+
 	const bool bFromDisk = LedgerPatchDisk::Load(Job);
 
 	TArray<double>& Elevations = Job.Elevations;
@@ -175,7 +181,7 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			// The one line the whole disk cache exists for.
 			const double Elevation = bFromDisk
 				? Elevations[Index]
-				: LedgerTerrain::Elevation(UnitSphere, Job.Params);
+				: LedgerTerrain::Elevation(UnitSphere, Job.Params, SpacingMetres);
 			const FVector3d Surface = UnitSphere * (Job.Params.Radius + Elevation);
 			// Relative to the node centre: this is what keeps float precision
 			// local, and it is why the same code works at planetary scale.

@@ -18,7 +18,7 @@ namespace
 	/// this found zero land ranges on the whole planet, which was a statement
 	/// about the sampling rather than about the terrain.
 	constexpr double LatitudeStep = 0.25;
-	constexpr int32 Samples = 361;
+	constexpr int32 TransectSamples = 361;
 
 	/// Prominence that makes a bump a range, in metres.
 	///
@@ -217,8 +217,8 @@ bool ULedgerClimateTransect::WriteTransect()
 	for (const double Longitude : Meridians)
 	{
 		TArray<FSample> Walk;
-		Walk.Reserve(Samples);
-		for (int32 Index = 0; Index < Samples; ++Index)
+		Walk.Reserve(TransectSamples);
+		for (int32 Index = 0; Index < TransectSamples; ++Index)
 		{
 			// Pole to equator: 90 degrees down to 0.
 			const double Latitude = 90.0 - static_cast<double>(Index) * LatitudeStep;
@@ -300,8 +300,8 @@ bool ULedgerClimateTransect::WriteTransect()
 	for (int32 Longitude = 0; Longitude < 360; ++Longitude)
 	{
 		TArray<double> Heights;
-		Heights.Reserve(Samples);
-		for (int32 Index = 0; Index < Samples; ++Index)
+		Heights.Reserve(TransectSamples);
+		for (int32 Index = 0; Index < TransectSamples; ++Index)
 		{
 			const double Latitude = 90.0 - static_cast<double>(Index) * LatitudeStep;
 			Heights.Add(LedgerTerrain::Elevation(
