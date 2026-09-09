@@ -328,6 +328,22 @@ major ranges, searched every degree of longitude:
 every wind-crossing ridge: 572 of 1018 drier on the lee side (56%)
 fifty per cent is a coin toss and means there is no shadow.
 
+
+biomes over 19426 land points, 8 loaded:
+  Ice cap                 22.9% of land by area
+  Tundra                  14.4% of land by area
+  Boreal forest            1.2% of land by area
+  Temperate forest         1.5% of land by area
+  Temperate grassland      5.7% of land by area
+  Savanna                  3.7% of land by area
+  Desert                  48.1% of land by area
+  Tropical rainforest      2.4% of land by area
+  in a transition (no biome above 75% weight): 31.9%
+
+
+land slope at the mesh vertex spacing of 4.8 m, 19426 points:
+  p50 4.2  p90 12.3  p99 25.7  max 57.0 degrees
+  at or above 30 degrees: 0.42%   at or above 60: 0.000%
 sea-level temperature monotonic pole to equator: yes
 major ranges found 2, of which with a rain shadow 2
 every wind-crossing ridge shadowed: 56% (needs 75)

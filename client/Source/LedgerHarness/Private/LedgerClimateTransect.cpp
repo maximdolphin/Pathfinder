@@ -458,6 +458,69 @@ bool ULedgerClimateTransect::WriteTransect()
 			LandArea > 0.0 ? 100.0 * Blended / LandArea : 0.0);
 	}
 
+	// ---- how steep does this planet get? ---------------------------------
+	//
+	// T054 wants a sixty-degree face reading as rock with bedding. Whether one
+	// exists is a property of the height function, not of the material, and it
+	// is measurable: the finest the mesh resolves is a node edge of 305 m over
+	// 64 quads, about 4.8 m, so slope is sampled at that spacing. Anything
+	// finer than the mesh is a slope no vertex has.
+	{
+		TArray<double> Slopes;
+		const double Step = 480.0 / Params.Radius; // 4.8 m as an arc
+		for (int32 LatStep = -85; LatStep <= 85; LatStep += 1)
+		{
+			for (int32 LonStep = 0; LonStep < 360; LonStep += 1)
+			{
+				const FVector3d Point = OnMeridian(LatStep, LonStep);
+				const double Height = LedgerTerrain::Elevation(Point, Params);
+				if (Height <= 0.0)
+				{
+					continue;
+				}
+
+				FVector3d PointEast =
+					FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Point).GetSafeNormal();
+				const FVector3d PointNorth =
+					FVector3d::CrossProduct(Point, PointEast).GetSafeNormal();
+
+				const double Rise = FVector2d(
+					LedgerTerrain::Elevation(
+						(Point * FMath::Cos(Step) + PointEast * FMath::Sin(Step)).GetSafeNormal(),
+						Params) - Height,
+					LedgerTerrain::Elevation(
+						(Point * FMath::Cos(Step) + PointNorth * FMath::Sin(Step)).GetSafeNormal(),
+						Params) - Height).Length();
+				Slopes.Add(FMath::RadiansToDegrees(FMath::Atan2(Rise, 480.0)));
+			}
+		}
+
+		Slopes.Sort();
+		auto Percentile = [&Slopes](double Fraction)
+		{
+			return Slopes.Num() == 0 ? 0.0
+				: Slopes[FMath::Clamp(FMath::FloorToInt32(Fraction * Slopes.Num()),
+					0, Slopes.Num() - 1)];
+		};
+
+		int32 OverSixty = 0;
+		int32 OverThirty = 0;
+		for (const double Slope : Slopes)
+		{
+			if (Slope >= 60.0) { ++OverSixty; }
+			if (Slope >= 30.0) { ++OverThirty; }
+		}
+
+		Body += FString::Printf(
+			TEXT("\nland slope at the mesh vertex spacing of 4.8 m, %d points:\n"
+				 "  p50 %.1f  p90 %.1f  p99 %.1f  max %.1f degrees\n"
+				 "  at or above 30 degrees: %.2f%%   at or above 60: %.3f%%\n"),
+			Slopes.Num(), Percentile(0.50), Percentile(0.90), Percentile(0.99),
+			Slopes.Num() > 0 ? Slopes.Last() : 0.0,
+			Slopes.Num() > 0 ? 100.0 * OverThirty / Slopes.Num() : 0.0,
+			Slopes.Num() > 0 ? 100.0 * OverSixty / Slopes.Num() : 0.0);
+	}
+
 	// Both, not either. Two ranges finding a shadow apiece is consistent with
 	// chance when the population sits at a coin toss, and a verdict that can
 	// pass on two lucky landmarks is a verdict that cannot fail.

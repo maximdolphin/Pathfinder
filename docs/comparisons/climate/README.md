@@ -119,6 +119,22 @@ renormalisation against the field's own distribution — is a decision about how
 the world should look. The diagnosis is the deliverable; the reshaping is not
 mine to choose.
 
+### And there are no cliffs either
+
+The same survey, at the finest spacing the mesh resolves — a node edge of 305 m
+over 64 quads, so 4.8 m. A slope finer than that is a slope no vertex has:
+
+```
+land slope at the mesh vertex spacing of 4.8 m, 19426 points:
+  p50 4.2  p90 12.3  p99 25.7  max 57.0 degrees
+  at or above 30 degrees: 0.42%   at or above 60: 0.000%
+```
+
+**The steepest ground on the planet is 57 degrees, and there is one of it.**
+T054 asks for a sixty-degree face reading as rock with bedding, with scree at
+its foot; neither the face nor the foot exists. That is the same root cause as
+the missing rain shadow, measured a second way.
+
 ## Where this leaves T051
 
 The climate model is written, tested and correct for everything that can be
