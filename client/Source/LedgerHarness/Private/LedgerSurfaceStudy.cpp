@@ -29,6 +29,11 @@ namespace
 	// surface and is the only condition in which height and normal detail can
 	// be judged at all. Photograph only at noon and you cannot tell a normal
 	// map from a painted-on one.
+	//
+	// Twenty degrees rather than eight. At eight the foreground sat in the
+	// shadow of a rise a few hundred metres away -- correct, and a photograph
+	// of a shadow. Twenty still rakes hard enough to throw the surface into
+	// relief and clears the terrain's own shadowing.
 	constexpr double SettleSeconds = 4.0;
 
 	/// One photograph: where the camera stands, what it looks at, where the sun is.
@@ -42,11 +47,11 @@ namespace
 
 	const FStudyShot StudyShots[] =
 	{
-		{ TEXT("surface-boots-low.png"),    1.7,     6.0,  8.0 },
+		{ TEXT("surface-boots-low.png"),    1.7,     6.0, 20.0 },
 		{ TEXT("surface-boots-high.png"),   1.7,     6.0, 62.0 },
-		{ TEXT("surface-field-low.png"),   12.0,    90.0,  8.0 },
+		{ TEXT("surface-field-low.png"),   12.0,    90.0, 20.0 },
 		{ TEXT("surface-field-high.png"),  12.0,    90.0, 62.0 },
-		{ TEXT("surface-hill-low.png"),   140.0,  1400.0,  8.0 },
+		{ TEXT("surface-hill-low.png"),   140.0,  1400.0, 20.0 },
 		{ TEXT("surface-hill-high.png"),  140.0,  1400.0, 62.0 },
 	};
 }
@@ -109,9 +114,14 @@ void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
 
 	if (!bCaptured)
 	{
+		// The noise comparison writes alongside rather than over: the gate is a
+		// side-by-side, and a comparison that overwrites one of its two halves
+		// is not one.
+		const FString Prefix = FParse::Param(FCommandLine::Get(), TEXT("noisesurface"))
+			? TEXT("noise-") : TEXT("");
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
-				FString(StudyShots[Index].Name)));
+				Prefix + FString(StudyShots[Index].Name)));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
 		UE_LOG(LogLedger, Log, TEXT("surface study -> %s"), *Path);
 		bCaptured = true;
@@ -237,10 +247,28 @@ void ULedgerSurfaceStudy::Place()
 	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
 	{
 		++Lights;
+
+		// Elevation is varied; azimuth is kept exactly as the world chose it.
+		//
+		// Not a cosmetic choice. An earlier version picked its own azimuth --
+		// due north of the site -- and every frame came back with the whole
+		// world unlit, terrain and trees alike, while the sky rendered a
+		// perfectly good midday blue. Rotating the light to the direction it
+		// already had left the world lit, which ruled out the rotation itself
+		// and left the direction. Keeping the world's azimuth and moving only
+		// the sun's height is also the more honest study: it is the same place
+		// on the same day at two times, rather than two different suns.
+		const FVector3d WorldSun = Builder->GetSunFacing().GetSafeNormal();
+		FVector3d Horizontal = WorldSun - Up * FVector3d::DotProduct(WorldSun, Up);
+		if (Horizontal.IsNearlyZero())
+		{
+			Horizontal = North;
+		}
+		Horizontal.Normalize();
+
+		const double Elevation = FMath::DegreesToRadians(Current.SunElevationDegrees);
 		const FVector3d Direction =
-			(Up * FMath::Sin(FMath::DegreesToRadians(Current.SunElevationDegrees))
-			 - North * FMath::Cos(FMath::DegreesToRadians(Current.SunElevationDegrees)))
-			.GetSafeNormal();
+			(Up * FMath::Sin(Elevation) + Horizontal * FMath::Cos(Elevation)).GetSafeNormal();
 		It->SetActorRotation((-FVector(Direction)).Rotation());
 
 		if (!bCaptured && Settle == 0.0)
