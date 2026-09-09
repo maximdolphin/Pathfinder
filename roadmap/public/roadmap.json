@@ -171,7 +171,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 8
+   "doneCount": 9
   },
   {
    "id": "M02",
@@ -3177,11 +3177,40 @@
    "dependsOn": [
     "T422"
    ],
-   "status": "active",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Measured. UProceduralMeshComponent kept: over the same flight it uploads 121,918 patches to the static backend's 8,212, and finishes with 6 holes against 2,584. The static run's p99 is lower (29.0 vs 33.1 ms) only because it is drawing a starved world -- compare_captures puts the worst channel difference between the two runs at 199 against a limit of 16."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "The comparison also produced the answer to a question nobody had asked: the terrain tick's cost was never the upload. Breaking ALedgerPlanet::Tick into phases put the LOD tree walk at 24 ms and upload at 7. UpdateTree was taking a full fractal elevation sample per visited node per frame for a value that never changes; caching it on the node took the ridge sweep from 18.8 ms of terrain to 11.2 and the flight p99 from 43.3 to 35.1."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "docs/comparisons/terrain-component.md, five runs kept under docs/comparisons/terrain-component/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T423-2026-09-09T12-13-50-108.png",
+     "caption": "The static backend starved: 2,584 holes, town and trees on open water",
+     "source": "../docs/comparisons/terrain-component/static-captures/terrain-town.png",
+     "addedAt": "2026-09-09T12:13:50.110Z"
+    },
+    {
+     "file": "evidence/T423-2026-09-09T12-13-54-254.md",
+     "caption": "The written comparison, with both runs' raw reports",
+     "source": "../docs/comparisons/terrain-component.md",
+     "addedAt": "2026-09-09T12:13:54.256Z"
+    }
+   ],
    "plannedStartDay": 69.5,
    "plannedEndDay": 73.5,
    "plannedStart": "2026-12-11",
@@ -12347,5 +12376,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T11:51:01.922Z"
+ "updatedAt": "2026-09-09T12:13:54.324Z"
 }

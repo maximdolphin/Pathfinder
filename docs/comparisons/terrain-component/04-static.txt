@@ -1,0 +1,46 @@
+Frame times for the scripted flight.
+
+VALID ONLY ON AN IDLE MACHINE. Anything else using the GPU is measured
+as part of this. A day went into optimising a cloud pass that costs
+0.24 ms, because the profile saying 90 ms was taken through another
+game running behind the capture.
+
+budget 16.7 ms (60 fps), warm-up 6 s excluded from the verdict
+
+phase              frames    mean   median     p95     p99     max   over    game  render     gpu terrain
+startup              1311    10.7    13.8    23.1    25.7    60.7    33%     4.3   336.9     2.4    2.34   (warm-up)
+orbit                 221    18.2    16.7    16.8    17.0   366.1    66%     1.8    16.6     2.8    0.10
+descent              1367    17.5    21.9    27.1    28.4    30.6    57%    14.9     8.4     5.4   13.53
+atmospheric entry    1474    17.6    16.7    23.9    27.3   400.0    54%    16.1     5.4     5.6   14.55
+surface               567    17.6    16.9    19.3    20.3   179.8    71%    17.6     0.0     6.8   14.35
+town                  564    17.7    16.9    19.6    21.7   177.3    82%    17.7     0.0     6.9   14.59
+ridge sweep          1941    18.5    18.0    20.5    21.1   174.1   100%    18.5     0.0     5.1   15.54
+coast                 422    19.0    18.1    24.1    27.4    41.7    89%    18.9     0.0     5.0   16.06
+underwater            295    27.1    26.4    29.7    30.1    60.4   100%    27.0     0.0     7.2   24.02
+ascent                614    22.8    24.8    28.0    29.3    57.4    82%    22.8     0.0     3.1   19.85
+space                 277    21.7    24.4    27.8    30.0    32.2    74%    21.7     0.0     5.8   18.77
+
+overall  7742 frames, mean 18.9 ms (53 fps), p99 29.0 ms, max 400.0 ms
+         76.2% of frames over budget
+
+p99 per phase, one column per millisecond:
+  startup              25.7 |##########################
+  orbit                17.0 |#################
+  descent              28.4 |############################
+  atmospheric entry    27.3 |###########################
+  surface              20.3 |####################
+  town                 21.7 |######################
+  ridge sweep          21.1 |#####################
+  coast                27.4 |###########################
+  underwater           30.1 |##############################
+  ascent               29.3 |#############################
+  space                30.0 |##############################
+
+VERDICT: FAIL (p99 29.0 ms against a 16.7 ms budget)
+[2026.09.09-12.05.38:786][  0]LogLedger: terrain component type: static (pool 3600)
+[2026.09.09-12.05.39:625][  2]LogLedger: static patch: 8192 land tris, 8192 water tris -> 2 sections, 2 materials
+[2026.09.09-12.08.35:331][812]LogLedger:   visible nodes      247  (deepest depth 4)
+[2026.09.09-12.08.35:331][812]LogLedger:   holes              0 now, 2584 worst at t=143s
+[2026.09.09-12.08.35:331][812]LogLedger:   upload ms (game)   last 0.008  worst 37.912
+[2026.09.09-12.08.35:331][812]LogLedger:   tick ms (worst)    tree 14.84  harvest 41.59  collect 0.56  sort 0.89  imbalance 0.75  whole tick 41.64
+[2026.09.09-12.08.35:331][812]LogLedger:   patch cache        0 hit / 8345 generated (0% reused)

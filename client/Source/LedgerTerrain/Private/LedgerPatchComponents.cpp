@@ -3,6 +3,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
+#include "LedgerLog.h"
 #include "LedgerPlanet.h"
 #include "Materials/MaterialInterface.h"
 #include "MeshDescription.h"
@@ -18,6 +19,12 @@ namespace
 	constexpr int32 LandSection = 0;
 	constexpr int32 WaterSection = 1;
 
+	/// Named slots, because a polygon group with no material slot name does not
+	/// reliably become the section you assumed. The first static run drew water
+	/// everywhere and no land at all, and this was why.
+	const FName LandSlot(TEXT("Land"));
+	const FName WaterSlot(TEXT("Water"));
+
 	void AppendToDescription(
 		FMeshDescription& Description,
 		const TArray<FVector>& Vertices,
@@ -27,7 +34,8 @@ namespace
 		const TArray<FVector2D>& MorphUVs,
 		const TArray<FColor>& Colors,
 		const TArray<FProcMeshTangent>& Tangents,
-		FPolygonGroupID Group)
+		FPolygonGroupID Group,
+		FName SlotName)
 	{
 		FStaticMeshAttributes Attributes(Description);
 		TVertexAttributesRef<FVector3f> Positions = Attributes.GetVertexPositions();
@@ -36,6 +44,7 @@ namespace
 		TVertexInstanceAttributesRef<float> BinormalSigns = Attributes.GetVertexInstanceBinormalSigns();
 		TVertexInstanceAttributesRef<FVector4f> InstanceColors = Attributes.GetVertexInstanceColors();
 		TVertexInstanceAttributesRef<FVector2f> InstanceUVs = Attributes.GetVertexInstanceUVs();
+		Attributes.GetPolygonGroupMaterialSlotNames()[Group] = SlotName;
 
 		TArray<FVertexID> Added;
 		Added.Reserve(Vertices.Num());
@@ -46,12 +55,12 @@ namespace
 			Added.Add(Vertex);
 		}
 
-		// Wound the other way round. MeshDescription's front face is the
-		// opposite of the procedural component's, and a patch built under one
-		// convention and drawn under the other is invisible from above and
-		// solid from below, which reads as "the static backend does not work"
-		// rather than as a winding bug.
-		const int32 Order[3] = { 2, 1, 0 };
+		// Same winding as the generator produced. The first attempt reversed it
+		// on the theory that MeshDescription's front face is the opposite of the
+		// procedural component's; that theory was invented rather than checked,
+		// and the land came back invisible from above while the water, which is
+		// looked at edge-on, went unnoticed.
+		const int32 Order[3] = { 0, 1, 2 };
 
 		for (int32 Index = 0; Index + 2 < Triangles.Num(); Index += 3)
 		{
@@ -191,10 +200,10 @@ namespace LedgerTerrain
 		// in place, which is a large part of what this comparison measures.
 		UStaticMesh* Built = NewObject<UStaticMesh>(
 			GetTransientPackage(), NAME_None, RF_Transient);
-		Built->GetStaticMaterials().Add(FStaticMaterial(Land));
+		Built->GetStaticMaterials().Add(FStaticMaterial(Land, LandSlot, LandSlot));
 		if (Job.bHasWater)
 		{
-			Built->GetStaticMaterials().Add(FStaticMaterial(Water));
+			Built->GetStaticMaterials().Add(FStaticMaterial(Water, WaterSlot, WaterSlot));
 		}
 
 		FMeshDescription Description;
@@ -204,14 +213,14 @@ namespace LedgerTerrain
 
 		const FPolygonGroupID LandGroup = Description.CreatePolygonGroup();
 		AppendToDescription(Description, Job.Vertices, Job.Triangles, Job.Normals,
-			Job.UVs, Job.MorphUVs, Job.Colors, Job.Tangents, LandGroup);
+			Job.UVs, Job.MorphUVs, Job.Colors, Job.Tangents, LandGroup, LandSlot);
 
 		if (Job.bHasWater)
 		{
 			const FPolygonGroupID WaterGroup = Description.CreatePolygonGroup();
 			AppendToDescription(Description, Job.WaterVertices, Job.WaterTriangles,
 				Job.WaterNormals, Job.WaterUVs, Job.WaterUVs, Job.WaterColors,
-				Job.WaterTangents, WaterGroup);
+				Job.WaterTangents, WaterGroup, WaterSlot);
 		}
 
 		UStaticMesh::FBuildMeshDescriptionsParams Params;
@@ -225,10 +234,18 @@ namespace LedgerTerrain
 		Built->BuildFromMeshDescriptions({ &Description }, Params);
 
 		Component->SetStaticMesh(Built);
-		Component->SetMaterial(LandSection, Land);
-		if (Job.bHasWater && Water != nullptr)
+
+		// Once per run, and only because the first attempt silently drew the
+		// wrong thing: what the build actually produced, rather than what the
+		// mesh description asked for.
+		static bool bReported = false;
+		if (!bReported)
 		{
-			Component->SetMaterial(WaterSection, Water);
+			bReported = true;
+			UE_LOG(LogLedger, Log,
+				TEXT("static patch: %d land tris, %d water tris -> %d sections, %d materials"),
+				Job.Triangles.Num() / 3, Job.WaterTriangles.Num() / 3,
+				Built->GetNumSections(0), Built->GetStaticMaterials().Num());
 		}
 	}
 

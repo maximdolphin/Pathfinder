@@ -151,7 +151,10 @@ struct FLedgerTerrainStats
 	int32 DeepestVisibleDepth = 0;
 
 	/// Game-thread milliseconds spent uploading finished patches last frame.
-	/// This is now the *only* terrain cost on the game thread.
+	///
+	/// This used to say upload was "the only terrain cost on the game thread".
+	/// It was not, and nothing had checked: the LOD walk cost three times as
+	/// much. See WorstTreeMs below and docs/comparisons/terrain-component.md.
 	UPROPERTY()
 	double LastFrameUploadMs = 0.0;
 
