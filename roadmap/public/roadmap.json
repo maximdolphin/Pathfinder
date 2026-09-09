@@ -3850,11 +3850,24 @@
    "dependsOn": [
     "T053"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Blocked on terrain relief, not on the material. The acceptance is a 60-degree face reading as rock with bedding, with scree at its foot. Measured at the finest spacing the mesh resolves -- a node edge of 305 m over 64 quads, 4.8 m -- the whole planet's land gives p50 4.2, p90 12.3, p99 25.7 and a maximum of 57.0 degrees, with 0.42% at or above 30 and 0.000% at or above 60. There is no 60-degree face and therefore no foot for debris to accumulate at. Same root cause as T051's missing rain shadow (ErodedRidged returns a [-1,1] signal that FMath::Max(0.0, ...) zeroes across 90% of the land), measured a second way and independently of the climate model. Evidence in docs/comparisons/climate/, commit d7df7f0."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T054-2026-09-09T17-00-04-443.txt",
+     "caption": "Planet-wide slope distribution at the mesh's own 4.8 m vertex spacing.",
+     "source": "../docs/comparisons/climate/climate-transect.txt",
+     "addedAt": "2026-09-09T17:00:04.444Z"
+    }
+   ],
    "plannedStartDay": 101.5,
    "plannedEndDay": 104,
    "plannedStart": "2027-01-26",
@@ -12547,5 +12560,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T16:57:49.191Z"
+ "updatedAt": "2026-09-09T17:00:04.446Z"
 }
