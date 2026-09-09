@@ -4541,7 +4541,7 @@
    "dependsOn": [
     "T429"
    ],
-   "status": "active",
+   "status": "blocked",
    "startedAt": "2026-09-09",
    "completedAt": null,
    "notes": [
@@ -4549,6 +4549,11 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "Parallax OFFSET mapping landed and measured; parallax OCCLUSION mapping, which the acceptance asks for, has not. Offset is applied to the world position all three triplanar projections derive from rather than to a UV, so the projections move together and the seams do not swim; one extra triplanar sample, faded out from 3 m to 15 m. The view-dependence is proven against a -noparallax control arm: difference by image row, which on a ground plane is difference by distance, runs 0.66 -> 3.33 of 255 from far to near. Occlusion needs a per-pixel ray march and is priced before it is taken. Separately and usefully negative: this does NOT fix the near-ground softness. At two degrees the footprint ratio is ~30:1 against anisotropy's maximum of 16, so parallax on a blurred sample gives blurred parallax -- the fix is displacing geometry, not the sample position."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Half delivered and committed: parallax offset mapping, measured. The remaining half is the per-pixel ray march the acceptance asks for, and its cost lands on every ground pixel -- priced in T436 before it is taken, not after."
     }
    ],
    "evidence": [
@@ -4578,11 +4583,24 @@
    "dependsOn": [
     "T430"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Closed by measurement, no code. The premise -- a 2 m tile repeated 152 times across a patch, unrotated -- is true of the texture and false of the render. High-passed autocorrelation of an overhead capture at 120 px/m puts the tiling period 0.9 sd BELOW the surrounding noise floor; there is no peak at 2 m or at its harmonic. Four things already break it and none were put there for this: triplanar's three out-of-phase projections, three ground slots with different tiling metadata, the 90 m and 1.2 km macro bands, and the vertex colour. Stochastic sampling would have tripled the texture samples on the most-shaded surface in the game to fix something that is not happening. The autocorrelation is the deliverable -- re-run it if the material ever loses triplanar or drops to one slot."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T431-2026-09-09T22-44-19-630.png",
+     "caption": "Overhead from 8 m, 120 px per metre, scatter off. High-passed autocorrelation puts the 2 m tiling period at -0.0151, which is 0.9 sd BELOW the noise floor. No repeat to break.",
+     "source": "../out/near-field-down-noscatter.png",
+     "addedAt": "2026-09-09T22:44:19.632Z"
+    }
+   ],
    "plannedStartDay": 147,
    "plannedEndDay": 150,
    "plannedStart": "2027-03-31",
@@ -13098,5 +13116,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T22:42:41.113Z"
+ "updatedAt": "2026-09-09T22:44:19.702Z"
 }
