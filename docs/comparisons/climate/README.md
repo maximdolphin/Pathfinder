@@ -75,6 +75,50 @@ a barrier and there is nothing here tall enough or steep enough to be one.
 That is also, separately, the answer to why the world looks bland from the air:
 there is nothing to look at above 1.4 km.
 
+### Why the terrain has no mountains
+
+`ElevationTerms` exposes the pieces the height function multiplies, and the
+survey over the land surface says which one collapses:
+
+```
+height terms over land (mountains = ridges * land^1.4 * province):
+  ridges     p50 0.000  p90 0.000  p99 0.183  max 0.440
+  province   p50 0.332  p90 0.773  p99 1.000  max 1.000
+  land       p50 0.111  p90 0.298  p99 0.494  max 0.581
+  mountains  p50 0.000  p90 0.000  p99 0.002  max 0.056
+```
+
+**The mountain band is exactly zero on ninety per cent of the land**, and the
+reason is one line in each of two files.
+
+`LedgerNoise::ErodedRidged` ends with
+
+```cpp
+return Normalisation > 0.0 ? (Sum / Normalisation) * 2.0 - 1.0 : 0.0;
+```
+
+which remaps its accumulation to [-1,1]. That is right for a signed fBm. But a
+ridged field with a continuity weight and erosion damping concentrates its
+energy into a few ridges, so `Sum / Normalisation` averages far below 0.5 and
+the remap puts most of the surface **negative**. `Elevation` then does
+
+```cpp
+const double Ridges = FMath::Max(0.0, LedgerNoise::ErodedRidged(...));
+```
+
+and the clamp deletes it. What survives is the top decile.
+
+The arithmetic checks out against the measurement: the largest height fraction
+the terms can produce is `0.581 * 0.26 + 0.056 * 0.64 = 0.187`, and
+`0.187 x 9 km = 1.68 km` against a surveyed maximum of 1.37 km.
+
+**This is not fixed here.** Changing the remap or the pivot reshapes every
+landform on the planet and invalidates every committed reference capture, and
+which of those it should be — a different pivot, an unsigned return, a
+renormalisation against the field's own distribution — is a decision about how
+the world should look. The diagnosis is the deliverable; the reshaping is not
+mine to choose.
+
 ## Where this leaves T051
 
 The climate model is written, tested and correct for everything that can be

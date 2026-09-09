@@ -228,6 +228,33 @@ namespace LedgerTerrain
 		return Height * Params.MaxElevation;
 	}
 
+	FLedgerElevationTerms ElevationTerms(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	{
+		// Deliberately a copy of the terms above rather than a refactor of
+		// Elevation to return them: Elevation is on the hot path and this is a
+		// diagnostic. If they drift apart the survey stops meaning anything, so
+		// the pairing is called out here and in the header.
+		const uint32 Seed = Params.Seed;
+		const FVector3d Warp(
+			LedgerNoise::Fractal(UnitSphere * 2.1 + FVector3d(19.3, 7.1, 3.7), Seed ^ 0xA1u, 3),
+			LedgerNoise::Fractal(UnitSphere * 2.1 + FVector3d(5.2, 23.9, 11.4), Seed ^ 0xB2u, 3),
+			LedgerNoise::Fractal(UnitSphere * 2.1 + FVector3d(31.7, 2.8, 17.5), Seed ^ 0xC3u, 3));
+		const FVector3d Warped = UnitSphere + Warp * 0.26;
+
+		FLedgerElevationTerms Terms;
+		Terms.Continent = LedgerNoise::Fractal(Warped * 1.25, Seed, 6);
+		Terms.Land = FMath::Clamp(
+			(Terms.Continent - Params.SeaLevel) / (1.0 - Params.SeaLevel), 0.0, 1.0);
+		Terms.Province = FMath::Clamp(
+			LedgerNoise::Fractal(Warped * 12.0, Seed ^ 0x7E7Eu, 3) * 1.4 + 0.35, 0.0, 1.0);
+		Terms.Ridges = FMath::Max(0.0,
+			LedgerNoise::ErodedRidged(Warped * 310.0, Seed ^ 0x5A5Au, 8, 0.85));
+		Terms.Mountains = Terms.Ridges * FMath::Pow(Terms.Land, 1.4) * Terms.Province;
+		Terms.HeightFraction = Terms.Land * 0.26 + Terms.Mountains * 0.64;
+		return Terms;
+	}
+
 	double ScreenSpaceError(
 		double NodeWorldSize,
 		double DistanceToCamera,

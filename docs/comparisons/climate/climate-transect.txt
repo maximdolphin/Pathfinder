@@ -11,6 +11,12 @@ relief survey, 16110 points: lowest -4735 m, highest 1372 m
 land is 31.0% of them; land altitude p50 241 m, p90 673 m, p99 1139 m
 a range here is a local peak 300 m above both neighbours
 
+height terms over land (mountains = ridges * land^1.4 * province):
+  ridges     p50 0.000  p90 0.000  p99 0.183  max 0.440
+  province   p50 0.332  p90 0.773  p99 1.000  max 1.000
+  land       p50 0.111  p90 0.298  p99 0.494  max 0.581
+  mountains  p50 0.000  p90 0.000  p99 0.002  max 0.056
+
 --- meridian 0 degrees ---
   lat   alt m   sea T   surf T   moist   wind
    90     -68   -25.0    -25.0   1.000   westerly

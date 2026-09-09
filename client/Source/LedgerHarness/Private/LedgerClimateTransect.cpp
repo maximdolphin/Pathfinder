@@ -124,6 +124,55 @@ bool ULedgerClimateTransect::WriteTransect()
 			MajorRangeMetres);
 	}
 
+	// Which term flattens the planet.
+	//
+	// The mountain band is Ridges * Land^1.4 * Province -- three masks, each in
+	// [0,1], multiplied. Percentiles over the land surface say which of them is
+	// doing the damage, and whether "the terrain has no mountains" is a
+	// statement about the noise or about how it is combined.
+	{
+		TArray<double> Ridges, Provinces, Lands, MountainTerm;
+		for (int32 LatStep = -80; LatStep <= 80; LatStep += 2)
+		{
+			for (int32 LonStep = 0; LonStep < 360; LonStep += 2)
+			{
+				const FVector3d Point = OnMeridian(LatStep, LonStep);
+				const LedgerTerrain::FLedgerElevationTerms Terms =
+					LedgerTerrain::ElevationTerms(Point, Params);
+				if (Terms.Land <= 0.0)
+				{
+					continue;
+				}
+				Ridges.Add(Terms.Ridges);
+				Provinces.Add(Terms.Province);
+				Lands.Add(Terms.Land);
+				MountainTerm.Add(Terms.Mountains);
+			}
+		}
+		auto Report = [&Body](const TCHAR* Name, TArray<double>& Values)
+		{
+			if (Values.Num() == 0)
+			{
+				return;
+			}
+			Values.Sort();
+			auto At = [&Values](double Fraction)
+			{
+				return Values[FMath::Clamp(
+					FMath::FloorToInt(Fraction * Values.Num()), 0, Values.Num() - 1)];
+			};
+			Body += FString::Printf(
+				TEXT("  %-10s p50 %.3f  p90 %.3f  p99 %.3f  max %.3f\n"),
+				Name, At(0.50), At(0.90), At(0.99), Values.Last());
+		};
+		Body += TEXT("height terms over land (mountains = ridges * land^1.4 * province):\n");
+		Report(TEXT("ridges"), Ridges);
+		Report(TEXT("province"), Provinces);
+		Report(TEXT("land"), Lands);
+		Report(TEXT("mountains"), MountainTerm);
+		Body += TEXT("\n");
+	}
+
 	// Every ten degrees of longitude. Four meridians was the first attempt and
 	// found no land range at all -- this planet is mostly ocean, and "every
 	// major range" cannot be tested on a sample containing none. Four are

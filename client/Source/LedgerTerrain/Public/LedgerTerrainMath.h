@@ -66,6 +66,28 @@ namespace LedgerTerrain
 
 	LEDGERTERRAIN_API double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
 
+	/// The pieces Elevation multiplies together, for diagnosis.
+	///
+	/// The height function stacks three independent masks on the mountain band
+	/// -- ridged noise, a land mask and a province mask -- and a product of
+	/// three numbers that each average well under one is a number that averages
+	/// very much under one. Whether that is what flattens this planet is a
+	/// question about the terms, and it cannot be answered from outside without
+	/// being able to see them.
+	struct FLedgerElevationTerms
+	{
+		double Continent = 0.0;
+		double Land = 0.0;
+		double Province = 0.0;
+		double Ridges = 0.0;
+		double Mountains = 0.0;
+		double HeightFraction = 0.0;
+	};
+
+	LEDGERTERRAIN_API FLedgerElevationTerms ElevationTerms(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
+
+
 	/// Screen-space error for a node, in pixels.
 	///
 	/// This is the whole LOD decision: a node subdivides when the world-space
