@@ -1,0 +1,30 @@
+River networks by flow accumulation (T055).
+
+lattice 256 per cube face, 393216 cells, 39.1 km apart, built in 0.1 s
+
+land 113920 cells (29.0%), sea 279296
+of the land, 46.6% drains to the sea and 53.4% into 1985 closed basins
+a basin is a cell with no lower neighbour; on a noise height field
+every dimple is one, so the count is a statement about the terrain.
+
+11603 river mouths. The twelve largest:
+      lat     lon    basin km2   cells   length km
+   -37.65  129.95      394271     258         821
+   -27.31   52.09      362179     237        1173
+    32.23 -113.43      334672     219         977
+   -10.97  139.87      320918     210        1016
+    52.80 -147.40      291883     191         938
+   -16.30  112.84      288826     189        1016
+    74.23  164.46      265904     174         586
+    16.79   56.37      241453     158         665
+   -38.40   92.26      236868     155         821
+   -12.30  145.37      226171     148         743
+   -16.50  110.11      220058     144         743
+   -39.12  144.98      212417     139         625
+
+cells flowing uphill: 0
+cells not reaching a terminal: 0
+network hash 5337665546445529852, rebuilt 5337665546445529852, same
+longest river traced: 1173 km
+
+VERDICT: PASS
