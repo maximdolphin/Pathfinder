@@ -3265,10 +3265,16 @@
    "dependsOn": [
     "T426"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Not met, and the reason is a flaw in the harness rather than in the build. Packaged against the editor's references, on the same SM6 configuration: 4 of 8 captures pass and 4 fail -- town 4.16, coast 8.26, surface 10.13, sweep 14.70, against a 2.50 limit. The four that fail are exactly the phases where the ship is moving fastest and terrain is streaming; town, the slowest, is closest to passing. CAPTURES ARE TRIGGERED ON GAME TIME, so a build with a different frame rate reaches a given timestamp having streamed a different amount of terrain, and the images differ for a reason that has nothing to do with rendering. Two builds with different performance can never match a time-triggered capture. The fix is to trigger on STATE -- altitude reached, distance travelled, patches resident -- which also makes the existing editor-to-editor comparison mean something stronger than it does now. Frame-time half of the gate: packaged overall 17.2 ms against the editor's 17.5, so the packaged build is not worse. Evidence in docs/comparisons/packaged/."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 79.5,
    "plannedEndDay": 80.5,
@@ -12310,5 +12316,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T07:27:18.739Z"
+ "updatedAt": "2026-09-09T07:29:16.480Z"
 }
