@@ -3719,6 +3719,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Blocked on terrain relief, not on the climate model. The rain-shadow half of the acceptance cannot be shown on a planet whose highest land is 1372 m of smooth noise against a 9 km configured maximum. The transect stays as the check and will start passing when the height function produces ranges."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Root cause found, and it is one line. ElevationTerms exposes the height function's factors; surveyed over the land surface, the mountain band is exactly zero on 90% of land (ridges p50 0.000, p90 0.000, p99 0.183). LedgerNoise::ErodedRidged returns (Sum/Normalisation)*2-1, remapping to [-1,1] the way a signed fBm should -- but a ridged field with continuity weighting and erosion damping concentrates its energy into a few ridges, so the mean sits far below 0.5 and the remap puts most of the surface negative, where Elevation's FMath::Max(0.0, ...) deletes it. Arithmetic agrees with the survey: max reachable height fraction 0.581*0.26 + 0.056*0.64 = 0.187, times 9 km = 1.68 km against a surveyed maximum of 1.37 km. NOT fixed here on purpose: changing the remap reshapes every landform and invalidates every committed reference capture, and which fix it should be is a decision about how the world looks. Diagnosis in docs/comparisons/climate/README.md, commit 7473932."
     }
    ],
    "evidence": [
@@ -12493,5 +12498,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T15:41:16.642Z"
+ "updatedAt": "2026-09-09T15:46:28.872Z"
 }
