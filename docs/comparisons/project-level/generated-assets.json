@@ -1,0 +1,20 @@
+{
+  "note": "Written by tools/generate_assets.py. Every asset listed is derived and is not in version control; each carries a Ledger.Generator tag naming what produced it.",
+  "steps": [
+    {
+      "name": "level",
+      "makes": "/Game/Maps/Ledger",
+      "why": "The map the project opens on, and the home of every actor that is placed rather than generated."
+    },
+    {
+      "name": "surfaces",
+      "makes": "/Game/Surfaces/*",
+      "why": "Photogrammetric scans imported with the compression and colour space that follow from each map's role."
+    },
+    {
+      "name": "materials",
+      "makes": "/Game/Materials/*",
+      "why": "The C++ graph builders, run once and saved, so a packaged build has a look at all."
+    }
+  ]
+}

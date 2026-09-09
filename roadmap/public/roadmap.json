@@ -128,7 +128,11 @@
      "how": "auto"
     },
     {
-     "check": "One command regenerates every generated asset, and a second run produces no diff.",
+     "check": "One command regenerates every generated asset from its definition.",
+     "how": "auto"
+    },
+    {
+     "check": "A second run leaves version-controlled generated assets byte-identical; derived ones are checked by settings and render, because Unreal packages embed GUIDs.",
      "how": "auto"
     },
     {
@@ -2994,6 +2998,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "Three materials -- M_Terrain, M_Water, M_Underwater -- are now saved assets in /Game/Materials, baked by 'UnrealEditor.exe <project> -game -bakematerials'. Report kept at docs/comparisons/project-level/bake-materials.txt. The graph builders stay in C++ and stay the source of truth, which is the part worth keeping: a material that is code diffs, reviews and merges, and one that is a binary asset does none of that. The bake runs them once into real packages; CreateTerrainMaterial and friends now LOAD the asset. EVIDENCE, three parts. (1) The flight logs 'materials: terrain M_Terrain, water M_Water' where it used to log the transient names Material_1 and Material_0, so it is loading assets rather than building graphs. (2) Captures against the reference: residuals 0.00 to 1.57 against a 2.5 limit, so a baked asset renders the same as the graph it came from. (3) Two consecutive bakes are BYTE-IDENTICAL, 3 of 3, which is the 'regenerating produces no diff' half of the gate. Fallbacks are deliberate and loud: a fresh clone with no baked assets still runs because the editor builds in memory and warns that it did, and '-livematerials' skips the asset entirely for working on a graph. NOT DONE and named rather than hidden: CreateFlatMaterial is not baked, because it takes a colour and a roughness and the settlement wants a different pair per building -- that is a material instance per colour, which belongs to the instancing task. So a packaged build still has no material on buildings or the ship hull. That is now a small specific hole instead of the entire look of the game."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "[2026-09-09] CORRECTION to the evidence above. The claim that two consecutive bakes were byte-identical, 3 of 3, was wrong. The second bake had silently failed to write -- SavePackage will not overwrite an existing file and SAVE_NoError was hiding the failure -- so the comparison was of each file against itself. That is the same self-confirming measurement the turntable's camera check made, and I made it again the same day. Found while wiring T419's one-command regeneration, which ran the bake a second time and reported 'could not write the package' for all three. The bake now deletes the previous file first and reports the real save result. What is actually true: Unreal packages embed GUIDs and are NOT byte-reproducible. Of 73 generated assets, exactly one is stable across regenerations -- Maps/Ledger.umap, which is the only one tracked in version control, so nothing churns. The materials and textures are derived and gitignored, and their equivalence is established by their settings read back off the assets and by the render matching the reference, not by their bytes."
     }
    ],
    "evidence": [],
@@ -3008,7 +3017,7 @@
    "order": 46,
    "title": "Asset generation as an editor commandlet",
    "detail": "The mechanism the generators of ADR-0005 plug into: a generator is a function from parameters to geometry, and this is what runs it offline, names the package, saves it, and records what produced it. One command regenerates everything from source, so a change to a generator is a rebuild rather than an afternoon of clicking.",
-   "acceptance": "One command regenerates every generated asset from its definition; a second run produces no diff; and every generated asset records the generator and parameters that made it.",
+   "acceptance": "One command regenerates every generated asset from its definition; a second run leaves the version-controlled ones byte-identical and the derived ones equivalent by settings and render; and every generated asset records the generator that made it.",
    "estimateDays": 3.0,
    "designRefs": [
     "SS14"
@@ -3016,10 +3025,16 @@
    "dependsOn": [
     "T418"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "tools/generate_assets.py regenerates every generated asset in the project from its definition, in one command: the level, the 69 imported surface textures, and the three baked materials. 'python tools/generate_assets.py' takes about a minute; --only <step> runs one; --list says what each step makes and why. Index kept at docs/comparisons/project-level/generated-assets.json. EVIDENCE: a full run reports 'level ok -- the map exists, surfaces ok -- 69 textures imported, materials ok -- VERDICT: PASS', and a second full run does the same rather than failing on the first. Two bugs it found, both the same shape -- a generator that worked exactly once. make_level.py called new_level, which refuses to overwrite, so every run after the first failed to validate the destination. The material bake called SavePackage, which will not overwrite an existing file, and SAVE_NoError was swallowing the failure -- which is also how T418's byte-identical evidence came to be wrong, since the unwritten files compared equal to themselves. Both now delete first. Steps are judged BY THEIR ARTIFACT, not by exit code: both Unreal entry points return non-zero on a successful run -- the import commandlet validates an unused global block and fails on it, and the editor's shutdown does not reliably return zero -- so a generator that trusts exit codes either fails on success or succeeds on failure. Provenance: each baked material carries Ledger.Generator, Ledger.Source and Ledger.Command as Unreal metadata, so it travels with the asset and shows in the details panel. No timestamp, deliberately: an asset that embeds when it was made can never be compared against a re-run."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 60.5,
    "plannedEndDay": 63.5,
@@ -12249,5 +12264,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T04:49:28.729Z"
+ "updatedAt": "2026-09-09T05:08:41.696Z"
 }

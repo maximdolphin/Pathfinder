@@ -34,6 +34,13 @@ def build():
     levels = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 
+    # Rebuilt from scratch each time. `new_level` refuses to overwrite, so
+    # without this the second run of the generator fails -- and "running it
+    # again produces no diff" is the property that makes a generated asset
+    # trustworthy at all. Deleting first is what makes this idempotent.
+    if unreal.EditorAssetLibrary.does_asset_exist(LEVEL):
+        unreal.EditorAssetLibrary.delete_asset(LEVEL)
+
     levels.new_level(LEVEL)
 
     placed = []

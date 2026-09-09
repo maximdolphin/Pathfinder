@@ -20,8 +20,10 @@
 #include "LedgerMaterialGraph.h"
 #include "LedgerLog.h"
 #include "Materials/Material.h"
+#include "HAL/FileManager.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
+#include "UObject/MetaData.h"
 #include "UObject/Package.h"
 #include "UObject/SavePackage.h"
 
@@ -54,20 +56,47 @@ namespace LedgerSurface
 				return false;
 			}
 
+			// The asset records what made it. Unreal's own metadata rather than
+			// a sidecar file, so it travels with the asset and shows in the
+			// editor's details panel -- and so the question "where did this come
+			// from" has an answer at the place somebody asks it.
+			//
+			// No timestamp. A generated asset that embeds the time it was
+			// generated is a generated asset that can never be byte-compared
+			// against a re-run, which is the check that says the generator is
+			// deterministic.
+			FMetaData& MetaData = Package->GetMetaData();
+			MetaData.SetValue(Material, TEXT("Ledger.Generator"),
+				TEXT("LedgerMaterial::BakeMaterials"));
+			MetaData.SetValue(Material, TEXT("Ledger.Source"), Name);
+			MetaData.SetValue(Material, TEXT("Ledger.Command"),
+				TEXT("UnrealEditor.exe <project> -game -bakematerials"));
+
 			FAssetRegistryModule::AssetCreated(Material);
 			Package->MarkPackageDirty();
 
 			const FString FileName = FPackageName::LongPackageNameToFilename(
 				PackageName, FPackageName::GetAssetPackageExtension());
 
+			// Any previous file goes first. Saving over one that is already on
+			// disk fails, which made the bake work exactly once: the first run
+			// wrote three assets, and every run after it reported "could not
+			// write the package" for all three. A generator that only works on
+			// a clean tree is a generator nobody can re-run, and re-running is
+			// the whole point.
+			IFileManager::Get().Delete(*FileName, /*RequireExists*/ false,
+				/*EvenReadOnly*/ true, /*Quiet*/ true);
+
 			FSavePackageArgs Args;
 			Args.TopLevelFlags = RF_Public | RF_Standalone;
-			Args.SaveFlags = SAVE_NoError;
-			const bool bSaved = UPackage::SavePackage(Package, Material, *FileName, Args);
+			const FSavePackageResultStruct Result =
+				UPackage::Save(Package, Material, *FileName, Args);
 
-			Line = FString::Printf(TEXT("  %-14s %s"), Name,
-				bSaved ? *PackageName : TEXT("FAILED: could not write the package"));
-			return bSaved;
+			Line = Result.IsSuccessful()
+				? FString::Printf(TEXT("  %-14s %s"), Name, *PackageName)
+				: FString::Printf(TEXT("  %-14s FAILED: save returned %d"),
+					Name, static_cast<int32>(Result.Result));
+			return Result.IsSuccessful();
 		}
 	}
 

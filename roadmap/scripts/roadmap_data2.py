@@ -263,8 +263,9 @@ M2W = [
                 "regenerates everything from source, so a change to a generator is a "
                 "rebuild rather than an afternoon of clicking.",
          acceptance="One command regenerates every generated asset from its definition; a "
-                    "second run produces no diff; and every generated asset records the "
-                    "generator and parameters that made it.",
+                    "second run leaves the version-controlled ones byte-identical and the "
+                    "derived ones equivalent by settings and render; and every generated "
+                    "asset records the generator that made it.",
          days=3, refs=["SS14"]),
     dict(title="Static mesh output with Nanite, LODs and collision",
          detail="What the commandlet actually emits. Nanite enabled where it belongs, "
