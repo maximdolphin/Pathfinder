@@ -81,47 +81,26 @@ void ALedgerPlanet::HarvestCompletedPatches()
 			continue;
 		}
 
-		UProceduralMeshComponent* Mesh = MeshPool[Job->SectionIndex];
+		UMeshComponent* Mesh = MeshPool[Job->SectionIndex];
 		Mesh->SetWorldLocation(GetActorLocation() + FVector(Job->Centre));
-		Mesh->ClearMeshSection(0);
 
-		const double CollisionStart = FPlatformTime::Seconds();
-		// UV1 carries the geomorph target. The overload that takes it wants all
-		// four channels, so two go in empty.
-		const TArray<FVector2D> Unused;
-		Mesh->CreateMeshSection(
-			0, Job->Vertices, Job->Triangles, Job->Normals, Job->UVs,
-			Job->MorphUVs, Unused, Unused,
-			Job->Colors, Job->Tangents, Job->bWithCollision);
+		// Section 1 is the sea. Same component, so it moves and culls with the
+		// land it belongs to and costs no extra transform.
+		const double UploadStart = FPlatformTime::Seconds();
+		LedgerTerrain::UploadPatch(*Mesh, *Job, TerrainMaterial(), WaterMaterial);
+		if (Job->bHasWater)
+		{
+			++Stats.WaterSections;
+		}
 		if (Job->bWithCollision)
 		{
 			Stats.WorstFrameCollisionMs = FMath::Max(
-				Stats.WorstFrameCollisionMs, (FPlatformTime::Seconds() - CollisionStart) * 1000.0);
+				Stats.WorstFrameCollisionMs, (FPlatformTime::Seconds() - UploadStart) * 1000.0);
 		}
 
 		Mesh->SetCollisionEnabled(Job->bWithCollision
 			? ECollisionEnabled::QueryAndPhysics
 			: ECollisionEnabled::NoCollision);
-		if (SurfaceMaterial != nullptr)
-		{
-			Mesh->SetMaterial(0, TerrainMaterial());
-		}
-
-		// Section 1 is the sea. Same component, so it moves and culls with the
-		// land it belongs to and costs no extra transform.
-		Mesh->ClearMeshSection(1);
-		if (Job->bHasWater)
-		{
-			++Stats.WaterSections;
-			Mesh->CreateMeshSection(
-				1, Job->WaterVertices, Job->WaterTriangles, Job->WaterNormals,
-				Job->WaterUVs, Job->WaterColors, Job->WaterTangents, /*bCreateCollision*/ false);
-			if (WaterMaterial != nullptr)
-			{
-				Mesh->SetMaterial(1, WaterMaterial);
-			}
-		}
-
 		Mesh->SetVisibility(true);
 
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
@@ -147,9 +126,22 @@ void ALedgerPlanet::HarvestCompletedPatches()
 	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 }
 
+UProceduralMeshComponent* ALedgerPlanet::PooledProcedural(int32 SectionIndex) const
+{
+	return MeshPool.IsValidIndex(SectionIndex)
+		? Cast<UProceduralMeshComponent>(MeshPool[SectionIndex].Get())
+		: nullptr;
+}
+
 bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithCollision)
 {
-	if (FreeSections.Num() == 0)
+	// The cache holds FProcMeshSection, which is the procedural component's own
+	// interleaved buffer. There is no equivalent for a static mesh built at
+	// runtime -- its render data is built once and cannot be handed back -- so
+	// under that backend every patch is regenerated. That is a difference
+	// between the candidates rather than a gap in the measurement, and it is
+	// reported as one.
+	if (ComponentKind != ELedgerPatchComponent::Procedural || FreeSections.Num() == 0)
 	{
 		return false;
 	}
@@ -176,7 +168,7 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	}
 
 	const int32 SectionIndex = FreeSections.Pop();
-	UProceduralMeshComponent* Mesh = MeshPool[SectionIndex];
+	UProceduralMeshComponent* Mesh = PooledProcedural(SectionIndex);
 	Mesh->SetWorldLocation(GetActorLocation() + FVector(Entry.Centre));
 
 	Entry.Land.bEnableCollision = bWithCollision;
@@ -260,12 +252,13 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 	}
 	if (MeshPool.IsValidIndex(SectionIndex))
 	{
-		UProceduralMeshComponent* Mesh = MeshPool[SectionIndex];
+		UProceduralMeshComponent* Mesh = PooledProcedural(SectionIndex);
 
 		// Take the geometry on the way out. This is the only moment it can be
 		// taken: after ClearMeshSection it is gone, and before release it is
 		// still on screen and not worth a second copy.
-		if (const FProcMeshSection* Land = Mesh->GetProcMeshSection(0))
+		const FProcMeshSection* Land = Mesh != nullptr ? Mesh->GetProcMeshSection(0) : nullptr;
+		if (Land != nullptr)
 		{
 			TSharedPtr<FLedgerCachedPatch> Entry = MakeShared<FLedgerCachedPatch>();
 			const FLedgerSectionMeta& Meta = SectionMeta[SectionIndex];
@@ -288,10 +281,10 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 			Stats.CacheEvictions = PatchCache.Evictions();
 		}
 
-		Mesh->ClearMeshSection(0);
-		Mesh->ClearMeshSection(1);
-		Mesh->SetVisibility(false);
-		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UMeshComponent* Pooled = MeshPool[SectionIndex];
+		LedgerTerrain::ClearPatch(*Pooled);
+		Pooled->SetVisibility(false);
+		Pooled->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 	FreeSections.Add(SectionIndex);
 }

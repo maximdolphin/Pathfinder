@@ -31,6 +31,10 @@ struct FLedgerPerfPhase
 	TArray<double> GameMs;
 	TArray<double> RenderMs;
 	TArray<double> GpuMs;
+	/// The terrain actor's whole tick, per frame. Recorded here rather than
+	/// left to the terrain's own worst-since-start counters because the
+	/// question is what share of the game thread terrain owns *while landing*.
+	TArray<double> TerrainMs;
 	TArray<int32> DrawCalls;
 	TArray<int32> Primitives;
 };

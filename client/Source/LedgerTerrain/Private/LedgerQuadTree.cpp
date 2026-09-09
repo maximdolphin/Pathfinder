@@ -31,6 +31,8 @@ void ALedgerPlanet::BuildRoots()
 		Node->Extent = 1.0;
 		Node->Centre = LedgerTerrain::CubeToSphere(
 			LedgerTerrain::FaceToCube(Node->Face, 0.5, 0.5)) * Radius;
+		const FVector3d RootDirection = Node->Centre.GetSafeNormal();
+		Node->SurfacePoint = RootDirection * SurfaceRadiusAt(RootDirection);
 		// A face spans a quarter of the circumference.
 		Node->WorldSize = Radius * PI * 0.5;
 		Roots.Add(MoveTemp(Node));
@@ -68,6 +70,8 @@ void ALedgerPlanet::Split(FLedgerQuadNode& Node)
 		Child->WorldSize = Node.WorldSize * 0.5;
 		Child->Centre = LedgerTerrain::CubeToSphere(
 			LedgerTerrain::FaceToCube(Child->Face, Child->U + Half * 0.5, Child->V + Half * 0.5)) * Radius;
+		const FVector3d ChildDirection = Child->Centre.GetSafeNormal();
+		Child->SurfacePoint = ChildDirection * SurfaceRadiusAt(ChildDirection);
 		Node.Children[Index] = MoveTemp(Child);
 	}
 	Node.bHasChildren = true;
@@ -147,9 +151,9 @@ void ALedgerPlanet::UpdateTree(
 	}
 
 	// Distance to the node's surface point, not to the reference sphere — at low
-	// altitude over a mountain the difference is the whole LOD decision.
-	const FVector3d NodeDirection = Node.Centre.GetSafeNormal();
-	const FVector3d NodeSurface = NodeDirection * SurfaceRadiusAt(NodeDirection);
+	// altitude over a mountain the difference is the whole LOD decision. Sampled
+	// once when the node is created; see FLedgerQuadNode::SurfacePoint.
+	const FVector3d& NodeSurface = Node.SurfacePoint;
 
 	// The nearer of where the camera is and where it will shortly be. Taking the
 	// minimum rather than replacing one with the other matters: leading alone

@@ -22,6 +22,7 @@
 #include "LedgerPatchCache.h"
 #include "LedgerQuadNode.h"
 #include "LedgerTerrainMath.h"
+#include "LedgerPatchComponents.h"
 #include "ProceduralMeshComponent.h"
 #include <atomic>
 #include "LedgerPlanet.generated.h"
@@ -192,6 +193,40 @@ struct FLedgerTerrainStats
 	UPROPERTY()
 	int32 SectionsPending = 0;
 
+	/// Where the terrain tick's game-thread time goes, in milliseconds, worst
+	/// frame so far.
+	///
+	/// LastFrameUploadMs above says upload "is now the *only* terrain cost on
+	/// the game thread". Nobody measured that. The game thread has been over
+	/// budget for the whole project -- 20 to 33 ms at low altitude against
+	/// 16.7, with the GPU idle at 5 to 9 -- and upload worsts at about 5, so
+	/// something else is spending the rest of it.
+	UPROPERTY()
+	double WorstTreeMs = 0.0;
+
+	UPROPERTY()
+	double WorstHarvestMs = 0.0;
+
+	UPROPERTY()
+	double WorstCollectMs = 0.0;
+
+	UPROPERTY()
+	double WorstSortMs = 0.0;
+
+	UPROPERTY()
+	double WorstImbalanceMs = 0.0;
+
+	UPROPERTY()
+	double WorstTickMs = 0.0;
+
+	/// The whole terrain tick, this frame. Worsts say how bad it ever got;
+	/// this is what the flight recorder samples so the cost can be reported
+	/// against the phase of flight it happened in, which is the only form in
+	/// which it answers anything -- the game thread is fine in orbit and 20 ms
+	/// over on approach, and one number for the run averages those together.
+	UPROPERTY()
+	double LastTickMs = 0.0;
+
 	/// Adjacent visible leaves whose depths differ by more than one.
 	///
 	/// Edge stitching collapses a finer node's odd edge vertices onto their even
@@ -343,8 +378,19 @@ private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
 
+	/// The pool, in whichever component type this run is measuring. Held as
+	/// the base type so the two candidates share every line of the streaming
+	/// code except the upload itself; see LedgerPatchComponents.h.
 	UPROPERTY()
-	TArray<TObjectPtr<UProceduralMeshComponent>> MeshPool;
+	TArray<TObjectPtr<UMeshComponent>> MeshPool;
+
+	ELedgerPatchComponent ComponentKind = ELedgerPatchComponent::Procedural;
+
+	/// The pooled component as a procedural one, or null when this run is
+	/// measuring the other backend. The patch cache stores FProcMeshSection
+	/// and therefore only exists for the procedural path -- which is one of
+	/// the differences being measured, not an oversight.
+	UProceduralMeshComponent* PooledProcedural(int32 SectionIndex) const;
 
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> SurfaceMaterial;

@@ -21,7 +21,11 @@ public class LedgerTerrain : ModuleRules
 			"LedgerCore",
 			// Runtime-generated meshes with async collision cooking (§6.8).
 			"ProceduralMeshComponent",
-			"PhysicsCore"
+			"PhysicsCore",
+			// The other candidate component type, measured in T423: a static
+			// mesh built per patch at runtime. See LedgerPatchComponents.h.
+			"MeshDescription",
+			"StaticMeshDescription"
 		});
 	}
 }

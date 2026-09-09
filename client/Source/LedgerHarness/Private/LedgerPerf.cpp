@@ -4,6 +4,8 @@
 #include "Engine/World.h"
 #include "LedgerLog.h"
 #include "Misc/FileHelper.h"
+#include "EngineUtils.h"
+#include "LedgerPlanet.h"
 #include "RenderTimer.h"
 
 namespace
@@ -76,6 +78,15 @@ void ULedgerPerfSubsystem::Tick(float DeltaSeconds)
 	Current.RenderMs.Add(FPlatformTime::ToMilliseconds(GRenderThreadTime));
 	Current.GpuMs.Add(FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles()));
 
+	// One planet, found by iteration rather than cached, because the harness
+	// deliberately holds no world state -- and this runs once a frame beside a
+	// tick that costs milliseconds.
+	for (TActorIterator<ALedgerPlanet> It(GetWorld()); It; ++It)
+	{
+		Current.TerrainMs.Add(It->GetStats().LastTickMs);
+		break;
+	}
+
 	const UWorld* World = GetWorld();
 	const double Now = World != nullptr ? World->GetTimeSeconds() : 0.0;
 	if (Milliseconds >= StallMs && Now >= WarmupSeconds)
@@ -101,7 +112,7 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 	Body += FString::Printf(TEXT("budget %.1f ms (%.0f fps), warm-up %.0f s excluded from the verdict\n\n"),
 		BudgetMs, 1000.0 / BudgetMs, WarmupSeconds);
 
-	Body += TEXT("phase              frames    mean   median     p95     p99     max   over    game  render     gpu\n");
+	Body += TEXT("phase              frames    mean   median     p95     p99     max   over    game  render     gpu terrain\n");
 
 	for (const FLedgerPerfPhase& Phase : Phases)
 	{
@@ -146,7 +157,7 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 		};
 
 		Body += FString::Printf(
-			TEXT("%-18s %6d  %6.1f  %6.1f  %6.1f  %6.1f  %6.1f  %4.0f%%  %6.1f  %6.1f  %6.1f%s\n"),
+			TEXT("%-18s %6d  %6.1f  %6.1f  %6.1f  %6.1f  %6.1f  %4.0f%%  %6.1f  %6.1f  %6.1f  %6.2f%s\n"),
 			*Phase.Name, Phase.FrameMs.Num(),
 			Sum / Phase.FrameMs.Num(),
 			Percentile(Sorted, 0.50),
@@ -155,6 +166,7 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 			Sorted.Last(),
 			100.0 * Over / Phase.FrameMs.Num(),
 			Average(Phase.GameMs), Average(Phase.RenderMs), Average(Phase.GpuMs),
+			Average(Phase.TerrainMs),
 			bCounts ? TEXT("") : TEXT("   (warm-up)"));
 	}
 

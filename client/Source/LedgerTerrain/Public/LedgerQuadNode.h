@@ -28,6 +28,18 @@ struct FLedgerQuadNode
 	/// vertices falling apart.
 	FVector3d Centre = FVector3d::ZeroVector;
 
+	/// The same point pushed out to the terrain surface, in planet-local space.
+	///
+	/// Cached rather than evaluated because the LOD metric wants the distance
+	/// to the *ground*, not to the reference sphere, and getting it means a
+	/// full fractal elevation sample. A node's centre never moves, so that
+	/// sample has the same answer for the life of the node -- and it was being
+	/// taken once per visited node per frame. That was 24 ms of the game
+	/// thread on approach and 290 ms in the single frame where a climb
+	/// collapses the tree, against a 16.7 ms budget, and it was the whole
+	/// overrun. See docs/comparisons/terrain-component.md.
+	FVector3d SurfacePoint = FVector3d::ZeroVector;
+
 	/// Approximate world-space extent of the node in centimetres.
 	double WorldSize = 0.0;
 

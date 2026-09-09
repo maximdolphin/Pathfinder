@@ -66,20 +66,16 @@ void ALedgerPlanet::BeginPlay()
 	// turn. Undersizing does not degrade gracefully on its own — the parent-hold
 	// rule in `UpdateTree` is what stops a starved pool from punching holes.
 	constexpr int32 PoolSize = 3600;
+	ComponentKind = LedgerTerrain::PatchComponentKind();
+	UE_LOG(LogLedger, Log, TEXT("terrain component type: %s (pool %d)"),
+		LedgerTerrain::PatchComponentName(ComponentKind), PoolSize);
+
 	MeshPool.Reserve(PoolSize);
 	FreeSections.Reserve(PoolSize);
 	for (int32 Index = 0; Index < PoolSize; ++Index)
 	{
 		SectionMeta.AddDefaulted();
-		UProceduralMeshComponent* Mesh = NewObject<UProceduralMeshComponent>(this);
-		Mesh->SetupAttachment(Root);
-		Mesh->RegisterComponent();
-		// The one setting that decides whether collision hitches (§6.8).
-		Mesh->bUseAsyncCooking = true;
-		Mesh->SetCastShadow(true);
-		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Mesh->SetVisibility(false);
-		MeshPool.Add(Mesh);
+		MeshPool.Add(LedgerTerrain::MakePatchComponent(*this, ComponentKind));
 		FreeSections.Add(Index);
 	}
 
@@ -205,14 +201,24 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 
 	// Before the tree walks: the blend has to be told the same thing the LOD
 	// decision is about to be told, in the same frame.
+	const double TickStarted = FPlatformTime::Seconds();
 	UpdateMorphParameters(ViewportWidth, Fov);
+	double PhaseStarted = FPlatformTime::Seconds();
 
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
 		UpdateTree(*RootNode, CameraLocal, GeometryLead, ViewportWidth, Fov, false);
 	}
 
+	Stats.WorstTreeMs = FMath::Max(Stats.WorstTreeMs,
+		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
+
+	PhaseStarted = FPlatformTime::Seconds();
 	HarvestCompletedPatches();
+	Stats.WorstHarvestMs = FMath::Max(Stats.WorstHarvestMs,
+		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
+
+	PhaseStarted = FPlatformTime::Seconds();
 
 	TArray<const FLedgerQuadNode*> Leaves;
 	Leaves.Reserve(2048);
@@ -235,6 +241,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	const FVector3d PredictedLocal = CameraLocal + CameraVelocityLocal * CollisionLeadSeconds;
 
 	// Nearest first: if the queue runs out, it runs out on the far nodes.
+	Stats.WorstCollectMs = FMath::Max(Stats.WorstCollectMs,
+		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
+
+	PhaseStarted = FPlatformTime::Seconds();
 	Leaves.Sort([&CameraLocal](const FLedgerQuadNode& A, const FLedgerQuadNode& B)
 	{
 		return FVector3d::DistSquared(A.Centre, CameraLocal) < FVector3d::DistSquared(B.Centre, CameraLocal);
@@ -291,6 +301,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// handles a one-level difference; whether a larger one ever arises is a
 	// question with an answer, and the answer decides whether the tree needs a
 	// balancing pass at all.
+	Stats.WorstSortMs = FMath::Max(Stats.WorstSortMs,
+		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
+
+	PhaseStarted = FPlatformTime::Seconds();
 	Stats.ImbalancedEdges = 0;
 	Stats.WorstDepthDifference = 0;
 	for (const FLedgerQuadNode* Leaf : Leaves)
@@ -316,6 +330,11 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			}
 		}
 	}
+
+	Stats.WorstImbalanceMs = FMath::Max(Stats.WorstImbalanceMs,
+		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
+	Stats.LastTickMs = (FPlatformTime::Seconds() - TickStarted) * 1000.0;
+	Stats.WorstTickMs = FMath::Max(Stats.WorstTickMs, Stats.LastTickMs);
 
 	Stats.SectionsActive = ActiveSections.Num();
 	Stats.SectionsFree = FreeSections.Num();
