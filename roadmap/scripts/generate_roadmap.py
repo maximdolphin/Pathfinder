@@ -185,7 +185,6 @@ def build():
         livingWorldDoc="docs/design/living-world.md",
         architectureDoc="docs/architecture/module-map.md",
         projectStart=PROJECT_START.isoformat(),
-        generatedAt=date.today().isoformat(),
         totalTasks=len(tasks),
         totalEstimateDays=sum(t["estimateDays"] for t in tasks),
         milestones=milestones,
@@ -268,6 +267,13 @@ def merge_progress(fresh, existing):
             if field in previous:
                 entry[field] = previous[field]
         carried += 1
+
+    # The last time a task actually changed, which is the only timestamp worth
+    # showing. Deliberately not "when was this file generated": that changes
+    # every day whether or not anything did, which makes the generated file
+    # unreproducible and its CI staleness check unpassable.
+    if existing.get("updatedAt"):
+        fresh["updatedAt"] = existing["updatedAt"]
 
     milestones_by_id = {m["id"]: m for m in existing.get("milestones", [])}
     for entry in fresh["milestones"]:

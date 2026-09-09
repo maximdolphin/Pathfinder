@@ -317,7 +317,7 @@ export default function App() {
 
         <footer className="rail-foot">
           <div>read-only view · managed by <code>scripts/task.mjs</code></div>
-          <div>{roadmap.updatedAt ? `updated ${roadmap.updatedAt.slice(0, 19).replace('T', ' ')}` : `generated ${roadmap.generatedAt}`}</div>
+          <div>{roadmap.updatedAt ? `updated ${roadmap.updatedAt.slice(0, 19).replace('T', ' ')}` : 'no task changes recorded yet'}</div>
           {error && <div className="stale">stale: {error}</div>}
         </footer>
       </aside>
