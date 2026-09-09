@@ -37,6 +37,15 @@ struct FLedgerTerrainParams
 	double MaxElevation = 0.0;
 	/// Fraction of `MaxElevation` that counts as sea level, from the bottom.
 	double SeaLevel = 0.0;
+
+	/// Ground somebody has changed, or null for a planet as generated (T062).
+	///
+	/// A shared pointer to an immutable delta, not a delta. The terrain is
+	/// sampled on worker threads while the game thread may be adding an edit;
+	/// publishing a whole new delta and swapping the pointer means a worker
+	/// reads a consistent one without a lock, and the copy is cheap because
+	/// there are tens of edits rather than millions of samples.
+	TSharedPtr<const class FLedgerTerrainDelta> Delta;
 };
 
 namespace LedgerTerrain

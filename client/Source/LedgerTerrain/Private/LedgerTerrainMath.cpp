@@ -1,5 +1,7 @@
 #include "LedgerTerrainMath.h"
 
+#include "LedgerTerrainDelta.h"
+
 #include "LedgerLog.h"
 
 namespace LedgerTerrain
@@ -186,7 +188,9 @@ namespace LedgerTerrain
 			(Params.SeaLevel - Continent) / FMath::Max(0.05, Params.SeaLevel + 1.0));
 	}
 
-	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	/// The generated field, before anything anybody did to it.
+	double GeneratedElevation(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
 	{
 		const uint32 Seed = Params.Seed;
 
@@ -272,6 +276,19 @@ namespace LedgerTerrain
 			+ Micro * (0.0010 + Mountains * 0.0030);
 
 		return Height * Params.MaxElevation;
+	}
+
+	double Elevation(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	{
+		const double Generated = GeneratedElevation(UnitSphere, Params);
+		if (!Params.Delta.IsValid())
+		{
+			// The overwhelmingly common case, and the second half of T062's
+			// acceptance: on a planet nobody has dug, a modified terrain costs
+			// one pointer test.
+			return Generated;
+		}
+		return Params.Delta->Apply(UnitSphere, Generated / 100.0) * 100.0;
 	}
 
 	FLedgerElevationTerms ElevationTerms(

@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "LedgerLog.h"
+#include "Misc/FileHelper.h"
 #include "LedgerPatchGenerator.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -29,7 +30,48 @@ FLedgerTerrainParams ALedgerPlanet::TerrainParams() const
 	Params.Radius = Radius;
 	Params.MaxElevation = MaxElevation;
 	Params.SeaLevel = SeaLevel;
+	Params.Delta = Delta;
 	return Params;
+}
+
+void ALedgerPlanet::LevelPad(const FVector3d& Direction, double RadiusMetres,
+	double FalloffMetres, double TargetAltitudeMetres)
+{
+	if (!Delta.IsValid())
+	{
+		Delta = MakeShared<FLedgerTerrainDelta>();
+	}
+
+	FLedgerTerrainEdit Edit;
+	Edit.Centre = Direction.GetSafeNormal();
+	Edit.RadiusMetres = RadiusMetres;
+	Edit.FalloffMetres = FalloffMetres;
+	Edit.TargetAltitudeMetres = TargetAltitudeMetres;
+	Delta = Delta->With(Edit);
+
+	FFileHelper::SaveStringToFile(Delta->ToJson(), *FLedgerTerrainDelta::DefaultPath());
+	UE_LOG(LogLedger, Log, TEXT("terrain delta: %d edits -> %s"),
+		Delta->Num(), *FLedgerTerrainDelta::DefaultPath());
+
+	InvalidateTerrain();
+}
+
+void ALedgerPlanet::InvalidateTerrain()
+{
+	// Everything, live and cached. A cached patch was generated against the
+	// old height function and there is nothing in its key that says so -- the
+	// alternative is a key that carries a delta version, which is a bigger key
+	// on every patch to save a rebuild that happens when somebody levels
+	// ground and at no other time.
+	TArray<uint64> Live;
+	ActiveSections.GetKeys(Live);
+	for (const uint64 Key : Live)
+	{
+		ReleaseSection(Key);
+	}
+	PatchCache.Empty();
+	Stats.CacheEntries = 0;
+	Stats.CacheMegabytes = 0.0;
 }
 
 void ALedgerPlanet::BeginPlay()
@@ -57,6 +99,23 @@ void ALedgerPlanet::BeginPlay()
 	UE_LOG(LogLedger, Log, TEXT("materials: terrain %s, water %s"),
 		SurfaceMaterial != nullptr ? *SurfaceMaterial->GetName() : TEXT("<none>"),
 		WaterMaterial != nullptr ? *WaterMaterial->GetName() : TEXT("<none>"));
+
+	// Load whatever anybody has done to this ground, before the first patch is
+	// generated. An empty or missing file gives an empty delta, which costs one
+	// pointer test per height sample.
+	{
+		FString Saved;
+		if (FFileHelper::LoadFileToString(Saved, *FLedgerTerrainDelta::DefaultPath()))
+		{
+			Delta = FLedgerTerrainDelta::FromJson(Saved);
+			UE_LOG(LogLedger, Log, TEXT("terrain delta: %d edits loaded from %s"),
+				Delta->Num(), *FLedgerTerrainDelta::DefaultPath());
+		}
+		else
+		{
+			Delta = MakeShared<FLedgerTerrainDelta>();
+		}
+	}
 
 	PatchCache.SetBudget(static_cast<int64>(PatchCacheBudgetMB * 1024.0 * 1024.0));
 

@@ -23,6 +23,7 @@
 #include "LedgerBiome.h"
 #include "LedgerQuadNode.h"
 #include "LedgerScatter.h"
+#include "LedgerTerrainDelta.h"
 #include "LedgerTerrainSample.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerPatchComponents.h"
@@ -76,6 +77,10 @@ struct FLedgerPatchJob
 	/// the set itself never changes after load. Null means no biomes were
 	/// loaded, in which case the generator falls back to the height ramp.
 	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
+
+	/// Ground somebody has changed. Loaded at BeginPlay, replaced whole on
+	/// every edit, and handed to every patch job through TerrainParams.
+	TSharedPtr<const FLedgerTerrainDelta> Delta;
 
 	/// Approximate world-space extent of the node, centimetres. Baked into the
 	/// vertices so the shader can work out how close this patch is to being
@@ -441,6 +446,24 @@ public:
 	// dll-interface class may not repeat it.
 	bool SampleTerrain(const FVector3d& WorldPoint, FLedgerTerrainSample& Out) const;
 
+	/// Brings the ground inside a radius to one altitude, blending out over the
+	/// falloff, and saves it. T062.
+	///
+	/// The delta is published as a new immutable one and the old patches are
+	/// dropped, so the change is visible on the next stream rather than on the
+	/// next reload. Everything already built out of the terrain -- collision,
+	/// the sampling API, scatter -- follows for free, because they all read the
+	/// same height function.
+	void LevelPad(const FVector3d& Direction, double RadiusMetres,
+		double FalloffMetres, double TargetAltitudeMetres);
+
+	/// Every edit made to this planet's ground. Never null.
+	TSharedPtr<const FLedgerTerrainDelta> TerrainDelta() const { return Delta; }
+
+	/// Throws away every patch, live and cached, so the terrain is rebuilt from
+	/// the current height function.
+	void InvalidateTerrain();
+
 	/// Where in the year this planet is, 0 to 1. Set from -season=.
 	double SeasonPhase() const;
 
@@ -520,6 +543,10 @@ private:
 	FLedgerPaletteMaterial PaletteMaterial;
 
 	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
+
+	/// Ground somebody has changed. Loaded at BeginPlay, replaced whole on
+	/// every edit, and handed to every patch job through TerrainParams.
+	TSharedPtr<const FLedgerTerrainDelta> Delta;
 
 	/// How many components each scatter variant is spread across.
 	///
