@@ -51,23 +51,22 @@ MILESTONES = [
         refs=["ARCH SS2", "ARCH SS3", "ARCH SS5"],
     ),
     dict(
-        id="M02", title="Terrain to production standard", week_start=5, week_end=13,
-        goal="The terrain stops being a spike. Stable LOD with no popping, collision "
-             "wherever a body can be, caves and overhangs, biome-driven material blending, "
-             "and a streaming budget that holds at speed.",
-        gate="Fly a 200 km transect at 300 m and at 900 m/s: no holes, no popping that "
-             "reads as a seam, no frame over 16 ms, and collision present under the ship "
-             "at every point along it.",
-        refs=["SS6.8"],
-    ),
-    dict(
         # The id is not sequential, and that is deliberate. Task ids are issued
         # against a key that begins with the milestone id, so renumbering M03
         # onward would orphan every task id after M02 and reissue three hundred
         # of them -- including the ones already referenced in commit messages
         # and on the published roadmap. A non-sequential id costs a line of
         # explanation; renumbering costs the project's own references to itself.
-        id="M2W", title="The world as an Unreal project", week_start=14, week_end=21,
+        id="M2W", title="The world as an Unreal project", week_start=5, week_end=9,
+        # Moved ahead of the rest of M02 on 2026-09-09. Four things were true
+        # and all of them got worse with every terrain task added on top:
+        # nothing packaged, the frame budget was failing on the game thread
+        # that M02's remaining work adds to, Nanite was unavailable to every
+        # object in the world, and four of M02's own tasks produce assets
+        # that would have had to be rebuilt against ADR-0006 afterwards.
+        # The cost is five weeks before the world looks better; the terrain
+        # *shape* tasks -- climate, biomes, cliffs, hydrology, caves -- do
+        # not depend on this and can interleave if that matters more.
         goal="Stop being a tech demo that only runs inside the editor. A real level, "
              "materials that are assets rather than node graphs rebuilt on every launch, "
              "and a mechanism that turns a generator into a saved asset with Nanite, "
@@ -76,6 +75,16 @@ MILESTONES = [
         gate="A packaged build, with no editor present, flies the scripted flight and "
              "renders within the perceptual tolerance of the editor build.",
         refs=["ARCH Rule 1", "SS14"],
+    ),
+    dict(
+        id="M02", title="Terrain to production standard", week_start=10, week_end=21,
+        goal="The terrain stops being a spike. Stable LOD with no popping, collision "
+             "wherever a body can be, caves and overhangs, biome-driven material blending, "
+             "and a streaming budget that holds at speed.",
+        gate="Fly a 200 km transect at 300 m and at 900 m/s: no holes, no popping that "
+             "reads as a seam, no frame over 16 ms, and collision present under the ship "
+             "at every point along it.",
+        refs=["SS6.8"],
     ),
     dict(
         id="M03", title="Planetary bodies and orbital mechanics", week_start=22, week_end=29,
