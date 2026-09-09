@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 8
+   "doneCount": 9
   },
   {
    "id": "M03",
@@ -3998,11 +3998,24 @@
    "dependsOn": [
     "T408"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Acceptance met and measured. 42,408 instances at a median 16.6 ms over 2,296 sampled frames at the three-biome site -- sixty, and four times the ten thousand asked for. Wall clock rather than DeltaSeconds, because the fixture runs under -useFixedTimeStep and the engine's delta is a constant that would have reported a perfect sixty however slowly the frame ran. Identical placement across runs is a bit-for-bit test: every position is a hash of the patch key and a cell index and nothing else. Nothing floating took three attempts and the third found a real bug -- the mesh is a bilinear interpolation of the height field sampled every 4.8 m and wanders up to 1.222 m from it, so a tree placed at the exact value floats or sinks by that much; placement now reads the patch's own vertices. The two failed attempts are recorded because both passed: one compared the height function against itself, and one needed to invert CubeToSphere's warp, which DirectionToFace does not do, so it skipped every instance and reported 0.000 m over four hundred it never looked at. Sixteen instanced-component buckets rather than one: one component per variant costs 13.4 ms to rebuild at a forest site, sixteen buckets with two rebuilt per frame costs 0.3 to 1.2 ms. Known and named limit: scatter stops dead at the finest-LOD ring with no fade or impostor, which is visible in the evidence and is T059's task. Commit fddfc8a, write-up in docs/comparisons/scatter/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T057-2026-09-09T17-58-31-201.png",
+     "caption": "42,408 instances at a median 16.6 ms. The hard edge in the middle distance is where the finest-LOD ring ends; that is T059's business.",
+     "source": "../docs/comparisons/scatter/forest.png",
+     "addedAt": "2026-09-09T17:58:31.203Z"
+    }
+   ],
    "plannedStartDay": 114,
    "plannedEndDay": 117,
    "plannedStart": "2027-02-12",
@@ -12592,5 +12605,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T17:24:24.308Z"
+ "updatedAt": "2026-09-09T17:58:31.293Z"
 }
