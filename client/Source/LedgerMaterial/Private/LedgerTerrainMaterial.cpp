@@ -48,6 +48,15 @@ namespace LedgerSurface
 		// per patch -- and it is why there are three ground slots and not four.
 		const TCHAR* SteepSurface = TEXT("rock_cliff_xbknedb");
 
+		// What falls off a cliff and piles up under it.
+		//
+		// Not a biome either, and not a third thing decided by hand: scree sits
+		// at the angle of repose, which is a slope, so it is the band between
+		// ground too steep to hold soil and rock too steep to hold anything.
+		// The debris under a face is derived from the same number that makes
+		// the face bare (T054).
+		const TCHAR* ScreeSurface = TEXT("gravel_ground_vi0maebg");
+
 		// Snow would be neither: it lies on top of whichever ground is there,
 		// so it wants to be an overlay on the finished blend rather than a
 		// fourth competitor in it, and it has a channel waiting for it in the
@@ -57,6 +66,14 @@ namespace LedgerSurface
 
 		/// The three parameterised ground slots.
 		constexpr int32 GroundSlots = 3;
+
+		/// The angle of repose, as the cosine of the angle from straight up.
+		///
+		/// Loose rock will not stand steeper than about 34 degrees; above that
+		/// it slides, and what is left is the face it slid off. cos(34) = 0.83,
+		/// and scree is strongest just under it and gone by the time the ground
+		/// is bare rock.
+		constexpr float ReposeCosine = 0.83f;
 
 		// Where rock takes over from soil, as the cosine of the angle between
 		// the surface normal and straight up. Soil holds to about 26 degrees;
@@ -159,7 +176,8 @@ namespace LedgerSurface
 	{
 		const FSurfaceSet Flat = LoadSurfaceSet(DefaultSurface);
 		const FSurfaceSet Steep = LoadSurfaceSet(SteepSurface);
-		if (!Flat.IsValid() || !Steep.IsValid())
+		const FSurfaceSet Scree = LoadSurfaceSet(ScreeSurface);
+		if (!Flat.IsValid() || !Steep.IsValid() || !Scree.IsValid())
 		{
 			// Loudly, and with nothing returned. A terrain material that
 			// silently falls back to something plausible is how this project
@@ -221,6 +239,8 @@ namespace LedgerSurface
 		UMaterialExpression* WeightZ = Graph.Mask(Weights, false, false, true);
 
 		const FSampled Rock = SampleSet(Graph, Steep, WorldPosition, WeightX, WeightY, WeightZ);
+		const FSampled ScreeSampled =
+			SampleSet(Graph, Scree, WorldPosition, WeightX, WeightY, WeightZ);
 
 		// ---- three grounds, weighted by the mesh --------------------------
 		//
@@ -306,6 +326,20 @@ namespace LedgerSurface
 				Graph.Subtract(Graph.Constant(SoilHoldsTo), Slope),
 				Graph.Constant(SoilHoldsTo - RockTakesOver)));
 
+		// ---- scree, at the angle of repose ---------------------------------
+		//
+		// A band, not a threshold: strongest just under the angle loose rock
+		// can stand at, gone above it where there is nothing left to hold and
+		// gone below it where the soil has won. That is a triangle in slope,
+		// built from the two edges rather than from a curve nobody can read.
+		UMaterialExpression* ScreeRising = Graph.Saturate(Graph.Divide(
+			Graph.Subtract(Graph.Constant(SoilHoldsTo), Slope),
+			Graph.Constant(SoilHoldsTo - ReposeCosine)));
+		UMaterialExpression* ScreeFalling = Graph.Saturate(Graph.Divide(
+			Graph.Subtract(Slope, Graph.Constant(RockTakesOver)),
+			Graph.Constant(ReposeCosine - RockTakesOver)));
+		UMaterialExpression* ScreeWeight = Graph.Multiply(ScreeRising, ScreeFalling);
+
 		// Height blending, not alpha blending. Each surface's own height map is
 		// added to its weight, and only the material that is *proud* at this
 		// texel wins. That is what makes gravel sit in the gaps between grass
@@ -328,10 +362,38 @@ namespace LedgerSurface
 			RockShare,
 			Graph.Add(Graph.Add(SoilShare, RockShare), Graph.Constant(0.0001f)));
 
-		UMaterialExpression* AlbedoMix = Graph.Lerp(Soil.Albedo, Rock.Albedo, Blend);
-		UMaterialExpression* NormalMix = Graph.Lerp(Soil.Normal, Rock.Normal, Blend);
-		UMaterialExpression* RoughMix = Graph.Lerp(Soil.Roughness, Rock.Roughness, Blend);
-		UMaterialExpression* OcclusionMix = Graph.Lerp(Soil.Occlusion, Rock.Occlusion, Blend);
+		// ---- bedding ------------------------------------------------------
+		//
+		// Strata are horizontal, so they are a function of altitude and of
+		// nothing else -- which on a sphere means distance from the centre, not
+		// world Z. Sampling the rock scan a second time at a scale stretched
+		// flat would cost nine more samples for a band pattern; modulating what
+		// is already sampled by a function of altitude costs none.
+		//
+		// Two frequencies, forty metres and nine, so the beds group into
+		// courses instead of reading as corduroy.
+		UMaterialExpression* AltitudeAbove = Graph.Distance(
+			AbsolutePosition, Graph.Mask(PlanetCentre, true, true, true));
+		UMaterialExpression* Bedding = Graph.Add(
+			Graph.Multiply(Graph.Sine(Graph.Multiply(AltitudeAbove,
+				Graph.Constant(1.0f / 4000.0f))), Graph.Constant(0.10f)),
+			Graph.Multiply(Graph.Sine(Graph.Multiply(AltitudeAbove,
+				Graph.Constant(1.0f / 900.0f))), Graph.Constant(0.05f)));
+
+		// Only where the rock is bare. Bedding through a meadow is a bug.
+		UMaterialExpression* BeddedRock = Graph.Multiply(Rock.Albedo,
+			Graph.Add(Graph.Constant(1.0f), Graph.Multiply(Bedding, RockWeight)));
+
+		UMaterialExpression* AlbedoMix = Graph.Lerp(
+			Graph.Lerp(Soil.Albedo, ScreeSampled.Albedo, ScreeWeight), BeddedRock, Blend);
+		UMaterialExpression* NormalMix = Graph.Lerp(
+			Graph.Lerp(Soil.Normal, ScreeSampled.Normal, ScreeWeight), Rock.Normal, Blend);
+		UMaterialExpression* RoughMix = Graph.Lerp(
+			Graph.Lerp(Soil.Roughness, ScreeSampled.Roughness, ScreeWeight),
+			Rock.Roughness, Blend);
+		UMaterialExpression* OcclusionMix = Graph.Lerp(
+			Graph.Lerp(Soil.Occlusion, ScreeSampled.Occlusion, ScreeWeight),
+			Rock.Occlusion, Blend);
 
 		// ---- snow: the field is here, the blend is not --------------------
 		//
@@ -356,12 +418,16 @@ namespace LedgerSurface
 		// and a sand scan under a snow tint is dirty snow. The averages were
 		// measured off the images at import and live in the manifest.
 		UMaterialExpression* MeanMix = Graph.Lerp(
-			SoilMean, Graph.Constant3(Steep.MeanAlbedo), Blend);
+			Graph.Lerp(SoilMean, Graph.Constant3(Scree.MeanAlbedo), ScreeWeight),
+			Graph.Constant3(Steep.MeanAlbedo), Blend);
 		UMaterialExpression* Variation = Graph.Divide(AlbedoMix, MeanMix);
 
 		// Rock has no biome and takes no tint, so the ground's tint fades out
 		// with it. Otherwise a cliff in a rainforest would be green rock.
-		UMaterialExpression* TintMix = Graph.Lerp(SoilTint, Graph.Constant(1.0f), Blend);
+		UMaterialExpression* TintMix = Graph.Lerp(
+			Graph.Lerp(SoilTint, Graph.Constant3(FLinearColor(0.30f, 0.29f, 0.27f)),
+				ScreeWeight),
+			Graph.Constant(1.0f), Blend);
 
 		// Macro breakup. One tile of ground is two metres; from a kilometre up,
 		// two metres is a pixel and the repeat becomes a visible grid. A second

@@ -29,6 +29,8 @@
 #include "Materials/MaterialExpressionOneMinus.h"
 #include "Materials/MaterialExpressionSaturate.h"
 #include "Materials/MaterialExpressionSubtract.h"
+#include "Materials/MaterialExpressionDistance.h"
+#include "Materials/MaterialExpressionSine.h"
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
@@ -147,6 +149,26 @@ namespace LedgerSurface
 		{
 			UMaterialExpressionFrac* Node = Make<UMaterialExpressionFrac>();
 			Node->Input.Expression = Input;
+			return Node;
+		}
+
+		/// Distance between two positions. Used for altitude on a sphere, which
+		/// is distance from the centre and not world Z.
+		UMaterialExpression* Distance(UMaterialExpression* A, UMaterialExpression* B)
+		{
+			UMaterialExpressionDistance* Node = Make<UMaterialExpressionDistance>();
+			Node->A.Expression = A;
+			Node->B.Expression = B;
+			return Node;
+		}
+
+		UMaterialExpression* Sine(UMaterialExpression* Input)
+		{
+			UMaterialExpressionSine* Node = Make<UMaterialExpressionSine>();
+			Node->Input.Expression = Input;
+			// One cycle per unit of input, so the caller's scale is a
+			// wavelength rather than a wavelength over two pi.
+			Node->Period = 1.0f;
 			return Node;
 		}
 
