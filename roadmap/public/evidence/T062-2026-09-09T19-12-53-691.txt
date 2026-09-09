@@ -1,0 +1,14 @@
+Levelling a pad, and what it costs elsewhere (T062).
+
+pad: 40 m flat with 20 m of blend, brought to 661.79 m
+the ground it replaced varied by 4.22 m across the pad
+
+after levelling: 317 samples over the pad, worst 0.0000 m from the target
+reloaded from disk: 1 edits, 21 samples along the pad, worst 0.0000 m from the target
+
+200000 height samples away from the pad: 90.6 ms without the delta, 89.5 ms with it (-1.2%)
+(checksum 2633474563, so neither loop was optimised away)
+
+flat: yes   survives a reload: yes   costs nothing elsewhere: yes
+
+VERDICT: PASS

@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 10
+   "doneCount": 11
   },
   {
    "id": "M03",
@@ -4174,11 +4174,24 @@
    "dependsOn": [
     "T061"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "All three clauses of the acceptance measured in one run. 317 samples over the pad are 0.0000 m from the target where the ground had varied by 4.22 m; the same after reading the file back into a fresh delta; and 200,000 height samples away from the pad cost 89.5 ms against 90.6 ms without the delta, which is noise. Flatness is measured through T061's sampling API, which reads the drawn mesh and is verified against physics traces to 22 microns, so it is about the geometry a player stands on rather than a function returning a constant. An edit is a place, a radius, a falloff and a height -- not a heightmap: the terrain has fifteen resolutions and a per-texel delta is wrong at every LOD but one and enormous at the finest. Everything downstream follows for free because it all reads the same height function. The first version failed its own second clause by +115%, because it bucketed edits with SphereToFace -- the honest inverse and a forty-step fixed point -- on every height sample on the planet; the same mistake as the stitch probes an hour earlier. A bucket has to be consistent, not a place. Commit e8da182, write-up in docs/comparisons/terrain-delta/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T062-2026-09-09T19-12-53-691.txt",
+     "caption": "A 40 m pad levelled through 4.22 m of relief: flat to 0.0000 m, the same after reload, and -1.2% cost away from it.",
+     "source": "../docs/comparisons/terrain-delta/flatten-pad.txt",
+     "addedAt": "2026-09-09T19:12:53.693Z"
+    }
+   ],
    "plannedStartDay": 126,
    "plannedEndDay": 129,
    "plannedStart": "2027-03-02",
@@ -12648,5 +12661,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T19:00:26.361Z"
+ "updatedAt": "2026-09-09T19:12:53.786Z"
 }
