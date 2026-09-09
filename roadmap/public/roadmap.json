@@ -3175,10 +3175,16 @@
    "dependsOn": [
     "T423"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "PSO precaching is on and takes effect; the two D3D12 driver disk caches cannot be enabled from project config -- read-only CVars read before it is applied, still logging r.D3D12.PSO.DiskCache=0 under both RendererSettings and SystemSettings. 28 PSOPrecacheState:Missed in cold AND warm runs, identical, so precaching is not covering them. 973 frames over the stall threshold, worst 116.5 ms. First run vs second: overall 17.2 then 17.8 ms (noise), but the town phase 17.0 then 20.0 -- 18% apart with nothing changed, so the run-to-run tolerance is not demonstrable yet. Needs ConsoleVariables.ini or a command-line route for the read-only CVars, and a stall attribution pass to find what the 973 actually are. Reports in docs/comparisons/packaged/."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 73.5,
    "plannedEndDay": 75.5,
@@ -12304,5 +12310,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T07:12:20.968Z"
+ "updatedAt": "2026-09-09T07:27:18.739Z"
 }
