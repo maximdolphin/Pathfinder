@@ -3901,6 +3901,16 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Blocked on terrain relief, not on the material. The acceptance is a 60-degree face reading as rock with bedding, with scree at its foot. Measured at the finest spacing the mesh resolves -- a node edge of 305 m over 64 quads, 4.8 m -- the whole planet's land gives p50 4.2, p90 12.3, p99 25.7 and a maximum of 57.0 degrees, with 0.42% at or above 30 and 0.000% at or above 60. There is no 60-degree face and therefore no foot for debris to accumulate at. Same root cause as T051's missing rain shadow (ErodedRidged returns a [-1,1] signal that FMath::Max(0.0, ...) zeroes across 90% of the land), measured a second way and independently of the climate model. Evidence in docs/comparisons/climate/, commit d7df7f0."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "unblock",
+     "text": "unblocked"
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Two of three, and the third is stated rather than tuned. Unblocked by T428: the planet's steepest ground was 57 degrees with none above 60, and is now 62.1 with 1.08% of land above 30. Scree is in and visible -- loose rock will not stand steeper than about 34 degrees, so it is the band between ground too steep for soil and rock too steep for anything, and the debris under a face is derived from the same number that makes the face bare. The flight's town phase shows the settlement in a valley at the foot of a mountain with a grey debris band along the base of the slope. Bedding is in -- horizontal strata as a function of distance from the planet centre, modulating rock that is already sampled so it costs no extra texture reads -- and NO capture demonstrates it: the amplitudes are 0.10 and 0.05 on albedo, chosen subtle rather than photogenic, and nothing survives the material's 600 m detail fade. Tuning them up to make a screenshot would be tuning for the screenshot. The -cliffsite fixture took five attempts and every failure was its own: it maximised a scale-free gradient and found a kerb; it tested the point rather than the face against the sun and photographed a silhouette; it found an ice cap; and it framed past the detail fade. Commit a472b2f, write-up in docs/comparisons/cliffs/."
     }
    ],
    "evidence": [
@@ -3909,6 +3919,18 @@
      "caption": "Planet-wide slope distribution at the mesh's own 4.8 m vertex spacing.",
      "source": "../docs/comparisons/climate/climate-transect.txt",
      "addedAt": "2026-09-09T17:00:04.444Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-09T21-00-53-262.png",
+     "caption": "The town at the foot of a mountain: a grey debris band along the base of the slope, where the ground passes through the angle of repose.",
+     "source": "../docs/comparisons/cliffs/scree-at-the-foot.png",
+     "addedAt": "2026-09-09T21:00:53.264Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-09T21-00-53-352.txt",
+     "caption": "The steepest warm sunlit face the fixture finds: 57.5 degrees at 1,900 m, falling 295 m.",
+     "source": "../docs/comparisons/cliffs/cliff.txt",
+     "addedAt": "2026-09-09T21:00:53.353Z"
     }
    ],
    "plannedStartDay": 103,
@@ -12723,5 +12745,5 @@
    "plannedEnd": "2031-01-06"
   }
  ],
- "updatedAt": "2026-09-09T20:44:59.429Z"
+ "updatedAt": "2026-09-09T21:00:53.447Z"
 }

@@ -1,0 +1,12 @@
+The steepest lit face on the planet (T054).
+
+57.5 degrees at the mesh's own 4.8 m spacing, 1900 m above the sea,
+falling 295 m over the two hundred metres below it
+10.60 lat, 44.60 lon
+
+cliff-face.png is the face, cliff-foot.png the ground under it,
+cliff-wide.png both in context.
+
+a sixty-degree face exists: NO
+
+VERDICT: FAIL
