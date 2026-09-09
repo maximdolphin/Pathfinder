@@ -316,7 +316,7 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 					+ (static_cast<double>(GridY) / (ClimateGrid - 1)) * Job.Extent;
 				Grid[GridY * ClimateGrid + GridX] = LedgerClimate::At(
 					LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(Job.Face, GridU, GridV)),
-					Job.Params);
+					Job.Params, Job.SeasonPhase);
 			}
 		}
 	}
@@ -348,10 +348,12 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	// Weights per vertex, and the patch totals the palette is chosen from.
 	TArray<double> PatchTotals;
 	TArray<TArray<double>> VertexWeights;
+	TArray<float> VertexSnow;
 	if (bBiomes)
 	{
 		PatchTotals.SetNumZeroed(Biomes->Num());
 		VertexWeights.SetNum(VertexCount);
+		VertexSnow.SetNumZeroed(VertexCount);
 	}
 
 	for (int32 Index = 0; Index < VertexCount; ++Index)
@@ -386,6 +388,15 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			const double SlopeDegrees = FMath::RadiansToDegrees(
 				FMath::Acos(FMath::Clamp(1.0 - Steepness, -1.0, 1.0)));
 			LedgerBiomes::Weigh(*Biomes, Climate, SlopeDegrees, VertexWeights[Index]);
+
+			// Snow does not lie on a cliff. The same slope the biomes are
+			// weighed by sheds it, which is why the shed is here and not in
+			// SnowCover -- that function is about climate, and a cliff is not
+			// a climate.
+			const double Sheds = FMath::GetMappedRangeValueClamped(
+				FVector2d(45.0, 62.0), FVector2d(1.0, 0.0), SlopeDegrees);
+			VertexSnow[Index] = static_cast<float>(
+				LedgerClimate::SnowCover(Climate) * Sheds);
 			for (int32 Biome = 0; Biome < PatchTotals.Num(); ++Biome)
 			{
 				PatchTotals[Biome] += VertexWeights[Index][Biome];
@@ -480,11 +491,19 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		for (int32 Index = 0; Index < VertexCount; ++Index)
 		{
 			const FVector3f Slots = LedgerBiomes::SlotWeights(VertexWeights[Index], Job.Palette);
+
+			// Alpha is snow, which was the one channel nobody was using.
+			//
+			// Snow is not a biome: it lies on top of whichever ground is there,
+			// and giving it a palette slot would have cost a biome and made a
+			// snowy forest and a snowy desert the same place. As a fourth
+			// channel it is an overlay, which is what it is.
 			Job.Colors[Index] = FColor(
 				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.X, 0.0f, 1.0f) * 255.0f)),
 				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Y, 0.0f, 1.0f) * 255.0f)),
 				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Z, 0.0f, 1.0f) * 255.0f)),
-				255);
+				static_cast<uint8>(FMath::RoundToInt(
+					FMath::Clamp(VertexSnow[Index], 0.0f, 1.0f) * 255.0f)));
 		}
 	}
 

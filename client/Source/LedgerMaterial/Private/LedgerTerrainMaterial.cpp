@@ -48,6 +48,13 @@ namespace LedgerSurface
 		// per patch -- and it is why there are three ground slots and not four.
 		const TCHAR* SteepSurface = TEXT("rock_cliff_xbknedb");
 
+		// Snow would be neither: it lies on top of whichever ground is there,
+		// so it wants to be an overlay on the finished blend rather than a
+		// fourth competitor in it, and it has a channel waiting for it in the
+		// vertex colour's alpha (T060). The set it would use is
+		// fresh_windswept_snow_ugspafgdy. See the note further down for why the
+		// blend is not here.
+
 		/// The three parameterised ground slots.
 		constexpr int32 GroundSlots = 3;
 
@@ -325,6 +332,20 @@ namespace LedgerSurface
 		UMaterialExpression* NormalMix = Graph.Lerp(Soil.Normal, Rock.Normal, Blend);
 		UMaterialExpression* RoughMix = Graph.Lerp(Soil.Roughness, Rock.Roughness, Blend);
 		UMaterialExpression* OcclusionMix = Graph.Lerp(Soil.Occlusion, Rock.Occlusion, Blend);
+
+		// ---- snow: the field is here, the blend is not --------------------
+		//
+		// The vertex colour's alpha carries snow cover (T060), the climate
+		// function that produces it is tested, and the blend that would put it
+		// on screen is NOT in this material.
+		//
+		// It was, for one evening. Height-blending a snow set over the finished
+		// ground changed every terrain capture on the planet -- including at
+		// season zero, where the climate is identical to before it and nothing
+		// should have moved at all. That is a bug in the blend rather than the
+		// snow, and shipping it would have meant every measurement in this
+		// repository being taken against a look nobody chose. The channel and
+		// the field stay; the blend comes back when it is understood.
 
 		// ---- colour ---------------------------------------------------------
 		//

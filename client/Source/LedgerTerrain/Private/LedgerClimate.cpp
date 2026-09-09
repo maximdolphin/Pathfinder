@@ -69,7 +69,31 @@ namespace LedgerClimate
 		return (East * Eastward).GetSafeNormal();
 	}
 
-	FLedgerClimate At(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params)
+	double SeasonalOffsetC(const FVector3d& UnitSphere, double SeasonPhase)
+	{
+		// Odd in the sine of latitude, so the two hemispheres are opposite
+		// without a rule anybody has to remember, and zero at the equator
+		// because a tropical year is not a sequence of seasons.
+		return SeasonalSwingC * SinLatitude(UnitSphere)
+			* FMath::Sin(2.0 * PI * SeasonPhase);
+	}
+
+	double SnowCover(const FLedgerClimate& Climate)
+	{
+		// Ramped over four degrees rather than switched at zero: a snow line is
+		// a band a few hundred metres deep, not a contour, and a hard threshold
+		// would draw one on the ground.
+		const double Cold = FMath::Clamp(-Climate.TemperatureC / 4.0, 0.0, 1.0);
+
+		// And there has to be something to fall. Fifteen per cent humidity is
+		// where the driest places that still hold snow sit; below it the ground
+		// is cold rock.
+		const double Wet = FMath::Clamp(Climate.Moisture / 0.15, 0.0, 1.0);
+		return Cold * Wet;
+	}
+
+	FLedgerClimate At(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SeasonPhase)
 	{
 		FLedgerClimate Climate;
 
@@ -77,7 +101,8 @@ namespace LedgerClimate
 		// sin^2 rather than |sin|: it is monotonic in |latitude| either way, and
 		// the square puts the steep part of the gradient in the mid latitudes
 		// where the real one is, instead of spreading it evenly.
-		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat);
+		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat)
+			+ SeasonalOffsetC(UnitSphere, SeasonPhase);
 
 		Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
 		const double AboveWater = FMath::Max(0.0, Climate.AltitudeMetres);

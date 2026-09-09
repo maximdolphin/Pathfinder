@@ -18,6 +18,7 @@
 #include "LedgerLog.h"
 #include "LedgerPatchGenerator.h"
 #include "Materials/MaterialInterface.h"
+#include "Misc/CommandLine.h"
 #include "ProceduralMeshComponent.h"
 
 bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision)
@@ -41,6 +42,16 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 	Job->Side = GridResolution;
 	Job->WorldSize = Node.WorldSize;
 	Job->Biomes = Biomes;
+
+	// Read once. FParse on every patch would be a string scan per patch, and
+	// the season cannot change during a run by design.
+	static const double Season = []()
+	{
+		float Parsed = 0.0f;
+		FParse::Value(FCommandLine::Get(), TEXT("season="), Parsed);
+		return static_cast<double>(FMath::Frac(Parsed));
+	}();
+	Job->SeasonPhase = Season;
 
 	// Neighbour depths are read here, on the game thread, while the tree is
 	// stable. The worker never touches the tree.

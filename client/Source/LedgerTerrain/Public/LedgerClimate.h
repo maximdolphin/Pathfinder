@@ -74,7 +74,38 @@ namespace LedgerClimate
 	/// deserts will notice is missing.
 	LEDGERTERRAIN_API FVector3d PrevailingWind(const FVector3d& UnitSphere);
 
-	/// Climate at a point on the unit sphere.
+	/// How much colder a winter is than the annual mean, at the pole, in
+	/// degrees. Zero at the equator and scaled by the sine of latitude, which
+	/// is the shape a seasonal swing actually has: the tropics barely notice a
+	/// year and the poles are a different world twice in one.
+	constexpr double SeasonalSwingC = 20.0;
+
+	/// The temperature this latitude gains or loses at this point in the year.
+	///
+	/// SeasonPhase runs 0 to 1 through a year, with 0.25 the northern summer.
+	/// The two hemispheres are opposite by construction -- the term is odd in
+	/// the sine of latitude -- rather than by a rule somebody has to remember.
+	LEDGERTERRAIN_API double SeasonalOffsetC(
+		const FVector3d& UnitSphere, double SeasonPhase);
+
+	/// Climate at a point on the unit sphere, at a point in the year.
+	///
+	/// SeasonPhase defaults to zero, which is neither summer nor winter, so
+	/// everything that does not care about the season reads the annual mean and
+	/// nothing had to change when the season arrived.
 	LEDGERTERRAIN_API FLedgerClimate At(
-		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params);
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SeasonPhase = 0.0);
+
+	/// How much snow is lying, 0 to 1.
+	///
+	/// **The snow line is not a parameter.** It is where this crosses zero, and
+	/// it moves with altitude because the surface temperature does -- the lapse
+	/// rate was already there and this is the first thing to read it. It moves
+	/// with latitude and with the season for the same reason.
+	///
+	/// Moisture matters as well as cold: a bone-dry basin at minus five has
+	/// nothing to fall out of the sky, and the coldest deserts on Earth are
+	/// bare rock rather than snowfields.
+	LEDGERTERRAIN_API double SnowCover(const FLedgerClimate& Climate);
 }

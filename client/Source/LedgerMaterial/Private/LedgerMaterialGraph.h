@@ -80,14 +80,14 @@ namespace LedgerSurface
 			return Node;
 		}
 
-		UMaterialExpression* Mask(UMaterialExpression* Input, bool R, bool G, bool B)
+		UMaterialExpression* Mask(UMaterialExpression* Input, bool R, bool G, bool B, bool A = false)
 		{
 			UMaterialExpressionComponentMask* Node = Make<UMaterialExpressionComponentMask>();
 			Node->Input.Expression = Input;
 			Node->R = R;
 			Node->G = G;
 			Node->B = B;
-			Node->A = false;
+			Node->A = A;
 			return Node;
 		}
 

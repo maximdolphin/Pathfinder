@@ -37,11 +37,16 @@ namespace LedgerScatter
 	{
 		Job.Scatter.Reset();
 
-		// Near patches, and the two size steps beyond them. See MaxSizeRatio:
-		// the candidate count falls as the patch grows, so the forest thins
-		// with distance instead of ending at a line.
+		// Near patches, and only the finest of those.
+		//
+		// Both conditions, and the collision one is not redundant: dropping it
+		// while trying to thin the scatter with distance quietly doubled the
+		// forest and put trees across a desert the reference captures had bare.
+		// The size limit is about how big an instance is on screen;
+		// bWithCollision is the planet's own statement about how close the
+		// patch is, and they are not the same set.
 		const double SizeRatio = FMath::Max(1.0, Job.WorldSize / FinestWorldSize);
-		if (SizeRatio > MaxSizeRatio)
+		if (!Job.bWithCollision || SizeRatio > MaxSizeRatio)
 		{
 			return;
 		}
@@ -146,7 +151,8 @@ namespace LedgerScatter
 				// What grows here. The same climate the ground is painted from,
 				// so a forest floor has trees on it and a desert does not,
 				// without a second rule to keep in step with the first.
-				FLedgerClimate Climate = LedgerClimate::At(Direction, Job.Params);
+				FLedgerClimate Climate =
+					LedgerClimate::At(Direction, Job.Params, Job.SeasonPhase);
 				LedgerBiomes::Weigh(*Biomes, Climate, SlopeDegrees, Weights);
 
 				double Density = 0.0;
@@ -154,6 +160,11 @@ namespace LedgerScatter
 				{
 					Density += Weights[Index] * (*Biomes)[Index].ScatterDensity;
 				}
+
+				// Under deep snow there is nothing to see. Not zero at the
+				// first flake -- a wood in winter is still a wood -- but a
+				// metre of cover buries the undergrowth this scatters.
+				Density *= 1.0 - 0.8 * LedgerClimate::SnowCover(Climate);
 
 				if (Uniform(CellHash(Job.Key, Cell, 3u)) >= Density)
 				{

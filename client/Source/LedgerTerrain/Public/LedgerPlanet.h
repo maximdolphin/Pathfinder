@@ -60,6 +60,14 @@ struct FLedgerPatchJob
 	FLedgerTerrainParams Params;
 	int32 Side = 33;
 
+	/// Where in the year this patch was generated, 0 to 1.
+	///
+	/// A constant for a run rather than a clock: the snow a patch carries is
+	/// baked into its vertices, so a season that moved would invalidate every
+	/// cached patch continuously. Set from -season= and left alone. A moving
+	/// year is M04's, with the weather.
+	double SeasonPhase = 0.0;
+
 	/// The biome set, shared with every job in flight.
 	///
 	/// A shared pointer to a const array rather than a copy per job: it is read
