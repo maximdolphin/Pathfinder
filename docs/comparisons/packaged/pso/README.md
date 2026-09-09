@@ -50,11 +50,31 @@ p99 is 12% apart, which is the half of the trace that a mean does not see.
 ## What is not met, and what it needs
 
 **34 `PSOPrecacheState: Missed`, identical cold and warm.** Identical is the
-point: precaching is not covering these 34 pipelines, and no cache carries them
-between runs, so every first run compiles them again. That is the half of the
-acceptance that fails, and the driver disk caches were the wrong lever for it —
-they are the driver's copy, not the engine's. The engine's own answer is a
-recorded `.upipelinecache` shipped with the build, which nothing here does yet.
+point: precaching is not covering these 34 pipelines, and no cache carried them
+between runs, so every first run compiled them again.
+
+Three things were wrong, and each hid the next.
+
+1. **`r.PSOPrecaching`, `r.PSOPrecache.Resources` and
+   `r.ShaderPipelineCache.Enabled` were in a section that ignores them.**
+   `[/Script/WindowsTargetPlatform.WindowsTargetSettings]` is a UObject
+   section; a stray `r.*` key there never becomes a console variable, and none
+   of the three appeared in the log's `Set CVar` lines. Two of them happen to
+   match the engine default, so the mistake cost nothing and showed nothing.
+2. **The cook was never asked for stable shader keys.** Without
+   `NeedsShaderStableKeys` there is no `.shk`, and without a `.shk` a recorded
+   PSO log cannot become a shipped cache — the recording names shaders by a
+   hash that changes every cook.
+3. **The flight never exited.** The pipeline cache writes its recording on
+   shutdown, and the fixture wrote its report and then sat there until it was
+   killed. `r.ShaderPipelineCache.SaveBoundPSOLog=1` produced nothing at all
+   until the flight learned to stop. (The same bug meant the CI job, which
+   runs the flight and then compares captures, could never have passed.)
+
+With all three fixed: a clean run produces a `.rec.upipelinecache`,
+`ShaderPipelineCacheTools Expand` turns its 38 recorded PSOs into 82 stable
+ones against 21,175 shader info lines, and `Ledger_SM6.spc` is committed under
+`client/Build/Windows/PipelineCaches/` for the cook to convert.
 
 **Most of the 22 stalls in the cold run were the fixture.** They landed at
 t=14.1, 42.1, 68.1, 78.1, 88.3 and 124.0 seconds — the capture timestamps.
@@ -82,3 +102,34 @@ t=124 is the coast teleport, t=132 the underwater one, t=140 the start of the
 climb. They are the frames where the camera moves somewhere new or the tree
 collapses — the terrain's problem, and the same ~300 ms spike the component
 comparison found. None of them coincides with a precache miss.
+
+## Where this stopped
+
+The shipped cache is built and in place, and it is not being opened.
+
+`client/Content/PipelineCaches/Windows/Ledger_PCD3D_SM6.stable.upipelinecache`
+matches the path and name `FPipelineFileCacheManager` constructs
+(`PipelineFileCache.cpp:2196`): project content dir, `PipelineCaches`, the ini
+platform name, then `<Name>_<PlatformName>.stable.upipelinecache`. UAT stages
+`*.upipelinecache` from that directory as UFS, so it is inside the pak. The
+count of `PSOPrecacheState: Missed` is unchanged at 34, and the log contains no
+`FShaderPipelineCache` or `PipelineFileCache` lines at all — the subsystem
+never opened it.
+
+Two things to check next, and the second may invalidate the whole approach:
+
+1. **Nothing calls `OpenPipelineFileCache`.** The bundled cache is opened by
+   name at a point the game chooses; a project that never asks gets nothing.
+   `r.ShaderPipelineCache.StartupFile` or an explicit open in game code is the
+   likely missing piece.
+2. **`PSOPrecacheState: Missed` may be the wrong meter.** It is reported by the
+   PSO *precaching* system, which builds pipelines from materials at load. The
+   bundled pipeline cache is a different mechanism that pre-creates PSOs from a
+   recorded list. A bundled cache could be working perfectly and this counter
+   would not move. Before spending more on the cache, find a counter that
+   measures what the cache actually does — otherwise this is another
+   measurement that cannot show success.
+
+The second point is why this stopped rather than continuing to iterate. Four
+package-and-fly cycles were spent moving a number that may not be connected to
+the thing being changed.
