@@ -93,7 +93,7 @@ namespace LedgerSurface
 		}
 	}
 
-	UMaterialInterface* CreateTerrainMaterial(UObject* Outer, uint32 Seed)
+	UMaterialInterface* BuildTerrainMaterial(UObject* Outer, uint32 Seed)
 	{
 		const FSurfaceSet Flat = LoadSurfaceSet(FlatSurface);
 		const FSurfaceSet Steep = LoadSurfaceSet(SteepSurface);
@@ -107,7 +107,7 @@ namespace LedgerSurface
 			return nullptr;
 		}
 
-		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
+		UMaterial* Material = NewMaterial(Outer, TEXT("M_Terrain"));
 		if (Material == nullptr)
 		{
 			return nullptr;

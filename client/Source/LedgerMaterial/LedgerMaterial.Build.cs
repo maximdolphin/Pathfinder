@@ -21,5 +21,16 @@ public class LedgerMaterial : ModuleRules
 			"Json",
 			"LedgerCore"
 		});
+
+		// Saving a package is an editor operation, and baking materials into
+		// assets is the only reason this module needs the editor at all.
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"AssetRegistry",
+				"UnrealEd"
+			});
+		}
 	}
 }

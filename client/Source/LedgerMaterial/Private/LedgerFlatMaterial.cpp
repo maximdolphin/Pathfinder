@@ -13,7 +13,7 @@ namespace LedgerSurface
 {
 	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness)
 	{
-		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
+		UMaterial* Material = NewMaterial(Outer, TEXT("M_Flat"));
 		if (Material == nullptr)
 		{
 			return nullptr;

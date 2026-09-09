@@ -13,9 +13,9 @@
 
 namespace LedgerSurface
 {
-	UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer)
+	UMaterialInterface* BuildUnderwaterMaterial(UObject* Outer)
 	{
-		UMaterial* Material = NewObject<UMaterial>(Outer, NAME_None, RF_Transient);
+		UMaterial* Material = NewMaterial(Outer, TEXT("M_Underwater"));
 		if (Material == nullptr)
 		{
 			return nullptr;

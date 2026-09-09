@@ -16,6 +16,7 @@
 #if WITH_EDITOR
 
 #include "Materials/Material.h"
+#include "UObject/Package.h"
 #include "Materials/MaterialExpressionAdd.h"
 #include "Materials/MaterialExpressionComponentMask.h"
 #include "Materials/MaterialExpressionConstant.h"
@@ -32,6 +33,30 @@
 
 namespace LedgerSurface
 {
+		/// A material whose flags follow its outer.
+		///
+		/// Given a package, it is a real asset -- public, standalone, and
+		/// therefore saveable. Given anything else it is transient, which is
+		/// what an in-memory fallback wants. One line at each of the four
+		/// creation sites instead of a second set of builders that would drift
+		/// from the first.
+		static UMaterial* NewMaterial(UObject* Outer, const TCHAR* Name)
+		{
+			const bool bAsset = Outer != nullptr && Outer->IsA<UPackage>();
+			return NewObject<UMaterial>(
+				Outer,
+				bAsset ? FName(Name) : NAME_None,
+				bAsset ? (RF_Public | RF_Standalone) : RF_Transient);
+		}
+
+	/// The graph builders. These are the source of truth for what a material
+	/// *is*; `Create...` in the public header is how the game gets one, and it
+	/// prefers the baked asset. Private, because nothing outside this module
+	/// should be building a material graph.
+	UMaterialInterface* BuildTerrainMaterial(UObject* Outer, uint32 Seed);
+	UMaterialInterface* BuildWaterMaterial(UObject* Outer);
+	UMaterialInterface* BuildUnderwaterMaterial(UObject* Outer);
+
 	struct FGraph
 	{
 		UMaterial* Material = nullptr;

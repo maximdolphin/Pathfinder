@@ -12,7 +12,9 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "LedgerSurface.h"
+#include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAtmosphere.h"
 #include "LedgerPlanet.h"
@@ -239,6 +241,29 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	}
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, atmosphere, sun, town, ship"));
+
+#if WITH_EDITOR
+	// `-bakematerials` runs every material builder into a saved asset and quits.
+	//
+	// Here rather than in a commandlet because the builders need a world that
+	// has already been built: the terrain material loads the surface sets and
+	// reads their tiling out of the manifest, and a bare commandlet has none of
+	// that. Building the world and then baking costs a few seconds and reuses
+	// the path the game already takes.
+	if (FParse::Param(FCommandLine::Get(), TEXT("bakematerials")))
+	{
+		FString Report;
+		const bool bAllSaved = LedgerSurface::BakeMaterials(Report);
+
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				TEXT("bake-materials.txt")));
+		FFileHelper::SaveStringToFile(Report, *Path);
+		UE_LOG(LogLedger, Log, TEXT("bake -> %s"), *Path);
+
+		FGenericPlatformMisc::RequestExit(!bAllSaved);
+	}
+#endif
 }
 
 void ULedgerWorldBuilder::ChooseSite()

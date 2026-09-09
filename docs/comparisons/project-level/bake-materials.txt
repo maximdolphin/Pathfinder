@@ -1,0 +1,9 @@
+Baked materials.
+
+  M_Terrain      FAILED: could not write the package
+  M_Water        FAILED: could not write the package
+  M_Underwater   FAILED: could not write the package
+
+  0 of 3 saved
+
+VERDICT: FAIL

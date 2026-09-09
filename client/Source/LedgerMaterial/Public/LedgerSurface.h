@@ -23,6 +23,13 @@ class UTexture2D;
 
 namespace LedgerSurface
 {
+	/// Where baked materials live. One place, derived from, never typed twice.
+	inline constexpr const TCHAR* MaterialPackageRoot = TEXT("/Game/Materials/");
+
+	/// Runs every material builder once and saves the result as an asset.
+	/// Editor only, and the whole reason a packaged build has a look at all.
+	LEDGERMATERIAL_API bool BakeMaterials(FString& Report);
+
 	/// A tiling detail texture with a **full mip chain**, generated from noise.
 	///
 	/// `UTexture2D::CreateTransient` produces a single mip, which is exactly the

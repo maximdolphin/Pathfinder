@@ -27,3 +27,10 @@ __pycache__/
 # needed to rebuild them is committed; 2.3 GB of derived binaries is not.
 /client/Content/Surfaces
 /build
+
+# Baked materials. Derived from the C++ graph builders by `-bakematerials`, and
+# byte-reproducible, so they are a build product rather than source. A clone
+# without them still runs: the editor falls back to building in memory and says
+# so. A packaged build needs the bake first, which is what M2W's packaging task
+# wires up.
+/client/Content/Materials
