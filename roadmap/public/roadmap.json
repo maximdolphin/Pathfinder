@@ -3258,9 +3258,21 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "Stall attribution done. The recorder now drops frames while a screenshot is outstanding -- a fixed two-frame skip was tried first and removed only nine of twenty-two, because the request is served whenever the render thread gets to it, and picking a larger number until the list looked clean would have been picking the answer. Count 22 -> 12. What is left lands on t=124 (coast teleport), t=132 (underwater teleport) and t=140 (start of the climb): the frames where the camera moves somewhere new or the tree collapses. None coincides with a precache miss. So the 34 misses are 30 in the warm-up window and 4 in flight, and the flight's stalls are the terrain's cache-copy problem rather than shader compilation. Remaining work for the acceptance is a recorded .upipelinecache to take the 34 to zero."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Recording pipeline built end to end: stable keys from the cook, a clean flight exit so the recording flushes, 38 recorded PSOs -> 82 stable -> a 38-PSO binary cache at Content/PipelineCaches/Windows/Ledger_PCD3D_SM6.stable.upipelinecache, which is the exact path and name FPipelineFileCacheManager constructs. The runtime never opens it -- no FShaderPipelineCache lines in the log at all -- and the miss count is unchanged at 34. STOPPED DELIBERATELY: PSOPrecacheState:Missed is reported by the PSO precaching system and the bundled cache is a different mechanism, so a working cache might not move that counter. Four package-and-fly cycles went into a number that may not be connected to the change. Prerequisite for finishing is a meter that measures the bundled cache; the other candidate is that nothing calls OpenPipelineFileCache."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T424-2026-09-09T15-05-42-631.md",
+     "caption": "Three causes found and fixed; where the fourth stopped and why",
+     "source": "../docs/comparisons/packaged/pso/README.md",
+     "addedAt": "2026-09-09T15:05:42.632Z"
+    }
+   ],
    "plannedStartDay": 73.5,
    "plannedEndDay": 75.5,
    "plannedStart": "2026-12-17",
@@ -12447,5 +12459,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T14:36:23.677Z"
+ "updatedAt": "2026-09-09T15:05:42.634Z"
 }
