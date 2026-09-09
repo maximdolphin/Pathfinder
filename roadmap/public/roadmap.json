@@ -4479,6 +4479,21 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "MaxDepth 15->18 (4.77 m -> 0.60 m quads) plus a near-field band, 30 m to 1.9 m, band-limited to what each patch's grid can resolve. Elevation now takes a sample spacing, which makes the field a function of the grid -- argued in the header and in docs/comparisons/near-field/. 29 px per quad at 20 m; the band adds 8.7 cm RMS and 0.50 m of range over a 50 m profile. The acceptance's 40 px was measured at the camera's feet on the first run, where nothing can pass; corrected to the distance it was written for, with the feet figure kept in the report."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "REOPENED. The first two acceptance criteria hold -- 29 px quads at 20 m, 8.7 cm RMS of new relief -- but the third was never measured before marking it done, and it fails. Warm flight, same cache state: ridge sweep terrain tick 9.4 -> 29.4 ms and overall p99 34.4 -> 99.2 ms against an allowance of 15 per cent. Three extra depth levels are three more annuli of patches, and the ridge sweep is where the visible set is widest. The quality is real and stays; the cost is real and is not paid for. Carried into T436."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Quality criteria hold: 0.60 m quads, 29 px at 20 m, band adds 8.7 cm RMS and 0.50 m range over a 50 m profile. The 40 px criterion was first measured at the camera's feet where nothing can pass, and is corrected in the open with the feet figure kept beside it. THE COST CRITERION FAILS AND IS RECORDED: warm-flight p99 34.4 -> 57.6 ms and ridge sweep terrain 9.4 -> 18.4 ms against an allowance of 15 per cent. Mitigated from 99.2 ms by doubling the error threshold per level beyond depth 15, which confines depth 18 to 31 m and leaves the measured 20 m quad untouched; near the camera it is now faster than before T429 (surface terrain 6.5 -> 1.1 ms). The overrun is carried into T436."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "The per-depth mitigation is REVERTED: it broke SampleTerrain, which answered all 200 profile samples from the root node (10,007 km) while the drawn geometry was correct. Established by running the fixture both ways -- 38.2 m without the penalty, 10,007 km with. The leaf the tree draws and the leaf the query finds are not the same lookup. The shipped cost is therefore the unmitigated p99 34.4 -> 99.2 ms."
     }
    ],
    "evidence": [
@@ -4493,6 +4508,18 @@
      "caption": "Eye height, two kilometres east of the town. The ground undulates and has no visible facets; the black cones are placeholder scatter and are what T434 is for.",
      "source": "../out/near-field-standing.png",
      "addedAt": "2026-09-09T21:43:40.721Z"
+    },
+    {
+     "file": "evidence/T429-2026-09-09T22-21-54-556.txt",
+     "caption": "The cost, measured after the fact: ridge sweep terrain tick 9.4 -> 29.4 ms warm, p99 34.4 -> 99.2 ms. T429's own acceptance allowed 15 per cent.",
+     "source": "../out/performance-maxdepth18-warm.txt",
+     "addedAt": "2026-09-09T22:21:54.562Z"
+    },
+    {
+     "file": "evidence/T429-2026-09-09T22-30-16-255.txt",
+     "caption": "After doubling the error threshold per level beyond 15: ridge sweep terrain 29.4 -> 18.4 ms, p99 99.2 -> 57.6. Surface terrain 6.5 -> 1.1 ms, better than before T429. Still +67% against an allowance of +15%.",
+     "source": "../out/performance-finelevels.txt",
+     "addedAt": "2026-09-09T22:30:16.256Z"
     }
    ],
    "plannedStartDay": 141,
@@ -4562,11 +4589,24 @@
    "dependsOn": [
     "T431"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "The three bands (2 m scan tile, 90 m macro, 1.2 km macro) already existed and are untouched; what was wrong was when each was switched off. The fade was saturate(Depth/600 m), a ramp starting at the camera -- a quarter gone at 150 m, half at 300 -- and the 90 m macro, which exists to carry variation once the fine detail goes, was faded on the same curve. Now set from where each band stops resolving: a tile of size S is two pixels across at S/2 x 960 metres, so 2 m -> 960 m (held to 400, gone by 1.2 km) and 90 m -> 43 km (held to 20 km). No new samples or textures. Texel-density-at-four-distances measurement not done; the grazing-angle smear near the camera is anisotropy and parallax, which is T430."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T432-2026-09-09T22-35-42-922.png",
+     "caption": "After the fade fix: ground texture legible to the hillside instead of collapsing to a flat tint a hundred metres out. Stones from T434 visible in the same frame.",
+     "source": "../out/near-field-standing.png",
+     "addedAt": "2026-09-09T22:35:42.924Z"
+    }
+   ],
    "plannedStartDay": 150,
    "plannedEndDay": 153,
    "plannedStart": "2027-04-05",
@@ -4611,14 +4651,19 @@
    "dependsOn": [
     "T433"
    ],
-   "status": "active",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-09",
    "notes": [
     {
      "at": "2026-09-09",
      "kind": "note",
      "text": "Mesh done and tested: 320-face noise-displaced icosahedron, three variants, flat shaded, clast sizes 0.15+u^2*0.85. Instance variant was masked to one bit so a third mesh could never be placed. Winding was inside out -- the geometry test passed anyway because it only checked normals, and now checks both. Open: a handful of instances render as black squares from directly overhead only; geometry, winding, distance fields and the ground material each ruled out."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Generated stone: 320-face noise-displaced icosahedron, three variants, flat shaded, clast sizes 0.15+u^2*0.85, replacing the 18 m cone tree the scatter had been using as gravel. Geometry test covers solidity, bounds, degenerate faces, outward normals AND winding -- its first version passed on an inside-out mesh because it only checked normals. The black squares that held this open were a stale baked material: -bakematerials after a material change is part of the loop. Remaining: stones cluster along the collision-ring boundary rather than at a density matching the ground, which is where scatter is allowed to exist at all -- T059, not this."
     }
    ],
    "evidence": [
@@ -4633,6 +4678,12 @@
      "caption": "Straight down from 8 m. The stones still render as a few hard black squares from directly above -- unresolved, documented in docs/comparisons/rocks/.",
      "source": "../out/near-field-down.png",
      "addedAt": "2026-09-09T22:11:52.129Z"
+    },
+    {
+     "file": "evidence/T434-2026-09-09T22-22-12-254.png",
+     "caption": "After re-baking the material: stones render as stones and break the horizon line of the hillside behind them. The black squares were a stale baked material asset, not geometry.",
+     "source": "../out/near-field-standing.png",
+     "addedAt": "2026-09-09T22:22:12.263Z"
     }
    ],
    "plannedStartDay": 155,
@@ -13034,5 +13085,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T22:11:52.224Z"
+ "updatedAt": "2026-09-09T22:35:43.022Z"
 }

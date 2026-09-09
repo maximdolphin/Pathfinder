@@ -12,6 +12,8 @@
 
 #include "LedgerPlanet.h"
 
+#include "Misc/CommandLine.h"
+
 #include "LedgerQuadNode.h"
 
 #include "Engine/World.h"
@@ -166,7 +168,33 @@ void ALedgerPlanet::UpdateTree(
 	const double Error = LedgerTerrain::ScreenSpaceError(
 		Node.WorldSize, Distance, ViewportWidth, FovRadians);
 
-	if (!bForceCollapse && Error > EffectiveErrorPixels && Node.Depth < MaxDepth)
+	// A per-depth error penalty was tried here and is not here, which is worth
+	// the paragraph because the number it bought was large.
+	//
+	// T429 took MaxDepth from 15 to 18 and the cost was measured afterwards
+	// rather than before: warm-flight p99 34.4 -> 99.2 ms, ridge sweep terrain
+	// 9.4 -> 29.4 ms, against an allowance of fifteen per cent. Making each
+	// level beyond 15 cost twice the projected error of the one above it --
+	// confining depth 16 to 489 m, 17 to 122 m and 18 to 31 m -- took p99 to
+	// 57.6 ms and the sweep to 18.4 ms without touching the quad the camera
+	// looks at, which is measured at twenty metres and stayed at 0.60 m.
+	//
+	// **And it broke SampleTerrain.** With the penalty on, the terrain query
+	// answered every one of two hundred profile samples from the root node --
+	// a ten-thousand-kilometre patch -- while the drawn geometry was visibly
+	// correct in the same frame. Established by running the fixture with the
+	// penalty and again with it off, not by reasoning: 38.2 m patches without,
+	// 10,007 km with.
+	//
+	// So the leaf the tree draws and the leaf the query finds are not the same
+	// lookup, and a threshold that varies with depth separates them. That is a
+	// real defect in something else, uncovered by this, and the query is what
+	// collision and gameplay read -- a third off the frame time is not worth
+	// shipping a terrain API that answers from the whole planet. The lead is
+	// written down for T436, which is where the milestone's cost is priced.
+	const double Threshold = EffectiveErrorPixels;
+
+	if (!bForceCollapse && Error > Threshold && Node.Depth < MaxDepth)
 	{
 		if (!Node.bHasChildren)
 		{

@@ -78,6 +78,49 @@ knee-height undulation, which is what was missing. The drawn mesh tracks the
 field it is built from to within 3 mm of RMS, which is the geomorph and the
 stitching agreeing.
 
+## The third criterion, which fails
+
+T429's acceptance also said *the transect frame time does not regress by more
+than 15 per cent*. That was not measured before the task was marked done. It
+was measured afterwards, and it fails.
+
+Warm flights, 86-92% of patches served from disk in every case, so the
+comparison is of drawing rather than of generating:
+
+| | ridge sweep terrain tick | overall p99 | |
+|---|---|---|---|
+| before T429 (MaxDepth 15) | 9.4 ms | 34.4 ms | |
+| **MaxDepth 18 — shipped** | **29.4 ms** | **99.2 ms** | |
+| finest levels at 2x error | 22.9 ms | 61.5 ms | reverted |
+| doubling per level | 18.4 ms | 57.6 ms | reverted |
+
+Three extra levels are three more annuli of nodes, and a sweep along a ridge at
+speed is where the visible set is widest.
+
+A mitigation was built and then taken out again. Making each level beyond 15
+cost twice the projected error of the one above it — confining depth 16 to
+489 m, 17 to 122 m, 18 to 31 m — took p99 from 99.2 to 57.6 ms without touching
+the quad the camera looks at, which is measured at twenty metres and stayed at
+0.60 m and 29 px.
+
+**And it broke `SampleTerrain`.** With the penalty on, the terrain query
+answered every one of two hundred profile samples from the **root node** — a
+ten-thousand-kilometre patch — while the drawn geometry was visibly correct in
+the same frame. Established by running the fixture both ways rather than by
+reasoning about it: 38.2 m patches with the penalty off, 10,007 km with it on.
+
+So the leaf the tree draws and the leaf the query finds are not the same lookup,
+and a threshold that varies with depth separates them. `SampleTerrain` is what
+collision and gameplay read (T061); a third off the frame time is not worth
+shipping a terrain API that answers from the whole planet. Reverted, with the
+lead written into `LedgerQuadTree.cpp` for whoever prices this.
+
+So the number that ships is the unmitigated one: **p99 34.4 → 99.2 ms**, against
+an allowance of fifteen per cent. It is recorded rather than rounded off. The
+quality is real, the bill is real and unpaid, and M02's own gate (no frame over
+16 ms on the transect) was already failing at 45 ms p99 before any of this.
+Carried into T436, which exists to price the whole milestone.
+
 ### The acceptance was wrong and is corrected in the open
 
 T429's acceptance said *no triangle edge over 40 px standing on flat ground*,
@@ -93,15 +136,16 @@ mine and quietly moving it would be worse than having got it wrong.
 
 ## What the photograph also shows
 
-`out/near-field-standing.png` is the honest result and it is worth reading for
-what it does *not* fix. The ground undulates and no facets are visible on it.
-Everything else in the frame is placeholder: the scatter props are black
-untextured cones several times the height of a person, and they dominate the
-image completely. At mid-distance the ground texture averages into mush, which
-is the single-tiling-scale problem.
+`out/near-field-standing.png` is the honest result. When it was first taken for
+this task it showed ground that undulated with no facets on it -- and a dense
+forest of black untextured cones several times the height of a person, filling
+the frame, plus a mid-ground that averaged into mush.
 
-Neither is T429. They are T434 and T432, and the photograph is filed here as
-evidence for this task and as the argument for those.
+Neither was T429. The cones were the scatter placing an eighteen-metre tree as
+gravel (T434) and the mush was the detail fade starting at the camera (T432).
+Both are fixed, and the capture filed here is the one taken after them: the
+same ground, with stones on it that read as stones and texture that survives to
+the hillside.
 
 ## Files
 

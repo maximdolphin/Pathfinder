@@ -451,21 +451,42 @@ namespace LedgerSurface
 				MacroFarPosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color),
 			SlotMean[0]);
 
-		// Distance fade. Mips stop the near detail aliasing, but by the time a
-		// two-metre pattern is a couple of pixels across it is only noise on
-		// the histogram — fading it to neutral is both cheaper and cleaner.
+		// Distance fade, from the distance the pattern actually stops
+		// resolving. T432.
+		//
+		// This was `saturate(Depth / 600 m)`, a ramp that begins at the camera.
+		// It reached a quarter at 150 m and a half at 300 m, so the ground
+		// three hundred metres away was drawn with half its detail already
+		// deleted -- which is what the mid-ground wash in the eye-height
+		// captures was. Nothing about a mip needs that.
+		//
+		// The criterion is when a tile is about two pixels across, which is
+		// arithmetic rather than taste. A two-metre tile at distance D subtends
+		// 2/D radians; on a 1920 px viewport at 90 degrees that is (2/D) x 960
+		// pixels, so two pixels happens at 960 m. Held to 400 m, gone by
+		// 1.2 km, which brackets it.
 		UMaterialExpressionPixelDepth* Depth = Graph.Make<UMaterialExpressionPixelDepth>();
 		UMaterialExpressionSaturate* Fade = Graph.Make<UMaterialExpressionSaturate>();
-		Fade->Input.Expression = Graph.Divide(Depth, Graph.Constant(60000.0f)); // 600 m
+		Fade->Input.Expression = Graph.Divide(
+			Graph.Subtract(Depth, Graph.Constant(40000.0f)),   // held to 400 m
+			Graph.Constant(80000.0f));                          // gone by 1.2 km
 
 		UMaterialExpression* FadedVariation = Graph.Lerp(Variation, Graph.Constant(1.0f), Fade);
 
-		// The ninety-metre macro fades out with the detail it modulates, and for
-		// the same reason: past its mip range it is a few pixels per tile, and
-		// what it contributes there is a visible grid rather than variation.
-		// The kilometre one does not fade -- at ten kilometres its features are
-		// still hundreds of pixels across, which is exactly why it is there.
-		UMaterialExpression* FadedMacro = Graph.Lerp(Macro, Graph.Constant(1.0f), Fade);
+		// The ninety-metre macro does not fade with the detail, and used to.
+		//
+		// Same arithmetic as above, applied honestly: ninety metres is two
+		// pixels across at forty-three kilometres, so within any distance this
+		// planet draws ground at, it is never near its mip range. It was being
+		// faded out over the same 600 m as the two-metre band -- so the moment
+		// the fine detail went, the thing that was supposed to replace it went
+		// with it, and the mid-ground collapsed to a flat tint. It fades over
+		// its own distance, far past where anything else matters.
+		UMaterialExpressionSaturate* MacroFade = Graph.Make<UMaterialExpressionSaturate>();
+		MacroFade->Input.Expression = Graph.Divide(
+			Graph.Subtract(Depth, Graph.Constant(2000000.0f)),  // held to 20 km
+			Graph.Constant(4000000.0f));                        // gone by 60 km
+		UMaterialExpression* FadedMacro = Graph.Lerp(Macro, Graph.Constant(1.0f), MacroFade);
 
 		// Saturated, because three mean-one multipliers stacked on a tint have
 		// a tail that goes above one and albedo above one is not a colour, it
