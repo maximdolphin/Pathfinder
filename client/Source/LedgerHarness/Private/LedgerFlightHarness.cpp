@@ -64,7 +64,8 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 
 	// Whichever fixture is running owns the ship. Two of them placing the same
 	// pawn is two fixtures measuring neither.
-	for (const TCHAR* Fixture : { TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable") })
+	for (const TCHAR* Fixture :
+		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate") })
 	{
 		if (FParse::Param(FCommandLine::Get(), Fixture))
 		{
