@@ -88,13 +88,30 @@ the edge of the collision radius, where nothing is close enough to notice.
 paints the ground plants the trees, and the desert the scripted flight lands in
 gets three per cent density while this site gets one.
 
-**There is a hard edge where the forest stops.** Scatter is placed only on the
-finest patches — the ones that carry collision — and beyond that ring there is
-nothing at all rather than something smaller or an impostor. It is visible in
-the middle distance of `forest.png` as a curved line with trees on one side and
-bare ground on the other. That is T059's business (far-field impostors and
-horizon detail) and it is named here so that nobody reads this picture as
-finished.
+**From above, the forest comes out in patch-shaped blocks.** `ring-edge.png` is
+the same site from 600 m, and it is not a clean edge with trees inside and bare
+ground outside: it is rectangular clumps with gaps between them, at about the
+size of a 305 m patch. Scatter goes only on the finest patches, so the gaps are
+where the ground is one LOD step coarser — but a distance-driven LOD ought to
+give a disc rather than a scatter of blocks, and **why it does not is not yet
+established.**
+
+This description is a correction. The first version of this write-up called it
+"a curved line with trees on one side and bare ground on the other", which is
+what `forest.png` looks like from thirty metres and is not what the wide shot
+shows. The claim was made from the wrong picture.
+
+**And the obvious fix made it worse.** Carrying scatter on for two more size
+steps with fewer candidates as the patch grows costs little — 97,777 instances
+over 905 patches, 1.5 ms a frame, still sixty — and looks far worse, because a
+fixed candidate count over a patch means areal density falls with the square of
+the patch's size. Patches one LOD step apart then differ eightfold, and the
+result is the patch grid drawn in trees. Reverted, with the reasoning kept in
+`LedgerScatter.h`.
+
+Density has to be a function of position rather than of which patch a point
+falls in, which means a candidate lattice fixed to the world rather than to the
+patch. That is T059's work.
 
 The meshes are the two trees the settlement plants, borrowed. The biome files
 already have somewhere to name their own rocks and shrubs; until those meshes
