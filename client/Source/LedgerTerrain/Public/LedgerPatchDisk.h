@@ -30,9 +30,10 @@ namespace LedgerPatchDisk
 	/// every elevation in every fine patch without changing the format at all
 	/// -- exactly the case a layout check would have missed. 3: T434's stone
 	/// sizes, which are stored in the payload and would otherwise have been
-	/// served from disk at the old tree-sized distribution forever. It is in the key, not a header check:
+	/// served from disk at the old tree-sized distribution forever. 4: the
+	/// scatter fill cap, for the same reason. It is in the key, not a header check:
 	/// a stale entry then simply never matches and is evicted in its turn.
-	constexpr uint32 FormatVersion = 3;
+	constexpr uint32 FormatVersion = 4;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

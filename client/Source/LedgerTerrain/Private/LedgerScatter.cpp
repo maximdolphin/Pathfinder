@@ -175,7 +175,21 @@ namespace LedgerScatter
 				// metre of cover buries the undergrowth this scatters.
 				Density *= 1.0 - 0.8 * LedgerClimate::SnowCover(Climate);
 
-				if (Uniform(CellHash(Job.Key, Cell, 3u)) >= Density)
+				// **Capped below one, and that is what stops the grid.**
+				//
+				// There is jitter inside each cell already, and it is not
+				// enough on its own: a cell is filled when a uniform draw falls
+				// under the density, so a biome asking for 1.0 fills every cell
+				// on the grid and jitter inside a full lattice is still a
+				// lattice. The rainforest capture in T437 is rows of stones
+				// marching in step across a hillside, from a rule that has had
+				// anti-grid jitter in it the whole time.
+				//
+				// At 0.55 nearly half the cells are empty and the gaps are
+				// where the pattern goes. Density below that is untouched, so
+				// the sparse biomes this was tuned on do not move.
+				constexpr double MaxFill = 0.55;
+				if (Uniform(CellHash(Job.Key, Cell, 3u)) >= FMath::Min(Density, MaxFill))
 				{
 					continue;
 				}

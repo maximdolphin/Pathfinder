@@ -270,9 +270,21 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 				// Lit, and not the engine default. Instanced components take
 				// the mesh's own material slots, the bake assigns none, and the
 				// default material is what those shards were being drawn with.
+				// The tint carries the colour, not the mesh's vertex colours.
+				//
+				// M_Flat is Tint x VertexColour, and the stones were baked with
+				// a warm grey per face -- which never arrives: an instanced
+				// static mesh does not deliver the mesh's vertex colours to the
+				// shader. White times a colour that is not there is white, and
+				// the T437 rainforest capture has arctic boulders in it.
+				// Darkening the bake changed nothing, which is what said so.
+				//
+				// 0.16 linear is rock. Per-stone variation has to come back
+				// some other way -- per-instance custom data, or one material
+				// per variant the way the settlement's two trees do it.
 				Planet->SetScatterMeshes(ScatterMeshes,
 					LedgerSurface::CreateFlatMaterial(
-						Planet, FLinearColor::White, 0.86f));
+						Planet, FLinearColor(0.16f, 0.15f, 0.13f), 0.86f));
 				ALedgerPlanet* Owner = Planet;
 				Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
 					[Owner, Surface](const FLedgerBiomePalette& Palette,

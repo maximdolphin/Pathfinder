@@ -1,0 +1,281 @@
+#include "LedgerFourBiomes.h"
+
+#include "Camera/CameraActor.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "HAL/PlatformMisc.h"
+#include "LedgerBiome.h"
+#include "LedgerClimate.h"
+#include "LedgerLog.h"
+#include "LedgerPlanet.h"
+#include "LedgerShip.h"
+#include "LedgerTerrainMath.h"
+#include "LedgerWorld.h"
+#include "Misc/CommandLine.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "UnrealClient.h"
+
+namespace
+{
+	constexpr int32 Wanted = 4;
+	constexpr double FourBiomeSettleSeconds = 22.0;
+	constexpr double FourBiomeEyeMetres = 1.7;
+
+	FVector3d FourBiomeOnSphere(double LatitudeDegrees, double LongitudeDegrees)
+	{
+		const double Lat = FMath::DegreesToRadians(LatitudeDegrees);
+		const double Lon = FMath::DegreesToRadians(LongitudeDegrees);
+		return FVector3d(
+			FMath::Cos(Lat) * FMath::Cos(Lon),
+			FMath::Cos(Lat) * FMath::Sin(Lon),
+			FMath::Sin(Lat)).GetSafeNormal();
+	}
+}
+
+bool ULedgerFourBiomes::DoesSupportWorldType(const EWorldType::Type WorldType) const
+{
+	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
+}
+
+TStatId ULedgerFourBiomes::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerFourBiomes, STATGROUP_Tickables);
+}
+
+void ULedgerFourBiomes::OnWorldBeginPlay(UWorld& InWorld)
+{
+	Super::OnWorldBeginPlay(InWorld);
+	bRunning = FParse::Param(FCommandLine::Get(), TEXT("fourbiomes"));
+}
+
+void ULedgerFourBiomes::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bRunning || DeltaSeconds <= 0.0f)
+	{
+		return;
+	}
+
+	if (!bFound)
+	{
+		if (!FindSites())
+		{
+			bRunning = false;
+			FPlatformMisc::RequestExit(false);
+			return;
+		}
+		bFound = true;
+	}
+
+	if (Shot >= Sites.Num())
+	{
+		bRunning = false;
+		Report();
+		FPlatformMisc::RequestExit(false);
+		return;
+	}
+
+	Place();
+
+	Settle += DeltaSeconds;
+	if (Settle < FourBiomeSettleSeconds)
+	{
+		return;
+	}
+
+	if (!bCaptured)
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				FString::Printf(TEXT("four-biomes-%d-%s.png"), Shot + 1, *Names[Shot])));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		bCaptured = true;
+		return;
+	}
+
+	++Shot;
+	Settle = 0.0;
+	bCaptured = false;
+}
+
+bool ULedgerFourBiomes::FindSites()
+{
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World != nullptr
+		? World->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
+	if (Planet == nullptr)
+	{
+		return false;
+	}
+
+	TArray<FString> Errors;
+	const TArray<FLedgerBiome> Biomes =
+		LedgerBiomes::Load(LedgerBiomes::DefaultDirectory(), Errors);
+	if (Biomes.Num() < Wanted)
+	{
+		UE_LOG(LogLedger, Error, TEXT("four biomes: only %d loaded"), Biomes.Num());
+		return false;
+	}
+
+	const FLedgerTerrainParams Params = Planet->TerrainParams();
+	const FVector3d SunDirection = Builder->GetSunFacing().GetSafeNormal();
+
+	// Every fixture in this repository that forgot this photographed the night
+	// side at least once. Well clear of the terminator, and on the raking side
+	// of it, which is the light the surface study found reads ground best.
+	auto IsLit = [&SunDirection](const FVector3d& Point)
+	{
+		return FVector3d::DotProduct(Point, SunDirection) > 0.35;
+	};
+
+	// The best example of each biome rather than the first: for every biome,
+	// keep the lit, dry-land point where that biome's weight is highest. A
+	// first-match search finds four places that all sit on the same boundary.
+	TArray<double> BestWeight;
+	TArray<FVector3d> BestPoint;
+	BestWeight.Init(-1.0, Biomes.Num());
+	BestPoint.Init(FVector3d::ZeroVector, Biomes.Num());
+
+	TArray<double> Weights;
+	for (double Latitude = -84.0; Latitude <= 84.0; Latitude += 1.0)
+	{
+		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 1.0)
+		{
+			const FVector3d Point = FourBiomeOnSphere(Latitude, Longitude);
+			if (!IsLit(Point))
+			{
+				continue;
+			}
+			// Above the waterline and clear of the shore: a beach is a
+			// boundary, and this wants the middle of somewhere.
+			if (LedgerTerrain::Elevation(Point, Params) / 100.0 <= 40.0)
+			{
+				continue;
+			}
+
+			const FLedgerClimate Climate = LedgerClimate::At(Point, Params);
+			LedgerBiomes::Weigh(Biomes, Climate, 0.0, Weights);
+			for (int32 Index = 0; Index < Weights.Num(); ++Index)
+			{
+				if (Weights[Index] > BestWeight[Index])
+				{
+					BestWeight[Index] = Weights[Index];
+					BestPoint[Index] = Point;
+				}
+			}
+		}
+	}
+
+	// The four most convincingly-itself biomes on the planet.
+	TArray<int32> Order;
+	for (int32 Index = 0; Index < Biomes.Num(); ++Index)
+	{
+		if (BestWeight[Index] > 0.0)
+		{
+			Order.Add(Index);
+		}
+	}
+	Order.Sort([&BestWeight](int32 A, int32 B) { return BestWeight[A] > BestWeight[B]; });
+
+	for (int32 Rank = 0; Rank < Order.Num() && Sites.Num() < Wanted; ++Rank)
+	{
+		const int32 Index = Order[Rank];
+		Sites.Add(BestPoint[Index]);
+		Names.Add(Biomes[Index].Name.Replace(TEXT(" "), TEXT("-")).ToLower());
+		UE_LOG(LogLedger, Log, TEXT("four biomes: %s at weight %.2f"),
+			*Biomes[Index].Name, BestWeight[Index]);
+	}
+
+	if (Sites.Num() < Wanted)
+	{
+		UE_LOG(LogLedger, Error,
+			TEXT("four biomes: only %d lit land biomes found, need %d"),
+			Sites.Num(), Wanted);
+		return false;
+	}
+	return true;
+}
+
+void ULedgerFourBiomes::Place()
+{
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>();
+	ALedgerPlanet* Planet = Builder->GetPlanet();
+	APlayerController* Controller = World->GetFirstPlayerController();
+	if (Planet == nullptr || Controller == nullptr)
+	{
+		return;
+	}
+
+	const FVector3d Up = Sites[Shot];
+	const FVector3d Origin = FVector3d(Planet->GetActorLocation());
+	const double Ground = Planet->SurfaceRadiusAt(Up);
+
+	// Hidden and parked above: the ship is the streaming anchor and not the
+	// subject.
+	if (ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn()))
+	{
+		Ship->SetFlightEnabled(false);
+		Ship->SetVelocity(FVector::ZeroVector);
+		Ship->SetActorHiddenInGame(true);
+		Ship->SetActorLocation(FVector(Origin + Up * (Ground + 400000.0)));
+	}
+
+	// Looking twenty metres out, which is where a standing person looks and
+	// what T429's pixel criterion is measured at. Same framing at every site,
+	// because four photographs taken differently cannot be compared.
+	FVector3d Along = FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Up);
+	if (Along.IsNearlyZero())
+	{
+		Along = FVector3d::CrossProduct(FVector3d(1.0, 0.0, 0.0), Up);
+	}
+	Along.Normalize();
+
+	const FVector Eye = FVector(Origin + Up * (Ground + FourBiomeEyeMetres * 100.0));
+	const FVector3d TargetDirection =
+		(Up + Along * (2000.0 / Planet->Radius)).GetSafeNormal();
+	const FVector Target = FVector(Origin
+		+ TargetDirection * Planet->SurfaceRadiusAt(TargetDirection));
+	const FRotator Look = FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Up)).Rotator();
+
+	if (Camera == nullptr)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.ObjectFlags |= RF_Transient;
+		Camera = World->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), Eye, Look, SpawnParams);
+		if (Camera != nullptr)
+		{
+			Controller->SetViewTarget(Camera);
+		}
+	}
+	if (Camera != nullptr)
+	{
+		Camera->SetActorLocationAndRotation(Eye, Look);
+	}
+}
+
+void ULedgerFourBiomes::Report()
+{
+	FString Body;
+	Body += TEXT("Four biomes, at eye height, same framing (T437).\n\n");
+	Body += TEXT("The verdict on whether these look like a video game heightfield is a\n");
+	Body += TEXT("person's and is not in this file. What is in this file is the check\n");
+	Body += TEXT("that they are four different places, because four photographs of the\n");
+	Body += TEXT("same desert would satisfy a careless reading of the acceptance.\n\n");
+
+	for (int32 Index = 0; Index < Names.Num(); ++Index)
+	{
+		Body += FString::Printf(TEXT("  %d  %-28s  four-biomes-%d-%s.png\n"),
+			Index + 1, *Names[Index], Index + 1, *Names[Index]);
+	}
+	Body += TEXT("\nCompare them with tools/compare_captures.py.\n");
+
+	const FString Path = FPaths::ConvertRelativePathToFull(
+		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+			TEXT("four-biomes.txt")));
+	FFileHelper::SaveStringToFile(Body, *Path);
+	UE_LOG(LogLedger, Log, TEXT("four biomes -> %s"), *Path);
+}

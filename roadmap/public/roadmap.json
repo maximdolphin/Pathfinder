@@ -4732,6 +4732,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "Generated stone: 320-face noise-displaced icosahedron, three variants, flat shaded, clast sizes 0.15+u^2*0.85, replacing the 18 m cone tree the scatter had been using as gravel. Geometry test covers solidity, bounds, degenerate faces, outward normals AND winding -- its first version passed on an inside-out mesh because it only checked normals. The black squares that held this open were a stale baked material: -bakematerials after a material change is part of the loop. Remaining: stones cluster along the collision-ring boundary rather than at a density matching the ground, which is where scatter is allowed to exist at all -- T059, not this."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Reopened by T437 and fixed. Two defects that one photograph of one grassland site had not shown: the stones were white, because an instanced static mesh does not deliver the mesh's vertex colours to the shader and Tint x (absent colour) is the tint -- darkening the bake changed nothing, which is what identified it, and the colour now lives in the tint at 0.16 linear. And they were on a lattice, because a cell fills when a uniform draw falls under the biome density, so density 1.0 fills every cell and the jitter that has always been inside each cell is jitter inside a full grid; capped at 0.55. Per-stone colour variation is lost until per-instance custom data or one material per variant. Stones still band along the collision-ring boundary, which is T059."
     }
    ],
    "evidence": [
@@ -4752,6 +4757,12 @@
      "caption": "After re-baking the material: stones render as stones and break the horizon line of the hillside behind them. The black squares were a stale baked material asset, not geometry.",
      "source": "../out/near-field-standing.png",
      "addedAt": "2026-09-09T22:22:12.263Z"
+    },
+    {
+     "file": "evidence/T434-2026-09-09T23-25-13-054.png",
+     "caption": "Savanna after the fill cap and the tint: dark rock at a plausible density, not white blobs on a lattice.",
+     "source": "../out/four-biomes-4-savanna.png",
+     "addedAt": "2026-09-09T23:25:13.056Z"
     }
    ],
    "plannedStartDay": 155,
@@ -4854,11 +4865,47 @@
    "dependsOn": [
     "T436"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "RUN, AND IT FAILS. The measurable half passes: four biomes found at weights 1.00/1.00/1.00/0.99, and the four grounds are measurably different places -- closest pair 27.0 of 255. The half that matters does not. Nobody shown the rainforest capture would fail to identify it as a video game: the scatter places one stone per cell of a 20x20 grid and in the mid-distance that lattice is plain, and the stones are a light grey tinted white so they blow out to featureless blobs and take no colour from the ground they sit on. Both were signed off in T434 on one photograph of one biome, which is exactly what this fixture exists to catch. T434 reopened."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Blocked on T434: the stones are on a visible lattice and are white. Re-run when they are fixed."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T437-2026-09-09T23-19-28-741.png",
+     "caption": "ice-cap, eye height, same framing as the other three.",
+     "source": "../out/four-biomes-1-ice-cap.png",
+     "addedAt": "2026-09-09T23:19:28.743Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-09T23-19-28-816.png",
+     "caption": "desert, eye height, same framing as the other three.",
+     "source": "../out/four-biomes-2-desert.png",
+     "addedAt": "2026-09-09T23:19:28.818Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-09T23-19-28-911.png",
+     "caption": "tropical-rainforest, eye height, same framing as the other three.",
+     "source": "../out/four-biomes-3-tropical-rainforest.png",
+     "addedAt": "2026-09-09T23:19:28.913Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-09T23-19-28-999.png",
+     "caption": "savanna, eye height, same framing as the other three.",
+     "source": "../out/four-biomes-4-savanna.png",
+     "addedAt": "2026-09-09T23:19:29.002Z"
+    }
+   ],
    "plannedStartDay": 164,
    "plannedEndDay": 166,
    "plannedStart": "2027-04-23",
@@ -13184,5 +13231,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T23:14:23.914Z"
+ "updatedAt": "2026-09-09T23:25:13.149Z"
 }

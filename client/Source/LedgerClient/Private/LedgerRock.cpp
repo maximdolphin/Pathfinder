@@ -137,12 +137,21 @@ namespace LedgerRock
 			// Vertex colour varies a little face to face. The material
 			// multiplies by it, so this is what stops a field of stones being
 			// one flat grey -- and it costs nothing, unlike a second material.
-			const double Shade = 0.82 + 0.18 * LedgerNoise::Fractal(
+			// Rock, not chalk.
+			//
+			// This was 168/160/148, which is an sRGB albedo around 0.38 -- far
+			// brighter than any stone. Under a bright sun in a bright biome the
+			// stones blew out to featureless white blobs, and the T437
+			// rainforest capture has arctic-looking boulders scattered through
+			// it. Real rock sits near 0.15-0.25 linear; 108/102/94 is about
+			// 0.14, and the per-face spread is widened because a stone with one
+			// flat albedo is the other half of why they read as plastic.
+			const double Shade = 0.72 + 0.34 * LedgerNoise::Fractal(
 				A.GetSafeNormal() * 6.1, Seed ^ 0x51EDu, 1);
 			const FColor Colour(
-				static_cast<uint8>(FMath::Clamp(Shade * 168.0, 0.0, 255.0)),
-				static_cast<uint8>(FMath::Clamp(Shade * 160.0, 0.0, 255.0)),
-				static_cast<uint8>(FMath::Clamp(Shade * 148.0, 0.0, 255.0)),
+				static_cast<uint8>(FMath::Clamp(Shade * 108.0, 0.0, 255.0)),
+				static_cast<uint8>(FMath::Clamp(Shade * 102.0, 0.0, 255.0)),
+				static_cast<uint8>(FMath::Clamp(Shade * 94.0, 0.0, 255.0)),
 				255);
 
 			for (const FVector3d& Point : { A, B, C })
