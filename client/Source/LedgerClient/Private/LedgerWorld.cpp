@@ -121,9 +121,24 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	{
 		// Built here, not in the planet: the composition root is the only place
 		// that gets to know about both the terrain and the materials.
-		Planet->SetMaterials(
-			LedgerSurface::CreateTerrainMaterial(Planet, static_cast<uint32>(Planet->Seed)),
-			LedgerSurface::CreateWaterMaterial(Planet));
+		//
+		// `-flatterrain` swaps the surface for an untextured constant on the
+		// same geometry. It is not a look; it is the control arm. T047 asks
+		// whether composing the blend into a virtual texture makes it cheaper,
+		// and that question cannot be answered without knowing what the blend
+		// costs -- which nobody had measured. The difference in GPU
+		// milliseconds between this and the real material over the same flight
+		// is the entire budget any caching scheme is competing for.
+		const bool bFlatTerrain = FParse::Param(FCommandLine::Get(), TEXT("flatterrain"));
+		UMaterialInterface* Surface = bFlatTerrain
+			? LedgerSurface::CreateFlatMaterial(Planet, FLinearColor(0.18f, 0.20f, 0.13f), 0.9f)
+			: LedgerSurface::CreateTerrainMaterial(Planet, static_cast<uint32>(Planet->Seed));
+		if (bFlatTerrain)
+		{
+			UE_LOG(LogLedger, Log, TEXT("terrain surface: FLAT (control arm for T047)"));
+		}
+
+		Planet->SetMaterials(Surface, LedgerSurface::CreateWaterMaterial(Planet));
 	}
 	if (Planet == nullptr)
 	{

@@ -3508,11 +3508,29 @@
    "dependsOn": [
     "T046"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Measured before building. A -flatterrain control arm swaps the surface for an untextured constant on identical geometry; the GPU difference over the same fixed-step flight is the whole budget an RVT competes for. It is at most 0.7 ms anywhere on the flight, and 0.1 and 0.0 ms in the surface and town phases where terrain fills the screen. There is nothing to recover: an RVT would add page rendering, memory on top of a 512 MB patch cache, and a cache invalidated by terrain that uploads 762 patches a second. Size is not the objection -- non-adaptive RVT gives 2.39 m/texel over a cube face, adaptive gives 9.3 mm. Evidence and the control-arm capture in docs/comparisons/terrain-material-cost/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Blocked on a consumer, not on effort. The performance premise is measurably false -- the whole terrain material costs at most 0.7 ms, and 0.0 where terrain fills the screen. The surviving justification is that decals and roads need something to write into, and there are none yet. Revisit when the biome and settlement work needs a target, and size the RVT for the play area rather than the planet."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T047-2026-09-09T14-36-19-677.png",
+     "caption": "The control arm: same geometry, untextured ground. The whole material is worth 0.0 ms here.",
+     "source": "../docs/comparisons/terrain-material-cost/flat-town.png",
+     "addedAt": "2026-09-09T14:36:19.679Z"
+    }
+   ],
    "plannedStartDay": 85,
    "plannedEndDay": 86.5,
    "plannedStart": "2027-01-04",
@@ -12429,5 +12447,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T13:21:57.551Z"
+ "updatedAt": "2026-09-09T14:36:23.677Z"
 }
