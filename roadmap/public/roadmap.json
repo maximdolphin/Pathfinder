@@ -4798,11 +4798,42 @@
    "dependsOn": [
     "T435"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Four flights, one control arm each, same cache state. The milestone's material work is inside the noise floor: -noscatter moves the overall mean 0.2 ms in the WRONG direction, -noparallax likewise, and the world-space normal blend is the same three samples with a swizzle. The whole bill is the CPU terrain tick from T429's three extra depth levels: ridge sweep 9.4 -> 20.5 ms, while the surface phase got FASTER (6.5 -> 1.22) because the disk cache serves the fine patches. -flatterrain is not a valid control arm here and the report's own cache line proves it -- 20% served from disk against 99% everywhere else, because dropping the biome set changes the content key and the flight regenerates; its 41 ms terrain tick is generation, not material. Also recorded: p99 on this flight has read 34.4, 57.6, 61.5, 65.9 and 72.7 across the session and is too noisy to attribute a few ms to a cause. Mean is the number to reason about: 19.7 -> 21.7 across the milestone."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T436-2026-09-09T23-14-23-568.txt",
+     "caption": "Flight with full.",
+     "source": "../out/perf-full.txt",
+     "addedAt": "2026-09-09T23:14:23.570Z"
+    },
+    {
+     "file": "evidence/T436-2026-09-09T23-14-23-661.txt",
+     "caption": "Flight with noscatter.",
+     "source": "../out/perf-noscatter.txt",
+     "addedAt": "2026-09-09T23:14:23.662Z"
+    },
+    {
+     "file": "evidence/T436-2026-09-09T23-14-23-753.txt",
+     "caption": "Flight with flatterrain.",
+     "source": "../out/perf-flatterrain.txt",
+     "addedAt": "2026-09-09T23:14:23.754Z"
+    },
+    {
+     "file": "evidence/T436-2026-09-09T23-14-23-825.txt",
+     "caption": "Flight with noparallax.",
+     "source": "../out/perf-noparallax.txt",
+     "addedAt": "2026-09-09T23:14:23.826Z"
+    }
+   ],
    "plannedStartDay": 162,
    "plannedEndDay": 164,
    "plannedStart": "2027-04-21",
@@ -13153,5 +13184,5 @@
    "plannedEnd": "2031-02-10"
   }
  ],
- "updatedAt": "2026-09-09T22:59:31.284Z"
+ "updatedAt": "2026-09-09T23:14:23.914Z"
 }
