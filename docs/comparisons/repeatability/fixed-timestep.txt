@@ -1,0 +1,4 @@
+two runs of the same fixture disagree:
+  terrain-coast.png: mean 0.610, worst channel 21 (limits 0.5 and 16)
+  terrain-sweep.png: mean 0.275, worst channel 21 (limits 0.5 and 16)
+8 shots compared, worst single channel difference 21 (limit 16)

@@ -1,0 +1,9 @@
+two runs of the same fixture disagree:
+  terrain-coast.png: mean 7.671, worst channel 29 (limits 0.5 and 16)
+  terrain-entry.png: mean 0.656, worst channel 96 (limits 0.5 and 16)
+  terrain-orbit.png: mean 0.028, worst channel 20 (limits 0.5 and 16)
+  terrain-space.png: mean 1.335, worst channel 116 (limits 0.5 and 16)
+  terrain-surface.png: mean 1.715, worst channel 128 (limits 0.5 and 16)
+  terrain-sweep.png: mean 0.592, worst channel 53 (limits 0.5 and 16)
+  terrain-town.png: mean 0.437, worst channel 43 (limits 0.5 and 16)
+8 shots compared, worst single channel difference 128 (limit 16)

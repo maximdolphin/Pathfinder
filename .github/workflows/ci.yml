@@ -81,10 +81,16 @@ jobs:
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor-Cmd.exe"
           "$PWD\client\Ledger.uproject" -ExecCmds="Automation RunTests Ledger; Quit"
           -unattended -nopause -nullrhi -testexit="Automation Test Queue Empty"
+      # -useFixedTimeStep is what makes the captures mean anything. Without
+      # it the same build run twice disagrees with itself on seven of eight
+      # shots, because every position, every streaming decision and every
+      # frame of Lumen history is a function of how fast the machine ran.
+      # See docs/comparisons/repeatability/.
       - name: Scripted flight
         run: >
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe"
           "$PWD\client\Ledger.uproject" -game -windowed -ResX=1600 -ResY=900
+          -useFixedTimeStep -fps=60
       - name: Captures match the reference
         run: python tools/compare_captures.py
       - name: Frame budget

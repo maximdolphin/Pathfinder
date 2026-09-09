@@ -67,7 +67,18 @@ void ULedgerPerfSubsystem::Tick(float DeltaSeconds)
 		return;
 	}
 
-	const double Milliseconds = static_cast<double>(DeltaSeconds) * 1000.0;
+	// Wall clock, not DeltaSeconds.
+	//
+	// They are the same number in a normal run and they are not the same
+	// number under `-useFixedTimeStep`, which is how the capture runs are made
+	// reproducible: there DeltaSeconds is exactly 1/60 on every frame however
+	// long the frame actually took, so a report built from it says 16.7 ms for
+	// a run that was visibly stuttering. The frame-time half of the packaged
+	// gate would have passed on any machine at any speed.
+	const double TickedAt = FPlatformTime::Seconds();
+	const double Milliseconds = LastTickAt > 0.0 ? (TickedAt - LastTickAt) * 1000.0
+												 : static_cast<double>(DeltaSeconds) * 1000.0;
+	LastTickAt = TickedAt;
 
 	// The engine's own counters, in cycles. GGPUFrameTime lags by a frame or
 	// two by construction; over a phase of hundreds of frames that does not

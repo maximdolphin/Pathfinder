@@ -54,6 +54,11 @@ public:
 	/// Writes the report and returns whether the budget held.
 	bool WriteReport(const FString& Path) const;
 
+	/// When the previous frame was recorded, so a frame's cost is measured
+	/// against the clock rather than against whatever the engine says the
+	/// simulation step was.
+	double LastTickAt = 0.0;
+
 	/// Milliseconds a frame may take. 16.7 is sixty per second.
 	double BudgetMs = 16.7;
 
