@@ -10,6 +10,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "LedgerSurface.h"
 #include "Misc/FileHelper.h"
 #include "GameFramework/PlayerStart.h"
@@ -77,6 +78,29 @@ bool ULedgerWorldBuilder::DoesSupportWorldType(const EWorldType::Type WorldType)
 	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
 
+namespace
+{
+	/// The one already in the level, or a new one.
+	///
+	/// The level holds what exists; this code holds how it behaves. Placing the
+	/// sun in a map and also spawning one at BeginPlay would give two suns and
+	/// the "multiple directional lights competing for forward shading" warning
+	/// that cost an hour on the turntable. Spawning remains the fallback so
+	/// that a world with no level -- a test, or a map that has not been rebuilt
+	/// -- still comes up lit rather than mysteriously black.
+	template <typename T>
+	T* Placed(UWorld& InWorld, const FActorSpawnParameters& Params,
+		const FVector& Location = FVector::ZeroVector,
+		const FRotator& Rotation = FRotator::ZeroRotator)
+	{
+		for (TActorIterator<T> It(&InWorld); It; ++It)
+		{
+			return *It;
+		}
+		return InWorld.SpawnActor<T>(T::StaticClass(), Location, Rotation, Params);
+	}
+}
+
 void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
@@ -112,10 +136,11 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 
 	// A star, angled to light the side of the planet the descent comes down on.
 	const FRotator SunRotation = (-FVector(SunFacing)).Rotation();
-	if (ADirectionalLight* Sun = InWorld.SpawnActor<ADirectionalLight>(
-		ADirectionalLight::StaticClass(), FVector::ZeroVector, SunRotation, Params))
+	if (ADirectionalLight* Sun = Placed<ADirectionalLight>(
+		InWorld, Params, FVector::ZeroVector, SunRotation))
 	{
 		Sun->SetMobility(EComponentMobility::Movable);
+		Sun->SetActorRotation(SunRotation);
 		if (UDirectionalLightComponent* Component = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
 			Component->SetIntensity(11.0f);
@@ -124,7 +149,7 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		}
 	}
 
-	if (ASkyLight* Sky = InWorld.SpawnActor<ASkyLight>(ASkyLight::StaticClass(), Params))
+	if (ASkyLight* Sky = Placed<ASkyLight>(InWorld, Params))
 	{
 		if (USkyLightComponent* Component = Sky->GetLightComponent())
 		{
@@ -145,8 +170,7 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	// Exposure. The single setting that decides whether the transition works:
 	// space is nearly black, a sunlit surface is not, and no fixed exposure
 	// serves both. The slow adaptation is also the transition the eye reads.
-	if (APostProcessVolume* PostProcess = InWorld.SpawnActor<APostProcessVolume>(
-		APostProcessVolume::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params))
+	if (APostProcessVolume* PostProcess = Placed<APostProcessVolume>(InWorld, Params))
 	{
 		PostProcess->bUnbound = true;
 		FPostProcessSettings& Settings = PostProcess->Settings;
@@ -179,6 +203,40 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	}
 
 	PlaceRegionMarkers(InWorld);
+
+	// What the lighting actually ended up as, rather than what was asked for.
+	// Moving these three actors into the level changed every capture by a
+	// structural residual of 25 to 32, and a change nobody can account for is
+	// the thing the capture check exists to catch.
+	for (TActorIterator<ADirectionalLight> It(&InWorld); It; ++It)
+	{
+		const UDirectionalLightComponent* Component =
+			Cast<UDirectionalLightComponent>(It->GetLightComponent());
+		UE_LOG(LogLedger, Log,
+			TEXT("lighting: sun rotation %s, intensity %.2f, atmosphere sun %d, mobility %d"),
+			*It->GetActorRotation().ToCompactString(),
+			Component ? Component->Intensity : -1.0f,
+			Component ? static_cast<int32>(Component->IsUsedAsAtmosphereSunLight()) : -1,
+			static_cast<int32>(It->GetRootComponent()->Mobility.GetValue()));
+	}
+	for (TActorIterator<ASkyLight> It(&InWorld); It; ++It)
+	{
+		const USkyLightComponent* Component = It->GetLightComponent();
+		UE_LOG(LogLedger, Log,
+			TEXT("lighting: sky intensity %.2f, real-time capture %d, source %d"),
+			Component ? Component->Intensity : -1.0f,
+			Component ? static_cast<int32>(Component->bRealTimeCapture) : -1,
+			Component ? static_cast<int32>(Component->SourceType) : -1);
+	}
+	for (TActorIterator<APostProcessVolume> It(&InWorld); It; ++It)
+	{
+		UE_LOG(LogLedger, Log,
+			TEXT("lighting: post-process unbound %d, priority %.1f, exposure %.3f-%.3f bias %.2f"),
+			static_cast<int32>(It->bUnbound), It->Priority,
+			It->Settings.AutoExposureMinBrightness,
+			It->Settings.AutoExposureMaxBrightness,
+			It->Settings.AutoExposureBias);
+	}
 
 	UE_LOG(LogLedger, Log, TEXT("world built: planet, atmosphere, sun, town, ship"));
 }

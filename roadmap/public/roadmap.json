@@ -162,7 +162,7 @@
    "estimateDays": 25.0,
    "plannedStart": "2026-11-23",
    "plannedEnd": "2026-12-28",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": []
   },
@@ -2955,10 +2955,16 @@
    "dependsOn": [
     "T043"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "The project opens on /Game/Maps/Ledger, built by tools/make_level.py and holding exactly three actors: Sun, SkyLight, WorldPostProcess. Listed and kept as evidence in docs/comparisons/project-level/level-actors.txt. The level says WHAT EXISTS and the code says HOW IT BEHAVES: ULedgerWorldBuilder finds a placed actor and configures it, falling back to spawning so a world with no level still comes up lit. That fallback matters -- before this, the engine's Entry map contributed a PlayerStart and the code spawned a second one. Two consecutive flights on the new map are BYTE-IDENTICAL, worst channel difference 0, via compare_captures.py --between. What I could NOT establish: the captures differ from the previous references by a structural residual of 25 to 32. That is not the map's doing -- a control run on the old engine map differs from the same references by the same amounts (town 28.97 either way), and the lighting configuration is provably identical on both, logged at world build: sun rotation R(P=-50.11,Y=-147.53), intensity 11, atmosphere sun on, sky 3.2 with real-time capture, exposure 0.03-8.0 bias 0.10. So the references were already stale against the current build before this task, from a commit I did not identify, and I did not pretend to. Re-baselined against a run that is now reproducible."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 55.5,
    "plannedEndDay": 57.5,
@@ -12237,5 +12243,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T01:02:53.947Z"
+ "updatedAt": "2026-09-09T04:28:54.068Z"
 }
