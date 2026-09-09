@@ -81,9 +81,15 @@ void ALedgerShip::BeginPlay()
 	}
 }
 
-void ALedgerShip::BuildHull()
+// The hull's shape, separated from the component it usually goes into.
+//
+// Static, and taking a builder rather than filling a member, because the same
+// geometry now has two destinations: a procedural mesh component at runtime, and
+// a saved static mesh asset at bake time. ADR-0006 -- a hull that exists only as
+// a runtime mesh gets no Nanite, no LOD chain and no distance field, and the way
+// to avoid describing the shape twice is to describe it once.
+void ALedgerShip::DescribeHull(FLedgerMeshBuilder& Builder)
 {
-	FLedgerMeshBuilder Builder;
 
 	// Fuselage: three tapered sections so the silhouette has a nose rather than
 	// being a brick.
@@ -147,6 +153,12 @@ void ALedgerShip::BuildHull()
 		HullLength * 0.24f,
 		PanelColour);
 
+}
+
+void ALedgerShip::BuildHull()
+{
+	FLedgerMeshBuilder Builder;
+	DescribeHull(Builder);
 	Builder.Upload(Hull, 0, /*bCreateCollision*/ false);
 
 	if (UMaterialInterface* Material = LedgerSurface::CreateFlatMaterial(this, FLinearColor(0.34f, 0.36f, 0.40f), 0.42f))

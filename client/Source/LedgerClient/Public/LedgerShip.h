@@ -18,6 +18,8 @@
 #include "GameFramework/Pawn.h"
 #include "LedgerShip.generated.h"
 
+struct FLedgerMeshBuilder;
+
 class ALedgerPlanet;
 class UCameraComponent;
 class UMaterialInterface;
@@ -133,6 +135,14 @@ private:
 	float AutoThrottle = 0.0f;
 
 	void BuildHull();
+
+public:
+	/// The hull's geometry, with no component and no actor state involved, so
+	/// the mesh bake can produce the same shape as an asset. Static for the same
+	/// reason: baking happens before any ship exists.
+	static void DescribeHull(FLedgerMeshBuilder& Builder);
+
+private:
 	void UpdateSubmersion(float DeltaSeconds);
 	void ApplyInput(float DeltaSeconds);
 	void Integrate(float DeltaSeconds);

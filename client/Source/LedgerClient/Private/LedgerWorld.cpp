@@ -17,6 +17,8 @@
 #include "Misc/Paths.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAtmosphere.h"
+#include "LedgerMeshBake.h"
+#include "LedgerMeshBuilder.h"
 #include "LedgerPlanet.h"
 #include "LedgerSettlement.h"
 #include "LedgerShip.h"
@@ -250,6 +252,39 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	// reads their tiling out of the manifest, and a bare commandlet has none of
 	// that. Building the world and then baking costs a few seconds and reuses
 	// the path the game already takes.
+	// `-bakemeshes` saves generated geometry as static mesh assets: Nanite, an
+	// LOD chain, collision and a distance field, none of which a procedural
+	// mesh component can have. ADR-0006.
+	if (FParse::Param(FCommandLine::Get(), TEXT("bakemeshes")))
+	{
+		FString Body = TEXT("Baked meshes.\n\n");
+		int32 Saved = 0;
+
+		{
+			FLedgerMeshBuilder Builder;
+			ALedgerShip::DescribeHull(Builder);
+			FString Line;
+			if (LedgerMesh::Bake(Builder,
+				FString(LedgerMesh::MeshPackageRoot) + TEXT("SM_ShipHull"),
+				TEXT("SM_ShipHull"), Line) != nullptr)
+			{
+				++Saved;
+			}
+			Body += Line + TEXT("\n");
+		}
+
+		Body += FString::Printf(TEXT("\n  %d of 1 saved\n\n"), Saved);
+		Body += FString::Printf(TEXT("VERDICT: %s\n"), Saved == 1 ? TEXT("PASS") : TEXT("FAIL"));
+
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				TEXT("bake-meshes.txt")));
+		FFileHelper::SaveStringToFile(Body, *Path);
+		UE_LOG(LogLedger, Log, TEXT("mesh bake -> %s"), *Path);
+
+		FGenericPlatformMisc::RequestExit(false);
+	}
+
 	if (FParse::Param(FCommandLine::Get(), TEXT("bakematerials")))
 	{
 		FString Report;

@@ -67,6 +67,15 @@ STEPS = [
             [sys.executable, os.path.join(ROOT, "tools", "make_import_settings.py")]),
     ),
     dict(
+        name="meshes",
+        makes="/Game/Meshes/*",
+        why="Generated geometry saved as static meshes, which is where Nanite, "
+            "collision and mesh distance fields come from.",
+        command=lambda: [
+            EDITOR, PROJECT, "-game", "-windowed", "-ResX=800", "-ResY=450",
+            "-bakemeshes", "-livematerials"],
+    ),
+    dict(
         name="materials",
         makes="/Game/Materials/*",
         why="The C++ graph builders, run once and saved, so a packaged build "
@@ -97,7 +106,16 @@ def verify_materials():
     return "VERDICT: PASS" in body, body.strip().splitlines()[-1]
 
 
-VERIFY = {"level": verify_level, "surfaces": verify_surfaces, "materials": verify_materials}
+def verify_meshes():
+    report = os.path.join(ROOT, "out", "bake-meshes.txt")
+    if not os.path.isfile(report):
+        return False, "no mesh bake report"
+    body = io.open(report, encoding="utf-8").read()
+    return "VERDICT: PASS" in body, body.strip().splitlines()[-1]
+
+
+VERIFY = {"level": verify_level, "surfaces": verify_surfaces,
+          "meshes": verify_meshes, "materials": verify_materials}
 
 
 def run(step):

@@ -3055,10 +3055,16 @@
    "dependsOn": [
     "T419"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "The ship hull is now a static mesh asset at /Game/Meshes/SM_ShipHull, baked by 'UnrealEditor.exe <project> -game -bakemeshes' and by tools/generate_assets.py as a step. LedgerMesh::Bake takes the same FLedgerMeshBuilder arrays the runtime uses and hands them to Unreal's own static mesh build, so the shape is described once and has two destinations. EVIDENCE, read back from a FRESH PROCESS rather than from the process that set it -- 'I set the flag' and 'the asset has it' are different claims: tools/verify_meshes.py opens the saved asset and reports '144 tris, nanite on, lods 1, collision yes, dist field yes, by LedgerMesh::Bake'. VERDICT PASS. Kept at docs/comparisons/project-level/verify-meshes.txt. Both things this unlocks were previously impossible: Nanite cannot be enabled on a procedural mesh component at all, and the mesh distance field is what Lumen's software tracing needs -- its absence across the whole project is why Lumen had to be forced onto hardware ray tracing in the first place. On 'a full LOD chain': the asset has one source model, and that is the right answer for a Nanite mesh rather than a shortfall. Nanite does LOD per cluster, so a hand-built chain would be both redundant and, on 144 triangles, meaningless. Said plainly rather than counted as met. NOT DONE: only the hull is baked. The settlement's buildings and trees are still runtime procedural meshes, because they want a material instance per colour and that is the instancing task."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 63.5,
    "plannedEndDay": 66.5,
@@ -12264,5 +12270,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T05:08:41.696Z"
+ "updatedAt": "2026-09-09T05:13:07.914Z"
 }

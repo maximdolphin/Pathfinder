@@ -37,5 +37,19 @@ public class LedgerClient : ModuleRules
 			"RenderCore",
 			"RHI"
 		});
+
+		// Building a static mesh asset from generated geometry is an editor
+		// operation. ADR-0006: the generators run offline and save, so the
+		// runtime never needs any of this.
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"AssetRegistry",
+				"MeshDescription",
+				"StaticMeshDescription",
+				"UnrealEd"
+			});
+		}
 	}
 }

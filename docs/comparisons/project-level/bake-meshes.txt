@@ -1,0 +1,7 @@
+Baked meshes.
+
+  SM_ShipHull         144 tris  nanite on   lods 1  collision yes  dist field yes
+
+  1 of 1 saved
+
+VERDICT: PASS

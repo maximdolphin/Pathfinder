@@ -1,0 +1,7 @@
+Baked static meshes, read back off the assets.
+
+  SM_ShipHull         144 tris  nanite on   lods 1  collision yes  dist field yes  by LedgerMesh::Bake
+
+  1 meshes checked
+
+VERDICT: PASS

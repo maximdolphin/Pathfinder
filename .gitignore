@@ -34,3 +34,4 @@ __pycache__/
 # so. A packaged build needs the bake first, which is what M2W's packaging task
 # wires up.
 /client/Content/Materials
+/client/Content/Meshes
