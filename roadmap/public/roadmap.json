@@ -168,10 +168,10 @@
    "estimateDays": 25,
    "plannedStart": "2026-11-23",
    "plannedEnd": "2026-12-28",
-   "status": "active",
+   "status": "complete-pending-gate",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 10
+   "doneCount": 11
   },
   {
    "id": "M02",
@@ -3230,9 +3230,9 @@
    "dependsOn": [
     "T423"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-09",
    "notes": [
     {
      "at": "2026-09-09",
@@ -3263,6 +3263,16 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "Recording pipeline built end to end: stable keys from the cook, a clean flight exit so the recording flushes, 38 recorded PSOs -> 82 stable -> a 38-PSO binary cache at Content/PipelineCaches/Windows/Ledger_PCD3D_SM6.stable.upipelinecache, which is the exact path and name FPipelineFileCacheManager constructs. The runtime never opens it -- no FShaderPipelineCache lines in the log at all -- and the miss count is unchanged at 34. STOPPED DELIBERATELY: PSOPrecacheState:Missed is reported by the PSO precaching system and the bundled cache is a different mechanism, so a working cache might not move that counter. Four package-and-fly cycles went into a number that may not be connected to the change. Prerequisite for finishing is a meter that measures the bundled cache; the other candidate is that nothing calls OpenPipelineFileCache."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "MET, both halves. Cause of the last wall: BuildCookRun DELETES loose non-asset files from Content/ during the cook, so the cache built into Content/PipelineCaches/Windows was gone by staging -- the log said 'Could not open FPipelineCacheFile' naming the exact path, under a string I had not grepped for. tools/pipeline_cache.py builds from the committed .spc and installs into the staged build after packaging. PSOPrecacheState:Missed 34 -> 0, cache opened with 38 entries, precompile finished with no jobs remaining. Second half: tolerance stated for the first time at 10% on phase means; eight of eleven phases agree to 0.0% between two cold runs, worst 6.3% on underwater, the one phase whose settle wait times out. Correction: I had claimed the miss counter might be the wrong meter for a bundled cache. It was the right meter."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "docs/comparisons/packaged/pso/README.md; reproduce with tools/pipeline_cache.py"
     }
    ],
    "evidence": [
@@ -3271,6 +3281,12 @@
      "caption": "Three causes found and fixed; where the fourth stopped and why",
      "source": "../docs/comparisons/packaged/pso/README.md",
      "addedAt": "2026-09-09T15:05:42.632Z"
+    },
+    {
+     "file": "evidence/T424-2026-09-09T15-20-47-339.txt",
+     "caption": "Cold packaged run with the cache: zero precache misses",
+     "source": "../docs/comparisons/packaged/pso/with-cache-run1.txt",
+     "addedAt": "2026-09-09T15:20:47.341Z"
     }
    ],
    "plannedStartDay": 73.5,
@@ -12459,5 +12475,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T15:05:42.634Z"
+ "updatedAt": "2026-09-09T15:20:47.409Z"
 }
