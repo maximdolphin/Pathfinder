@@ -1,6 +1,11 @@
 #include "LedgerCaveSurvey.h"
 
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
+#include "LedgerShip.h"
+#include "UnrealClient.h"
 #include "HAL/PlatformMisc.h"
 #include "LedgerCaves.h"
 #include "LedgerLog.h"
@@ -78,10 +83,169 @@ void ULedgerCaveSurvey::OnWorldBeginPlay(UWorld& InWorld)
 		return;
 	}
 
+	bSurveyed = true;
 	const bool bHolds = WriteSurvey();
 	UE_LOG(LogLedger, Log, TEXT("cave survey: %s"),
 		bHolds ? TEXT("VERDICT PASS") : TEXT("VERDICT FAIL"));
-	FPlatformMisc::RequestExit(false);
+
+	// -cavephoto keeps the run alive to photograph the mouth it just measured.
+	// A mesher nobody has looked at is the failure this project keeps writing
+	// down: a report with a VERDICT line in it is not evidence that the thing
+	// being measured is on screen.
+	if (!FParse::Param(FCommandLine::Get(), TEXT("cavephoto")) || !bFound)
+	{
+		FPlatformMisc::RequestExit(false);
+	}
+}
+
+namespace
+{
+	/// Framings of a cave mouth: standing outside it, at its lip, and inside
+	/// looking back out at the daylight.
+	struct FCaveShot
+	{
+		const TCHAR* Name;
+		double EyeHeightMetres;
+		double AlongMetres;
+		double LookAtHeightMetres;
+	};
+
+	const FCaveShot CaveShots[] =
+	{
+		{ TEXT("cave-approach.png"),  12.0,  -90.0,   0.0 },
+		{ TEXT("cave-mouth.png"),      3.0,  -25.0,  -6.0 },
+		// Actually inside: below the lip, looking along the passage. The first
+		// version put this one two metres above the ground thirty-five metres
+		// away, which is a photograph of a desert with a slot in it -- the same
+		// picture as the other two.
+		{ TEXT("cave-inside.png"),   -18.0,    0.0, -30.0 },
+	};
+
+	constexpr double CaveSettleSeconds = 6.0;
+}
+
+void ULedgerCaveSurvey::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bSurveyed || !bFound || DeltaSeconds <= 0.0f)
+	{
+		return;
+	}
+	if (!FParse::Param(FCommandLine::Get(), TEXT("cavephoto")))
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	if (Controller == nullptr || Controller->GetPawn() == nullptr)
+	{
+		return;
+	}
+
+	if (Shot >= UE_ARRAY_COUNT(CaveShots))
+	{
+		UE_LOG(LogLedger, Log, TEXT("cave photographs: done"));
+		FPlatformMisc::RequestExit(false);
+		return;
+	}
+
+	Place();
+
+	Settle += DeltaSeconds;
+	if (Settle < CaveSettleSeconds)
+	{
+		return;
+	}
+
+	if (!bCaptured)
+	{
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				FString(CaveShots[Shot].Name)));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		UE_LOG(LogLedger, Log, TEXT("cave photograph -> %s"), *Path);
+		bCaptured = true;
+		return;
+	}
+
+	++Shot;
+	Settle = 0.0;
+	bCaptured = false;
+}
+
+void ULedgerCaveSurvey::Place()
+{
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>();
+	ALedgerPlanet* Planet = Builder->GetPlanet();
+	APlayerController* Controller = World->GetFirstPlayerController();
+
+	const FCaveShot& Current = CaveShots[Shot];
+	const FLedgerTerrainParams Params = Planet->TerrainParams();
+	const FLocalFrame Frame = FrameAt(Mouth, Params);
+
+	const double RadiusMetres = Params.Radius / 100.0;
+	const FVector3d EyeDirection = (Frame.Up
+		+ Frame.East * (Current.AlongMetres / RadiusMetres)).GetSafeNormal();
+	const double EyeGround = LedgerTerrain::Elevation(EyeDirection, Params) / 100.0;
+
+	const FVector Eye = FVector(Planet->GetActorLocation())
+		+ FVector(EyeDirection * ((RadiusMetres + EyeGround + Current.EyeHeightMetres) * 100.0));
+	const FVector Target = FVector(Planet->GetActorLocation())
+		+ FVector(Frame.Up * ((RadiusMetres + Frame.SurfaceMetres
+			+ Current.LookAtHeightMetres) * 100.0));
+
+	if (ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn()))
+	{
+		Ship->SetFlightEnabled(false);
+		// Hidden rather than moved: a hull parked overhead casts a
+		// hull-shaped shadow, which the biome captures learned the hard way.
+		Ship->SetActorHiddenInGame(true);
+		Ship->SetActorLocation(Eye + FVector(Frame.Up * 400000.0));
+	}
+
+	// Built from the local up, not from the world's.
+	//
+	// FVector::Rotation() gives a rotator with zero roll, which means the
+	// camera's up is world Z projected -- and on a sphere world Z is only
+	// vertical at one longitude. Looking east from fourteen degrees north put
+	// the horizon down the side of the frame at sixty degrees. The biome
+	// captures escaped this by looking north, where the projection happens to
+	// land on the local up; that was luck, not correctness.
+	const FRotator Look = FRotationMatrix::MakeFromXZ(
+		Target - Eye, FVector(Frame.Up)).Rotator();
+	if (Camera == nullptr)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.ObjectFlags |= RF_Transient;
+		Camera = World->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), Eye, Look, SpawnParams);
+		if (Camera != nullptr)
+		{
+			if (UCameraComponent* Component = Camera->GetCameraComponent())
+			{
+				// Auto exposure left ON here, unlike every other fixture in
+				// this harness. A cave is a dark room with a bright doorway and
+				// the eye adapts walking into one; a pinned exposure would show
+				// either a white doorway or a black passage, and the thing to
+				// look at is whether the two meet.
+				Component->PostProcessSettings.bOverride_AutoExposureBias = true;
+				Component->PostProcessSettings.AutoExposureBias = 0.0f;
+			}
+			Controller->SetViewTarget(Camera);
+		}
+	}
+	if (Camera != nullptr)
+	{
+		Camera->SetActorLocationAndRotation(Eye, Look);
+	}
+}
+
+TStatId ULedgerCaveSurvey::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerCaveSurvey, STATGROUP_Tickables);
 }
 
 bool ULedgerCaveSurvey::WriteSurvey()
@@ -137,7 +301,6 @@ bool ULedgerCaveSurvey::WriteSurvey()
 	// coarse sweep first, because the field is empty nearly everywhere and a
 	// fine search over the whole planet would be a hundred times the work for
 	// the same answer.
-	FVector3d Mouth = FVector3d::ZeroVector;
 	bool bFoundMouth = false;
 	int32 MouthsSeen = 0;
 	for (double Lat = -80.0; Lat <= 80.0 && MouthsSeen < 5000; Lat += 0.25)
@@ -167,10 +330,19 @@ bool ULedgerCaveSurvey::WriteSurvey()
 			if (LedgerCaves::Density(Point, Ground, Ground, Params) > 0.0)
 			{
 				++MouthsSeen;
-				if (!bFoundMouth)
+
+				// Counted wherever it is; photographed only where the sun is.
+				// The first mouth this found was at -57 lat on the night side
+				// and the photographs came back as three black frames, which is
+				// a correct search and a useless picture. The count is a
+				// property of the planet and stays whole-planet; the choice of
+				// subject is a property of the camera.
+				const FVector3d SunDirection = Builder->GetSunFacing().GetSafeNormal();
+				if (!bFoundMouth && FVector3d::DotProduct(Point, SunDirection) > 0.35)
 				{
 					Mouth = Point;
 					bFoundMouth = true;
+					bFound = true;
 				}
 			}
 		}

@@ -1,6 +1,9 @@
 #include "LedgerPatchGenerator.h"
 
 #include "LedgerBiome.h"
+#include "LedgerCaveMesh.h"
+#include "LedgerCaves.h"
+#include "LedgerLog.h"
 #include "Misc/CommandLine.h"
 #include "LedgerClimate.h"
 #include "LedgerPlanet.h"
@@ -220,6 +223,54 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			const int32 D = C + 1;
 			Job.Triangles.Add(A); Job.Triangles.Add(C); Job.Triangles.Add(B);
 			Job.Triangles.Add(B); Job.Triangles.Add(C); Job.Triangles.Add(D);
+		}
+	}
+
+	// ---- holes where caves reach the surface ------------------------------
+	//
+	// **A height field cannot have a hole, so the hole is a deletion.** The
+	// surface is generated as if there were no caves and then the triangles
+	// standing where a mouth is are dropped. That is the whole trick: the cave
+	// mesh supplies the walls beyond, and the two meet at the edge of the hole
+	// because both are level sets of the same field.
+	//
+	// Off by default while the volumetric layer has no LOD story, so the
+	// terrain everything else measures against is untouched. -cavemesh turns it
+	// on.
+	static const bool bCaveMesh = FParse::Param(FCommandLine::Get(), TEXT("cavemesh"));
+	if (bCaveMesh && LedgerCaves::ShouldMeshCaves(Job))
+	{
+		const double RadiusCm = Job.Params.Radius;
+		TArray<int32> Kept;
+		Kept.Reserve(Job.Triangles.Num());
+		for (int32 Triangle = 0; Triangle + 2 < Job.Triangles.Num(); Triangle += 3)
+		{
+			const int32 I0 = Job.Triangles[Triangle];
+			const int32 I1 = Job.Triangles[Triangle + 1];
+			const int32 I2 = Job.Triangles[Triangle + 2];
+
+			const FVector Centroid =
+				(Job.Vertices[I0] + Job.Vertices[I1] + Job.Vertices[I2]) / 3.0;
+			const FVector3d World = FVector3d(Centroid) + Job.Centre;
+			const FVector3d Direction = World.GetSafeNormal();
+			const double GroundMetres =
+				(Elevations[I0] + Elevations[I1] + Elevations[I2]) / 300.0;
+			const double AltitudeMetres = (World.Length() - RadiusCm) / 100.0;
+
+			if (LedgerCaves::Density(Direction, AltitudeMetres, GroundMetres, Job.Params) > 0.0)
+			{
+				continue;
+			}
+			Kept.Add(I0); Kept.Add(I1); Kept.Add(I2);
+		}
+		Job.Triangles = MoveTemp(Kept);
+
+		LedgerCaves::GenerateCaveMesh(Job);
+		Job.bHasCaves = Job.CaveTriangles.Num() > 0;
+		if (Job.bHasCaves)
+		{
+			UE_LOG(LogLedger, Verbose, TEXT("cave patch %llu: %d vertices, %d triangles"),
+				Job.Key, Job.CaveVertices.Num(), Job.CaveTriangles.Num() / 3);
 		}
 	}
 

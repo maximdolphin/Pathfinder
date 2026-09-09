@@ -561,7 +561,16 @@ void ULedgerBiomeSite::Place()
 		Ship->SetActorLocation(Eye + FVector(Eye3d * 400000.0));
 	}
 
-	const FRotator Look = (Target - Eye).Rotation();
+	// Built from the local up, not from the world's.
+	//
+	// FVector::Rotation() gives a rotator with zero roll, which means the
+	// camera's up is world Z projected -- and on a sphere world Z is only
+	// vertical at one longitude. Looking east from fourteen degrees north put
+	// the horizon down the side of the frame at sixty degrees. The biome
+	// captures escaped this by looking north, where the projection happens to
+	// land on the local up; that was luck, not correctness.
+	const FRotator Look = FRotationMatrix::MakeFromXZ(
+		Target - Eye, FVector(Eye3d)).Rotator();
 
 	if (Camera == nullptr)
 	{

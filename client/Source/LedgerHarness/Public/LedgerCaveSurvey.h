@@ -16,15 +16,32 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "LedgerCaveSurvey.generated.h"
 
+class ACameraActor;
+
 UCLASS()
-class LEDGERHARNESS_API ULedgerCaveSurvey : public UWorldSubsystem
+class LEDGERHARNESS_API ULedgerCaveSurvey : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 
 public:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+	virtual void Tick(float DeltaSeconds) override;
+	virtual TStatId GetStatId() const override;
 
 private:
 	bool WriteSurvey();
+	void Place();
+
+	UPROPERTY()
+	TObjectPtr<ACameraActor> Camera;
+
+	/// Where the survey found a mouth. Also where the photographs are taken
+	/// from, so the picture and the numbers are of the same hole in the ground.
+	FVector3d Mouth = FVector3d::ZeroVector;
+	bool bSurveyed = false;
+	bool bFound = false;
+	bool bCaptured = false;
+	int32 Shot = 0;
+	double Settle = 0.0;
 };

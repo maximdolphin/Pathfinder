@@ -18,6 +18,7 @@ namespace
 	/// assignment reads the same either way.
 	constexpr int32 LandSection = 0;
 	constexpr int32 WaterSection = 1;
+	constexpr int32 CaveSection = 2;
 
 	/// Named slots, because a polygon group with no material slot name does not
 	/// reliably become the section you assumed. The first static run drew water
@@ -177,6 +178,26 @@ namespace LedgerTerrain
 			if (Land != nullptr)
 			{
 				Procedural->SetMaterial(LandSection, Land);
+			}
+
+			// Caves as a third section, with collision: a passage you can see
+			// and cannot stand in is not a passage. Painted with the terrain
+			// material for now -- its vertex colour is unset, so all three
+			// biome slots weigh equally and a cave wall reads as a mix of the
+			// three grounds above it. Wrong, and a placeholder rather than a
+			// decision: cave rock wants its own surface set.
+			Procedural->ClearMeshSection(CaveSection);
+			if (Job.bHasCaves)
+			{
+				const TArray<FColor> NoColours;
+				const TArray<FProcMeshTangent> NoTangents;
+				Procedural->CreateMeshSection(
+					CaveSection, Job.CaveVertices, Job.CaveTriangles, Job.CaveNormals,
+					Job.CaveUVs, NoColours, NoTangents, Job.bWithCollision);
+				if (Land != nullptr)
+				{
+					Procedural->SetMaterial(CaveSection, Land);
+				}
 			}
 
 			Procedural->ClearMeshSection(WaterSection);
