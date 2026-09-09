@@ -3230,7 +3230,7 @@
    "dependsOn": [
     "T423"
    ],
-   "status": "blocked",
+   "status": "todo",
    "startedAt": null,
    "completedAt": null,
    "notes": [
@@ -3238,6 +3238,21 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "PSO precaching is on and takes effect; the two D3D12 driver disk caches cannot be enabled from project config -- read-only CVars read before it is applied, still logging r.D3D12.PSO.DiskCache=0 under both RendererSettings and SystemSettings. 28 PSOPrecacheState:Missed in cold AND warm runs, identical, so precaching is not covering them. 973 frames over the stall threshold, worst 116.5 ms. First run vs second: overall 17.2 then 17.8 ms (noise), but the town phase 17.0 then 20.0 -- 18% apart with nothing changed, so the run-to-run tolerance is not demonstrable yet. Needs ConsoleVariables.ini or a command-line route for the read-only CVars, and a stall attribution pass to find what the 973 actually are. Reports in docs/comparisons/packaged/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "The two D3D12 driver disk caches are unreachable, not merely unset. Tried RendererSettings, SystemSettings, [ConsoleVariables] (the earliest project-owned section, applied in PreInit) and -dpcvars on the command line; all four give 'CVar deferred - dummy variable created' followed by 'Not using pipeline state disk cache per r.D3D12.PSO.DiskCache=0'. The RHI reads the value in the pass that registers it. The lines are out of DefaultEngine.ini rather than sitting there looking like a setting somebody chose. They were also the wrong lever: they are the driver's copy, not the engine's, and the engine's answer is a recorded .upipelinecache shipped with the build."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Run-to-run half of the acceptance now measurable, because the fixture is reproducible: cold and warm packaged runs under -useFixedTimeStep agree to within 2% on every phase mean (overall 16.4 vs 16.6 ms) and 12% on p99. The previous attempt had the town phase 18% apart with nothing changed; that was the free-running fixture. Still failing: 34 PSOPrecacheState:Missed, IDENTICAL cold and warm, so precaching is not covering them and nothing carries them between runs. Also: the 22 stalls in the cold run land on the capture timestamps -- taking a screenshot stalls its own frame and the recorder counts it, so stall attribution has to exclude capture frames first. Evidence in docs/comparisons/packaged/pso/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "unblock",
+     "text": "unblocked"
     }
    ],
    "evidence": [],
@@ -12409,5 +12424,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T12:54:31.562Z"
+ "updatedAt": "2026-09-09T13:07:53.246Z"
 }
