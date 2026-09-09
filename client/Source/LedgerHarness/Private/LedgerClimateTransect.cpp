@@ -2,6 +2,7 @@
 
 #include "Engine/World.h"
 #include "HAL/PlatformMisc.h"
+#include "LedgerBiome.h"
 #include "LedgerClimate.h"
 #include "LedgerLog.h"
 #include "LedgerPlanet.h"
@@ -364,6 +365,97 @@ bool ULedgerClimateTransect::WriteTransect()
 			Shadowed, Ridges, Ridges > 0 ? 100.0 * Shadowed / Ridges : 0.0);
 		RidgeShadowFraction = Ridges > 0 ? static_cast<double>(Shadowed) / Ridges : 0.0;
 		Body += TEXT("fifty per cent is a coin toss and means there is no shadow.\n\n");
+	}
+
+	// The biomes the climate field actually produces, over the same land the
+	// relief survey walked (T052). Not part of the verdict: this reports what
+	// the framework says about this planet rather than asserting a distribution
+	// nobody has a reference for. It is here because a biome set that loads,
+	// weighs and blends correctly in isolation can still describe a world that
+	// is ninety per cent one thing, and the only way to find that out is to
+	// look at the world.
+	{
+		TArray<FString> BiomeErrors;
+		const TArray<FLedgerBiome> Biomes =
+			LedgerBiomes::Load(LedgerBiomes::DefaultDirectory(), BiomeErrors);
+		for (const FString& Error : BiomeErrors)
+		{
+			Body += FString::Printf(TEXT("BIOME REJECTED %s\n"), *Error);
+		}
+
+		// Weighted by cos(latitude), because a one-degree cell at 80 degrees
+		// covers a sixth of the ground a one-degree cell at the equator does.
+		// The unweighted version of this said the planet is 45% ice cap, which
+		// was a statement about the grid rather than about the planet.
+		TArray<double> Area;
+		Area.SetNumZeroed(Biomes.Num());
+		double LandArea = 0.0;
+		int32 LandPoints = 0;
+		double Blended = 0.0;
+
+		TArray<double> Weights;
+		for (int32 LatStep = -85; LatStep <= 85; LatStep += 1)
+		{
+			for (int32 LonStep = 0; LonStep < 360; LonStep += 1)
+			{
+				const FVector3d Point = OnMeridian(LatStep, LonStep);
+				const double Height = LedgerTerrain::Elevation(Point, Params) / 100.0;
+				if (Height <= 0.0)
+				{
+					continue;
+				}
+
+				// Slope from the two neighbours one march step away, which is
+				// the finest spacing anything else in this report uses.
+				const FVector3d East =
+					FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Point).GetSafeNormal();
+				const FVector3d North = FVector3d::CrossProduct(Point, East).GetSafeNormal();
+				const double Run = LedgerClimate::UpwindFetchMetres / LedgerClimate::UpwindSteps;
+				const double Rise = FVector2d(
+					LedgerTerrain::Elevation(Along(Point, East, 1), Params) / 100.0 - Height,
+					LedgerTerrain::Elevation(Along(Point, North, 1), Params) / 100.0 - Height).Length();
+				const double SlopeDegrees = FMath::RadiansToDegrees(FMath::Atan2(Rise, Run));
+
+				const FLedgerClimate Climate = LedgerClimate::At(Point, Params);
+				LedgerBiomes::Weigh(Biomes, Climate, SlopeDegrees, Weights);
+
+				int32 Best = 0;
+				for (int32 Index = 1; Index < Weights.Num(); ++Index)
+				{
+					if (Weights[Index] > Weights[Best])
+					{
+						Best = Index;
+					}
+				}
+				const double Cell = FMath::Cos(FMath::DegreesToRadians(
+					static_cast<double>(LatStep)));
+				if (Area.IsValidIndex(Best))
+				{
+					Area[Best] += Cell;
+				}
+				LandArea += Cell;
+				// A point where the winner holds less than three quarters of
+				// the weight is a point inside a transition rather than on one
+				// side of a line. That fraction is what T053 is going to blend.
+				if (Weights.IsValidIndex(Best) && Weights[Best] < 0.75)
+				{
+					Blended += Cell;
+				}
+				++LandPoints;
+			}
+		}
+
+		Body += FString::Printf(TEXT("\nbiomes over %d land points, %d loaded:\n"),
+			LandPoints, Biomes.Num());
+		for (int32 Index = 0; Index < Biomes.Num(); ++Index)
+		{
+			Body += FString::Printf(TEXT("  %-22s %5.1f%% of land by area\n"),
+				*Biomes[Index].Name,
+				LandArea > 0.0 ? 100.0 * Area[Index] / LandArea : 0.0);
+		}
+		Body += FString::Printf(
+			TEXT("  in a transition (no biome above 75%% weight): %.1f%%\n\n"),
+			LandArea > 0.0 ? 100.0 * Blended / LandArea : 0.0);
 	}
 
 	// Both, not either. Two ranges finding a shadow apiece is consistent with

@@ -1,0 +1,15 @@
+{
+  "name": "Ice cap",
+  "temperatureC": -22.0,
+  "temperatureToleranceC": 14.0,
+  "moisture": 0.45,
+  "moistureTolerance": 0.4,
+  "maxSlopeDegrees": 90.0,
+  "surfaceSet": "fresh_windswept_snow_ugspafgdy",
+  "tint": [
+    0.86,
+    0.9,
+    0.95
+  ],
+  "scatterDensity": 0.0
+}

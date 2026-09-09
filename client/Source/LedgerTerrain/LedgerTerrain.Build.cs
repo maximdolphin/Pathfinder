@@ -25,7 +25,9 @@ public class LedgerTerrain : ModuleRules
 			// The other candidate component type, measured in T423: a static
 			// mesh built per patch at runtime. See LedgerPatchComponents.h.
 			"MeshDescription",
-			"StaticMeshDescription"
+			"StaticMeshDescription",
+			// Biomes are JSON files in Config/Biomes (LedgerBiome.h).
+			"Json"
 		});
 	}
 }

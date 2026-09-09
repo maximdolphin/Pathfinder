@@ -1,0 +1,15 @@
+{
+  "name": "Savanna",
+  "temperatureC": 24.0,
+  "temperatureToleranceC": 6.0,
+  "moisture": 0.42,
+  "moistureTolerance": 0.15,
+  "maxSlopeDegrees": 30.0,
+  "surfaceSet": "grassy_soil_xbreair",
+  "tint": [
+    0.62,
+    0.56,
+    0.31
+  ],
+  "scatterDensity": 0.35
+}

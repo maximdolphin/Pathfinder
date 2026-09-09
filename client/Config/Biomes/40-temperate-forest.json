@@ -1,0 +1,15 @@
+{
+  "name": "Temperate forest",
+  "temperatureC": 13.0,
+  "temperatureToleranceC": 6.0,
+  "moisture": 0.68,
+  "moistureTolerance": 0.2,
+  "maxSlopeDegrees": 35.0,
+  "surfaceSet": "forest_floor_compost_teiowah",
+  "tint": [
+    0.38,
+    0.44,
+    0.28
+  ],
+  "scatterDensity": 1.0
+}

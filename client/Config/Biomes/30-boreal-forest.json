@@ -1,0 +1,15 @@
+{
+  "name": "Boreal forest",
+  "temperatureC": 3.0,
+  "temperatureToleranceC": 6.0,
+  "moisture": 0.62,
+  "moistureTolerance": 0.22,
+  "maxSlopeDegrees": 35.0,
+  "surfaceSet": "mossy_forest_floor_vfylbge",
+  "tint": [
+    0.4,
+    0.48,
+    0.38
+  ],
+  "scatterDensity": 0.7
+}

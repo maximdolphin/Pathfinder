@@ -1,0 +1,15 @@
+{
+  "name": "Tropical rainforest",
+  "temperatureC": 26.0,
+  "temperatureToleranceC": 6.0,
+  "moisture": 0.86,
+  "moistureTolerance": 0.18,
+  "maxSlopeDegrees": 35.0,
+  "surfaceSet": "rocky_forest_floor_wjvpaff",
+  "tint": [
+    0.24,
+    0.4,
+    0.2
+  ],
+  "scatterDensity": 1.0
+}

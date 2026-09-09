@@ -1,0 +1,15 @@
+{
+  "name": "Tundra",
+  "temperatureC": -5.0,
+  "temperatureToleranceC": 7.0,
+  "moisture": 0.5,
+  "moistureTolerance": 0.3,
+  "maxSlopeDegrees": 40.0,
+  "surfaceSet": "rocky_ground_xbkibje",
+  "tint": [
+    0.52,
+    0.53,
+    0.44
+  ],
+  "scatterDensity": 0.15
+}

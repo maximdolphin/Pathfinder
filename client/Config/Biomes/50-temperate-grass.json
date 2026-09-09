@@ -1,0 +1,15 @@
+{
+  "name": "Temperate grassland",
+  "temperatureC": 13.0,
+  "temperatureToleranceC": 7.0,
+  "moisture": 0.36,
+  "moistureTolerance": 0.14,
+  "maxSlopeDegrees": 30.0,
+  "surfaceSet": "grassy_soil_xbklfix",
+  "tint": [
+    0.55,
+    0.56,
+    0.33
+  ],
+  "scatterDensity": 0.45
+}

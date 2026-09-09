@@ -1,0 +1,15 @@
+{
+  "name": "Desert",
+  "temperatureC": 25.0,
+  "temperatureToleranceC": 9.0,
+  "moisture": 0.1,
+  "moistureTolerance": 0.13,
+  "maxSlopeDegrees": 25.0,
+  "surfaceSet": "dry_sand_xfhsfao",
+  "tint": [
+    0.78,
+    0.68,
+    0.48
+  ],
+  "scatterDensity": 0.03
+}
