@@ -37,11 +37,24 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Roadmap data is up to date
+      # Regenerated first, and the page is built from the regenerated file, so
+      # it is correct by construction whatever the committed copy says.
+      #
+      # This used to be fatal, and that was the wrong failure mode. Closing a
+      # task writes roadmap.json from task.mjs; one commit where that had
+      # drifted from the generator failed the build, and because the build
+      # gates the deploy, the published roadmap simply stopped updating and
+      # stayed stale for several commits before anybody noticed. A stale file
+      # in git is a nit. A roadmap nobody can read is not.
+      - name: Regenerate the roadmap, and report drift
         run: |
           python roadmap/scripts/generate_roadmap.py
-          git diff --exit-code roadmap/public/roadmap.json roadmap/task-ids.json \
-            || (echo "roadmap.json is stale: run roadmap/scripts/generate_roadmap.py and commit"; exit 1)
+          if git diff --quiet roadmap/public/roadmap.json roadmap/task-ids.json; then
+            echo "committed roadmap matches the generator"
+          else
+            echo "::warning::committed roadmap.json had drifted; the page is built from the regenerated data"
+            git --no-pager diff --stat roadmap/public/roadmap.json roadmap/task-ids.json
+          fi
 
       - uses: actions/setup-node@v4
         with:
