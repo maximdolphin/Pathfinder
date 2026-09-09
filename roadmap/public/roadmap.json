@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 6
+   "doneCount": 7
   },
   {
    "id": "M03",
@@ -3753,11 +3753,24 @@
    "dependsOn": [
     "T051"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Six automation tests green, and the acceptance is one of them rather than a claim beside them: AddingABiomeIsOneFileAndNoRecompile builds a directory with two biomes, asks which owns hot wet ground, writes a third file into the same directory and asks again -- the answer changes with nothing between the two questions but a file appearing. Weights rather than a classification, Gaussian in climate distance: a function returning THE biome at a point draws a line wherever two meet, and T053's acceptance is three biomes on one slope with no visible band. The census says 33.9% of land sits inside a transition, which is the fraction T053 has to blend. Config/Biomes rather than Content because the cook deletes loose non-asset files from Content/ -- the bug that kept the pipeline cache from shipping. Half the planet reads as desert and four per cent as forest; not tuned away, because that is what the moisture field produces and the moisture field is limited by the missing relief that blocks T051. First census was unweighted and said 45% ice cap, which was a statement about the grid rather than the planet. Commit c612dd4, evidence in docs/comparisons/biomes/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T052-2026-09-09T15-55-07-589.txt",
+     "caption": "Planet-wide biome census over 19,426 land points, cos(latitude)-weighted.",
+     "source": "../docs/comparisons/biomes/climate-with-biomes.txt",
+     "addedAt": "2026-09-09T15:55:07.590Z"
+    }
+   ],
    "plannedStartDay": 96,
    "plannedEndDay": 98.5,
    "plannedStart": "2027-01-19",
@@ -12498,5 +12511,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T15:46:28.872Z"
+ "updatedAt": "2026-09-09T15:55:07.680Z"
 }
