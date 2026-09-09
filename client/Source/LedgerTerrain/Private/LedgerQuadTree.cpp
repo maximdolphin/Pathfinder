@@ -166,7 +166,7 @@ void ALedgerPlanet::UpdateTree(
 	const double Error = LedgerTerrain::ScreenSpaceError(
 		Node.WorldSize, Distance, ViewportWidth, FovRadians);
 
-	if (!bForceCollapse && Error > ErrorThresholdPixels && Node.Depth < MaxDepth)
+	if (!bForceCollapse && Error > EffectiveErrorPixels && Node.Depth < MaxDepth)
 	{
 		if (!Node.bHasChildren)
 		{
@@ -198,7 +198,14 @@ void ALedgerPlanet::UpdateTree(
 				break;
 			}
 		}
-		if (bAllChildrenReady)
+		// The resident shell keeps its geometry even once its children have
+		// theirs. That is the whole point of it: it is not standing in for
+		// them, it is standing by for the next time the camera arrives
+		// somewhere with nothing built. Releasing it here is what made the
+		// shell do nothing at all -- the overload run reported holes in a
+		// hundred per cent of frames with the shell in place, because the shell
+		// was being dismantled as fast as it was built.
+		if (bAllChildrenReady && Node.Depth > ResidentDepth)
 		{
 			ReleaseSection(NodeKey(Node));
 		}
@@ -261,7 +268,9 @@ void ALedgerPlanet::UpdateTree(
 	Node.CollapseWaitFrames = 0;
 }
 
-void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out, bool bAncestorHasGeometry) const
+void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node,
+	TArray<const FLedgerQuadNode*>& Out, TArray<uint8>& OutUrgent,
+	bool bAncestorHasGeometry) const
 {
 	if (!Node.bVisible)
 	{
@@ -272,11 +281,15 @@ void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLed
 
 	if (Node.IsLeaf())
 	{
+		// Nothing anywhere up the chain is drawing this ground. Not a coarse
+		// patch standing in for a fine one -- a hole. Recorded per node as
+		// well as counted, because it is what decides whether this node's
+		// geometry gets paid for before somebody else's detail (T063).
+		const bool bIsHole = !bHasGeometry && !bAncestorHasGeometry;
 		Out.Add(&Node);
-		if (!bHasGeometry && !bAncestorHasGeometry)
+		OutUrgent.Add(bIsHole ? 1 : 0);
+		if (bIsHole)
 		{
-			// Nothing anywhere up the chain is drawing this ground. Not a
-			// coarse patch standing in for a fine one — a hole.
 			++const_cast<ALedgerPlanet*>(this)->Stats.UnfilledNodes;
 		}
 		return;
@@ -304,16 +317,30 @@ void ALedgerPlanet::CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLed
 		}
 	}
 
-	if (bHasGeometry || bCollapseFront)
+	// The resident shell keeps geometry whether it is a leaf or not, so that
+	// arriving anywhere on the planet finds coarse ground already there rather
+	// than a hole waiting to be filled. See ResidentDepth.
+	const bool bResident = Node.Depth <= ResidentDepth;
+	if (bHasGeometry || bCollapseFront || bResident)
 	{
 		Out.Add(&Node);
+
+		// **Urgent, not a hole.** A split resident node with no geometry of its
+		// own is covered by its children and nothing is missing on screen; what
+		// it is, is the thing that will cover the screen the next time the
+		// camera arrives somewhere new, so it is worth paying for before
+		// somebody's detail. Marking it as a hole instead made the overload
+		// report say a hundred per cent of frames had holes when what they had
+		// was a shell being prefetched -- a measurement counting its own fix.
+		OutUrgent.Add(!bHasGeometry && bResident ? 1 : 0);
 	}
 
 	for (int32 Index = 0; Index < 4; ++Index)
 	{
 		if (Node.Children[Index].IsValid())
 		{
-			CollectLeaves(*Node.Children[Index], Out, bAncestorHasGeometry || bHasGeometry);
+			CollectLeaves(*Node.Children[Index], Out, OutUrgent,
+				bAncestorHasGeometry || bHasGeometry);
 		}
 	}
 }

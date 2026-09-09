@@ -67,6 +67,7 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 void ALedgerPlanet::HarvestCompletedPatches()
 {
 	const double Started = FPlatformTime::Seconds();
+	double Previous = Started;
 
 	TArray<uint64> Landed;
 	Landed.Reserve(InFlight.Num());
@@ -126,7 +127,20 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
 		++Stats.TotalBuilds;
 
-		if ((FPlatformTime::Seconds() - Started) * 1000.0 >= UploadBudgetMs)
+		// The same allowance the request loop spends from, so a frame that
+		// harvests a hundred finished patches has less left to ask for more.
+		// Each patch is charged its own time rather than the elapsed total,
+		// which is the difference between a budget and a stopwatch.
+		const double Now = FPlatformTime::Seconds();
+		Budget.Spent(Job->bWithCollision
+			? ELedgerStreamClass::Collision : ELedgerStreamClass::Detail,
+			(Now - Previous) * 1000.0);
+		Previous = Now;
+
+		// A finished patch with collision is uploaded whatever the budget says:
+		// the work is already done on the worker and the alternative is ground
+		// the player can fall through.
+		if (!Budget.Allows(ELedgerStreamClass::Detail))
 		{
 			break;
 		}
@@ -429,6 +443,15 @@ void ALedgerPlanet::RebuildScatter()
 		ScatterBucketDirty.Init(true, ScatterBuckets);
 	}
 
+	if (!Budget.Allows(ELedgerStreamClass::Speculative))
+	{
+		// Trees are the first thing to give up. Somebody standing on ground
+		// that has not arrived notices; somebody standing on ground whose
+		// trees arrive a frame late does not.
+		Budget.Refused(ELedgerStreamClass::Speculative);
+		return;
+	}
+
 	const double Started = FPlatformTime::Seconds();
 	const FVector PlanetOrigin = GetActorLocation();
 
@@ -509,6 +532,8 @@ void ALedgerPlanet::RebuildScatter()
 	}
 	Stats.ScatterInstances = Total;
 	Stats.LastScatterRebuildMs = (FPlatformTime::Seconds() - Started) * 1000.0;
+	Budget.Spent(ELedgerStreamClass::Speculative, Stats.LastScatterRebuildMs);
+	Stats.SpentSpeculativeMs = Budget.SpentMs(ELedgerStreamClass::Speculative);
 
 	// Logged on every rebuild, because the rebuild cost is the whole of T057's
 	// frame-budget question and a number nobody can see is a number nobody

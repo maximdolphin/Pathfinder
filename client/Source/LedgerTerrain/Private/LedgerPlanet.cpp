@@ -268,6 +268,45 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	RebuildScatter();
 	double PhaseStarted = FPlatformTime::Seconds();
 
+	// How fine the tree may go this frame.
+	//
+	// The pool is the hard limit: sections it does not have cannot be filled,
+	// and a visible set larger than the pool is holes by arithmetic rather than
+	// by any failure to stream. So the threshold rises with the overshoot and
+	// relaxes back when there is room -- a coarser planet for a second, not a
+	// planet with pieces missing.
+	{
+		// **Pool occupancy, not the visible-node count.** `bVisible` is a
+		// horizon test rather than a frustum one, so it counts ground behind
+		// the camera; driving the threshold off it throttled detail because of
+		// terrain nobody could see. Sections in use against sections that
+		// exist is unambiguous: it is the resource that actually runs out.
+		// Ninety-five per cent, not eighty. At eighty the flight's ordinary
+		// cruise sits above the target and the threshold creeps up all the
+		// time: the underwater capture came back as a featureless gradient
+		// because the seabed had been coarsened during a frame that was never
+		// in trouble. This is a brake for an emergency, and a brake that drags
+		// is worse than none.
+		const double Target = MeshPool.Num() * 0.95;
+		const double Overshoot = Target > 0.0
+			? FMath::Max(1.0, ActiveSections.Num() / Target) : 1.0;
+		const double Wanted = ErrorThresholdPixels * Overshoot;
+
+		// Eased rather than snapped. Jumping the threshold makes the whole
+		// visible set collapse and re-split in one frame, which costs more than
+		// the overshoot did.
+		EffectiveErrorPixels = EffectiveErrorPixels <= 0.0
+			? Wanted
+			: FMath::Lerp(EffectiveErrorPixels, Wanted, 0.15);
+		Stats.EffectiveErrorPixels = EffectiveErrorPixels;
+
+		// Logged because the first version of this did nothing measurable and
+		// there was no way to see whether the threshold was moving at all.
+		UE_LOG(LogLedger, VeryVerbose,
+			TEXT("lod: %d sections of %.0f target, threshold %.0f px"),
+			ActiveSections.Num(), Target, EffectiveErrorPixels);
+	}
+
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
 		UpdateTree(*RootNode, CameraLocal, GeometryLead, ViewportWidth, Fov, false);
@@ -277,6 +316,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
 
 	PhaseStarted = FPlatformTime::Seconds();
+	// One allowance for the whole frame's streaming, opened before anything
+	// spends it. Collision work is exempt and reported separately.
+	Budget.Begin(UploadBudgetMs);
+
 	HarvestCompletedPatches();
 	Stats.WorstHarvestMs = FMath::Max(Stats.WorstHarvestMs,
 		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
@@ -284,11 +327,13 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	PhaseStarted = FPlatformTime::Seconds();
 
 	TArray<const FLedgerQuadNode*> Leaves;
+	TArray<uint8> Urgent;
 	Leaves.Reserve(2048);
+	Urgent.Reserve(2048);
 	Stats.UnfilledNodes = 0;
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)
 	{
-		CollectLeaves(*RootNode, Leaves, /*bAncestorHasGeometry*/ false);
+		CollectLeaves(*RootNode, Leaves, Urgent, /*bAncestorHasGeometry*/ false);
 	}
 
 	Stats.VisibleNodes = Leaves.Num();
@@ -303,32 +348,35 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// arrive rather than starting when we get there.
 	const FVector3d PredictedLocal = CameraLocal + CameraVelocityLocal * CollisionLeadSeconds;
 
-	// Nearest first: if the queue runs out, it runs out on the far nodes.
 	Stats.WorstCollectMs = FMath::Max(Stats.WorstCollectMs,
 		(FPlatformTime::Seconds() - PhaseStarted) * 1000.0);
 
 	PhaseStarted = FPlatformTime::Seconds();
-	Leaves.Sort([&CameraLocal](const FLedgerQuadNode& A, const FLedgerQuadNode& B)
-	{
-		return FVector3d::DistSquared(A.Centre, CameraLocal) < FVector3d::DistSquared(B.Centre, CameraLocal);
-	});
 
-	int32 Pending = 0;
+	// ---- what needs work, and in what order ------------------------------
+	//
+	// **By class first, then by distance.** Nearest-first alone is not a
+	// priority: a hole three kilometres away matters more than a detail level
+	// on the next hillside, because one is ground missing and the other is
+	// ground that is merely coarse. Given a budget too small for everything,
+	// arrival order lets the horizon starve the floor, which is the failure
+	// the acceptance calls "holes" rather than "less detail".
+	struct FRequest
+	{
+		const FLedgerQuadNode* Leaf = nullptr;
+		ELedgerStreamClass Class = ELedgerStreamClass::Detail;
+		double DistanceSquared = 0.0;
+	};
+
+	TArray<FRequest> Requests;
+	Requests.Reserve(Leaves.Num());
+
 	int32 WithCollision = 0;
-
-	// A cache hit is cheap next to generating a patch and expensive next to
-	// doing nothing: SetProcMeshSection still rebuilds render resources on the
-	// game thread. Unbudgeted, a turn that brings several hundred cached
-	// patches back into view would serve all of them in one frame, and the
-	// cache would have turned a smooth stream of work into a single stall.
-	const double CacheUploadStart = FPlatformTime::Seconds();
-	const double CacheUploadBudgetMs = FMath::Max(0.0, UploadBudgetMs - Stats.LastFrameUploadMs);
-
-	for (const FLedgerQuadNode* Leaf : Leaves)
+	for (int32 Index = 0; Index < Leaves.Num(); ++Index)
 	{
+		const FLedgerQuadNode* Leaf = Leaves[Index];
 		Stats.DeepestVisibleDepth = FMath::Max(Stats.DeepestVisibleDepth, Leaf->Depth);
 
-		const uint64 Key = NodeKey(*Leaf);
 		const double NearNow = FVector3d::Distance(Leaf->Centre, CameraLocal);
 		const double NearSoon = FVector3d::Distance(Leaf->Centre, PredictedLocal);
 		const bool bWantsCollision = FMath::Min(NearNow, NearSoon) < CollisionRadius;
@@ -337,26 +385,65 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			++WithCollision;
 		}
 
+		const uint64 Key = NodeKey(*Leaf);
 		if (ActiveSections.Contains(Key) || InFlight.Contains(Key))
 		{
 			continue;
 		}
 
-		// Cache first. A hit costs an upload; a miss costs a worker thread and
-		// several milliseconds of sampling.
-		if ((FPlatformTime::Seconds() - CacheUploadStart) * 1000.0 < CacheUploadBudgetMs
-			&& UploadFromCache(*Leaf, bWantsCollision))
+		FRequest Request;
+		Request.Leaf = Leaf;
+		Request.DistanceSquared = FVector3d::DistSquared(Leaf->Centre, CameraLocal);
+		Request.Class = bWantsCollision
+			? ELedgerStreamClass::Collision
+			: (Urgent.IsValidIndex(Index) && Urgent[Index] != 0
+				? ELedgerStreamClass::Hole
+				: ELedgerStreamClass::Detail);
+		Requests.Add(Request);
+	}
+
+	Requests.Sort([](const FRequest& A, const FRequest& B)
+	{
+		if (A.Class != B.Class)
 		{
+			return A.Class < B.Class;
+		}
+		return A.DistanceSquared < B.DistanceSquared;
+	});
+
+	// ---- spend ------------------------------------------------------------
+	//
+	// A cache hit is cheap next to generating a patch and expensive next to
+	// doing nothing: SetProcMeshSection still rebuilds render resources on the
+	// game thread. Unbudgeted, a turn that brings several hundred cached
+	// patches back into view serves all of them in one frame, and the cache
+	// has turned a smooth stream of work into a single stall.
+	int32 Pending = 0;
+	for (const FRequest& Request : Requests)
+	{
+		if (!Budget.Allows(Request.Class))
+		{
+			Budget.Refused(Request.Class);
+			++Pending;
 			continue;
 		}
 
-		if (!LaunchPatch(*Leaf, bWantsCollision))
+		const double Started = FPlatformTime::Seconds();
+		const bool bCollision = Request.Class == ELedgerStreamClass::Collision;
+		if (!UploadFromCache(*Request.Leaf, bCollision) && !LaunchPatch(*Request.Leaf, bCollision))
 		{
 			++Pending;
 		}
+		Budget.Spent(Request.Class, (FPlatformTime::Seconds() - Started) * 1000.0);
 	}
 
-	Stats.LastFrameUploadMs += (FPlatformTime::Seconds() - CacheUploadStart) * 1000.0;
+	Stats.SpentCollisionMs = Budget.SpentMs(ELedgerStreamClass::Collision);
+	Stats.SpentHoleMs = Budget.SpentMs(ELedgerStreamClass::Hole);
+	Stats.SpentDetailMs = Budget.SpentMs(ELedgerStreamClass::Detail);
+	Stats.RefusedDetail = Budget.RefusedCount(ELedgerStreamClass::Detail);
+	Stats.RefusedSpeculative = Budget.RefusedCount(ELedgerStreamClass::Speculative);
+
+	Stats.LastFrameUploadMs = Budget.TotalSpentMs();
 	Stats.WorstFrameUploadMs = FMath::Max(Stats.WorstFrameUploadMs, Stats.LastFrameUploadMs);
 
 	Stats.PendingBuilds = Pending;

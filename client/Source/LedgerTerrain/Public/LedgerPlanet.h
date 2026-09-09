@@ -23,6 +23,7 @@
 #include "LedgerBiome.h"
 #include "LedgerQuadNode.h"
 #include "LedgerScatter.h"
+#include "LedgerStreamingBudget.h"
 #include "LedgerTerrainDelta.h"
 #include "LedgerTerrainSample.h"
 #include "LedgerTerrainMath.h"
@@ -330,6 +331,32 @@ struct FLedgerTerrainStats
 
 	UPROPERTY()
 	double LastScatterRebuildMs = 0.0;
+
+	/// Streaming time spent last frame, by what it was for, and how many
+	/// pieces of work were refused for want of budget. Together these say
+	/// whether a budget is holding by doing less or by doing nothing.
+	UPROPERTY()
+	double SpentCollisionMs = 0.0;
+
+	UPROPERTY()
+	double SpentHoleMs = 0.0;
+
+	UPROPERTY()
+	double SpentDetailMs = 0.0;
+
+	UPROPERTY()
+	double SpentSpeculativeMs = 0.0;
+
+	UPROPERTY()
+	int32 RefusedDetail = 0;
+
+	UPROPERTY()
+	int32 RefusedSpeculative = 0;
+
+	/// The error threshold actually in force, which rises above the configured
+	/// one when the visible set is larger than the pool can hold.
+	UPROPERTY()
+	double EffectiveErrorPixels = 0.0;
 };
 
 UCLASS()
@@ -390,13 +417,37 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	double ErrorThresholdPixels = 150.0;
 
+	/// Depth down to which every visible node keeps geometry, always.
+	///
+	/// A shell so that arriving somewhere new finds coarse ground already
+	/// there. Kept at 3 -- six by sixty-four nodes at most, of which only the
+	/// ones facing the camera are built.
+	///
+	/// **It was added to fix a problem that turned out not to exist.** The
+	/// overload run reported holes in a hundred per cent of frames; the shell
+	/// moved that by under two per cent, and so did keeping the shell resident
+	/// against the parent-hold rule. A photograph of the same run settled it:
+	/// the ground is solid. `UnfilledNodes` counts nodes that `bVisible` says
+	/// are visible, and `bVisible` is a horizon test rather than a frustum one,
+	/// so it counts the ground behind the camera. See
+	/// docs/comparisons/overload/. The shell stays because prefetching the
+	/// coarse levels is right on its own terms and costs sixty-odd sections of
+	/// three thousand six hundred; it is not a fix for anything.
+	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
+	int32 ResidentDepth = 3;
+
 	/// Patches allowed in flight at once. Bounded so a fast turn cannot queue
 	/// thousands of jobs whose results are stale before they land.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	int32 MaxJobsInFlight = 128;
 
-	/// Milliseconds per frame the game thread may spend uploading finished
-	/// patches. Generation is no longer on this budget â€” only the upload is.
+	/// Milliseconds per frame the game thread may spend on streaming: cache
+	/// uploads, finished patches and the scatter rebuild, together.
+	///
+	/// **Together is the point.** These were three separate budgets, each
+	/// reasonable alone, and a frame that did all three did the sum of them.
+	/// Collision work is exempt and is reported separately, because ground the
+	/// player is standing on is not a thing to be economical about.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	double UploadBudgetMs = 6.0;
 
@@ -587,6 +638,20 @@ private:
 		FVector3d Centre = FVector3d::ZeroVector;
 		TArray<FLedgerScatterInstance> Instances;
 	};
+	/// The frame's streaming allowance, and where it went.
+	FLedgerStreamingBudget Budget;
+
+	/// The error threshold in force this frame.
+	///
+	/// **A pool that cannot hold the visible set makes holes whatever the
+	/// streamer does**, and the overload run found a visible set of 8,644
+	/// against a pool of 3,600. The honest response is not to stream harder but
+	/// to ask for less: when the set outgrows the pool the threshold rises, the
+	/// tree splits less, and the ground is coarser instead of absent. It falls
+	/// back to the configured value as soon as there is room, so nothing is
+	/// permanently degraded by one bad second.
+	double EffectiveErrorPixels = 0.0;
+
 	TMap<uint64, FPatchScatter> LiveScatter;
 
 	/// Which bucket a patch's instances live in. A hash of the key rather than
@@ -631,7 +696,11 @@ private:
 
 	void BuildRoots();
 	void UpdateTree(FLedgerQuadNode& Node, const FVector3d& CameraLocal, const FVector3d& LeadLocal, double ViewportWidth, double FovRadians, bool bForceCollapse);
-	void CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out, bool bAncestorHasGeometry) const;
+	/// Collects the nodes that need geometry, and marks the urgent ones: leaves
+	/// with nothing standing in for them (holes), and the resident shell, which
+	/// is what stops the next arrival being a hole.
+	void CollectLeaves(const FLedgerQuadNode& Node, TArray<const FLedgerQuadNode*>& Out,
+		TArray<uint8>& OutUrgent, bool bAncestorHasGeometry) const;
 	void Split(FLedgerQuadNode& Node);
 	void Collapse(FLedgerQuadNode& Node);
 	bool IsBeyondHorizon(const FLedgerQuadNode& Node, const FVector3d& CameraLocal) const;
