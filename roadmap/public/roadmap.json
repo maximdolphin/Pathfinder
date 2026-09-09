@@ -4006,6 +4006,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "Acceptance met and measured. 42,408 instances at a median 16.6 ms over 2,296 sampled frames at the three-biome site -- sixty, and four times the ten thousand asked for. Wall clock rather than DeltaSeconds, because the fixture runs under -useFixedTimeStep and the engine's delta is a constant that would have reported a perfect sixty however slowly the frame ran. Identical placement across runs is a bit-for-bit test: every position is a hash of the patch key and a cell index and nothing else. Nothing floating took three attempts and the third found a real bug -- the mesh is a bilinear interpolation of the height field sampled every 4.8 m and wanders up to 1.222 m from it, so a tree placed at the exact value floats or sinks by that much; placement now reads the patch's own vertices. The two failed attempts are recorded because both passed: one compared the height function against itself, and one needed to invert CubeToSphere's warp, which DirectionToFace does not do, so it skipped every instance and reported 0.000 m over four hundred it never looked at. Sixteen instanced-component buckets rather than one: one component per variant costs 13.4 ms to rebuild at a forest site, sixteen buckets with two rebuilt per frame costs 0.3 to 1.2 ms. Known and named limit: scatter stops dead at the finest-LOD ring with no fade or impostor, which is visible in the evidence and is T059's task. Commit fddfc8a, write-up in docs/comparisons/scatter/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Correction to the note above: the limit was described as 'a hard edge where the scatter stops', from the thirty-metre frame. The six-hundred-metre frame (docs/comparisons/scatter/ring-edge.png) shows rectangular clumps at about the size of a 305 m patch with gaps between them, not a clean edge -- and why a distance-driven LOD produces blocks rather than a disc is not established. Also recorded: the obvious remedy makes it worse. Carrying scatter two size steps further with fewer candidates per patch is cheap (97,777 instances over 905 patches, 1.5 ms, still sixty) and looks far worse, because a fixed candidate count over a patch means areal density falls with the square of patch size, so patches one LOD step apart differ eightfold. Reverted; the reasoning is in LedgerScatter.h. Density has to be a function of position rather than of which patch a point falls in, which means a world-fixed candidate lattice -- T059's work. Commits 33081f7 and 2e8486a."
     }
    ],
    "evidence": [
@@ -4065,10 +4070,16 @@
    "dependsOn": [
     "T058"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Two halves, and both are blocked for different reasons. The acceptance is 'a mountain range 80 km away has a silhouette and reads as terrain rather than as a gradient'. There is no mountain range: measured at the mesh's own 4.8 m spacing, the whole planet's land is p50 4.2, p90 12.3, p99 25.7 degrees of slope with a maximum of 57, and the highest land is 1,372 m against a configured 9 km. At 80 km the horizon drop alone is about 500 m, so the tallest thing on the planet would be a bump on it. Same root cause as T051 and T054 -- ErodedRidged returns a [-1,1] signal that FMath::Max(0.0, ...) zeroes across 90% of the land. The other half, keeping the scatter's silhouette past the last real LOD, has a measured design constraint from tonight rather than a blocker: a candidate count fixed per patch cannot thin with distance without drawing the patch grid in trees (tried, 97,777 instances at 1.5 ms and visibly worse, reverted). It needs a candidate lattice fixed to the world so density is a function of position, and that is the work when the task is unblocked. Evidence in docs/comparisons/climate/ and docs/comparisons/scatter/."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 119.5,
    "plannedEndDay": 122,
@@ -12611,5 +12622,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T17:59:02.916Z"
+ "updatedAt": "2026-09-09T18:04:21.677Z"
 }
