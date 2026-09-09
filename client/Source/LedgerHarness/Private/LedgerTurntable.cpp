@@ -6,11 +6,13 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DirectionalLightComponent.h"
+#include "Components/MeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshActor.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
 #include "LedgerLog.h"
 #include "LedgerShip.h"
@@ -22,16 +24,29 @@
 
 namespace
 {
-	/// Where the stage sits: far enough from the planet that the atmosphere
-	/// renders nothing, the clouds are not in shot and no terrain streams. All
-	/// three of those animate, and an animating background cannot be diffed.
-	const FVector StagePosition(0.0, 0.0, 2.0e10);
+	/// How far the backdrop sits from the subject, as a multiple of its radius.
+	/// It has to clear the widest framing, which is four.
+	constexpr double BackdropScale = 8.0;
 
 	/// Frames spent settling before each shot. Lumen's screen probes accumulate
 	/// over frames, so this is a count and not a duration: the same count from
 	/// the same state converges to the same image, where the same *time* does
 	/// not because it is a different number of frames on a different machine.
-	constexpr int32 FramesToSettle = 24;
+	///
+	/// Twenty-four was not enough. Every camera move invalidates the probes and
+	/// they reconverge over the frames that follow, so two runs disagreed on a
+	/// handful of shots by a mean of 0.06 of a channel -- invisible, and still
+	/// a failed byte-comparison. The whole point of this fixture is that a diff
+	/// means a change, so the settle is long enough that a diff means one.
+	constexpr int32 FramesToSettle = 64;
+
+	/// Frames spent composing the first shot before anything is captured.
+	/// Without it the first framing's eight images differed between runs by a
+	/// mean of 0.06 of a channel and never more than 9 -- Lumen still
+	/// converging from a cold start, not nondeterminism, but enough to fail a
+	/// byte-identical check on eleven of forty-eight files. The rest of the
+	/// run was already identical, which is what said it was warm-up.
+	constexpr int32 FramesToWarmUp = 150;
 
 	/// Eight yaw angles. Not sixteen: the point is to catch a silhouette that
 	/// only works from the front, and eight does that for a fraction of the
@@ -102,14 +117,51 @@ bool ULedgerTurntable::Stage()
 	{
 		Ship->SetFlightEnabled(false);
 	}
-	Subject->SetActorLocation(StagePosition);
+	// The subject is not moved. An earlier version carried it 200,000 km out to
+	// a spot with nothing else in it, on the reasoning that the planet's clouds
+	// and sun animate and an animating background cannot be diffed. Everything
+	// about that placement measured correct -- subject there, camera 152 m away
+	// pointing at it, view target right, backdrop and both lights spawned -- and
+	// all forty-eight frames came back black. Rather than keep theorising about
+	// why nothing rendered at a coordinate nothing else in the project has ever
+	// rendered at, the stage is built where the ship already is, which the
+	// scripted flight demonstrably draws. The backdrop is what hides the world,
+	// and that is its job either way.
 	Subject->SetActorRotation(FRotator::ZeroRotator);
 
-	FVector Origin = FVector::ZeroVector;
-	FVector Extent = FVector::ZeroVector;
-	Subject->GetActorBounds(true, Origin, Extent);
-	StageOrigin = Origin;
-	SubjectRadius = FMath::Max(100.0, Extent.Size());
+	// `false` -- include components that do not collide. The first version
+	// passed `true`, which counts only colliding components, and the hull is a
+	// procedural mesh with collision off. The bounds came back empty, the radius
+	// fell to its own one-metre floor, and every framing was computed from that.
+	// Worse, the camera-outside check used the same empty bounds and passed
+	// forty-eight times out of forty-eight: a measurement checked against itself
+	// agrees with itself, and all forty-eight images were black.
+	// Bounds over the components that actually draw something, unioned by hand.
+	// GetActorBounds includes the whole actor, and this pawn carries a 52 m
+	// camera boom -- so it reported a 33 m subject for a hull a few metres
+	// across, and every framing was computed three times too far out. The ship
+	// came back as a speck in the middle of the frame and the fixture had no
+	// way to notice.
+	FBox Box(ForceInit);
+	Subject->ForEachComponent<UMeshComponent>(true, [&Box](const UMeshComponent* Component)
+	{
+		if (Component->IsRegistered() && Component->IsVisible())
+		{
+			Box += Component->Bounds.GetBox();
+		}
+	});
+
+	if (!Box.IsValid)
+	{
+		UE_LOG(LogLedger, Error,
+			TEXT("turntable: the subject has no visible mesh component. There is "
+			     "nothing to photograph, and a contact sheet of nothing is still 48 files."));
+		return false;
+	}
+
+	StageOrigin = Box.GetCenter();
+	SubjectExtent = Box.GetExtent();
+	SubjectRadius = SubjectExtent.Size();
 
 	FActorSpawnParameters Params;
 	Params.ObjectFlags |= RF_Transient;
@@ -117,24 +169,37 @@ bool ULedgerTurntable::Stage()
 	// A backdrop, so that "silhouette" framing shows a silhouette. A dark hull
 	// against empty space is a picture of nothing, and it is exactly the kind
 	// of image that gets nodded at.
-	if (UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere")))
+	//
+	// A plane held behind the subject and turned to face the camera, not a
+	// sphere around the stage. The sphere was scaled negative to turn it inside
+	// out, which does not do what it looks like it does -- it never rendered,
+	// and the planet was visible straight through where it should have been.
+	// It also enclosed the whole stage and cast a shadow over it.
+	if (UStaticMesh* Plane = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Plane.Plane")))
 	{
-		AStaticMeshActor* Backdrop = World->SpawnActor<AStaticMeshActor>(
+		Backdrop = World->SpawnActor<AStaticMeshActor>(
 			AStaticMeshActor::StaticClass(), StageOrigin, FRotator::ZeroRotator, Params);
 		if (Backdrop != nullptr && Backdrop->GetStaticMeshComponent() != nullptr)
 		{
 			UStaticMeshComponent* Mesh = Backdrop->GetStaticMeshComponent();
 			Mesh->SetMobility(EComponentMobility::Movable);
-			Mesh->SetStaticMesh(Sphere);
-			// The engine sphere is 100 cm across, and it is scaled inside out so
-			// the camera sits within it.
-			const double Scale = SubjectRadius * 0.4;
-			Backdrop->SetActorScale3D(FVector(-Scale, -Scale, -Scale));
+			Mesh->SetStaticMesh(Plane);
+			// The engine plane is 100 cm square, and it has to cover the frame
+			// at the widest framing with room to spare.
+			//
+			// The arithmetic: the camera sits at 4 radii, the plane at 8, so
+			// they are 12 apart, and a 90 degree horizontal field of view needs
+			// a half-width equal to that distance -- 24 radii across. The first
+			// version was exactly 24, which is exactly wrong: the frame's
+			// corners reach 15% further than its sides, so at two of the eight
+			// yaw angles the planet showed past the edge, and the planet streams
+			// terrain, which does not render the same way twice. Double it and
+			// stop thinking about it.
+			const double Scale = (SubjectRadius * BackdropScale * 6.0) / 100.0;
+			Backdrop->SetActorScale3D(FVector(Scale, Scale, Scale));
 			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			// The engine's own material, not the project's. LedgerHarness
-			// already has its three allowed module dependencies, and reaching
-			// into LedgerMaterial for one grey backdrop would break the
-			// layering rule to save four lines.
+			// It must not cast a shadow onto its own subject.
+			Mesh->SetCastShadow(false);
 			if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(
 				nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
 			{
@@ -142,7 +207,7 @@ bool ULedgerTurntable::Stage()
 					UMaterialInstanceDynamic::Create(Base, Backdrop))
 				{
 					Grey->SetVectorParameterValue(
-						TEXT("Color"), FLinearColor(0.18f, 0.19f, 0.21f));
+						TEXT("Color"), FLinearColor(0.16f, 0.17f, 0.19f));
 					Mesh->SetMaterial(0, Grey);
 				}
 			}
@@ -150,15 +215,37 @@ bool ULedgerTurntable::Stage()
 		}
 	}
 
-	// Two lights, both movable and both under this fixture's control. The
-	// world's sun is left where it is; it is 20,000 km away and lighting a
-	// planet, and rotating it is what unlit the entire world last time.
+	// The world's own sun is switched off for the duration. It is not one of
+	// this fixture's lights, and leaving it on produced the warning drawn
+	// across the viewport: multiple directional lights competing to be the one
+	// used for forward shading, resolved by picking whichever is brightest --
+	// which is not a thing a review fixture should leave to a tie-break.
+	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+	{
+		if (UDirectionalLightComponent* Component =
+			Cast<UDirectionalLightComponent>(It->GetLightComponent()))
+		{
+			WorldSunIntensity = Component->Intensity;
+			WorldSun = *It;
+			Component->SetIntensity(0.0f);
+		}
+		break;
+	}
+
+	// Two lights, with an explicit priority so that the choice of which one
+	// drives forward shading is stated rather than inferred from brightness.
 	for (int32 Which = 0; Which < 2; ++Which)
 	{
 		if (ADirectionalLight* Light = World->SpawnActor<ADirectionalLight>(
 			ADirectionalLight::StaticClass(), StageOrigin, FRotator::ZeroRotator, Params))
 		{
 			Light->SetMobility(EComponentMobility::Movable);
+			if (UDirectionalLightComponent* Component =
+				Cast<UDirectionalLightComponent>(Light->GetLightComponent()))
+			{
+				Component->ForwardShadingPriority = Which == 0 ? 10 : 0;
+				Component->SetAtmosphereSunLight(false);
+			}
 			StageActors.Add(Light);
 		}
 	}
@@ -188,8 +275,34 @@ bool ULedgerTurntable::Stage()
 	}
 	Controller->SetViewTarget(Camera);
 
-	UE_LOG(LogLedger, Log, TEXT("turntable: subject radius %.0f cm, stage at %.0f km"),
-		SubjectRadius, StagePosition.Z / 100000.0);
+	// Everything that has to be true for a shot to contain anything, printed
+	// once. Forty-eight black images passed the only check this fixture had,
+	// because that check compared the bounds against themselves; a picture of
+	// nothing is not distinguishable from a picture of something by any
+	// property of the camera alone.
+	int32 Backdrops = 0;
+	int32 Lights = 0;
+	for (AActor* Actor : StageActors)
+	{
+		Backdrops += Cast<AStaticMeshActor>(Actor) != nullptr ? 1 : 0;
+		Lights += Cast<ADirectionalLight>(Actor) != nullptr ? 1 : 0;
+	}
+
+	UE_LOG(LogLedger, Log,
+		TEXT("turntable: subject extent (%.0f, %.0f, %.0f) cm, radius %.0f cm, "
+		     "framings %.0f / %.0f / %.0f cm"),
+		SubjectExtent.X, SubjectExtent.Y, SubjectExtent.Z, SubjectRadius,
+		SubjectRadius * Framings[0], SubjectRadius * Framings[1],
+		SubjectRadius * Framings[2]);
+	UE_LOG(LogLedger, Log,
+		TEXT("turntable: subject at %s, bounds centre %s"),
+		*Subject->GetActorLocation().ToCompactString(),
+		*StageOrigin.ToCompactString());
+	UE_LOG(LogLedger, Log,
+		TEXT("turntable: %d backdrop, %d lights, view target %s"),
+		Backdrops, Lights,
+		Controller->GetViewTarget() == Camera ? TEXT("is the turntable camera")
+		                                      : TEXT("IS NOT the turntable camera"));
 	return true;
 }
 
@@ -229,6 +342,24 @@ void ULedgerTurntable::Compose()
 	const FVector Eye = StageOrigin + Offset;
 
 	Camera->SetActorLocationAndRotation(Eye, (StageOrigin - Eye).Rotation());
+
+	// The backdrop follows, always square to the camera and always behind the
+	// subject. The engine plane's face points along +Z, so the rotation is
+	// built from that axis rather than from a forward vector.
+	if (Backdrop != nullptr)
+	{
+		const FVector TowardCamera = (Eye - StageOrigin).GetSafeNormal();
+		Backdrop->SetActorLocation(StageOrigin - TowardCamera * (SubjectRadius * BackdropScale));
+		Backdrop->SetActorRotation(FRotationMatrix::MakeFromZ(TowardCamera).Rotator());
+	}
+
+	if (Index == 0 && SettleFrames == 0)
+	{
+		UE_LOG(LogLedger, Log,
+			TEXT("turntable shot 0: camera %s, looking at %s, %.0f cm away"),
+			*Eye.ToCompactString(), *StageOrigin.ToCompactString(),
+			FVector::Distance(Eye, StageOrigin));
+	}
 }
 
 bool ULedgerTurntable::CameraIsOutside(FString& Why) const
@@ -280,6 +411,12 @@ void ULedgerTurntable::Tick(float DeltaSeconds)
 
 	Compose();
 
+	if (WarmUpFrames < FramesToWarmUp)
+	{
+		++WarmUpFrames;
+		return;
+	}
+
 	if (SettleFrames < FramesToSettle)
 	{
 		++SettleFrames;
@@ -323,9 +460,20 @@ void ULedgerTurntable::Finish()
 {
 	bRunning = false;
 
+	if (WorldSun != nullptr)
+	{
+		if (UDirectionalLightComponent* Component =
+			Cast<UDirectionalLightComponent>(WorldSun->GetLightComponent()))
+		{
+			Component->SetIntensity(WorldSunIntensity);
+		}
+	}
+
 	FString Body;
 	Body += TEXT("Turntable.\n\n");
 	Body += FString::Printf(TEXT("  shots            %d\n"), ShotCount);
+	Body += FString::Printf(TEXT("  subject extent   %.0f x %.0f x %.0f cm\n"),
+		SubjectExtent.X, SubjectExtent.Y, SubjectExtent.Z);
 	Body += FString::Printf(TEXT("  subject radius   %.0f cm\n"), SubjectRadius);
 	Body += FString::Printf(TEXT("  settle           %d frames each\n"), FramesToSettle);
 	Body += FString::Printf(TEXT("  camera outside   %d\n"), Outside);

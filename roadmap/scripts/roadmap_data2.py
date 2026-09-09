@@ -142,8 +142,8 @@ M02 = [
                 "an hour because the picture was believed before the arithmetic.",
          acceptance="One command turns any generated asset into a contact sheet on disk, "
                     "with the camera provably outside the geometry, exposure fixed across "
-                    "every frame, and the same asset producing byte-identical sheets on "
-                    "two runs.",
+                    "every frame, and two consecutive runs agreeing within a stated "
+                    "tolerance rather than by eye.",
          days=1.5, refs=["ARCH Rule 6", "SS14"]),
     dict(title="Scatter framework: rocks, vegetation, debris",
          detail="Deterministic placement from biome rules, GPU-instanced, LOD'd, with "

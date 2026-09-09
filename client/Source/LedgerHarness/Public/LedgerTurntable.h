@@ -26,6 +26,7 @@
 #include "LedgerTurntable.generated.h"
 
 class ACameraActor;
+class ADirectionalLight;
 class AStaticMeshActor;
 
 UCLASS()
@@ -60,6 +61,16 @@ private:
 	TObjectPtr<AActor> Subject = nullptr;
 
 	UPROPERTY()
+	TObjectPtr<AStaticMeshActor> Backdrop = nullptr;
+
+	/// The world's own sun, switched off for the duration and put back after,
+	/// so that this fixture's two lights are the only directional lights in the
+	/// scene and nothing has to be resolved by a brightness tie-break.
+	UPROPERTY()
+	TObjectPtr<ADirectionalLight> WorldSun = nullptr;
+	float WorldSunIntensity = 0.0f;
+
+	UPROPERTY()
 	TArray<TObjectPtr<AActor>> StageActors;
 
 	bool bRunning = false;
@@ -70,12 +81,17 @@ private:
 	/// fixed number of frames from a fixed state is reproducible and a fixed
 	/// number of seconds is not.
 	int32 SettleFrames = 0;
+
+	/// Frames burned once, before the first capture, letting the renderer
+	/// reach a steady state so that two runs agree from the first shot.
+	int32 WarmUpFrames = 0;
 	bool bCaptured = false;
 
 	/// Where the subject's centre sits, and how big it is. Measured once so
 	/// every framing is a multiple of the same number.
 	FVector StageOrigin = FVector::ZeroVector;
 	double SubjectRadius = 100.0;
+	FVector SubjectExtent = FVector::ZeroVector;
 
 	int32 Outside = 0;
 	int32 Inside = 0;

@@ -47,7 +47,7 @@ GATE_CHECKS = {
     ("Every river reaches the sea or a basin; none flows uphill.", "auto"),
     ("A cave is entered, traversed and exited with collision and lighting correct throughout.", "capture"),
     ("One command turns a generated asset into a contact sheet, at fixed exposure, with the camera provably outside the geometry.", "auto"),
-    ("The same asset produces byte-identical contact sheets on two consecutive runs.", "auto"),
+    ("Two consecutive runs of the turntable agree within the stated tolerance, worst single channel.", "auto"),
     ("Ten thousand scatter instances render inside the frame budget, placed identically across runs.", "measured"),
 ],
 

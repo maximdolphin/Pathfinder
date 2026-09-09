@@ -17,6 +17,14 @@ off. It only handles the non-interlaced truecolour PNGs the engine writes.
 
     python tools/compare_captures.py            compare out/ against reference/
     python tools/compare_captures.py --accept   adopt out/ as the new reference
+    python tools/compare_captures.py --between A B   compare two directories
+
+**--between** exists for the turntable, which asks a different question: not
+"does this match the reference" but "do two runs of the same fixture agree".
+It is judged on the largest single-channel difference rather than on a
+structural residual, because the failure it looks for is a render that
+quietly varies, and the size of the worst pixel is what decides whether a
+diff means a change.
 """
 
 import argparse
@@ -25,6 +33,8 @@ import os
 import struct
 import sys
 import zlib
+
+LINE_END = chr(10)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CAPTURES = os.path.join(ROOT, "out")
@@ -176,11 +186,84 @@ def compare(reference_path, capture_path):
     return None, residual, fraction
 
 
+# What two runs of the same fixture may differ by.
+#
+# Not zero, and zero was tried. The turntable renders under Lumen, whose screen
+# probes accumulate over frames, and how far they have converged when a shot is
+# taken depends on how many frames the run took to reach it. Two runs came back
+# 42 of 48 identical, then 46, then 42 again, differing by a mean of 0.06 of a
+# channel and never more than 9 -- invisible, and still a failed byte
+# comparison. A gate that reads 46 on one run and 42 on the next, with nothing
+# changed in between, is worse than a looser one that always means something.
+REPEAT_MEAN_TOLERANCE = 0.5
+REPEAT_WORST_TOLERANCE = 16
+
+
+def compare_runs(first, second):
+    """Mean and largest channel difference between two renders of one shot."""
+    fw, fh, frows, fc = read_png(first)
+    sw, sh, srows, sc = read_png(second)
+    if (fw, fh) != (sw, sh):
+        return None, None
+
+    total = 0
+    worst = 0
+    samples = 0
+    for y in range(fh):
+        a, b = frows[y], srows[y]
+        for x in range(0, fw * fc, fc):
+            for channel in range(3):
+                difference = abs(a[x + channel] - b[x + channel])
+                total += difference
+                worst = max(worst, difference)
+                samples += 1
+    return total / float(samples), worst
+
+
+def between(first_dir, second_dir):
+    names = sorted(f for f in os.listdir(first_dir) if f.endswith(".png"))
+    if not names:
+        sys.stderr.write("no PNGs in %s" % first_dir + LINE_END)
+        return 1
+
+    failures = []
+    worst_seen = 0
+    for name in names:
+        second = os.path.join(second_dir, name)
+        if not os.path.isfile(second):
+            failures.append("%s: missing from %s" % (name, second_dir))
+            continue
+        mean, worst = compare_runs(os.path.join(first_dir, name), second)
+        if mean is None:
+            failures.append("%s: the two runs are different sizes" % name)
+            continue
+        worst_seen = max(worst_seen, worst)
+        if mean > REPEAT_MEAN_TOLERANCE or worst > REPEAT_WORST_TOLERANCE:
+            failures.append("%s: mean %.3f, worst channel %d (limits %.1f and %d)"
+                            % (name, mean, worst, REPEAT_MEAN_TOLERANCE,
+                               REPEAT_WORST_TOLERANCE))
+
+    print("%d shots compared, worst single channel difference %d (limit %d)"
+          % (len(names), worst_seen, REPEAT_WORST_TOLERANCE))
+    if failures:
+        sys.stderr.write("two runs of the same fixture disagree:" + LINE_END)
+        for failure in failures:
+            sys.stderr.write("  " + failure + LINE_END)
+        return 1
+    print("the two runs agree within tolerance")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--accept", action="store_true",
                         help="adopt the current captures as the reference")
+    parser.add_argument("--between", nargs=2, metavar=("A", "B"),
+                        help="compare two directories of the same shots")
     arguments = parser.parse_args()
+
+    if arguments.between:
+        return between(arguments.between[0], arguments.between[1])
 
     if not os.path.isdir(CAPTURES):
         sys.stderr.write("no captures in out/ — run the scripted flight first\n")

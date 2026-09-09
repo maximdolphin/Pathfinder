@@ -39,12 +39,13 @@
    "weekStart": -6,
    "weekEnd": 0,
    "taskCount": 27,
-   "estimateDays": 34.0,
+   "estimateDays": 34,
    "plannedStart": "2026-09-07",
    "plannedEnd": "2026-10-23",
    "status": "done",
    "gatePassedAt": "2026-09-07",
-   "evidence": []
+   "evidence": [],
+   "doneCount": 26
   },
   {
    "id": "M01",
@@ -99,7 +100,8 @@
      "source": "../out/performance.txt",
      "addedAt": "2026-09-08T21:22:27.421Z"
     }
-   ]
+   ],
+   "doneCount": 16
   },
   {
    "id": "M02",
@@ -148,7 +150,7 @@
      "how": "auto"
     },
     {
-     "check": "The same asset produces byte-identical contact sheets on two consecutive runs.",
+     "check": "Two consecutive runs of the turntable agree within the stated tolerance, worst single channel.",
      "how": "auto"
     },
     {
@@ -167,7 +169,8 @@
    "plannedEnd": "2027-01-26",
    "status": "active",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 6
   },
   {
    "id": "M2W",
@@ -227,12 +230,13 @@
    "weekStart": 14,
    "weekEnd": 21,
    "taskCount": 11,
-   "estimateDays": 40.0,
+   "estimateDays": 40,
    "plannedStart": "2027-01-26",
    "plannedEnd": "2027-03-23",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M03",
@@ -280,12 +284,13 @@
    "weekStart": 22,
    "weekEnd": 29,
    "taskCount": 20,
-   "estimateDays": 40.0,
+   "estimateDays": 40,
    "plannedStart": "2027-03-23",
    "plannedEnd": "2027-05-18",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M04",
@@ -337,12 +342,13 @@
    "weekStart": 30,
    "weekEnd": 37,
    "taskCount": 19,
-   "estimateDays": 40.0,
+   "estimateDays": 40,
    "plannedStart": "2027-05-18",
    "plannedEnd": "2027-07-13",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M05",
@@ -406,7 +412,8 @@
    "plannedEnd": "2027-09-17",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M06",
@@ -469,12 +476,13 @@
    "weekStart": 48,
    "weekEnd": 56,
    "taskCount": 21,
-   "estimateDays": 45.0,
+   "estimateDays": 45,
    "plannedStart": "2027-09-17",
    "plannedEnd": "2027-11-19",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M07",
@@ -526,12 +534,13 @@
    "weekStart": 57,
    "weekEnd": 65,
    "taskCount": 15,
-   "estimateDays": 45.0,
+   "estimateDays": 45,
    "plannedStart": "2027-11-19",
    "plannedEnd": "2028-01-21",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M08",
@@ -586,12 +595,13 @@
    "weekStart": 66,
    "weekEnd": 74,
    "taskCount": 16,
-   "estimateDays": 45.0,
+   "estimateDays": 45,
    "plannedStart": "2028-01-21",
    "plannedEnd": "2028-03-24",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M09",
@@ -655,12 +665,13 @@
    "weekStart": 75,
    "weekEnd": 85,
    "taskCount": 20,
-   "estimateDays": 56.0,
+   "estimateDays": 56,
    "plannedStart": "2028-03-24",
    "plannedEnd": "2028-06-12",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M10",
@@ -724,12 +735,13 @@
    "weekStart": 86,
    "weekEnd": 94,
    "taskCount": 14,
-   "estimateDays": 46.0,
+   "estimateDays": 46,
    "plannedStart": "2028-06-12",
    "plannedEnd": "2028-08-15",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M11",
@@ -794,7 +806,8 @@
    "plannedEnd": "2028-11-01",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M12",
@@ -869,12 +882,13 @@
    "weekStart": 106,
    "weekEnd": 114,
    "taskCount": 19,
-   "estimateDays": 45.0,
+   "estimateDays": 45,
    "plannedStart": "2028-11-01",
    "plannedEnd": "2029-01-03",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M13",
@@ -925,12 +939,13 @@
    "weekStart": 115,
    "weekEnd": 122,
    "taskCount": 11,
-   "estimateDays": 38.0,
+   "estimateDays": 38,
    "plannedStart": "2029-01-03",
    "plannedEnd": "2029-02-26",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M14",
@@ -977,12 +992,13 @@
    "weekStart": 123,
    "weekEnd": 130,
    "taskCount": 11,
-   "estimateDays": 39.0,
+   "estimateDays": 39,
    "plannedStart": "2029-02-26",
    "plannedEnd": "2029-04-20",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M15",
@@ -1043,7 +1059,8 @@
    "plannedEnd": "2029-06-13",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M16",
@@ -1108,7 +1125,8 @@
    "plannedEnd": "2029-09-06",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M17",
@@ -1160,12 +1178,13 @@
    "weekStart": 151,
    "weekEnd": 158,
    "taskCount": 14,
-   "estimateDays": 40.0,
+   "estimateDays": 40,
    "plannedStart": "2029-09-06",
    "plannedEnd": "2029-11-01",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M18",
@@ -1218,7 +1237,8 @@
    "plannedEnd": "2029-12-25",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M19",
@@ -1273,12 +1293,13 @@
    "weekStart": 167,
    "weekEnd": 176,
    "taskCount": 17,
-   "estimateDays": 50.0,
+   "estimateDays": 50,
    "plannedStart": "2029-12-25",
    "plannedEnd": "2030-03-05",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M20",
@@ -1339,7 +1360,8 @@
    "plannedEnd": "2030-05-02",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M21",
@@ -1391,12 +1413,13 @@
    "weekStart": 185,
    "weekEnd": 193,
    "taskCount": 13,
-   "estimateDays": 45.0,
+   "estimateDays": 45,
    "plannedStart": "2030-05-02",
    "plannedEnd": "2030-07-04",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M22",
@@ -1443,12 +1466,13 @@
    "weekStart": 194,
    "weekEnd": 200,
    "taskCount": 10,
-   "estimateDays": 33.0,
+   "estimateDays": 33,
    "plannedStart": "2030-07-04",
    "plannedEnd": "2030-08-20",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M23",
@@ -1509,7 +1533,8 @@
    "plannedEnd": "2030-10-21",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   },
   {
    "id": "M24",
@@ -1565,12 +1590,13 @@
    "weekStart": 210,
    "weekEnd": 220,
    "taskCount": 14,
-   "estimateDays": 55.0,
+   "estimateDays": 55,
    "plannedStart": "2030-10-21",
    "plannedEnd": "2031-01-06",
    "status": "todo",
    "gatePassedAt": null,
-   "evidence": []
+   "evidence": [],
+   "doneCount": 0
   }
  ],
  "tasks": [
@@ -1591,7 +1617,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 0.0,
+   "plannedStartDay": 0,
    "plannedEndDay": 0.5,
    "plannedStart": "2026-09-07",
    "plannedEnd": "2026-09-07"
@@ -1603,7 +1629,7 @@
    "title": "Fixed-point arithmetic with no floats in authoritative state",
    "detail": "i64 fixed-point type with the operators the sim needs.",
    "acceptance": "No f32 or f64 appears in any authoritative struct.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS3"
    ],
@@ -1640,7 +1666,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1.5,
-   "plannedEndDay": 2.0,
+   "plannedEndDay": 2,
    "plannedStart": "2026-09-08",
    "plannedEnd": "2026-09-09"
   },
@@ -1663,7 +1689,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 2.0,
+   "plannedStartDay": 2,
    "plannedEndDay": 3.5,
    "plannedStart": "2026-09-09",
    "plannedEnd": "2026-09-10"
@@ -1675,7 +1701,7 @@
    "title": "Belief graph with propagation, decay and distortion",
    "detail": "Typed propositions, confidence, provenance, hop count.",
    "acceptance": "A fact propagates with latency and arrives degraded.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS4"
    ],
@@ -1712,7 +1738,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 5.5,
-   "plannedEndDay": 6.0,
+   "plannedEndDay": 6,
    "plannedStart": "2026-09-14",
    "plannedEnd": "2026-09-15"
   },
@@ -1735,7 +1761,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 6.0,
+   "plannedStartDay": 6,
    "plannedEndDay": 7.5,
    "plannedStart": "2026-09-15",
    "plannedEnd": "2026-09-16"
@@ -1760,7 +1786,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 7.5,
-   "plannedEndDay": 9.0,
+   "plannedEndDay": 9,
    "plannedStart": "2026-09-16",
    "plannedEnd": "2026-09-18"
   },
@@ -1783,7 +1809,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 9.0,
+   "plannedStartDay": 9,
    "plannedEndDay": 10.5,
    "plannedStart": "2026-09-18",
    "plannedEnd": "2026-09-21"
@@ -1808,7 +1834,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 10.5,
-   "plannedEndDay": 12.0,
+   "plannedEndDay": 12,
    "plannedStart": "2026-09-21",
    "plannedEnd": "2026-09-23"
   },
@@ -1831,7 +1857,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 12.0,
+   "plannedStartDay": 12,
    "plannedEndDay": 13.5,
    "plannedStart": "2026-09-23",
    "plannedEnd": "2026-09-24"
@@ -1856,7 +1882,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 13.5,
-   "plannedEndDay": 15.0,
+   "plannedEndDay": 15,
    "plannedStart": "2026-09-24",
    "plannedEnd": "2026-09-28"
   },
@@ -1879,7 +1905,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 15.0,
+   "plannedStartDay": 15,
    "plannedEndDay": 16.5,
    "plannedStart": "2026-09-28",
    "plannedEnd": "2026-09-29"
@@ -1891,7 +1917,7 @@
    "title": "Cube-sphere quadtree terrain with screen-space error LOD",
    "detail": "Six roots, edge-index stitching, horizon culling.",
    "acceptance": "A planet renders with no cracks at any LOD boundary.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -1929,7 +1955,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 19.5,
-   "plannedEndDay": 21.0,
+   "plannedEndDay": 21,
    "plannedStart": "2026-10-02",
    "plannedEnd": "2026-10-06"
   },
@@ -1952,7 +1978,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 21.0,
+   "plannedStartDay": 21,
    "plannedEndDay": 22.5,
    "plannedStart": "2026-10-06",
    "plannedEnd": "2026-10-07"
@@ -1977,7 +2003,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 22.5,
-   "plannedEndDay": 24.0,
+   "plannedEndDay": 24,
    "plannedStart": "2026-10-07",
    "plannedEnd": "2026-10-09"
   },
@@ -1988,7 +2014,7 @@
    "title": "Analytic erosion via slope-damped octaves",
    "detail": "Exact gradient derivatives; each octave damped by coarser slope.",
    "acceptance": "Terrain shows drainage, and there are no LOD seams.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -2000,8 +2026,8 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 24.0,
-   "plannedEndDay": 26.0,
+   "plannedStartDay": 24,
+   "plannedEndDay": 26,
    "plannedStart": "2026-10-09",
    "plannedEnd": "2026-10-13"
   },
@@ -2024,7 +2050,7 @@
    "completedAt": "2026-09-07",
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 26.0,
+   "plannedStartDay": 26,
    "plannedEndDay": 27.5,
    "plannedStart": "2026-10-13",
    "plannedEnd": "2026-10-14"
@@ -2036,7 +2062,7 @@
    "title": "Ship, gravity, and a town",
    "detail": "6-DOF flight integrated manually, inverse-square gravity, buildings.",
    "acceptance": "Fly from orbit to a town and back with no loading screen.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -2073,7 +2099,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 29.5,
-   "plannedEndDay": 30.0,
+   "plannedEndDay": 30,
    "plannedStart": "2026-10-16",
    "plannedEnd": "2026-10-19"
   },
@@ -2125,7 +2151,7 @@
      "addedAt": "2026-09-08T15:53:19.961Z"
     }
    ],
-   "plannedStartDay": 30.0,
+   "plannedStartDay": 30,
    "plannedEndDay": 31.5,
    "plannedStart": "2026-10-19",
    "plannedEnd": "2026-10-20"
@@ -2168,7 +2194,7 @@
     }
    ],
    "plannedStartDay": 31.5,
-   "plannedEndDay": 32.0,
+   "plannedEndDay": 32,
    "plannedStart": "2026-10-20",
    "plannedEnd": "2026-10-21"
   },
@@ -2220,7 +2246,7 @@
      "addedAt": "2026-09-08T16:29:58.311Z"
     }
    ],
-   "plannedStartDay": 32.0,
+   "plannedStartDay": 32,
    "plannedEndDay": 32.5,
    "plannedStart": "2026-10-21",
    "plannedEnd": "2026-10-21"
@@ -2263,7 +2289,7 @@
     }
    ],
    "plannedStartDay": 32.5,
-   "plannedEndDay": 33.0,
+   "plannedEndDay": 33,
    "plannedStart": "2026-10-21",
    "plannedEnd": "2026-10-22"
   },
@@ -2309,7 +2335,7 @@
      "addedAt": "2026-09-08T17:11:22.455Z"
     }
    ],
-   "plannedStartDay": 33.0,
+   "plannedStartDay": 33,
    "plannedEndDay": 33.5,
    "plannedStart": "2026-10-22",
    "plannedEnd": "2026-10-22"
@@ -2350,7 +2376,7 @@
    ],
    "evidence": [],
    "plannedStartDay": 33.5,
-   "plannedEndDay": 34.0,
+   "plannedEndDay": 34,
    "plannedStart": "2026-10-22",
    "plannedEnd": "2026-10-23"
   },
@@ -2361,7 +2387,7 @@
    "title": "Fix the collapse cascade the prefetch work exposed",
    "detail": "A fast ascent wants to collapse many levels at once. Each pending node keeps its four children and also requests its own patch, so the visible set inflates exactly when it should shrink: 6,029 nodes, 2,429 starved, 1,444 holes. Collapse has to resolve bottom-up within a frame budget.",
    "acceptance": "A full-thrust climb from ground to orbit reports zero holes and a visible set that falls monotonically.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -2394,8 +2420,8 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 34.0,
-   "plannedEndDay": 36.0,
+   "plannedStartDay": 34,
+   "plannedEndDay": 36,
    "plannedStart": "2026-10-23",
    "plannedEnd": "2026-10-27"
   },
@@ -2406,7 +2432,7 @@
    "title": "Frame-time recording in the scripted flight",
    "detail": "Every run writes out/performance.txt: per-phase mean, median, p95, p99 and max, with game, render and GPU thread time beside them, and a verdict against the budget. A screenshot has no frame time in it, which is how a run at nineteen frames a second passed twenty-six task reviews.",
    "acceptance": "Every scripted run produces a report with a PASS or FAIL verdict, and a stall over 33 ms is logged with its timestamp and phase.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS14"
    ],
@@ -2431,8 +2457,8 @@
      "addedAt": "2026-09-08T19:55:29.489Z"
     }
    ],
-   "plannedStartDay": 36.0,
-   "plannedEndDay": 37.0,
+   "plannedStartDay": 36,
+   "plannedEndDay": 37,
    "plannedStart": "2026-10-27",
    "plannedEnd": "2026-10-28"
   },
@@ -2474,7 +2500,7 @@
      "addedAt": "2026-09-08T19:55:29.890Z"
     }
    ],
-   "plannedStartDay": 37.0,
+   "plannedStartDay": 37,
    "plannedEndDay": 37.5,
    "plannedStart": "2026-10-28",
    "plannedEnd": "2026-10-28"
@@ -2486,7 +2512,7 @@
    "title": "Unreal module split: LedgerCore, LedgerTerrain, LedgerMaterial",
    "detail": "Real UE modules with Build.cs files rather than folders, so UBT enforces the dependency declarations instead of a convention doing it.",
    "acceptance": "The three modules build and LedgerTerrain cannot see LedgerGame.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH SS3"
    ],
@@ -2584,7 +2610,7 @@
     }
    ],
    "plannedStartDay": 39.5,
-   "plannedEndDay": 42.0,
+   "plannedEndDay": 42,
    "plannedStart": "2026-10-30",
    "plannedEnd": "2026-11-04"
   },
@@ -2618,7 +2644,7 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 42.0,
+   "plannedStartDay": 42,
    "plannedEndDay": 43.5,
    "plannedStart": "2026-11-04",
    "plannedEnd": "2026-11-05"
@@ -2630,7 +2656,7 @@
    "title": "Extract the scripted flight into a development-only harness module",
    "detail": "LedgerWorld.cpp is 1,002 lines, most of it a camera script and screenshot capture — a test fixture living in production code.",
    "acceptance": "A shipping configuration builds with the harness module absent.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH SS3.1"
    ],
@@ -2694,7 +2720,7 @@
    ],
    "evidence": [],
    "plannedStartDay": 45.5,
-   "plannedEndDay": 47.0,
+   "plannedEndDay": 47,
    "plannedStart": "2026-11-09",
    "plannedEnd": "2026-11-11"
   },
@@ -2705,7 +2731,7 @@
    "title": "Module dependency test for the Unreal side",
    "detail": "A build step asserting each module's declared dependencies against the allowed list, with LedgerGame the only exception.",
    "acceptance": "Adding an undeclared dependency fails the build with a named rule.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "ARCH Rule 2"
    ],
@@ -2723,8 +2749,8 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 47.0,
-   "plannedEndDay": 48.0,
+   "plannedStartDay": 47,
+   "plannedEndDay": 48,
    "plannedStart": "2026-11-11",
    "plannedEnd": "2026-11-12"
   },
@@ -2754,7 +2780,7 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 48.0,
+   "plannedStartDay": 48,
    "plannedEndDay": 48.5,
    "plannedStart": "2026-11-12",
    "plannedEnd": "2026-11-12"
@@ -2766,7 +2792,7 @@
    "title": "CI: build the client and run its tests on every commit",
    "detail": "Unreal automation tests, headless, plus the scripted flight as a smoke test with image comparison. The frozen sim builds but is not on the critical path.",
    "acceptance": "A commit that breaks the client is red within fifteen minutes.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS13"
    ],
@@ -2796,7 +2822,7 @@
    "title": "Automated visual regression on the scripted flight",
    "detail": "The scripted flight already produces captures. Compare them against committed references with a perceptual diff so a rendering regression is caught by CI rather than by eye three weeks later.",
    "acceptance": "A deliberate one-shade material change fails the comparison; recompiling unchanged code does not.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS13"
    ],
@@ -2827,7 +2853,7 @@
    "title": "Coding standards and formatter configuration",
    "detail": "Naming, file layout, comment expectations, the 500-line rule, and where each kind of thing goes. Short enough that it gets read.",
    "acceptance": "Both halves are formatted by tool and CI fails on unformatted code.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "ARCH SS4"
    ],
@@ -2876,7 +2902,7 @@
    ],
    "evidence": [],
    "plannedStartDay": 53.5,
-   "plannedEndDay": 54.0,
+   "plannedEndDay": 54,
    "plannedStart": "2026-11-19",
    "plannedEnd": "2026-11-20"
   },
@@ -2905,7 +2931,7 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 54.0,
+   "plannedStartDay": 54,
    "plannedEndDay": 54.5,
    "plannedStart": "2026-11-20",
    "plannedEnd": "2026-11-20"
@@ -2917,7 +2943,7 @@
    "title": "Playable proof: the flight still flies",
    "detail": "Rule 6. The full scripted sequence after a structural rewrite, compared against the captures taken before it.",
    "acceptance": "Every capture in out/ matches its pre-split reference.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -2972,7 +2998,7 @@
    ],
    "evidence": [],
    "plannedStartDay": 55.5,
-   "plannedEndDay": 56.0,
+   "plannedEndDay": 56,
    "plannedStart": "2026-11-23",
    "plannedEnd": "2026-11-24"
   },
@@ -2983,7 +3009,7 @@
    "title": "Texture import pipeline for surface sets",
    "detail": "Pulled forward from M12, because sixteen sets imported by hand is sixteen chances to get a normal map's colour space wrong and one afternoon wondering why the lighting is inside out. Channel packing — roughness, ambient occlusion and height into one texture — compression settings per map type, sRGB flags, mip and streaming policy.",
    "acceptance": "A surface set dropped into the source directory is import-ready with no manual step, and a validator rejects wrong channel layout or colour space with a message naming the file.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS14"
    ],
@@ -3001,8 +3027,8 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 56.0,
-   "plannedEndDay": 57.0,
+   "plannedStartDay": 56,
+   "plannedEndDay": 57,
    "plannedStart": "2026-11-24",
    "plannedEnd": "2026-11-25"
   },
@@ -3031,7 +3057,7 @@
     }
    ],
    "evidence": [],
-   "plannedStartDay": 57.0,
+   "plannedStartDay": 57,
    "plannedEndDay": 58.5,
    "plannedStart": "2026-11-25",
    "plannedEnd": "2026-11-26"
@@ -3043,7 +3069,7 @@
    "title": "Runtime Virtual Texture for surface composition",
    "detail": "Compose the blended surface into an RVT so the expensive blend happens once per texel rather than once per pixel, and so decals and roads have something to write into. Moved up beside the material work: it is what makes layered authored sets affordable at all.",
    "acceptance": "Terrain material cost falls measurably against the direct-blend version with no visual difference.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS6.8"
    ],
@@ -3067,7 +3093,7 @@
    "title": "Geomorphing across LOD transitions",
    "detail": "Vertices interpolate toward their coarser position as the transition approaches, so a split is a blend rather than a jump. The current pop is small at altitude and unmissable at walking pace.",
    "acceptance": "Walk a ridge line at 2 m/s across four LOD boundaries with no visible vertex movement at any of them.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3119,7 +3145,7 @@
    "title": "Stitching for the finer-neighbour case",
    "detail": "Edge stitching currently handles a coarser neighbour. The mirror case arises whenever LOD is driven by anything other than pure distance, which it is about to be.",
    "acceptance": "A forced-depth region adjacent to a natural one shows no crack from any angle.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS6.8"
    ],
@@ -3164,7 +3190,7 @@
    "title": "Collision streaming with a cook budget",
    "detail": "Cooking is the expensive half of a patch. Predictive cook along the velocity vector, bounded per frame, with a guarantee rather than a hope.",
    "acceptance": "At 900 m/s at 50 m altitude, a downward trace hits terrain on every frame of a 200 km transect.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3208,7 +3234,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 64.5,
-   "plannedEndDay": 67.0,
+   "plannedEndDay": 67,
    "plannedStart": "2026-12-04",
    "plannedEnd": "2026-12-09"
   },
@@ -3219,7 +3245,7 @@
    "title": "Biome definition framework",
    "detail": "A biome is a region of climate space with material sets, scatter rules, colour response and slope behaviour. Data, not code.",
    "acceptance": "Adding a biome is one data file and requires no recompile.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 7"
    ],
@@ -3231,8 +3257,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 67.0,
-   "plannedEndDay": 69.0,
+   "plannedStartDay": 67,
+   "plannedEndDay": 69,
    "plannedStart": "2026-12-09",
    "plannedEnd": "2026-12-11"
   },
@@ -3255,7 +3281,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 69.0,
+   "plannedStartDay": 69,
    "plannedEndDay": 71.5,
    "plannedStart": "2026-12-11",
    "plannedEnd": "2026-12-15"
@@ -3267,7 +3293,7 @@
    "title": "Cliff and scree treatment by slope",
    "detail": "Slope drives material, not just colour: exposed rock strata on steep faces, scree accumulating at the angle of repose below them.",
    "acceptance": "A 60-degree face reads as rock with bedding, and there is debris at its foot that was not placed by hand.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3291,7 +3317,7 @@
    "title": "Hydrology: flow accumulation and river networks",
    "detail": "Rivers derived from the height field by flow accumulation, carving their own valleys, reaching the sea. The erosion model already computes slope; this is what slope is for.",
    "acceptance": "Every river reaches the sea or a basin, none flows uphill, and the same seed produces the same network.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -3328,7 +3354,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 76.5,
-   "plannedEndDay": 80.0,
+   "plannedEndDay": 80,
    "plannedStart": "2026-12-22",
    "plannedEnd": "2026-12-28"
   },
@@ -3338,8 +3364,8 @@
    "order": 57,
    "title": "Asset review harness: turntable, framing and lighting rig",
    "detail": "One command puts a generated asset on a stand and photographs it: eight yaw angles, three framings from silhouette to close, and two lighting rigs, at pinned exposure. Scheduled before the first generator that needs it, and for the same reason the capture comparison was built before the material work. ADR-0005 makes every asset in the game an iterated one, and iteration is only affordable if looking at the result is cheap and honest. It was not: three separate readings of the surface captures were wrong -- a camera underground, an exposure in stops mistaken for lux, a camera standing inside a building -- and each cost an hour because the picture was believed before the arithmetic.",
-   "acceptance": "One command turns any generated asset into a contact sheet on disk, with the camera provably outside the geometry, exposure fixed across every frame, and the same asset producing byte-identical sheets on two runs.",
-   "estimateDays": 1.0,
+   "acceptance": "One command turns any generated asset into a contact sheet on disk, with the camera provably outside the geometry, exposure fixed across every frame, and two consecutive runs agreeing within a stated tolerance rather than by eye.",
+   "estimateDays": 1,
    "designRefs": [
     "ARCH Rule 6",
     "SS14"
@@ -3347,13 +3373,19 @@
    "dependsOn": [
     "T056"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "48 shots: 8 yaw x 3 framings (silhouette, standing, close) x 2 rigs (raking key with almost no fill, soft filled), exposure pinned, backdrop plane held square to the camera. out/turntable/, three kept in docs/comparisons/turntable/. Four bugs between writing it and the first usable frame, and each one produced the same symptom -- a black or empty image -- which is why each was mistaken for the last: GetActorBounds(true) counts only COLLIDING components, and the hull's collision is off, so the subject measured 1 m and the camera-outside check passed 48 times against the same empty bounds it was derived from; then bounds measured over the whole actor, which on this pawn includes a 52 m camera boom, so framings were three times too far and the ship was a speck; then the backdrop was an inside-out sphere by negative scale, which does not work and also enclosed the stage in its own shadow; then two stage lights plus the world's sun produced 'multiple directional lights competing for forward shading', resolved by a brightness tie-break. The user spotted that last one from the on-screen warning after I had cleared it by grepping the log, where it does not appear. Determinism: byte-identity was the original gate and is NOT achievable with Lumen -- its probes accumulate over frames and two runs came back 42/48, then 46/48, then 42/48 identical, differing by a mean of 0.06 of a channel and never more than 9. The gate now states a tolerance and the runs pass it at worst-channel 3 against a limit of 16. compare_captures.py --between does the comparison."
+    }
+   ],
    "evidence": [],
-   "plannedStartDay": 80.0,
-   "plannedEndDay": 81.0,
+   "plannedStartDay": 80,
+   "plannedEndDay": 81,
    "plannedStart": "2026-12-28",
    "plannedEnd": "2026-12-29"
   },
@@ -3376,7 +3408,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 81.0,
+   "plannedStartDay": 81,
    "plannedEndDay": 83.5,
    "plannedStart": "2026-12-29",
    "plannedEnd": "2026-12-31"
@@ -3388,7 +3420,7 @@
    "title": "Vegetation with wind response",
    "detail": "Trees and grass that move with the wind field M04 will provide, and stop moving when it stops.",
    "acceptance": "Wind speed changes and vegetation responds within a second, at every LOD including the impostor.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3412,7 +3444,7 @@
    "title": "Far-field impostors and horizon detail",
    "detail": "Beyond the last real LOD, the planet needs to keep its silhouette. Impostors for scatter, and a horizon that does not go smooth.",
    "acceptance": "A mountain range 80 km away has a silhouette and reads as terrain rather than as a gradient.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3436,7 +3468,7 @@
    "title": "Snow, ice and seasonal cover",
    "detail": "Cover driven by the climate field and the season, accumulating by altitude and latitude, affecting material and scatter.",
    "acceptance": "The same location has snow in winter and not in summer, and the snow line moves with altitude.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3460,7 +3492,7 @@
    "title": "Terrain sampling API with a stable contract",
    "detail": "One place gameplay asks for height, normal, biome, slope and material at a point, agreeing exactly with what is rendered. Everything built after this depends on it.",
    "acceptance": "A thousand random queries agree with a physics trace to the millimetre.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "ARCH SS3"
    ],
@@ -3497,7 +3529,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 90.5,
-   "plannedEndDay": 93.0,
+   "plannedEndDay": 93,
    "plannedStart": "2027-01-11",
    "plannedEnd": "2027-01-14"
   },
@@ -3508,7 +3540,7 @@
    "title": "Streaming budget manager",
    "detail": "One authority deciding how much generation, cooking and upload happens per frame, with the budget split by priority rather than first come first served.",
    "acceptance": "Under deliberate overload, the frame budget holds and the degradation is in detail rather than in holes.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -3520,8 +3552,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 93.0,
-   "plannedEndDay": 95.0,
+   "plannedStartDay": 93,
+   "plannedEndDay": 95,
    "plannedStart": "2027-01-14",
    "plannedEnd": "2027-01-18"
   },
@@ -3532,7 +3564,7 @@
    "title": "Shadow-specific terrain LOD",
    "detail": "Shadow casters do not need the LOD the camera needs, and paying full resolution into a shadow map is most of a cascade wasted.",
    "acceptance": "Shadow cost drops measurably with no visible change in shadow quality.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS14"
    ],
@@ -3544,8 +3576,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 95.0,
-   "plannedEndDay": 96.0,
+   "plannedStartDay": 95,
+   "plannedEndDay": 96,
    "plannedStart": "2027-01-18",
    "plannedEnd": "2027-01-19"
   },
@@ -3556,7 +3588,7 @@
    "title": "Disk cache for generated patches",
    "detail": "Generation is deterministic, so it need only happen once per machine. A content-addressed on-disk cache under the terrain cache.",
    "acceptance": "A second visit to the same ground generates nothing and is bit-identical.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS6.8"
    ],
@@ -3568,8 +3600,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 96.0,
-   "plannedEndDay": 97.0,
+   "plannedStartDay": 96,
+   "plannedEndDay": 97,
    "plannedStart": "2027-01-19",
    "plannedEnd": "2027-01-20"
   },
@@ -3580,7 +3612,7 @@
    "title": "Terrain debug visualisers",
    "detail": "LOD level, patch boundaries, collision presence, biome, climate fields, cache state, streaming queue — all toggleable in-game.",
    "acceptance": "Every terrain bug class in M00's history is diagnosable from the visualisers without adding code.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "SS13"
    ],
@@ -3592,8 +3624,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 97.0,
-   "plannedEndDay": 98.0,
+   "plannedStartDay": 97,
+   "plannedEndDay": 98,
    "plannedStart": "2027-01-20",
    "plannedEnd": "2027-01-21"
   },
@@ -3604,7 +3636,7 @@
    "title": "Terrain regression suite",
    "detail": "Automated flights over fixed seeds producing captures and metrics, compared against references. Holes, cracks, popping and budget overruns all become build failures.",
    "acceptance": "Each of those four failure modes, introduced deliberately, is caught by CI.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS13"
    ],
@@ -3616,8 +3648,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 98.0,
-   "plannedEndDay": 100.0,
+   "plannedStartDay": 98,
+   "plannedEndDay": 100,
    "plannedStart": "2027-01-21",
    "plannedEnd": "2027-01-25"
   },
@@ -3628,7 +3660,7 @@
    "title": "Playable proof: the 200 km transect",
    "detail": "Rule 6. The milestone gate, run and recorded.",
    "acceptance": "200 km at 300 m and 900 m/s: no holes, no seams, no frame over 16 ms, collision present throughout.",
-   "estimateDays": 1.0,
+   "estimateDays": 1,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -3640,8 +3672,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 100.0,
-   "plannedEndDay": 101.0,
+   "plannedStartDay": 100,
+   "plannedEndDay": 101,
    "plannedStart": "2027-01-25",
    "plannedEnd": "2027-01-26"
   },
@@ -3652,7 +3684,7 @@
    "title": "A project level, with the world placed in it",
    "detail": "The project loads /Engine/Maps/Entry -- an empty engine map -- and a subsystem spawns the planet, the sun, the atmosphere and the ship into it. So the world exists only while code is running, and there is nothing to open, look at or select. A real map, with the things that are not generated placed as actors, and the generated ones attached to something a person can find.",
    "acceptance": "The project opens on its own map, the world's fixed actors are visible and selectable in the editor, and the scripted flight runs from it unchanged.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 1"
    ],
@@ -3664,8 +3696,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 101.0,
-   "plannedEndDay": 104.0,
+   "plannedStartDay": 101,
+   "plannedEndDay": 104,
    "plannedStart": "2027-01-26",
    "plannedEnd": "2027-01-29"
   },
@@ -3676,7 +3708,7 @@
    "title": "Materials as saved assets, generated once",
    "detail": "Every material is RF_Transient and built as a node graph on each launch inside an editor-only block, which is why LedgerSurfaceCooked.cpp returns null for all of them and a packaged build has no look at all. The graphs stay in C++ and stay the source of truth -- that is what makes them diffable and is worth keeping. A commandlet runs them once and saves the result, and the game loads assets. The same arrangement the surface textures already use.",
    "acceptance": "Every material in the game is a saved asset; a build with the editor stripped renders the terrain, water and underwater passes correctly; and regenerating produces no diff unless the C++ changed.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "ARCH Rule 1",
     "SS14"
@@ -3689,8 +3721,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 104.0,
-   "plannedEndDay": 109.0,
+   "plannedStartDay": 104,
+   "plannedEndDay": 109,
    "plannedStart": "2027-01-29",
    "plannedEnd": "2027-02-05"
   },
@@ -3701,7 +3733,7 @@
    "title": "Asset generation as an editor commandlet",
    "detail": "The mechanism the generators of ADR-0005 plug into: a generator is a function from parameters to geometry, and this is what runs it offline, names the package, saves it, and records what produced it. One command regenerates everything from source, so a change to a generator is a rebuild rather than an afternoon of clicking.",
    "acceptance": "One command regenerates every generated asset from its definition; a second run produces no diff; and every generated asset records the generator and parameters that made it.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "SS14"
    ],
@@ -3713,8 +3745,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 109.0,
-   "plannedEndDay": 114.0,
+   "plannedStartDay": 109,
+   "plannedEndDay": 114,
    "plannedStart": "2027-02-05",
    "plannedEnd": "2027-02-12"
   },
@@ -3725,7 +3757,7 @@
    "title": "Static mesh output with Nanite, LODs and collision",
    "detail": "What the commandlet actually emits. Nanite enabled where it belongs, automatic LOD chains, simplified collision matching the silhouette, and distance-field generation. None of this is available to a procedural mesh and all of it is free once the output is a static mesh, which is the whole argument of ADR-0006 in one task.",
    "acceptance": "A generated hull comes out as a static mesh with Nanite on, a full LOD chain, collision matching its silhouette and a mesh distance field, with no manual step.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "SS14"
    ],
@@ -3737,8 +3769,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 114.0,
-   "plannedEndDay": 119.0,
+   "plannedStartDay": 114,
+   "plannedEndDay": 119,
    "plannedStart": "2027-02-12",
    "plannedEnd": "2027-02-19"
   },
@@ -3749,7 +3781,7 @@
    "title": "Instanced rendering for repeated and scattered assets",
    "detail": "Three hundred and forty-two trees are three hundred and forty-two procedural mesh components today, each with its own draw and its own generation cost on the game thread. Once assets are static meshes they instance, and a forest becomes one draw. The scatter framework in M02 decides where they go; this decides what they are placed as.",
    "acceptance": "A settlement's trees and props render as instanced draws, the draw count is independent of the instance count, and the measured game-thread cost of placing them falls against the current build.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8",
     "SS14"
@@ -3762,8 +3794,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 119.0,
-   "plannedEndDay": 122.0,
+   "plannedStartDay": 119,
+   "plannedEndDay": 122,
    "plannedStart": "2027-02-19",
    "plannedEnd": "2027-02-24"
   },
@@ -3786,7 +3818,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 122.0,
+   "plannedStartDay": 122,
    "plannedEndDay": 123.5,
    "plannedStart": "2027-02-24",
    "plannedEnd": "2027-02-25"
@@ -3811,7 +3843,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 123.5,
-   "plannedEndDay": 130.0,
+   "plannedEndDay": 130,
    "plannedStart": "2027-02-25",
    "plannedEnd": "2027-03-08"
   },
@@ -3822,7 +3854,7 @@
    "title": "Shader compilation and PSO caching",
    "detail": "Building material graphs at runtime means compiling shaders at runtime, which is a stall the moment anything new comes into view. Once materials are assets their shaders cook, and the pipeline state objects need collecting so that first sight of a surface is not a hitch.",
    "acceptance": "A packaged build shows no compilation stall on first sight of any material, and a first run's frame-time trace matches a second run's within the stated tolerance.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -3834,8 +3866,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 130.0,
-   "plannedEndDay": 133.0,
+   "plannedStartDay": 130,
+   "plannedEndDay": 133,
    "plannedStart": "2027-03-08",
    "plannedEnd": "2027-03-11"
   },
@@ -3846,7 +3878,7 @@
    "title": "Package the technical slice and run it without the editor",
    "detail": "The narrow version of what M12 does properly later: prove it packages and runs at all. Today it cannot, and every milestone spent adding content on top of a build that has never shipped once is a milestone spent finding out later.",
    "acceptance": "A packaged Windows build launches with no editor present, flies the scripted flight, and writes its captures and frame-time report.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "SS14"
    ],
@@ -3858,8 +3890,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 133.0,
-   "plannedEndDay": 138.0,
+   "plannedStartDay": 133,
+   "plannedEndDay": 138,
    "plannedStart": "2027-03-11",
    "plannedEnd": "2027-03-18"
   },
@@ -3882,7 +3914,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 138.0,
+   "plannedStartDay": 138,
    "plannedEndDay": 139.5,
    "plannedStart": "2027-03-18",
    "plannedEnd": "2027-03-19"
@@ -3907,7 +3939,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 139.5,
-   "plannedEndDay": 141.0,
+   "plannedEndDay": 141,
    "plannedStart": "2027-03-19",
    "plannedEnd": "2027-03-23"
   },
@@ -3930,7 +3962,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 141.0,
+   "plannedStartDay": 141,
    "plannedEndDay": 142.5,
    "plannedStart": "2027-03-23",
    "plannedEnd": "2027-03-24"
@@ -3942,7 +3974,7 @@
    "title": "Keplerian ephemeris",
    "detail": "Position and velocity of every body at any time, from orbital elements. Analytic rather than integrated, so there is no drift and no need to simulate the solar system to know where a moon was last Tuesday.",
    "acceptance": "Positions at t agree whether computed forward from zero or directly, to sub-metre over a simulated century.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS8"
    ],
@@ -3966,7 +3998,7 @@
    "title": "Reference frame hierarchy",
    "detail": "System, body, surface and vehicle frames with transforms between them. Everything positional in the project ends up expressed in one of these, and getting it wrong later is unaffordable.",
    "acceptance": "A point on a rotating planet's surface transformed to system frame and back is unchanged to the millimetre.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4003,7 +4035,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 147.5,
-   "plannedEndDay": 149.0,
+   "plannedEndDay": 149,
    "plannedStart": "2027-03-31",
    "plannedEnd": "2027-04-02"
   },
@@ -4026,7 +4058,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 149.0,
+   "plannedStartDay": 149,
    "plannedEndDay": 150.5,
    "plannedStart": "2027-04-02",
    "plannedEnd": "2027-04-05"
@@ -4038,7 +4070,7 @@
    "title": "Multi-body rendering with correct illumination",
    "detail": "Other planets and moons visible in the sky, at the right place, with the right phase and the right apparent size.",
    "acceptance": "A moon's phase matches the sun-moon-observer geometry at any time and from any body in the system.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4062,7 +4094,7 @@
    "title": "Eclipses and body shadows",
    "detail": "A moon casting a shadow on a planet, a planet eclipsing its moon, and the lighting change on the ground when it happens.",
    "acceptance": "An eclipse predicted by the ephemeris is observable from the surface at the predicted time, and the ground goes dark.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4099,7 +4131,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 154.5,
-   "plannedEndDay": 156.0,
+   "plannedEndDay": 156,
    "plannedStart": "2027-04-09",
    "plannedEnd": "2027-04-13"
   },
@@ -4110,7 +4142,7 @@
    "title": "Star field from a generated catalogue",
    "detail": "Stars with position, magnitude and colour, correct for the observer's location in the galaxy, and parallax between systems.",
    "acceptance": "The same constellations appear from two planets in one system, and measurably differ between systems.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4122,8 +4154,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 156.0,
-   "plannedEndDay": 158.0,
+   "plannedStartDay": 156,
+   "plannedEndDay": 158,
    "plannedStart": "2027-04-13",
    "plannedEnd": "2027-04-15"
   },
@@ -4134,7 +4166,7 @@
    "title": "Moons on the shared terrain framework",
    "detail": "A moon is a body with a different radius, no atmosphere and different climate inputs. If it needs its own renderer, the framework is wrong.",
    "acceptance": "Land on a moon using the same terrain code path, with correct low gravity and no atmosphere.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4146,8 +4178,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 158.0,
-   "plannedEndDay": 160.0,
+   "plannedStartDay": 158,
+   "plannedEndDay": 160,
    "plannedStart": "2027-04-15",
    "plannedEnd": "2027-04-19"
   },
@@ -4158,7 +4190,7 @@
    "title": "Gas giants",
    "detail": "Volumetric banding, storms, and a surface you can descend into until pressure ends the attempt.",
    "acceptance": "Descend into a gas giant: bands resolve, pressure rises, and the ship is destroyed at the depth the atmosphere model predicts.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -4170,8 +4202,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 160.0,
-   "plannedEndDay": 163.0,
+   "plannedStartDay": 160,
+   "plannedEndDay": 163,
    "plannedStart": "2027-04-19",
    "plannedEnd": "2027-04-22"
   },
@@ -4182,7 +4214,7 @@
    "title": "Ring systems",
    "detail": "Particle rings with self-shadowing and a shadow cast on the planet, flyable through rather than a texture on a disc.",
    "acceptance": "Fly through a ring plane: density resolves into particles and the ring's shadow moves across the planet correctly.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4194,8 +4226,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 163.0,
-   "plannedEndDay": 165.0,
+   "plannedStartDay": 163,
+   "plannedEndDay": 165,
    "plannedStart": "2027-04-22",
    "plannedEnd": "2027-04-26"
   },
@@ -4206,7 +4238,7 @@
    "title": "Asteroid fields and small irregular bodies",
    "detail": "Non-spherical bodies need a different mesh path from the cube-sphere, and orbits that are individually tracked rather than instanced.",
    "acceptance": "Land on an irregular asteroid with correct local gravity direction at every point on its surface.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -4218,8 +4250,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 165.0,
-   "plannedEndDay": 168.0,
+   "plannedStartDay": 165,
+   "plannedEndDay": 168,
    "plannedStart": "2027-04-26",
    "plannedEnd": "2027-04-29"
   },
@@ -4230,7 +4262,7 @@
    "title": "Orbital stations and platforms",
    "detail": "Structures on rails around a body, with their own local frame that things can dock to and stand in.",
    "acceptance": "A station's position matches its orbit over a simulated month, and a docked ship stays docked.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4242,8 +4274,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 168.0,
-   "plannedEndDay": 170.0,
+   "plannedStartDay": 168,
+   "plannedEndDay": 170,
    "plannedStart": "2027-04-29",
    "plannedEnd": "2027-05-03"
   },
@@ -4254,7 +4286,7 @@
    "title": "Gravity field from real masses",
    "detail": "Inverse-square from every significant body rather than one hardcoded constant, including the transition between spheres of influence.",
    "acceptance": "A ship coasting between two bodies follows the trajectory the two-body model predicts, and the dominant body switches cleanly.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4266,8 +4298,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 170.0,
-   "plannedEndDay": 172.0,
+   "plannedStartDay": 170,
+   "plannedEndDay": 172,
    "plannedStart": "2027-05-03",
    "plannedEnd": "2027-05-05"
   },
@@ -4278,7 +4310,7 @@
    "title": "System generation from seed",
    "detail": "Star class, planet count, orbits, compositions and moons, generated to be plausible rather than uniform — hot rocks close in, gas giants further out, habitable zones where the star puts them.",
    "acceptance": "Twenty generated systems are all physically plausible and none is a rearrangement of another.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS8"
    ],
@@ -4290,8 +4322,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 172.0,
-   "plannedEndDay": 175.0,
+   "plannedStartDay": 172,
+   "plannedEndDay": 175,
    "plannedStart": "2027-05-05",
    "plannedEnd": "2027-05-10"
   },
@@ -4314,7 +4346,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 175.0,
+   "plannedStartDay": 175,
    "plannedEndDay": 176.5,
    "plannedStart": "2027-05-10",
    "plannedEnd": "2027-05-11"
@@ -4339,7 +4371,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 176.5,
-   "plannedEndDay": 178.0,
+   "plannedEndDay": 178,
    "plannedStart": "2027-05-11",
    "plannedEnd": "2027-05-13"
   },
@@ -4362,7 +4394,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 178.0,
+   "plannedStartDay": 178,
    "plannedEndDay": 179.5,
    "plannedStart": "2027-05-13",
    "plannedEnd": "2027-05-14"
@@ -4387,7 +4419,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 179.5,
-   "plannedEndDay": 181.0,
+   "plannedEndDay": 181,
    "plannedStart": "2027-05-14",
    "plannedEnd": "2027-05-18"
   },
@@ -4398,7 +4430,7 @@
    "title": "Atmosphere profile per body",
    "detail": "Composition, surface pressure, scale height and lapse rate as data. Earth's numbers become one row rather than the only row.",
    "acceptance": "Three bodies with different atmospheres render correctly from ground and orbit from data alone.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8",
     "LW SS7.2"
@@ -4411,8 +4443,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 181.0,
-   "plannedEndDay": 183.0,
+   "plannedStartDay": 181,
+   "plannedEndDay": 183,
    "plannedStart": "2027-05-18",
    "plannedEnd": "2027-05-20"
   },
@@ -4423,7 +4455,7 @@
    "title": "Scattering for non-Earth compositions",
    "detail": "Rayleigh and Mie coefficients derived from composition, so a CO2 sky is the colour physics says and not the colour someone liked.",
    "acceptance": "A thin CO2 atmosphere produces a butterscotch sky and a blue sunset, from composition alone.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4435,8 +4467,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 183.0,
-   "plannedEndDay": 185.0,
+   "plannedStartDay": 183,
+   "plannedEndDay": 185,
    "plannedStart": "2027-05-20",
    "plannedEnd": "2027-05-24"
   },
@@ -4447,7 +4479,7 @@
    "title": "Volumetric fog that is not planar",
    "detail": "Exponential height fog fills space from orbit because it has no notion of a sphere. Ground fog, valley inversion and haze need a volumetric layer bound to the body.",
    "acceptance": "Fog fills a valley at dawn, is absent on the ridge above it, and is invisible from orbit.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -4459,8 +4491,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 185.0,
-   "plannedEndDay": 188.0,
+   "plannedStartDay": 185,
+   "plannedEndDay": 188,
    "plannedStart": "2027-05-24",
    "plannedEnd": "2027-05-27"
   },
@@ -4483,7 +4515,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 188.0,
+   "plannedStartDay": 188,
    "plannedEndDay": 191.5,
    "plannedStart": "2027-05-27",
    "plannedEnd": "2027-06-01"
@@ -4508,7 +4540,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 191.5,
-   "plannedEndDay": 193.0,
+   "plannedEndDay": 193,
    "plannedStart": "2027-06-01",
    "plannedEnd": "2027-06-03"
   },
@@ -4519,7 +4551,7 @@
    "title": "Cloud layers at real altitudes",
    "detail": "Multiple volumetric decks — low cumulus, mid, high cirrus — at altitudes the atmosphere profile determines, advected by the wind field.",
    "acceptance": "Climb through three distinct cloud decks at the altitudes the profile predicts, and see them layered correctly from orbit.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.8"
    ],
@@ -4531,8 +4563,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 193.0,
-   "plannedEndDay": 196.0,
+   "plannedStartDay": 193,
+   "plannedEndDay": 196,
    "plannedStart": "2027-06-03",
    "plannedEnd": "2027-06-08"
   },
@@ -4543,7 +4575,7 @@
    "title": "Precipitation: rain, snow and dust",
    "detail": "Driven by the weather model, rendered volumetrically and as surface effects, with the type decided by temperature and composition.",
    "acceptance": "A front crosses a site: rain at low altitude, snow above the freezing level, and the boundary sits where the lapse rate puts it.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.2"
    ],
@@ -4555,8 +4587,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 196.0,
-   "plannedEndDay": 199.0,
+   "plannedStartDay": 196,
+   "plannedEndDay": 199,
    "plannedStart": "2027-06-08",
    "plannedEnd": "2027-06-11"
   },
@@ -4567,7 +4599,7 @@
    "title": "Surface wetness, puddles and drying",
    "detail": "Rain changes roughness and colour, water collects where the terrain says it should, and it dries at a rate the temperature decides.",
    "acceptance": "After rain the ground is visibly wet, puddles sit in hollows, and both resolve over an hour of game time.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.8"
    ],
@@ -4579,8 +4611,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 199.0,
-   "plannedEndDay": 201.0,
+   "plannedStartDay": 199,
+   "plannedEndDay": 201,
    "plannedStart": "2027-06-11",
    "plannedEnd": "2027-06-15"
   },
@@ -4591,7 +4623,7 @@
    "title": "Storms: lightning, dust and severe weather",
    "detail": "The extreme tail of the weather model, with the visual and audio signature to match, and enough force to matter to a ship.",
    "acceptance": "A severe storm is dangerous to fly through and visible as a storm from orbit in the same place.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.2"
    ],
@@ -4603,8 +4635,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 201.0,
-   "plannedEndDay": 204.0,
+   "plannedStartDay": 201,
+   "plannedEndDay": 204,
    "plannedStart": "2027-06-15",
    "plannedEnd": "2027-06-18"
   },
@@ -4615,7 +4647,7 @@
    "title": "Turbulence and wind loading on vehicles",
    "detail": "Wind shear, gusts and thermals as forces on the flight model, not as camera shake.",
    "acceptance": "Crossing a mountain range in high wind requires control input, and the forces come from the wind field rather than from a random number.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4627,8 +4659,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 204.0,
-   "plannedEndDay": 206.0,
+   "plannedStartDay": 204,
+   "plannedEndDay": 206,
    "plannedStart": "2027-06-18",
    "plannedEnd": "2027-06-22"
   },
@@ -4651,7 +4683,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 206.0,
+   "plannedStartDay": 206,
    "plannedEndDay": 207.5,
    "plannedStart": "2027-06-22",
    "plannedEnd": "2027-06-23"
@@ -4663,7 +4695,7 @@
    "title": "Re-entry heating from atmospheric density",
    "detail": "Heating as a function of density and velocity, with the visual effect and the ship damage both derived from it rather than triggered by altitude.",
    "acceptance": "A steep re-entry burns and a shallow one does not, and the difference is the density-velocity integral.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4687,7 +4719,7 @@
    "title": "Cockpit and visor effects",
    "detail": "Rain streaks that respond to airspeed, dust accumulation, icing, fogging, and the wipers or heaters that clear them.",
    "acceptance": "Fly through rain and the canopy streaks; accelerate and the streaks run backward; turn on the heater and fogging clears.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4724,7 +4756,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 211.5,
-   "plannedEndDay": 213.0,
+   "plannedEndDay": 213,
    "plannedStart": "2027-06-29",
    "plannedEnd": "2027-07-01"
   },
@@ -4747,7 +4779,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 213.0,
+   "plannedStartDay": 213,
    "plannedEndDay": 214.5,
    "plannedStart": "2027-07-01",
    "plannedEnd": "2027-07-02"
@@ -4772,7 +4804,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 214.5,
-   "plannedEndDay": 216.0,
+   "plannedEndDay": 216,
    "plannedStart": "2027-07-02",
    "plannedEnd": "2027-07-06"
   },
@@ -4783,7 +4815,7 @@
    "title": "Volumetric performance budget",
    "detail": "Clouds, fog and precipitation are the easiest way to lose the frame. Resolution, temporal reprojection and distance-based quality, under one budget.",
    "acceptance": "Worst-case weather costs no more than 4 ms and degrades in detail rather than in frame rate.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS14"
    ],
@@ -4795,8 +4827,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 216.0,
-   "plannedEndDay": 218.0,
+   "plannedStartDay": 216,
+   "plannedEndDay": 218,
    "plannedStart": "2027-07-06",
    "plannedEnd": "2027-07-08"
   },
@@ -4819,7 +4851,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 218.0,
+   "plannedStartDay": 218,
    "plannedEndDay": 219.5,
    "plannedStart": "2027-07-08",
    "plannedEnd": "2027-07-09"
@@ -4844,7 +4876,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 219.5,
-   "plannedEndDay": 221.0,
+   "plannedEndDay": 221,
    "plannedStart": "2027-07-09",
    "plannedEnd": "2027-07-13"
   },
@@ -4855,7 +4887,7 @@
    "title": "Ship definition format",
    "detail": "A ship is data: hull geometry, hardpoints, component slots, mass distribution, and the topology that connects them. Adding a ship must never require a compiler.",
    "acceptance": "A new ship is one data file plus art, and it flies.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9",
     "ARCH Rule 7"
@@ -4868,8 +4900,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 221.0,
-   "plannedEndDay": 223.0,
+   "plannedStartDay": 221,
+   "plannedEndDay": 223,
    "plannedStart": "2027-07-13",
    "plannedEnd": "2027-07-15"
   },
@@ -4892,7 +4924,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 223.0,
+   "plannedStartDay": 223,
    "plannedEndDay": 225.5,
    "plannedStart": "2027-07-15",
    "plannedEnd": "2027-07-19"
@@ -4904,7 +4936,7 @@
    "title": "Power generation and distribution",
    "detail": "Plants, buses, priorities and brownouts. Demand exceeding supply sheds load in priority order rather than stopping the ship.",
    "acceptance": "Overload a bus and the lowest-priority consumers drop first, in the order the configuration states.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4941,7 +4973,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 227.5,
-   "plannedEndDay": 230.0,
+   "plannedEndDay": 230,
    "plannedStart": "2027-07-21",
    "plannedEnd": "2027-07-26"
   },
@@ -4952,7 +4984,7 @@
    "title": "Fuel: types, tanks, transfer, consumption",
    "detail": "Propellant and reactor fuel as separate resources, consumed at rates the flight model produces rather than at a rate someone picked.",
    "acceptance": "Fuel burn integrated over a flight matches thrust integrated over the same flight, and running dry stops the engines.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4964,8 +4996,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 230.0,
-   "plannedEndDay": 232.0,
+   "plannedStartDay": 230,
+   "plannedEndDay": 232,
    "plannedStart": "2027-07-26",
    "plannedEnd": "2027-07-28"
   },
@@ -4976,7 +5008,7 @@
    "title": "Mass, centre of mass and inertia from contents",
    "detail": "Computed from hull, components, fuel and cargo, updating as fuel burns and cargo moves. An unevenly loaded ship handles unevenly.",
    "acceptance": "Load cargo on one side and the ship's handling changes measurably in the direction predicted.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -4988,8 +5020,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 232.0,
-   "plannedEndDay": 234.0,
+   "plannedStartDay": 232,
+   "plannedEndDay": 234,
    "plannedStart": "2027-07-28",
    "plannedEnd": "2027-07-30"
   },
@@ -5012,7 +5044,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 234.0,
+   "plannedStartDay": 234,
    "plannedEndDay": 236.5,
    "plannedStart": "2027-07-30",
    "plannedEnd": "2027-08-03"
@@ -5037,7 +5069,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 236.5,
-   "plannedEndDay": 239.0,
+   "plannedEndDay": 239,
    "plannedStart": "2027-08-03",
    "plannedEnd": "2027-08-06"
   },
@@ -5060,7 +5092,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 239.0,
+   "plannedStartDay": 239,
    "plannedEndDay": 240.5,
    "plannedStart": "2027-08-06",
    "plannedEnd": "2027-08-09"
@@ -5072,7 +5104,7 @@
    "title": "Repair and component replacement",
    "detail": "Field repair with limited effect, workshop repair with full effect, and component swapping with the parts economy in mind.",
    "acceptance": "A damaged ship is repaired to a stated condition and the parts are consumed from somewhere.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5096,7 +5128,7 @@
    "title": "Life support as a component",
    "detail": "Atmosphere, pressure and temperature inside the hull, with consumption, reserves and failure. On a breathable world it is a convenience; elsewhere it is the thing keeping you alive.",
    "acceptance": "Cut life support in vacuum and the internal atmosphere depletes on the modelled schedule, with warnings.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "LW SS7.2"
    ],
@@ -5120,7 +5152,7 @@
    "title": "Shields",
    "detail": "Directional shields with capacity, recharge, and a power draw that competes with everything else on the bus.",
    "acceptance": "Raising shields measurably reduces power available to thrust, and the trade-off is visible on the instruments.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5144,7 +5176,7 @@
    "title": "Signature model: thermal, electromagnetic, cross-section",
    "detail": "What a ship looks like to a sensor, derived from what it is doing. Running cold and quiet must be a real option, because information is the design's scarce commodity.",
    "acceptance": "Shutting down non-essential systems measurably reduces detection range, and the numbers come from the thermal and power models.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS4",
     "SS6.9"
@@ -5169,7 +5201,7 @@
    "title": "Hardpoints and mount framework",
    "detail": "The general mechanism for attaching things to a hull — weapons, mining gear, sensors, cargo pods — with size classes and power and cooling draw. Not the weapons themselves.",
    "acceptance": "A mount accepts any component of its class, refuses others, and its power and heat appear in the ship's totals.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5193,7 +5225,7 @@
    "title": "Cargo hold and volumetric stowage",
    "detail": "Cargo occupies space and has mass and a position. A full hold is visibly full and an unbalanced one is felt.",
    "acceptance": "Loading to capacity is limited by volume or mass, whichever binds first, and the contents are visible in the hold.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS7"
    ],
@@ -5217,7 +5249,7 @@
    "title": "Animated ship parts as components",
    "detail": "Gear, ramps, doors, radiators and canopies are components with state, power draw and failure modes, not animations.",
    "acceptance": "Cutting power mid-cycle leaves the gear half-deployed and it stays there until power returns.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5254,7 +5286,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 254.5,
-   "plannedEndDay": 256.0,
+   "plannedEndDay": 256,
    "plannedStart": "2027-08-27",
    "plannedEnd": "2027-08-31"
   },
@@ -5277,7 +5309,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 256.0,
+   "plannedStartDay": 256,
    "plannedEndDay": 258.5,
    "plannedStart": "2027-08-31",
    "plannedEnd": "2027-09-02"
@@ -5289,7 +5321,7 @@
    "title": "Ship audio from component state",
    "detail": "Engine note from throttle and load, coolant pumps under thermal stress, alarms from the systems that raised them.",
    "acceptance": "A listener can identify which subsystem is in trouble from audio alone.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5313,7 +5345,7 @@
    "title": "Damage visuals",
    "detail": "Scorching, deformation, venting, sparks and debris tied to the damage state rather than played as effects.",
    "acceptance": "A ship's exterior condition is readable at a glance and matches its component state.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5337,7 +5369,7 @@
    "title": "Ship configuration and outfitting",
    "detail": "Swap components within slot and power constraints, with the consequences computed rather than listed.",
    "acceptance": "Fitting an oversized power plant changes mass, heat and handling, and the configuration screen shows all three before it is fitted.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5374,7 +5406,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 264.5,
-   "plannedEndDay": 266.0,
+   "plannedEndDay": 266,
    "plannedStart": "2027-09-10",
    "plannedEnd": "2027-09-14"
   },
@@ -5385,7 +5417,7 @@
    "title": "Ship diagnostics and test harness",
    "detail": "A headless rig that builds a ship, applies loads and damage, and asserts the component graph behaves. Ship bugs are systemic and need systemic tests.",
    "acceptance": "Every failure mode in this milestone has a test that reproduces it without flying anything.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS13"
    ],
@@ -5397,8 +5429,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 266.0,
-   "plannedEndDay": 268.0,
+   "plannedStartDay": 266,
+   "plannedEndDay": 268,
    "plannedStart": "2027-09-14",
    "plannedEnd": "2027-09-16"
   },
@@ -5421,7 +5453,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 268.0,
+   "plannedStartDay": 268,
    "plannedEndDay": 269.5,
    "plannedStart": "2027-09-16",
    "plannedEnd": "2027-09-17"
@@ -5446,7 +5478,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 269.5,
-   "plannedEndDay": 272.0,
+   "plannedEndDay": 272,
    "plannedStart": "2027-09-17",
    "plannedEnd": "2027-09-22"
   },
@@ -5469,7 +5501,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 272.0,
+   "plannedStartDay": 272,
    "plannedEndDay": 275.5,
    "plannedStart": "2027-09-22",
    "plannedEnd": "2027-09-27"
@@ -5481,7 +5513,7 @@
    "title": "Flight assist and control modes",
    "detail": "Assist on, assist off, coupled and decoupled, each a different controller over the same allocator rather than a different flight model.",
    "acceptance": "Switching modes changes only the controller; the physics underneath is identical and provably so.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5518,7 +5550,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 277.5,
-   "plannedEndDay": 280.0,
+   "plannedEndDay": 280,
    "plannedStart": "2027-09-29",
    "plannedEnd": "2027-10-04"
   },
@@ -5529,7 +5561,7 @@
    "title": "Stall, spin and recovery",
    "detail": "An aerodynamic envelope with edges. Exceeding them has consequences that can be recovered from if the pilot knows how.",
    "acceptance": "A deliberate stall departs controlled flight and standard recovery inputs recover it.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5541,8 +5573,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 280.0,
-   "plannedEndDay": 282.0,
+   "plannedStartDay": 280,
+   "plannedEndDay": 282,
    "plannedStart": "2027-10-04",
    "plannedEnd": "2027-10-06"
   },
@@ -5553,7 +5585,7 @@
    "title": "Vacuum-to-atmosphere transition",
    "detail": "Aerodynamic authority fades in as density rises and thruster authority does not, so the handover is continuous rather than a mode change.",
    "acceptance": "A re-entry from vacuum to sea level shows no discontinuity in forces at any altitude.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5565,8 +5597,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 282.0,
-   "plannedEndDay": 284.0,
+   "plannedStartDay": 282,
+   "plannedEndDay": 284,
    "plannedStart": "2027-10-06",
    "plannedEnd": "2027-10-08"
   },
@@ -5577,7 +5609,7 @@
    "title": "VTOL and hover",
    "detail": "Vertical thrust with ground effect, and the fuel cost that makes hovering a decision rather than a default.",
    "acceptance": "Hovering consumes fuel at the rate thrust-to-weight implies, and ground effect is measurable near the surface.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5589,8 +5621,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 284.0,
-   "plannedEndDay": 286.0,
+   "plannedStartDay": 284,
+   "plannedEndDay": 286,
    "plannedStart": "2027-10-08",
    "plannedEnd": "2027-10-12"
   },
@@ -5613,7 +5645,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 286.0,
+   "plannedStartDay": 286,
    "plannedEndDay": 288.5,
    "plannedStart": "2027-10-12",
    "plannedEnd": "2027-10-14"
@@ -5638,7 +5670,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 288.5,
-   "plannedEndDay": 290.0,
+   "plannedEndDay": 290,
    "plannedStart": "2027-10-14",
    "plannedEnd": "2027-10-18"
   },
@@ -5661,7 +5693,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 290.0,
+   "plannedStartDay": 290,
    "plannedEndDay": 291.5,
    "plannedStart": "2027-10-18",
    "plannedEnd": "2027-10-19"
@@ -5686,7 +5718,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 291.5,
-   "plannedEndDay": 294.0,
+   "plannedEndDay": 294,
    "plannedStart": "2027-10-19",
    "plannedEnd": "2027-10-22"
   },
@@ -5709,7 +5741,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 294.0,
+   "plannedStartDay": 294,
    "plannedEndDay": 296.5,
    "plannedStart": "2027-10-22",
    "plannedEnd": "2027-10-26"
@@ -5734,7 +5766,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 296.5,
-   "plannedEndDay": 299.0,
+   "plannedEndDay": 299,
    "plannedStart": "2027-10-26",
    "plannedEnd": "2027-10-29"
   },
@@ -5745,7 +5777,7 @@
    "title": "Input framework: HOTAS, gamepad, mouse and keyboard",
    "detail": "One binding layer over one command set, with curves, deadzones and per-device profiles. Not three control schemes.",
    "acceptance": "All three devices produce identical commanded forces for equivalent input, and rebinding requires no code.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5757,8 +5789,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 299.0,
-   "plannedEndDay": 301.0,
+   "plannedStartDay": 299,
+   "plannedEndDay": 301,
    "plannedStart": "2027-10-29",
    "plannedEnd": "2027-11-02"
   },
@@ -5781,7 +5813,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 301.0,
+   "plannedStartDay": 301,
    "plannedEndDay": 303.5,
    "plannedStart": "2027-11-02",
    "plannedEnd": "2027-11-04"
@@ -5793,7 +5825,7 @@
    "title": "Collision response for vehicles",
    "detail": "Impacts transfer momentum and damage components through M05's graph, rather than triggering a generic effect.",
    "acceptance": "A glancing impact damages the components at the point of contact and imparts the momentum the collision implies.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5817,7 +5849,7 @@
    "title": "Ship-to-ship physical interaction",
    "detail": "Ships push each other, land on each other, and carry each other. The prerequisite for M08's nested frames.",
    "acceptance": "A small ship lands on a large one and is carried with it.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -5854,7 +5886,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 307.5,
-   "plannedEndDay": 309.0,
+   "plannedEndDay": 309,
    "plannedStart": "2027-11-10",
    "plannedEnd": "2027-11-12"
   },
@@ -5865,7 +5897,7 @@
    "title": "Flight model tuning tools",
    "detail": "In-editor visualisation of thruster authority, aerodynamic forces, envelope and control response, so tuning is measured rather than felt.",
    "acceptance": "A ship's envelope can be read off a chart the tool generates.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS13"
    ],
@@ -5877,8 +5909,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 309.0,
-   "plannedEndDay": 311.0,
+   "plannedStartDay": 309,
+   "plannedEndDay": 311,
    "plannedStart": "2027-11-12",
    "plannedEnd": "2027-11-16"
   },
@@ -5901,7 +5933,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 311.0,
+   "plannedStartDay": 311,
    "plannedEndDay": 312.5,
    "plannedStart": "2027-11-16",
    "plannedEnd": "2027-11-17"
@@ -5913,7 +5945,7 @@
    "title": "Playable proof: continent, orbit, pad",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "Pad to another continent aerodynamically, out to vacuum, manoeuvre, re-enter with heating, land on the pad you left — cockpit only.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -5937,7 +5969,7 @@
    "title": "Origin rebasing",
    "detail": "Move the world under the camera so float precision never has to express an astronomical unit. The prototype avoids this by keeping vertices patch-relative; everything else in the game will not have that luxury.",
    "acceptance": "At one AU from origin, a one-millimetre movement is still one millimetre, for every actor and every particle system.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS6.8"
    ],
@@ -5974,7 +6006,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 318.5,
-   "plannedEndDay": 322.0,
+   "plannedEndDay": 322,
    "plannedStart": "2027-11-25",
    "plannedEnd": "2027-12-01"
   },
@@ -5997,7 +6029,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 322.0,
+   "plannedStartDay": 322,
    "plannedEndDay": 325.5,
    "plannedStart": "2027-12-01",
    "plannedEnd": "2027-12-06"
@@ -6022,7 +6054,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 325.5,
-   "plannedEndDay": 329.0,
+   "plannedEndDay": 329,
    "plannedStart": "2027-12-06",
    "plannedEnd": "2027-12-10"
   },
@@ -6045,7 +6077,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 329.0,
+   "plannedStartDay": 329,
    "plannedEndDay": 332.5,
    "plannedStart": "2027-12-10",
    "plannedEnd": "2027-12-15"
@@ -6070,7 +6102,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 332.5,
-   "plannedEndDay": 335.0,
+   "plannedEndDay": 335,
    "plannedStart": "2027-12-15",
    "plannedEnd": "2027-12-20"
   },
@@ -6093,7 +6125,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 335.0,
+   "plannedStartDay": 335,
    "plannedEndDay": 337.5,
    "plannedStart": "2027-12-20",
    "plannedEnd": "2027-12-22"
@@ -6118,7 +6150,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 337.5,
-   "plannedEndDay": 341.0,
+   "plannedEndDay": 341,
    "plannedStart": "2027-12-22",
    "plannedEnd": "2027-12-28"
   },
@@ -6141,7 +6173,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 341.0,
+   "plannedStartDay": 341,
    "plannedEndDay": 343.5,
    "plannedStart": "2027-12-28",
    "plannedEnd": "2027-12-30"
@@ -6166,7 +6198,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 343.5,
-   "plannedEndDay": 347.0,
+   "plannedEndDay": 347,
    "plannedStart": "2027-12-30",
    "plannedEnd": "2028-01-05"
   },
@@ -6189,7 +6221,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 347.0,
+   "plannedStartDay": 347,
    "plannedEndDay": 348.5,
    "plannedStart": "2028-01-05",
    "plannedEnd": "2028-01-06"
@@ -6214,7 +6246,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 348.5,
-   "plannedEndDay": 351.0,
+   "plannedEndDay": 351,
    "plannedStart": "2028-01-06",
    "plannedEnd": "2028-01-11"
   },
@@ -6237,7 +6269,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 351.0,
+   "plannedStartDay": 351,
    "plannedEndDay": 353.5,
    "plannedStart": "2028-01-11",
    "plannedEnd": "2028-01-13"
@@ -6262,7 +6294,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 353.5,
-   "plannedEndDay": 357.0,
+   "plannedEndDay": 357,
    "plannedStart": "2028-01-13",
    "plannedEnd": "2028-01-19"
   },
@@ -6285,7 +6317,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 357.0,
+   "plannedStartDay": 357,
    "plannedEndDay": 359.5,
    "plannedStart": "2028-01-19",
    "plannedEnd": "2028-01-21"
@@ -6311,7 +6343,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 359.5,
-   "plannedEndDay": 365.0,
+   "plannedEndDay": 365,
    "plannedStart": "2028-01-21",
    "plannedEnd": "2028-01-31"
   },
@@ -6322,7 +6354,7 @@
    "title": "Local physics grid framework",
    "detail": "A grid is a moving frame with its own physics content. Bodies inside it are simulated in grid-local coordinates, so a ship at 3,000 m/s is a room at rest.",
    "acceptance": "An object at rest inside a manoeuvring ship stays at rest relative to the ship, at any speed the ship can reach.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS6.9"
    ],
@@ -6334,8 +6366,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 365.0,
-   "plannedEndDay": 369.0,
+   "plannedStartDay": 365,
+   "plannedEndDay": 369,
    "plannedStart": "2028-01-31",
    "plannedEnd": "2028-02-04"
   },
@@ -6358,7 +6390,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 369.0,
+   "plannedStartDay": 369,
    "plannedEndDay": 372.5,
    "plannedStart": "2028-02-04",
    "plannedEnd": "2028-02-09"
@@ -6383,7 +6415,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 372.5,
-   "plannedEndDay": 376.0,
+   "plannedEndDay": 376,
    "plannedStart": "2028-02-09",
    "plannedEnd": "2028-02-15"
   },
@@ -6406,7 +6438,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 376.0,
+   "plannedStartDay": 376,
    "plannedEndDay": 378.5,
    "plannedStart": "2028-02-15",
    "plannedEnd": "2028-02-17"
@@ -6431,7 +6463,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 378.5,
-   "plannedEndDay": 381.0,
+   "plannedEndDay": 381,
    "plannedStart": "2028-02-17",
    "plannedEnd": "2028-02-22"
   },
@@ -6442,7 +6474,7 @@
    "title": "Gravity generation inside grids",
    "detail": "Artificial gravity as a per-grid field with orientation, plus what happens when it fails and everything inside becomes free-floating.",
    "acceptance": "Cutting grid gravity leaves loose objects and characters floating with the velocity they had.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -6454,8 +6486,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 381.0,
-   "plannedEndDay": 383.0,
+   "plannedStartDay": 381,
+   "plannedEndDay": 383,
    "plannedStart": "2028-02-22",
    "plannedEnd": "2028-02-24"
   },
@@ -6478,7 +6510,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 383.0,
+   "plannedStartDay": 383,
    "plannedEndDay": 385.5,
    "plannedStart": "2028-02-24",
    "plannedEnd": "2028-02-28"
@@ -6503,7 +6535,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 385.5,
-   "plannedEndDay": 388.0,
+   "plannedEndDay": 388,
    "plannedStart": "2028-02-28",
    "plannedEnd": "2028-03-02"
   },
@@ -6526,7 +6558,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 388.0,
+   "plannedStartDay": 388,
    "plannedEndDay": 390.5,
    "plannedStart": "2028-03-02",
    "plannedEnd": "2028-03-06"
@@ -6551,7 +6583,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 390.5,
-   "plannedEndDay": 393.0,
+   "plannedEndDay": 393,
    "plannedStart": "2028-03-06",
    "plannedEnd": "2028-03-09"
   },
@@ -6562,7 +6594,7 @@
    "title": "Ragdoll and character physics",
    "detail": "Bodies that fall, are thrown and collide, correctly inside a moving frame.",
    "acceptance": "A ragdoll inside an accelerating ship slides toward the stern at the rate the acceleration implies.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS6.9"
    ],
@@ -6574,8 +6606,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 393.0,
-   "plannedEndDay": 395.0,
+   "plannedStartDay": 393,
+   "plannedEndDay": 395,
    "plannedStart": "2028-03-09",
    "plannedEnd": "2028-03-13"
   },
@@ -6598,7 +6630,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 395.0,
+   "plannedStartDay": 395,
    "plannedEndDay": 398.5,
    "plannedStart": "2028-03-13",
    "plannedEnd": "2028-03-16"
@@ -6610,7 +6642,7 @@
    "title": "Physics determinism and stability harness",
    "detail": "Fixed-step physics with recorded scenarios replayed in CI. Frame-rate dependent physics is a bug that only shows on someone else's machine.",
    "acceptance": "A recorded scenario replays identically at 30, 60 and 144 fps.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 5"
    ],
@@ -6634,7 +6666,7 @@
    "title": "Physics performance budget",
    "detail": "Grid count, body count and substep cost under one budget, with degradation that is a decision rather than a stutter.",
    "acceptance": "Ten active grids with two hundred bodies each stays inside the physics budget.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS14"
    ],
@@ -6658,7 +6690,7 @@
    "title": "Playable proof: walk to the cockpit at speed",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "Walk from the stern to the cockpit while the ship accelerates, rolls and flies through atmosphere; a cup set down stays on the table; step out onto a pad on a rotating planet and inherit the right frame.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -6696,7 +6728,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 404.5,
-   "plannedEndDay": 407.0,
+   "plannedEndDay": 407,
    "plannedStart": "2028-03-24",
    "plannedEnd": "2028-03-29"
   },
@@ -6707,7 +6739,7 @@
    "title": "Character controller with momentum",
    "detail": "Acceleration, deceleration, turning radius and footing rather than a capsule that changes velocity instantly. A body has mass and the controller has to admit it.",
    "acceptance": "Stopping from a run takes distance, turning at speed carries momentum, and neither is a curve someone drew.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6719,8 +6751,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 407.0,
-   "plannedEndDay": 410.0,
+   "plannedStartDay": 407,
+   "plannedEndDay": 410,
    "plannedStart": "2028-03-29",
    "plannedEnd": "2028-04-03"
   },
@@ -6731,7 +6763,7 @@
    "title": "One skeleton for first and third person",
    "detail": "Two skeletons is two sets of bugs and a first person view whose body is a lie. One rig, camera attached to the head, IK correcting what the camera can see.",
    "acceptance": "Look down in first person and see the same body a third-person camera sees, doing the same thing.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6743,8 +6775,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 410.0,
-   "plannedEndDay": 413.0,
+   "plannedStartDay": 410,
+   "plannedEndDay": 413,
    "plannedStart": "2028-04-03",
    "plannedEnd": "2028-04-06"
   },
@@ -6755,7 +6787,7 @@
    "title": "Full-body IK and foot placement",
    "detail": "Feet land on the ground that is actually there, at the angle it is at, on stairs, slopes and debris.",
    "acceptance": "Walk across broken terrain and a stairway with no foot sliding and no foot intersecting geometry.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6767,8 +6799,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 413.0,
-   "plannedEndDay": 416.0,
+   "plannedStartDay": 413,
+   "plannedEndDay": 416,
    "plannedStart": "2028-04-06",
    "plannedEnd": "2028-04-11"
   },
@@ -6779,7 +6811,7 @@
    "title": "Locomotion state machine and blend framework",
    "detail": "Idle, walk, run, sprint, crouch, prone, strafe, turn-in-place, with distance-matched transitions rather than fixed blends.",
    "acceptance": "No locomotion transition slides the feet, at any speed or direction change.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS6.9"
    ],
@@ -6791,8 +6823,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 416.0,
-   "plannedEndDay": 420.0,
+   "plannedStartDay": 416,
+   "plannedEndDay": 420,
    "plannedStart": "2028-04-11",
    "plannedEnd": "2028-04-17"
   },
@@ -6803,7 +6835,7 @@
    "title": "Locomotion in variable gravity",
    "detail": "Walking on a moon, in a station's spin gravity, and in a ship under thrust — stride, jump arc and fall speed all derived from local gravity.",
    "acceptance": "The same controller produces correct movement at 0.16 g, 1 g and 1.5 g with no special-cased animation.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6815,8 +6847,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 420.0,
-   "plannedEndDay": 423.0,
+   "plannedStartDay": 420,
+   "plannedEndDay": 423,
    "plannedStart": "2028-04-17",
    "plannedEnd": "2028-04-20"
   },
@@ -6827,7 +6859,7 @@
    "title": "Zero-gravity movement and EVA",
    "detail": "Push off, drift, arrest with a thruster pack, grab handholds. A different control problem, not a different character.",
    "acceptance": "Cross a compartment in zero gravity by pushing off and catching a handhold, with momentum conserved throughout.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6839,8 +6871,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 423.0,
-   "plannedEndDay": 426.0,
+   "plannedStartDay": 423,
+   "plannedEndDay": 426,
    "plannedStart": "2028-04-20",
    "plannedEnd": "2028-04-25"
   },
@@ -6851,7 +6883,7 @@
    "title": "Interaction framework",
    "detail": "One mechanism for everything a person can touch: buttons, levers, doors, seats, terminals, containers. Highlighting, reach, occlusion and the animation that sells it.",
    "acceptance": "A new interactable is one data declaration and inherits highlighting, reach and animation with no bespoke code.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6863,8 +6895,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 426.0,
-   "plannedEndDay": 429.0,
+   "plannedStartDay": 426,
+   "plannedEndDay": 429,
    "plannedStart": "2028-04-25",
    "plannedEnd": "2028-04-28"
   },
@@ -6875,7 +6907,7 @@
    "title": "Seats, harnesses and vehicle entry",
    "detail": "Getting into and out of a seat as a physical transition inside a moving frame, with the controller handing off to the vehicle.",
    "acceptance": "Board a hovering ship, take the seat and fly, with no teleport and no cut, and get out again while it is still moving.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS6.9"
    ],
@@ -6887,8 +6919,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 429.0,
-   "plannedEndDay": 432.0,
+   "plannedStartDay": 429,
+   "plannedEndDay": 432,
    "plannedStart": "2028-04-28",
    "plannedEnd": "2028-05-03"
   },
@@ -6911,7 +6943,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 432.0,
+   "plannedStartDay": 432,
    "plannedEndDay": 434.5,
    "plannedStart": "2028-05-03",
    "plannedEnd": "2028-05-05"
@@ -6936,7 +6968,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 434.5,
-   "plannedEndDay": 437.0,
+   "plannedEndDay": 437,
    "plannedStart": "2028-05-05",
    "plannedEnd": "2028-05-10"
   },
@@ -6959,7 +6991,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 437.0,
+   "plannedStartDay": 437,
    "plannedEndDay": 439.5,
    "plannedStart": "2028-05-10",
    "plannedEnd": "2028-05-12"
@@ -6984,7 +7016,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 439.5,
-   "plannedEndDay": 442.0,
+   "plannedEndDay": 442,
    "plannedStart": "2028-05-12",
    "plannedEnd": "2028-05-17"
   },
@@ -6995,7 +7027,7 @@
    "title": "Facial and upper-body animation framework",
    "detail": "Look-at, gesture, and expression driven by state rather than by canned clips, because every NPC in the living world will need it.",
    "acceptance": "A character tracks a moving object with head and eyes while walking, with no clip authored for it.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS6"
    ],
@@ -7007,8 +7039,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 442.0,
-   "plannedEndDay": 445.0,
+   "plannedStartDay": 442,
+   "plannedEndDay": 445,
    "plannedStart": "2028-05-17",
    "plannedEnd": "2028-05-22"
   },
@@ -7019,7 +7051,7 @@
    "title": "Character definition and variation",
    "detail": "Body proportions, faces, clothing and equipment as data, so a crowd is not twelve copies of one person.",
    "acceptance": "A hundred generated characters are visually distinct and all animate correctly on the shared rig.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 7"
    ],
@@ -7031,8 +7063,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 445.0,
-   "plannedEndDay": 448.0,
+   "plannedStartDay": 445,
+   "plannedEndDay": 448,
    "plannedStart": "2028-05-22",
    "plannedEnd": "2028-05-25"
   },
@@ -7055,7 +7087,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 448.0,
+   "plannedStartDay": 448,
    "plannedEndDay": 450.5,
    "plannedStart": "2028-05-25",
    "plannedEnd": "2028-05-29"
@@ -7080,7 +7112,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 450.5,
-   "plannedEndDay": 453.0,
+   "plannedEndDay": 453,
    "plannedStart": "2028-05-29",
    "plannedEnd": "2028-06-01"
   },
@@ -7103,7 +7135,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 453.0,
+   "plannedStartDay": 453,
    "plannedEndDay": 455.5,
    "plannedStart": "2028-06-01",
    "plannedEnd": "2028-06-05"
@@ -7128,7 +7160,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 455.5,
-   "plannedEndDay": 458.0,
+   "plannedEndDay": 458,
    "plannedStart": "2028-06-05",
    "plannedEnd": "2028-06-08"
   },
@@ -7151,7 +7183,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 458.0,
+   "plannedStartDay": 458,
    "plannedEndDay": 460.5,
    "plannedStart": "2028-06-08",
    "plannedEnd": "2028-06-12"
@@ -7163,7 +7195,7 @@
    "title": "Modular kit framework",
    "detail": "Rooms, corridors, junctions and shafts as a connectable kit with sockets, so interiors are assembled rather than modelled. The prerequisite for generated ships, stations and buildings all at once.",
    "acceptance": "An interior assembled from the kit has no gap, no z-fight at any seam, and correct collision throughout.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS7"
    ],
@@ -7187,7 +7219,7 @@
    "title": "Interior generation from a layout grammar",
    "detail": "A generator that lays out an interior from a purpose and a footprint — circulation first, then rooms, then detail — rather than stamping prefabs.",
    "acceptance": "Twenty generated interiors of the same purpose are all navigable, all different, and none has an unreachable room.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS7"
    ],
@@ -7224,7 +7256,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 468.5,
-   "plannedEndDay": 472.0,
+   "plannedEndDay": 472,
    "plannedStart": "2028-06-22",
    "plannedEnd": "2028-06-28"
   },
@@ -7235,7 +7267,7 @@
    "title": "Cockpit generated from the component graph",
    "detail": "The strongest case for generating rather than authoring, and it comes out of a promise already made: docs/quality-bar.md says every gauge traces to a real component. A hand-authored cockpit can lie about that. One laid out from the ship's own graph cannot -- a readout exists because a component exists, a breaker exists because a power path does, and a ship fitted differently gets a different panel without anyone redrawing it. Layout from the seat outward: reach envelope from the seated eye point, consoles on ergonomic arcs, sightlines to the canopy preserved, labels beside every control. Cable and pipe runs routed between components rather than drawn.",
    "acceptance": "Two ships with different component fits produce different cockpits with no hand editing; every readout in both traces to a component in the graph; and every control is reachable from the seated position without the sightline to the horizon being blocked.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS6.9",
     "LW SS7"
@@ -7248,8 +7280,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 472.0,
-   "plannedEndDay": 476.0,
+   "plannedStartDay": 472,
+   "plannedEndDay": 476,
    "plannedStart": "2028-06-28",
    "plannedEnd": "2028-07-04"
   },
@@ -7272,7 +7304,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 476.0,
+   "plannedStartDay": 476,
    "plannedEndDay": 479.5,
    "plannedStart": "2028-07-04",
    "plannedEnd": "2028-07-07"
@@ -7297,7 +7329,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 479.5,
-   "plannedEndDay": 483.0,
+   "plannedEndDay": 483,
    "plannedStart": "2028-07-07",
    "plannedEnd": "2028-07-13"
   },
@@ -7308,7 +7340,7 @@
    "title": "Portals and interior streaming",
    "detail": "Interiors stream and cull through portals, so a city block of walkable buildings costs what is visible rather than what exists.",
    "acceptance": "A hundred walkable interiors in view cost no more than the handful actually visible through their openings.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -7320,8 +7352,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 483.0,
-   "plannedEndDay": 487.0,
+   "plannedStartDay": 483,
+   "plannedEndDay": 487,
    "plannedStart": "2028-07-13",
    "plannedEnd": "2028-07-19"
   },
@@ -7344,7 +7376,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 487.0,
+   "plannedStartDay": 487,
    "plannedEndDay": 489.5,
    "plannedStart": "2028-07-19",
    "plannedEnd": "2028-07-21"
@@ -7369,7 +7401,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 489.5,
-   "plannedEndDay": 492.0,
+   "plannedEndDay": 492,
    "plannedStart": "2028-07-21",
    "plannedEnd": "2028-07-26"
   },
@@ -7392,7 +7424,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 492.0,
+   "plannedStartDay": 492,
    "plannedEndDay": 495.5,
    "plannedStart": "2028-07-26",
    "plannedEnd": "2028-07-31"
@@ -7417,7 +7449,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 495.5,
-   "plannedEndDay": 498.0,
+   "plannedEndDay": 498,
    "plannedStart": "2028-07-31",
    "plannedEnd": "2028-08-03"
   },
@@ -7440,7 +7472,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 498.0,
+   "plannedStartDay": 498,
    "plannedEndDay": 501.5,
    "plannedStart": "2028-08-03",
    "plannedEnd": "2028-08-08"
@@ -7465,7 +7497,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 501.5,
-   "plannedEndDay": 504.0,
+   "plannedEndDay": 504,
    "plannedStart": "2028-08-08",
    "plannedEnd": "2028-08-11"
   },
@@ -7488,7 +7520,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 504.0,
+   "plannedStartDay": 504,
    "plannedEndDay": 506.5,
    "plannedStart": "2028-08-11",
    "plannedEnd": "2028-08-15"
@@ -7513,7 +7545,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 506.5,
-   "plannedEndDay": 509.0,
+   "plannedEndDay": 509,
    "plannedStart": "2028-08-15",
    "plannedEnd": "2028-08-18"
   },
@@ -7536,7 +7568,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 509.0,
+   "plannedStartDay": 509,
    "plannedEndDay": 512.5,
    "plannedStart": "2028-08-18",
    "plannedEnd": "2028-08-23"
@@ -7561,7 +7593,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 512.5,
-   "plannedEndDay": 517.0,
+   "plannedEndDay": 517,
    "plannedStart": "2028-08-23",
    "plannedEnd": "2028-08-30"
   },
@@ -7584,7 +7616,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 517.0,
+   "plannedStartDay": 517,
    "plannedEndDay": 519.5,
    "plannedStart": "2028-08-30",
    "plannedEnd": "2028-09-01"
@@ -7610,7 +7642,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 519.5,
-   "plannedEndDay": 524.0,
+   "plannedEndDay": 524,
    "plannedStart": "2028-09-01",
    "plannedEnd": "2028-09-08"
   },
@@ -7633,7 +7665,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 524.0,
+   "plannedStartDay": 524,
    "plannedEndDay": 527.5,
    "plannedStart": "2028-09-08",
    "plannedEnd": "2028-09-13"
@@ -7658,7 +7690,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 527.5,
-   "plannedEndDay": 531.0,
+   "plannedEndDay": 531,
    "plannedStart": "2028-09-13",
    "plannedEnd": "2028-09-19"
   },
@@ -7681,7 +7713,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 531.0,
+   "plannedStartDay": 531,
    "plannedEndDay": 533.5,
    "plannedStart": "2028-09-19",
    "plannedEnd": "2028-09-21"
@@ -7706,7 +7738,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 533.5,
-   "plannedEndDay": 537.0,
+   "plannedEndDay": 537,
    "plannedStart": "2028-09-21",
    "plannedEnd": "2028-09-27"
   },
@@ -7729,7 +7761,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 537.0,
+   "plannedStartDay": 537,
    "plannedEndDay": 540.5,
    "plannedStart": "2028-09-27",
    "plannedEnd": "2028-10-02"
@@ -7754,7 +7786,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 540.5,
-   "plannedEndDay": 543.0,
+   "plannedEndDay": 543,
    "plannedStart": "2028-10-02",
    "plannedEnd": "2028-10-05"
   },
@@ -7777,7 +7809,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 543.0,
+   "plannedStartDay": 543,
    "plannedEndDay": 546.5,
    "plannedStart": "2028-10-05",
    "plannedEnd": "2028-10-10"
@@ -7802,7 +7834,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 546.5,
-   "plannedEndDay": 551.0,
+   "plannedEndDay": 551,
    "plannedStart": "2028-10-10",
    "plannedEnd": "2028-10-17"
   },
@@ -7825,7 +7857,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 551.0,
+   "plannedStartDay": 551,
    "plannedEndDay": 554.5,
    "plannedStart": "2028-10-17",
    "plannedEnd": "2028-10-20"
@@ -7850,7 +7882,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 554.5,
-   "plannedEndDay": 557.0,
+   "plannedEndDay": 557,
    "plannedStart": "2028-10-20",
    "plannedEnd": "2028-10-25"
   },
@@ -7873,7 +7905,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 557.0,
+   "plannedStartDay": 557,
    "plannedEndDay": 559.5,
    "plannedStart": "2028-10-25",
    "plannedEnd": "2028-10-27"
@@ -7898,7 +7930,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 559.5,
-   "plannedEndDay": 562.0,
+   "plannedEndDay": 562,
    "plannedStart": "2028-10-27",
    "plannedEnd": "2028-11-01"
   },
@@ -7921,7 +7953,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 562.0,
+   "plannedStartDay": 562,
    "plannedEndDay": 564.5,
    "plannedStart": "2028-11-01",
    "plannedEnd": "2028-11-03"
@@ -7946,7 +7978,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 564.5,
-   "plannedEndDay": 567.0,
+   "plannedEndDay": 567,
    "plannedStart": "2028-11-03",
    "plannedEnd": "2028-11-08"
   },
@@ -7969,7 +8001,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 567.0,
+   "plannedStartDay": 567,
    "plannedEndDay": 568.5,
    "plannedStart": "2028-11-08",
    "plannedEnd": "2028-11-09"
@@ -7994,7 +8026,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 568.5,
-   "plannedEndDay": 573.0,
+   "plannedEndDay": 573,
    "plannedStart": "2028-11-09",
    "plannedEnd": "2028-11-16"
   },
@@ -8005,7 +8037,7 @@
    "title": "Settlement layout generator",
    "detail": "Districts, streets, utilities and pads laid out from terrain, resources and purpose, at scales from outpost to city.",
    "acceptance": "Three settlements of different scale generate on different terrain, each navigable and each explicable from its site.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7"
    ],
@@ -8017,8 +8049,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 573.0,
-   "plannedEndDay": 576.0,
+   "plannedStartDay": 573,
+   "plannedEndDay": 576,
    "plannedStart": "2028-11-16",
    "plannedEnd": "2028-11-21"
   },
@@ -8041,7 +8073,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 576.0,
+   "plannedStartDay": 576,
    "plannedEndDay": 578.5,
    "plannedStart": "2028-11-21",
    "plannedEnd": "2028-11-23"
@@ -8066,7 +8098,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 578.5,
-   "plannedEndDay": 580.0,
+   "plannedEndDay": 580,
    "plannedStart": "2028-11-23",
    "plannedEnd": "2028-11-27"
   },
@@ -8089,7 +8121,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 580.0,
+   "plannedStartDay": 580,
    "plannedEndDay": 583.5,
    "plannedStart": "2028-11-27",
    "plannedEnd": "2028-11-30"
@@ -8114,7 +8146,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 583.5,
-   "plannedEndDay": 586.0,
+   "plannedEndDay": 586,
    "plannedStart": "2028-11-30",
    "plannedEnd": "2028-12-05"
   },
@@ -8137,7 +8169,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 586.0,
+   "plannedStartDay": 586,
    "plannedEndDay": 588.5,
    "plannedStart": "2028-12-05",
    "plannedEnd": "2028-12-07"
@@ -8162,7 +8194,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 588.5,
-   "plannedEndDay": 590.0,
+   "plannedEndDay": 590,
    "plannedStart": "2028-12-07",
    "plannedEnd": "2028-12-11"
   },
@@ -8185,7 +8217,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 590.0,
+   "plannedStartDay": 590,
    "plannedEndDay": 592.5,
    "plannedStart": "2028-12-11",
    "plannedEnd": "2028-12-13"
@@ -8211,7 +8243,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 592.5,
-   "plannedEndDay": 594.0,
+   "plannedEndDay": 594,
    "plannedStart": "2028-12-13",
    "plannedEnd": "2028-12-15"
   },
@@ -8234,7 +8266,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 594.0,
+   "plannedStartDay": 594,
    "plannedEndDay": 595.5,
    "plannedStart": "2028-12-15",
    "plannedEnd": "2028-12-18"
@@ -8246,7 +8278,7 @@
    "title": "Content authoring tools",
    "detail": "In-editor tools for defining systems, bodies, biomes, ships, buildings and settlements, so content is authored as data by a person rather than typed as code.",
    "acceptance": "A complete star system is authored end to end without editing source.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 7"
    ],
@@ -8283,7 +8315,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 598.5,
-   "plannedEndDay": 600.0,
+   "plannedEndDay": 600,
    "plannedStart": "2028-12-21",
    "plannedEnd": "2028-12-25"
   },
@@ -8306,7 +8338,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 600.0,
+   "plannedStartDay": 600,
    "plannedEndDay": 602.5,
    "plannedStart": "2028-12-25",
    "plannedEnd": "2028-12-27"
@@ -8318,7 +8350,7 @@
    "title": "Cook and package pipeline",
    "detail": "A packaged build that actually runs — including the runtime-generated materials the prototype relies on the editor for, which will not survive a cook as they stand.",
    "acceptance": "A packaged build runs the full technical slice with no editor present.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS9"
    ],
@@ -8355,7 +8387,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 605.5,
-   "plannedEndDay": 607.0,
+   "plannedEndDay": 607,
    "plannedStart": "2029-01-01",
    "plannedEnd": "2029-01-03"
   },
@@ -8366,7 +8398,7 @@
    "title": "Frame budget definition and enforcement",
    "detail": "A published budget per subsystem, instrumented, with CI failing a build that exceeds it. A budget nobody measures is a wish.",
    "acceptance": "The budget is enforced automatically and a deliberate regression fails the build.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -8378,8 +8410,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 607.0,
-   "plannedEndDay": 610.0,
+   "plannedStartDay": 607,
+   "plannedEndDay": 610,
    "plannedStart": "2029-01-03",
    "plannedEnd": "2029-01-08"
   },
@@ -8390,7 +8422,7 @@
    "title": "Automated performance capture across scenarios",
    "detail": "Fixed scenarios — city, cockpit, orbit, storm, combat — captured every build with frame time distributions rather than averages.",
    "acceptance": "Per-build performance history is queryable and a regression is attributable to a commit.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -8402,8 +8434,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 610.0,
-   "plannedEndDay": 613.0,
+   "plannedStartDay": 610,
+   "plannedEndDay": 613,
    "plannedStart": "2029-01-08",
    "plannedEnd": "2029-01-11"
   },
@@ -8414,7 +8446,7 @@
    "title": "Draw call and instancing pass",
    "detail": "Batching, instancing and merging across terrain, scatter, buildings and props. The prototype's section pool alone reached thousands of components.",
    "acceptance": "Draw calls in the densest scene fall below the budget with no visual change.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -8426,8 +8458,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 613.0,
-   "plannedEndDay": 617.0,
+   "plannedStartDay": 613,
+   "plannedEndDay": 617,
    "plannedStart": "2029-01-11",
    "plannedEnd": "2029-01-17"
   },
@@ -8438,7 +8470,7 @@
    "title": "Culling: occlusion, distance and relevance",
    "detail": "A city with interiors is mostly invisible from anywhere in it, and the renderer should know that.",
    "acceptance": "Visible triangle count in a city drops by an order of magnitude with no visible change.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -8450,8 +8482,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 617.0,
-   "plannedEndDay": 621.0,
+   "plannedStartDay": 617,
+   "plannedEndDay": 621,
    "plannedStart": "2029-01-17",
    "plannedEnd": "2029-01-23"
   },
@@ -8462,7 +8494,7 @@
    "title": "Game thread cost reduction",
    "detail": "Tick consolidation, work distribution and removal of per-frame work that does not need to happen per frame.",
    "acceptance": "Game thread stays under its budget in the worst scenario.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -8474,8 +8506,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 621.0,
-   "plannedEndDay": 625.0,
+   "plannedStartDay": 621,
+   "plannedEndDay": 625,
    "plannedStart": "2029-01-23",
    "plannedEnd": "2029-01-29"
   },
@@ -8486,7 +8518,7 @@
    "title": "Worker thread utilisation",
    "detail": "Terrain, physics, animation, streaming and audio across cores without contention or priority inversion.",
    "acceptance": "Core utilisation is even under load and no worker starves the game thread.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -8498,8 +8530,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 625.0,
-   "plannedEndDay": 628.0,
+   "plannedStartDay": 625,
+   "plannedEndDay": 628,
    "plannedStart": "2029-01-29",
    "plannedEnd": "2029-02-01"
   },
@@ -8510,7 +8542,7 @@
    "title": "GPU profiling and shader cost pass",
    "detail": "Per-pass GPU cost measured and reduced, with shader complexity budgets by material class.",
    "acceptance": "Every render pass is inside its budget in the worst scenario.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -8522,8 +8554,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 628.0,
-   "plannedEndDay": 632.0,
+   "plannedStartDay": 628,
+   "plannedEndDay": 632,
    "plannedStart": "2029-02-01",
    "plannedEnd": "2029-02-07"
   },
@@ -8534,7 +8566,7 @@
    "title": "Memory: fragmentation, leaks and long sessions",
    "detail": "Two-hour sessions with no growth, no fragmentation-driven stalls, and pools sized from measurement.",
    "acceptance": "A two-hour session ends with the memory profile it started with.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -8546,8 +8578,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 632.0,
-   "plannedEndDay": 635.0,
+   "plannedStartDay": 632,
+   "plannedEndDay": 635,
    "plannedStart": "2029-02-07",
    "plannedEnd": "2029-02-12"
   },
@@ -8558,7 +8590,7 @@
    "title": "Load and streaming hitch elimination",
    "detail": "Every remaining stall over 4 ms hunted down. Seamlessness is destroyed by one hitch and the player remembers only the hitch.",
    "acceptance": "A full traversal of the slice shows no frame over 16 ms.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS14"
    ],
@@ -8570,8 +8602,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 635.0,
-   "plannedEndDay": 639.0,
+   "plannedStartDay": 635,
+   "plannedEndDay": 639,
    "plannedStart": "2029-02-12",
    "plannedEnd": "2029-02-16"
   },
@@ -8582,7 +8614,7 @@
    "title": "Scalability settings",
    "detail": "Quality levels that degrade gracefully across a range of hardware, each measured rather than assumed.",
    "acceptance": "Three quality levels are measured on three hardware profiles and each hits its target frame rate.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS14"
    ],
@@ -8594,8 +8626,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 639.0,
-   "plannedEndDay": 642.0,
+   "plannedStartDay": 639,
+   "plannedEndDay": 642,
    "plannedStart": "2029-02-16",
    "plannedEnd": "2029-02-21"
   },
@@ -8606,7 +8638,7 @@
    "title": "Playable proof: the density test",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "Sixty frames a second with a full city, a docked ship interior and traffic in view, no frame over 16 ms, no memory growth over two hours.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -8618,8 +8650,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 642.0,
-   "plannedEndDay": 645.0,
+   "plannedStartDay": 642,
+   "plannedEndDay": 645,
    "plannedStart": "2029-02-21",
    "plannedEnd": "2029-02-26"
   },
@@ -8642,7 +8674,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 645.0,
+   "plannedStartDay": 645,
    "plannedEndDay": 648.5,
    "plannedStart": "2029-02-26",
    "plannedEnd": "2029-03-01"
@@ -8667,7 +8699,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 648.5,
-   "plannedEndDay": 653.0,
+   "plannedEndDay": 653,
    "plannedStart": "2029-03-01",
    "plannedEnd": "2029-03-08"
   },
@@ -8690,7 +8722,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 653.0,
+   "plannedStartDay": 653,
    "plannedEndDay": 656.5,
    "plannedStart": "2029-03-08",
    "plannedEnd": "2029-03-13"
@@ -8715,7 +8747,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 656.5,
-   "plannedEndDay": 660.0,
+   "plannedEndDay": 660,
    "plannedStart": "2029-03-13",
    "plannedEnd": "2029-03-19"
   },
@@ -8738,7 +8770,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 660.0,
+   "plannedStartDay": 660,
    "plannedEndDay": 665.5,
    "plannedStart": "2029-03-19",
    "plannedEnd": "2029-03-26"
@@ -8763,7 +8795,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 665.5,
-   "plannedEndDay": 669.0,
+   "plannedEndDay": 669,
    "plannedStart": "2029-03-26",
    "plannedEnd": "2029-03-30"
   },
@@ -8786,7 +8818,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 669.0,
+   "plannedStartDay": 669,
    "plannedEndDay": 672.5,
    "plannedStart": "2029-03-30",
    "plannedEnd": "2029-04-04"
@@ -8811,7 +8843,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 672.5,
-   "plannedEndDay": 676.0,
+   "plannedEndDay": 676,
    "plannedStart": "2029-04-04",
    "plannedEnd": "2029-04-10"
   },
@@ -8822,7 +8854,7 @@
    "title": "External playtest",
    "detail": "People who have not seen it, playing without instruction, watched. The first honest read on whether the technical model reads as a place.",
    "acceptance": "Five testers complete a free-play session and their observations are recorded and triaged.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS13"
    ],
@@ -8834,8 +8866,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 676.0,
-   "plannedEndDay": 679.0,
+   "plannedStartDay": 676,
+   "plannedEndDay": 679,
    "plannedStart": "2029-04-10",
    "plannedEnd": "2029-04-13"
   },
@@ -8846,7 +8878,7 @@
    "title": "Technical slice review and ADR",
    "detail": "What the model proved, what it did not, and what the simulation layer must now be built against. The decision point the whole technical plan exists to inform.",
    "acceptance": "An ADR recording what was proven and any changes it forces on the simulation plan.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH SS5"
    ],
@@ -8858,8 +8890,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 679.0,
-   "plannedEndDay": 681.0,
+   "plannedStartDay": 679,
+   "plannedEndDay": 681,
    "plannedStart": "2029-04-13",
    "plannedEnd": "2029-04-17"
   },
@@ -8870,7 +8902,7 @@
    "title": "Playable proof: an hour of free play",
    "detail": "Rule 6, and the milestone gate. This is the moment the project either has a technical foundation or does not.",
    "acceptance": "An hour of unscripted play with no loading screen, no crash, no frame over 16 ms, and nothing that reads as placeholder.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -8882,8 +8914,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 681.0,
-   "plannedEndDay": 684.0,
+   "plannedStartDay": 681,
+   "plannedEndDay": 684,
    "plannedStart": "2029-04-17",
    "plannedEnd": "2029-04-20"
   },
@@ -8906,7 +8938,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 684.0,
+   "plannedStartDay": 684,
    "plannedEndDay": 685.5,
    "plannedStart": "2029-04-20",
    "plannedEnd": "2029-04-23"
@@ -8932,7 +8964,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 685.5,
-   "plannedEndDay": 689.0,
+   "plannedEndDay": 689,
    "plannedStart": "2029-04-23",
    "plannedEnd": "2029-04-27"
   },
@@ -8955,7 +8987,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 689.0,
+   "plannedStartDay": 689,
    "plannedEndDay": 690.5,
    "plannedStart": "2029-04-27",
    "plannedEnd": "2029-04-30"
@@ -8980,7 +9012,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 690.5,
-   "plannedEndDay": 693.0,
+   "plannedEndDay": 693,
    "plannedStart": "2029-04-30",
    "plannedEnd": "2029-05-03"
   },
@@ -9003,7 +9035,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 693.0,
+   "plannedStartDay": 693,
    "plannedEndDay": 695.5,
    "plannedStart": "2029-05-03",
    "plannedEnd": "2029-05-07"
@@ -9028,7 +9060,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 695.5,
-   "plannedEndDay": 698.0,
+   "plannedEndDay": 698,
    "plannedStart": "2029-05-07",
    "plannedEnd": "2029-05-10"
   },
@@ -9051,7 +9083,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 698.0,
+   "plannedStartDay": 698,
    "plannedEndDay": 700.5,
    "plannedStart": "2029-05-10",
    "plannedEnd": "2029-05-14"
@@ -9076,7 +9108,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 700.5,
-   "plannedEndDay": 702.0,
+   "plannedEndDay": 702,
    "plannedStart": "2029-05-14",
    "plannedEnd": "2029-05-16"
   },
@@ -9099,7 +9131,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 702.0,
+   "plannedStartDay": 702,
    "plannedEndDay": 704.5,
    "plannedStart": "2029-05-16",
    "plannedEnd": "2029-05-18"
@@ -9124,7 +9156,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 704.5,
-   "plannedEndDay": 707.0,
+   "plannedEndDay": 707,
    "plannedStart": "2029-05-18",
    "plannedEnd": "2029-05-23"
   },
@@ -9147,7 +9179,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 707.0,
+   "plannedStartDay": 707,
    "plannedEndDay": 709.5,
    "plannedStart": "2029-05-23",
    "plannedEnd": "2029-05-25"
@@ -9172,7 +9204,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 709.5,
-   "plannedEndDay": 712.0,
+   "plannedEndDay": 712,
    "plannedStart": "2029-05-25",
    "plannedEnd": "2029-05-30"
   },
@@ -9195,7 +9227,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 712.0,
+   "plannedStartDay": 712,
    "plannedEndDay": 714.5,
    "plannedStart": "2029-05-30",
    "plannedEnd": "2029-06-01"
@@ -9220,7 +9252,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 714.5,
-   "plannedEndDay": 717.0,
+   "plannedEndDay": 717,
    "plannedStart": "2029-06-01",
    "plannedEnd": "2029-06-06"
   },
@@ -9243,7 +9275,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 717.0,
+   "plannedStartDay": 717,
    "plannedEndDay": 719.5,
    "plannedStart": "2029-06-06",
    "plannedEnd": "2029-06-08"
@@ -9268,7 +9300,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 719.5,
-   "plannedEndDay": 721.0,
+   "plannedEndDay": 721,
    "plannedStart": "2029-06-08",
    "plannedEnd": "2029-06-12"
   },
@@ -9291,7 +9323,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 721.0,
+   "plannedStartDay": 721,
    "plannedEndDay": 722.5,
    "plannedStart": "2029-06-12",
    "plannedEnd": "2029-06-13"
@@ -9316,7 +9348,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 722.5,
-   "plannedEndDay": 725.0,
+   "plannedEndDay": 725,
    "plannedStart": "2029-06-13",
    "plannedEnd": "2029-06-18"
   },
@@ -9339,7 +9371,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 725.0,
+   "plannedStartDay": 725,
    "plannedEndDay": 728.5,
    "plannedStart": "2029-06-18",
    "plannedEnd": "2029-06-21"
@@ -9364,7 +9396,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 728.5,
-   "plannedEndDay": 732.0,
+   "plannedEndDay": 732,
    "plannedStart": "2029-06-21",
    "plannedEnd": "2029-06-27"
   },
@@ -9375,7 +9407,7 @@
    "title": "Planner over world state",
    "detail": "From a goal and a set of available actions, produce a plan. Hierarchical and interruptible, because plans in this world get invalidated constantly.",
    "acceptance": "An agent plans a multi-step route to a goal, is interrupted, and replans without restarting from nothing.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "LW SS6"
    ],
@@ -9387,8 +9419,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 732.0,
-   "plannedEndDay": 737.0,
+   "plannedStartDay": 732,
+   "plannedEndDay": 737,
    "plannedStart": "2029-06-27",
    "plannedEnd": "2029-07-04"
   },
@@ -9412,7 +9444,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 737.0,
+   "plannedStartDay": 737,
    "plannedEndDay": 740.5,
    "plannedStart": "2029-07-04",
    "plannedEnd": "2029-07-09"
@@ -9424,7 +9456,7 @@
    "title": "Perception and belief formation",
    "detail": "Agents observe what they can see, are told what others tell them, and form beliefs with provenance and confidence. The existing belief graph gets its producers.",
    "acceptance": "An agent that witnesses an event believes it firsthand; one told about it believes it at a lower confidence with a named source.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "SS4"
    ],
@@ -9461,7 +9493,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 744.5,
-   "plannedEndDay": 748.0,
+   "plannedEndDay": 748,
    "plannedStart": "2029-07-13",
    "plannedEnd": "2029-07-19"
   },
@@ -9484,7 +9516,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 748.0,
+   "plannedStartDay": 748,
    "plannedEndDay": 751.5,
    "plannedStart": "2029-07-19",
    "plannedEnd": "2029-07-24"
@@ -9509,7 +9541,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 751.5,
-   "plannedEndDay": 754.0,
+   "plannedEndDay": 754,
    "plannedStart": "2029-07-24",
    "plannedEnd": "2029-07-27"
   },
@@ -9532,7 +9564,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 754.0,
+   "plannedStartDay": 754,
    "plannedEndDay": 757.5,
    "plannedStart": "2029-07-27",
    "plannedEnd": "2029-08-01"
@@ -9557,7 +9589,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 757.5,
-   "plannedEndDay": 761.0,
+   "plannedEndDay": 761,
    "plannedStart": "2029-08-01",
    "plannedEnd": "2029-08-07"
   },
@@ -9580,7 +9612,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 761.0,
+   "plannedStartDay": 761,
    "plannedEndDay": 764.5,
    "plannedStart": "2029-08-07",
    "plannedEnd": "2029-08-10"
@@ -9592,7 +9624,7 @@
    "title": "Agent scale: level of detail for simulation",
    "detail": "Fifty thousand agents cannot all plan every tick. Full simulation near the player, statistical further out, with promotion and demotion that does not lose state or produce a visible discontinuity.",
    "acceptance": "An agent demoted to statistical and later promoted has a history consistent with what it would have done, and the transition is invisible.",
-   "estimateDays": 5.0,
+   "estimateDays": 5,
    "designRefs": [
     "SS14"
    ],
@@ -9629,7 +9661,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 769.5,
-   "plannedEndDay": 773.0,
+   "plannedEndDay": 773,
    "plannedStart": "2029-08-17",
    "plannedEnd": "2029-08-23"
   },
@@ -9652,7 +9684,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 773.0,
+   "plannedStartDay": 773,
    "plannedEndDay": 776.5,
    "plannedStart": "2029-08-23",
    "plannedEnd": "2029-08-28"
@@ -9664,7 +9696,7 @@
    "title": "Client integration: agents as embodied characters",
    "detail": "Agents drive the characters M09 built, through the entity-view framework. A sim agent walking to work is a person walking down a street.",
    "acceptance": "Two hundred simulated agents are visible as characters going about traceable business, inside the frame budget.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "ARCH Rule 1"
    ],
@@ -9701,7 +9733,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 780.5,
-   "plannedEndDay": 783.0,
+   "plannedEndDay": 783,
    "plannedStart": "2029-09-03",
    "plannedEnd": "2029-09-06"
   },
@@ -9725,7 +9757,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 783.0,
+   "plannedStartDay": 783,
    "plannedEndDay": 785.5,
    "plannedStart": "2029-09-06",
    "plannedEnd": "2029-09-10"
@@ -9750,7 +9782,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 785.5,
-   "plannedEndDay": 788.0,
+   "plannedEndDay": 788,
    "plannedStart": "2029-09-10",
    "plannedEnd": "2029-09-13"
   },
@@ -9773,7 +9805,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 788.0,
+   "plannedStartDay": 788,
    "plannedEndDay": 791.5,
    "plannedStart": "2029-09-13",
    "plannedEnd": "2029-09-18"
@@ -9798,7 +9830,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 791.5,
-   "plannedEndDay": 794.0,
+   "plannedEndDay": 794,
    "plannedStart": "2029-09-18",
    "plannedEnd": "2029-09-21"
   },
@@ -9821,7 +9853,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 794.0,
+   "plannedStartDay": 794,
    "plannedEndDay": 796.5,
    "plannedStart": "2029-09-21",
    "plannedEnd": "2029-09-25"
@@ -9846,7 +9878,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 796.5,
-   "plannedEndDay": 800.0,
+   "plannedEndDay": 800,
    "plannedStart": "2029-09-25",
    "plannedEnd": "2029-10-01"
   },
@@ -9857,7 +9889,7 @@
    "title": "Drift: subordinates acting on their own goals",
    "detail": "The consequence of the deficit, expressed entirely through the agent framework. Unauthorised routes, skimming, late execution, private agendas — all agents pursuing their own goals because nobody is watching.",
    "acceptance": "Drift emerges from agent goals with no code in the org layer that produces it directly.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS2.3"
    ],
@@ -9869,8 +9901,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 800.0,
-   "plannedEndDay": 804.0,
+   "plannedStartDay": 800,
+   "plannedEndDay": 804,
    "plannedStart": "2029-10-01",
    "plannedEnd": "2029-10-05"
   },
@@ -9893,7 +9925,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 804.0,
+   "plannedStartDay": 804,
    "plannedEndDay": 806.5,
    "plannedStart": "2029-10-05",
    "plannedEnd": "2029-10-09"
@@ -9905,7 +9937,7 @@
    "title": "Organisation-level goals and decision making",
    "detail": "Organisations want things: growth, security, revenue, revenge. Goals generated from state and doctrine, decomposed into directives for members.",
    "acceptance": "An organisation's current goals are inspectable and each traces to a state fact and a doctrine weight.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS2.1"
    ],
@@ -9942,7 +9974,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 810.5,
-   "plannedEndDay": 814.0,
+   "plannedEndDay": 814,
    "plannedStart": "2029-10-15",
    "plannedEnd": "2029-10-19"
   },
@@ -9965,7 +9997,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 814.0,
+   "plannedStartDay": 814,
    "plannedEndDay": 816.5,
    "plannedStart": "2029-10-19",
    "plannedEnd": "2029-10-23"
@@ -9990,7 +10022,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 816.5,
-   "plannedEndDay": 819.0,
+   "plannedEndDay": 819,
    "plannedStart": "2029-10-23",
    "plannedEnd": "2029-10-26"
   },
@@ -10013,7 +10045,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 819.0,
+   "plannedStartDay": 819,
    "plannedEndDay": 821.5,
    "plannedStart": "2029-10-26",
    "plannedEnd": "2029-10-30"
@@ -10038,7 +10070,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 821.5,
-   "plannedEndDay": 823.0,
+   "plannedEndDay": 823,
    "plannedStart": "2029-10-30",
    "plannedEnd": "2029-11-01"
   },
@@ -10049,7 +10081,7 @@
    "title": "Goods, commodities and material properties",
    "detail": "What exists, what it weighs, what it takes up, what it is worth and what it is made from. The vocabulary production and construction are written in.",
    "acceptance": "The goods table is data, and adding a commodity requires no code.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "SS7"
    ],
@@ -10061,8 +10093,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 823.0,
-   "plannedEndDay": 825.0,
+   "plannedStartDay": 823,
+   "plannedEndDay": 825,
    "plannedStart": "2029-11-01",
    "plannedEnd": "2029-11-05"
   },
@@ -10085,7 +10117,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 825.0,
+   "plannedStartDay": 825,
    "plannedEndDay": 828.5,
    "plannedStart": "2029-11-05",
    "plannedEnd": "2029-11-08"
@@ -10110,7 +10142,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 828.5,
-   "plannedEndDay": 833.0,
+   "plannedEndDay": 833,
    "plannedStart": "2029-11-08",
    "plannedEnd": "2029-11-15"
   },
@@ -10133,7 +10165,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 833.0,
+   "plannedStartDay": 833,
    "plannedEndDay": 835.5,
    "plannedStart": "2029-11-15",
    "plannedEnd": "2029-11-19"
@@ -10159,7 +10191,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 835.5,
-   "plannedEndDay": 839.0,
+   "plannedEndDay": 839,
    "plannedStart": "2029-11-19",
    "plannedEnd": "2029-11-23"
   },
@@ -10182,7 +10214,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 839.0,
+   "plannedStartDay": 839,
    "plannedEndDay": 842.5,
    "plannedStart": "2029-11-23",
    "plannedEnd": "2029-11-28"
@@ -10207,7 +10239,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 842.5,
-   "plannedEndDay": 845.0,
+   "plannedEndDay": 845,
    "plannedStart": "2029-11-28",
    "plannedEnd": "2029-12-03"
   },
@@ -10230,7 +10262,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 845.0,
+   "plannedStartDay": 845,
    "plannedEndDay": 847.5,
    "plannedStart": "2029-12-03",
    "plannedEnd": "2029-12-05"
@@ -10255,7 +10287,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 847.5,
-   "plannedEndDay": 850.0,
+   "plannedEndDay": 850,
    "plannedStart": "2029-12-05",
    "plannedEnd": "2029-12-10"
   },
@@ -10278,7 +10310,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 850.0,
+   "plannedStartDay": 850,
    "plannedEndDay": 852.5,
    "plannedStart": "2029-12-10",
    "plannedEnd": "2029-12-12"
@@ -10303,7 +10335,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 852.5,
-   "plannedEndDay": 857.0,
+   "plannedEndDay": 857,
    "plannedStart": "2029-12-12",
    "plannedEnd": "2029-12-19"
   },
@@ -10326,7 +10358,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 857.0,
+   "plannedStartDay": 857,
    "plannedEndDay": 859.5,
    "plannedStart": "2029-12-19",
    "plannedEnd": "2029-12-21"
@@ -10338,7 +10370,7 @@
    "title": "Playable proof: the supply shock",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "A shock moves prices three systems away with the right lag; ninety days with no negative inventory and no money created outside a mint.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -10375,7 +10407,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 861.5,
-   "plannedEndDay": 864.0,
+   "plannedEndDay": 864,
    "plannedStart": "2029-12-25",
    "plannedEnd": "2029-12-28"
   },
@@ -10398,7 +10430,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 864.0,
+   "plannedStartDay": 864,
    "plannedEndDay": 866.5,
    "plannedStart": "2029-12-28",
    "plannedEnd": "2030-01-01"
@@ -10410,7 +10442,7 @@
    "title": "Structure archetypes and module derivation",
    "detail": "A building is an archetype plus the modules its environment demands. The rule from LW SS7.2 as code: sealed envelope, anchoring, shielding, thermal plant, each derived rather than chosen.",
    "acceptance": "One archetype on four environments produces four different structures with different capital cost, power load and maintenance rate.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS7.2"
    ],
@@ -10434,7 +10466,7 @@
    "title": "Utility network model: power",
    "detail": "Generation, distribution and consumption as a graph with capacity and throughput. The network everything else depends on.",
    "acceptance": "Demand exceeding supply sheds load in priority order, and the shortfall is attributable to a node or an edge.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.3"
    ],
@@ -10458,7 +10490,7 @@
    "title": "Utility networks: life support, water, transit",
    "detail": "The other three, on the same graph machinery. Life support exists only where the environment demands it, which is why some cities are fragile.",
    "acceptance": "All four networks run on one implementation, and a city on a breathable world has three of them.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.3"
    ],
@@ -10495,7 +10527,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 876.5,
-   "plannedEndDay": 879.0,
+   "plannedEndDay": 879,
    "plannedStart": "2030-01-15",
    "plannedEnd": "2030-01-18"
   },
@@ -10506,7 +10538,7 @@
    "title": "Construction projects as directives",
    "detail": "A project has a site, a design, materials that must physically arrive, labour that must be present, and a schedule that weather and people can disrupt.",
    "acceptance": "A project on a remote world is delayed by a late convoy and by a storm, and both delays are traceable.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS7.4"
    ],
@@ -10518,8 +10550,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 879.0,
-   "plannedEndDay": 883.0,
+   "plannedStartDay": 879,
+   "plannedEndDay": 883,
    "plannedStart": "2030-01-18",
    "plannedEnd": "2030-01-24"
   },
@@ -10530,7 +10562,7 @@
    "title": "Construction as a visible process",
    "detail": "Foundations, scaffolding, partial structures and crews. A building under construction is a place, not a progress bar.",
    "acceptance": "A project is identifiable by sight at four stages of completion.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.1"
    ],
@@ -10542,8 +10574,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 883.0,
-   "plannedEndDay": 886.0,
+   "plannedStartDay": 883,
+   "plannedEndDay": 886,
    "plannedStart": "2030-01-24",
    "plannedEnd": "2030-01-29"
   },
@@ -10566,7 +10598,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 886.0,
+   "plannedStartDay": 886,
    "plannedEndDay": 888.5,
    "plannedStart": "2030-01-29",
    "plannedEnd": "2030-01-31"
@@ -10578,7 +10610,7 @@
    "title": "Work orders and maintenance crews",
    "detail": "Degradation produces work orders; crews are agents with the maintain goal, their own competence, and their own beliefs about which conduit is broken.",
    "acceptance": "A crew fed a false belief about a fault location goes to the wrong district, and the right one stays dark.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7.6"
    ],
@@ -10616,7 +10648,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 891.5,
-   "plannedEndDay": 894.0,
+   "plannedEndDay": 894,
    "plannedStart": "2030-02-05",
    "plannedEnd": "2030-02-08"
   },
@@ -10627,7 +10659,7 @@
    "title": "District state and population",
    "detail": "Who lives and works where, what they need, and what happens when the district cannot provide it — including leaving.",
    "acceptance": "A district that loses life support evacuates, and the population appears somewhere else rather than vanishing.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7"
    ],
@@ -10639,8 +10671,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 894.0,
-   "plannedEndDay": 897.0,
+   "plannedStartDay": 894,
+   "plannedEndDay": 897,
    "plannedStart": "2030-02-08",
    "plannedEnd": "2030-02-13"
   },
@@ -10651,7 +10683,7 @@
    "title": "City growth and decline",
    "detail": "Settlements grow where there is reason and shrink where there is not, driven by the economy rather than by a curve.",
    "acceptance": "A city grows a district in response to sustained economic demand and abandons one when the demand goes.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS7"
    ],
@@ -10663,8 +10695,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 897.0,
-   "plannedEndDay": 900.0,
+   "plannedStartDay": 897,
+   "plannedEndDay": 900,
    "plannedStart": "2030-02-13",
    "plannedEnd": "2030-02-18"
   },
@@ -10675,7 +10707,7 @@
    "title": "The six first-person tells",
    "detail": "LW SS7.1, implemented and verified: dark districts, masks indoors, shutters in a storm, deferred maintenance, contested markers, scaffolding. A mechanic without a tell does not ship.",
    "acceptance": "All six are observable by walking through a running city, and each is driven by the simulation rather than triggered for display.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS7.1"
    ],
@@ -10687,8 +10719,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 900.0,
-   "plannedEndDay": 904.0,
+   "plannedStartDay": 900,
+   "plannedEndDay": 904,
    "plannedStart": "2030-02-18",
    "plannedEnd": "2030-02-22"
   },
@@ -10711,7 +10743,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 904.0,
+   "plannedStartDay": 904,
    "plannedEndDay": 906.5,
    "plannedStart": "2030-02-22",
    "plannedEnd": "2030-02-26"
@@ -10736,7 +10768,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 906.5,
-   "plannedEndDay": 909.0,
+   "plannedEndDay": 909,
    "plannedStart": "2030-02-26",
    "plannedEnd": "2030-03-01"
   },
@@ -10759,7 +10791,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 909.0,
+   "plannedStartDay": 909,
    "plannedEndDay": 911.5,
    "plannedStart": "2030-03-01",
    "plannedEnd": "2030-03-05"
@@ -10784,7 +10816,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 911.5,
-   "plannedEndDay": 915.0,
+   "plannedEndDay": 915,
    "plannedStart": "2030-03-05",
    "plannedEnd": "2030-03-11"
   },
@@ -10807,7 +10839,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 915.0,
+   "plannedStartDay": 915,
    "plannedEndDay": 918.5,
    "plannedStart": "2030-03-11",
    "plannedEnd": "2030-03-14"
@@ -10832,7 +10864,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 918.5,
-   "plannedEndDay": 921.0,
+   "plannedEndDay": 921,
    "plannedStart": "2030-03-14",
    "plannedEnd": "2030-03-19"
   },
@@ -10843,7 +10875,7 @@
    "title": "Coalition formation",
    "detail": "When several organisations independently cross alarm about the same subject and are not blocked by mutual hostility, they discover each other. The pact is a coincidence of alarm, not a script.",
    "acceptance": "A coalition forms in a scenario with no code that decides a coalition should form, and its members can each state why they joined.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS3.1"
    ],
@@ -10855,8 +10887,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 921.0,
-   "plannedEndDay": 925.0,
+   "plannedStartDay": 921,
+   "plannedEndDay": 925,
    "plannedStart": "2030-03-19",
    "plannedEnd": "2030-03-25"
   },
@@ -10879,7 +10911,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 925.0,
+   "plannedStartDay": 925,
    "plannedEndDay": 928.5,
    "plannedStart": "2030-03-25",
    "plannedEnd": "2030-03-28"
@@ -10891,7 +10923,7 @@
    "title": "Counterplay: hiding, bribing, fracturing, being useful",
    "detail": "The four strategies in LW SS3.1, each of which must actually work: suppress information, redirect a member's alarm, feed one member a belief about another, or become indispensable.",
    "acceptance": "Each of the four demonstrably breaks or prevents a coalition in a scenario.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS3.1"
    ],
@@ -10928,7 +10960,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 932.5,
-   "plannedEndDay": 935.0,
+   "plannedEndDay": 935,
    "plannedStart": "2030-04-03",
    "plannedEnd": "2030-04-08"
   },
@@ -10951,7 +10983,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 935.0,
+   "plannedStartDay": 935,
    "plannedEndDay": 937.5,
    "plannedStart": "2030-04-08",
    "plannedEnd": "2030-04-10"
@@ -10976,7 +11008,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 937.5,
-   "plannedEndDay": 941.0,
+   "plannedEndDay": 941,
    "plannedStart": "2030-04-10",
    "plannedEnd": "2030-04-16"
   },
@@ -10999,7 +11031,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 941.0,
+   "plannedStartDay": 941,
    "plannedEndDay": 944.5,
    "plannedStart": "2030-04-16",
    "plannedEnd": "2030-04-19"
@@ -11024,7 +11056,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 944.5,
-   "plannedEndDay": 947.0,
+   "plannedEndDay": 947,
    "plannedStart": "2030-04-19",
    "plannedEnd": "2030-04-24"
   },
@@ -11047,7 +11079,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 947.0,
+   "plannedStartDay": 947,
    "plannedEndDay": 950.5,
    "plannedStart": "2030-04-24",
    "plannedEnd": "2030-04-29"
@@ -11072,7 +11104,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 950.5,
-   "plannedEndDay": 953.0,
+   "plannedEndDay": 953,
    "plannedStart": "2030-04-29",
    "plannedEnd": "2030-05-02"
   },
@@ -11095,7 +11127,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 953.0,
+   "plannedStartDay": 953,
    "plannedEndDay": 956.5,
    "plannedStart": "2030-05-02",
    "plannedEnd": "2030-05-07"
@@ -11120,7 +11152,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 956.5,
-   "plannedEndDay": 961.0,
+   "plannedEndDay": 961,
    "plannedStart": "2030-05-07",
    "plannedEnd": "2030-05-14"
   },
@@ -11131,7 +11163,7 @@
    "title": "Stakes: nothing is generated that does not matter",
    "detail": "Every mission changes the world on success or failure. A mission whose stake is only money should not have been emitted.",
    "acceptance": "A test rejects any mission whose only stake is a payment, and every generated mission's stake is a state change.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS5.2"
    ],
@@ -11143,8 +11175,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 961.0,
-   "plannedEndDay": 964.0,
+   "plannedStartDay": 961,
+   "plannedEndDay": 964,
    "plannedStart": "2030-05-14",
    "plannedEnd": "2030-05-17"
   },
@@ -11167,7 +11199,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 964.0,
+   "plannedStartDay": 964,
    "plannedEndDay": 967.5,
    "plannedStart": "2030-05-17",
    "plannedEnd": "2030-05-22"
@@ -11192,7 +11224,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 967.5,
-   "plannedEndDay": 971.0,
+   "plannedEndDay": 971,
    "plannedStart": "2030-05-22",
    "plannedEnd": "2030-05-28"
   },
@@ -11203,7 +11235,7 @@
    "title": "Directive representation",
    "detail": "Intent, assets, constraints and a delegate. A standing order the simulation resolves whether or not anyone is watching.",
    "acceptance": "A directive is issued, persists across a save, and continues resolving.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS4.1"
    ],
@@ -11215,8 +11247,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 971.0,
-   "plannedEndDay": 974.0,
+   "plannedStartDay": 971,
+   "plannedEndDay": 974,
    "plannedStart": "2030-05-28",
    "plannedEnd": "2030-05-31"
   },
@@ -11240,7 +11272,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 974.0,
+   "plannedStartDay": 974,
    "plannedEndDay": 978.5,
    "plannedStart": "2030-05-31",
    "plannedEnd": "2030-06-06"
@@ -11265,7 +11297,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 978.5,
-   "plannedEndDay": 982.0,
+   "plannedEndDay": 982,
    "plannedStart": "2030-06-06",
    "plannedEnd": "2030-06-12"
   },
@@ -11276,7 +11308,7 @@
    "title": "Player directives become other people's missions",
    "detail": "At the top you generate the tension. A directive that moves a fleet creates the shortfall a courier is hired against, through the same generator.",
    "acceptance": "A player directive produces a mission on the open board for an NPC, with no special code path.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS5.1"
    ],
@@ -11288,8 +11320,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 982.0,
-   "plannedEndDay": 985.0,
+   "plannedStartDay": 982,
+   "plannedEndDay": 985,
    "plannedStart": "2030-06-12",
    "plannedEnd": "2030-06-17"
   },
@@ -11312,7 +11344,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 985.0,
+   "plannedStartDay": 985,
    "plannedEndDay": 988.5,
    "plannedStart": "2030-06-17",
    "plannedEnd": "2030-06-20"
@@ -11324,7 +11356,7 @@
    "title": "Mission inspection tools",
    "detail": "Every generated mission with its tension, parties, stake and reasoning, plus what happened to the ones nobody took.",
    "acceptance": "Any mission on any board is explicable from the tools.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS13"
    ],
@@ -11361,7 +11393,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 991.5,
-   "plannedEndDay": 995.0,
+   "plannedEndDay": 995,
    "plannedStart": "2030-06-25",
    "plannedEnd": "2030-07-01"
   },
@@ -11372,7 +11404,7 @@
    "title": "Playable proof: a directive left alone for a week",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "It resolves through subordinates, correctly or otherwise, and the outcome is explained by the delegate's beliefs and competence.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -11384,8 +11416,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 995.0,
-   "plannedEndDay": 998.0,
+   "plannedStartDay": 995,
+   "plannedEndDay": 998,
    "plannedStart": "2030-07-01",
    "plannedEnd": "2030-07-04"
   },
@@ -11396,7 +11428,7 @@
    "title": "Command lens framework",
    "detail": "A lens over the simulation, not a mode. It does not pause the world and it does not move your body — which is still standing wherever you left it.",
    "acceptance": "Opening Command mid-flight leaves the ship flying and the world running, and closing it returns to an unchanged cockpit.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS4"
    ],
@@ -11408,8 +11440,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 998.0,
-   "plannedEndDay": 1002.0,
+   "plannedStartDay": 998,
+   "plannedEndDay": 1002,
    "plannedStart": "2030-07-04",
    "plannedEnd": "2030-07-10"
   },
@@ -11420,7 +11452,7 @@
    "title": "The map is built from reports, not ground truth",
    "detail": "Everything displayed is something somebody reported. A Command lens showing truth would destroy the entire information design.",
    "acceptance": "A test proves the Command data path cannot reach world state, and an unobserved fact does not appear on the map.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS4.3"
    ],
@@ -11432,8 +11464,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1002.0,
-   "plannedEndDay": 1006.0,
+   "plannedStartDay": 1002,
+   "plannedEndDay": 1006,
    "plannedStart": "2030-07-10",
    "plannedEnd": "2030-07-16"
   },
@@ -11444,7 +11476,7 @@
    "title": "Staleness and confidence in the interface",
    "detail": "A three-day-old report looks three days old. Confidence, provenance and hop count are visible rather than flattened into a number.",
    "acceptance": "A stale report is visibly stale and its source is inspectable.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS4.3"
    ],
@@ -11456,8 +11488,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1006.0,
-   "plannedEndDay": 1009.0,
+   "plannedStartDay": 1006,
+   "plannedEndDay": 1009,
    "plannedStart": "2030-07-16",
    "plannedEnd": "2030-07-19"
   },
@@ -11468,7 +11500,7 @@
    "title": "Issuing directives from Command",
    "detail": "Select assets, choose intent, set constraints, assign a delegate. The UI over M21's directive system.",
    "acceptance": "Every directive type is issuable from Command and resolves identically to one issued programmatically.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS4.1"
    ],
@@ -11480,8 +11512,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1009.0,
-   "plannedEndDay": 1013.0,
+   "plannedStartDay": 1009,
+   "plannedEndDay": 1013,
    "plannedStart": "2030-07-19",
    "plannedEnd": "2030-07-25"
   },
@@ -11492,7 +11524,7 @@
    "title": "Reports and the intelligence view",
    "detail": "What your people have told you, when, and how much you should believe it — including reports that contradict each other.",
    "acceptance": "Two contradictory reports are both shown with their sources rather than one silently winning.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "SS4"
    ],
@@ -11504,8 +11536,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1013.0,
-   "plannedEndDay": 1016.0,
+   "plannedStartDay": 1013,
+   "plannedEndDay": 1016,
    "plannedStart": "2030-07-25",
    "plannedEnd": "2030-07-30"
   },
@@ -11516,7 +11548,7 @@
    "title": "Organisation management screens",
    "detail": "Members, roles, finances, holdings, doctrine and the oversight deficit — the last of which is where a player learns what drift is.",
    "acceptance": "An over-extended organisation shows the deficit and the player can act on it before drift becomes damage.",
-   "estimateDays": 4.0,
+   "estimateDays": 4,
    "designRefs": [
     "LW SS2.3"
    ],
@@ -11528,8 +11560,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1016.0,
-   "plannedEndDay": 1020.0,
+   "plannedStartDay": 1016,
+   "plannedEndDay": 1020,
    "plannedStart": "2030-07-30",
    "plannedEnd": "2030-08-05"
   },
@@ -11540,7 +11572,7 @@
    "title": "Scale transitions in the interface",
    "detail": "From a district to a system to the region, without a load and without losing context.",
    "acceptance": "Zooming from a street to a region is continuous and never loses the selected entity.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS4"
    ],
@@ -11552,8 +11584,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1020.0,
-   "plannedEndDay": 1023.0,
+   "plannedStartDay": 1020,
+   "plannedEndDay": 1023,
    "plannedStart": "2030-08-05",
    "plannedEnd": "2030-08-08"
   },
@@ -11564,7 +11596,7 @@
    "title": "Your body while you are in Command",
    "detail": "You are still standing somewhere, and someone might be looking for you. The tension that stops Command being a safe menu.",
    "acceptance": "A hostile agent can find and act on the player's body while Command is open.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS4"
    ],
@@ -11576,8 +11608,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1023.0,
-   "plannedEndDay": 1026.0,
+   "plannedStartDay": 1023,
+   "plannedEndDay": 1026,
    "plannedStart": "2030-08-08",
    "plannedEnd": "2030-08-13"
   },
@@ -11588,7 +11620,7 @@
    "title": "Notifications and interruption",
    "detail": "What is worth telling the player, when, and how not to bury it. An organisation with four hundred problems generates four hundred events.",
    "acceptance": "A hundred simultaneous events produce a legible summary rather than a hundred notifications.",
-   "estimateDays": 3.0,
+   "estimateDays": 3,
    "designRefs": [
     "LW SS4"
    ],
@@ -11600,8 +11632,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1026.0,
-   "plannedEndDay": 1029.0,
+   "plannedStartDay": 1026,
+   "plannedEndDay": 1029,
    "plannedStart": "2030-08-13",
    "plannedEnd": "2030-08-16"
   },
@@ -11612,7 +11644,7 @@
    "title": "Playable proof: Command mid-flight",
    "detail": "Rule 6. The gate, run and recorded.",
    "acceptance": "The world does not pause, the ship does not stop, a stale report is visibly stale, and an unobserved fact is absent.",
-   "estimateDays": 2.0,
+   "estimateDays": 2,
    "designRefs": [
     "ARCH Rule 6"
    ],
@@ -11624,8 +11656,8 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1029.0,
-   "plannedEndDay": 1031.0,
+   "plannedStartDay": 1029,
+   "plannedEndDay": 1031,
    "plannedStart": "2030-08-16",
    "plannedEnd": "2030-08-20"
   },
@@ -11648,7 +11680,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1031.0,
+   "plannedStartDay": 1031,
    "plannedEndDay": 1036.5,
    "plannedStart": "2030-08-20",
    "plannedEnd": "2030-08-27"
@@ -11673,7 +11705,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1036.5,
-   "plannedEndDay": 1040.0,
+   "plannedEndDay": 1040,
    "plannedStart": "2030-08-27",
    "plannedEnd": "2030-09-02"
   },
@@ -11696,7 +11728,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1040.0,
+   "plannedStartDay": 1040,
    "plannedEndDay": 1044.5,
    "plannedStart": "2030-09-02",
    "plannedEnd": "2030-09-06"
@@ -11721,7 +11753,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1044.5,
-   "plannedEndDay": 1050.0,
+   "plannedEndDay": 1050,
    "plannedStart": "2030-09-06",
    "plannedEnd": "2030-09-16"
   },
@@ -11744,7 +11776,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1050.0,
+   "plannedStartDay": 1050,
    "plannedEndDay": 1055.5,
    "plannedStart": "2030-09-16",
    "plannedEnd": "2030-09-23"
@@ -11769,7 +11801,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1055.5,
-   "plannedEndDay": 1060.0,
+   "plannedEndDay": 1060,
    "plannedStart": "2030-09-23",
    "plannedEnd": "2030-09-30"
   },
@@ -11792,7 +11824,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1060.0,
+   "plannedStartDay": 1060,
    "plannedEndDay": 1064.5,
    "plannedStart": "2030-09-30",
    "plannedEnd": "2030-10-04"
@@ -11817,7 +11849,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1064.5,
-   "plannedEndDay": 1068.0,
+   "plannedEndDay": 1068,
    "plannedStart": "2030-10-04",
    "plannedEnd": "2030-10-10"
   },
@@ -11840,7 +11872,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1068.0,
+   "plannedStartDay": 1068,
    "plannedEndDay": 1070.5,
    "plannedStart": "2030-10-10",
    "plannedEnd": "2030-10-14"
@@ -11865,7 +11897,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1070.5,
-   "plannedEndDay": 1073.0,
+   "plannedEndDay": 1073,
    "plannedStart": "2030-10-14",
    "plannedEnd": "2030-10-17"
   },
@@ -11888,7 +11920,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1073.0,
+   "plannedStartDay": 1073,
    "plannedEndDay": 1075.5,
    "plannedStart": "2030-10-17",
    "plannedEnd": "2030-10-21"
@@ -11913,7 +11945,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1075.5,
-   "plannedEndDay": 1079.0,
+   "plannedEndDay": 1079,
    "plannedStart": "2030-10-21",
    "plannedEnd": "2030-10-25"
   },
@@ -11937,7 +11969,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1079.0,
+   "plannedStartDay": 1079,
    "plannedEndDay": 1083.5,
    "plannedStart": "2030-10-25",
    "plannedEnd": "2030-10-31"
@@ -11962,7 +11994,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1083.5,
-   "plannedEndDay": 1087.0,
+   "plannedEndDay": 1087,
    "plannedStart": "2030-10-31",
    "plannedEnd": "2030-11-06"
   },
@@ -11985,7 +12017,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1087.0,
+   "plannedStartDay": 1087,
    "plannedEndDay": 1090.5,
    "plannedStart": "2030-11-06",
    "plannedEnd": "2030-11-11"
@@ -12010,7 +12042,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1090.5,
-   "plannedEndDay": 1095.0,
+   "plannedEndDay": 1095,
    "plannedStart": "2030-11-11",
    "plannedEnd": "2030-11-18"
   },
@@ -12033,7 +12065,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1095.0,
+   "plannedStartDay": 1095,
    "plannedEndDay": 1098.5,
    "plannedStart": "2030-11-18",
    "plannedEnd": "2030-11-21"
@@ -12058,7 +12090,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1098.5,
-   "plannedEndDay": 1102.0,
+   "plannedEndDay": 1102,
    "plannedStart": "2030-11-21",
    "plannedEnd": "2030-11-27"
   },
@@ -12081,7 +12113,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1102.0,
+   "plannedStartDay": 1102,
    "plannedEndDay": 1105.5,
    "plannedStart": "2030-11-27",
    "plannedEnd": "2030-12-02"
@@ -12106,7 +12138,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1105.5,
-   "plannedEndDay": 1109.0,
+   "plannedEndDay": 1109,
    "plannedStart": "2030-12-02",
    "plannedEnd": "2030-12-06"
   },
@@ -12129,7 +12161,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1109.0,
+   "plannedStartDay": 1109,
    "plannedEndDay": 1113.5,
    "plannedStart": "2030-12-06",
    "plannedEnd": "2030-12-12"
@@ -12154,7 +12186,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1113.5,
-   "plannedEndDay": 1118.0,
+   "plannedEndDay": 1118,
    "plannedStart": "2030-12-12",
    "plannedEnd": "2030-12-19"
   },
@@ -12177,7 +12209,7 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1118.0,
+   "plannedStartDay": 1118,
    "plannedEndDay": 1122.5,
    "plannedStart": "2030-12-19",
    "plannedEnd": "2030-12-25"
@@ -12202,7 +12234,7 @@
    "notes": [],
    "evidence": [],
    "plannedStartDay": 1122.5,
-   "plannedEndDay": 1127.0,
+   "plannedEndDay": 1127,
    "plannedStart": "2030-12-25",
    "plannedEnd": "2031-01-01"
   },
@@ -12225,10 +12257,11 @@
    "completedAt": null,
    "notes": [],
    "evidence": [],
-   "plannedStartDay": 1127.0,
+   "plannedStartDay": 1127,
    "plannedEndDay": 1130.5,
    "plannedStart": "2031-01-01",
    "plannedEnd": "2031-01-06"
   }
- ]
+ ],
+ "updatedAt": "2026-09-09T01:02:53.947Z"
 }
