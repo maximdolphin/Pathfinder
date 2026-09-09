@@ -41,6 +41,14 @@ private:
 	TObjectPtr<ACameraActor> Camera;
 
 	bool bRunning = false;
+
+	/// Wall-clock frame times while the camera sits at the site.
+	///
+	/// The fixture is where the dense biomes are, so it is also where T057's
+	/// "ten thousand visible instances at 60 fps" can be answered. The flight
+	/// cannot answer it: it lands in desert, where the scatter is 3% density.
+	TArray<double> FrameMs;
+	double LastFrameAt = 0.0;
 	bool bFound = false;
 	bool bCaptured = false;
 	int32 Index = 0;

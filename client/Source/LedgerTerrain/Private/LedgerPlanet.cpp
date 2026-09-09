@@ -203,6 +203,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// decision is about to be told, in the same frame.
 	const double TickStarted = FPlatformTime::Seconds();
 	UpdateMorphParameters(ViewportWidth, Fov);
+
+	// After streaming, so a patch that arrived this frame is scattered this
+	// frame rather than next. Returns immediately unless the near set changed.
+	RebuildScatter();
 	double PhaseStarted = FPlatformTime::Seconds();
 
 	for (const TUniquePtr<FLedgerQuadNode>& RootNode : Roots)

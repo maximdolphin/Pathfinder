@@ -12,6 +12,8 @@
 #include "LedgerQuadNode.h"
 
 #include "Async/Async.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "LedgerLog.h"
 #include "LedgerPatchGenerator.h"
@@ -105,6 +107,14 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		Mesh->SetVisibility(true);
 
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
+		if (Job->Scatter.Num() > 0)
+		{
+			FPatchScatter Scattered;
+			Scattered.Centre = Job->Centre;
+			Scattered.Instances = MoveTemp(Job->Scatter);
+			LiveScatter.Add(Job->Key, MoveTemp(Scattered));
+			ScatterBucketDirty[ScatterBucketOf(Job->Key)] = true;
+		}
 		SectionMeta[Job->SectionIndex] = FLedgerSectionMeta{
 			Job->Key, Job->Centre,
 			Job->bStitchLeft, Job->bStitchRight, Job->bStitchBottom, Job->bStitchTop,
@@ -172,6 +182,15 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	const int32 SectionIndex = FreeSections.Pop();
 	UProceduralMeshComponent* Mesh = PooledProcedural(SectionIndex);
 	Mesh->SetWorldLocation(GetActorLocation() + FVector(Entry.Centre));
+
+	if (Entry.Scatter.Num() > 0)
+	{
+		FPatchScatter Scattered;
+		Scattered.Centre = Entry.Centre;
+		Scattered.Instances = Entry.Scatter;
+		LiveScatter.Add(Key, MoveTemp(Scattered));
+		ScatterBucketDirty[ScatterBucketOf(Key)] = true;
+	}
 
 	Entry.Land.bEnableCollision = bWithCollision;
 	Mesh->SetProcMeshSection(0, Entry.Land);
@@ -287,6 +306,11 @@ void ALedgerPlanet::ApplyMorphParameters(UMaterialInstanceDynamic& Instance) con
 
 void ALedgerPlanet::ReleaseSection(uint64 Key)
 {
+	if (LiveScatter.Remove(Key) > 0)
+	{
+		ScatterBucketDirty[ScatterBucketOf(Key)] = true;
+	}
+
 	int32 SectionIndex = INDEX_NONE;
 	if (!ActiveSections.RemoveAndCopyValue(Key, SectionIndex))
 	{
@@ -310,6 +334,10 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 			Entry->bStitchBottom = Meta.bStitchBottom;
 			Entry->bStitchTop = Meta.bStitchTop;
 			Entry->Palette = Meta.Palette;
+			if (const FPatchScatter* Scattered = LiveScatter.Find(Key))
+			{
+				Entry->Scatter = Scattered->Instances;
+			}
 			Entry->Land = *Land;
 
 			if (const FProcMeshSection* Water = Mesh->GetProcMeshSection(1))
@@ -345,3 +373,144 @@ void ALedgerPlanet::AbandonJob(uint64 Key)
 	}
 }
 
+
+void ALedgerPlanet::SetScatterMeshes(const TArray<UStaticMesh*>& Meshes)
+{
+	for (UHierarchicalInstancedStaticMeshComponent* Component : ScatterComponents)
+	{
+		if (Component != nullptr)
+		{
+			Component->DestroyComponent();
+		}
+	}
+	ScatterComponents.Reset();
+	ScatterVariants = 0;
+
+	for (int32 Variant = 0; Variant < Meshes.Num(); ++Variant)
+	{
+		if (Meshes[Variant] == nullptr)
+		{
+			continue;
+		}
+		for (int32 Bucket = 0; Bucket < ScatterBuckets; ++Bucket)
+		{
+			UHierarchicalInstancedStaticMeshComponent* Component =
+				NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
+			Component->SetStaticMesh(Meshes[Variant]);
+			Component->SetupAttachment(GetRootComponent());
+			// No collision on the instances. Tens of thousands of them with
+			// collision is that many more shapes for the physics scene to
+			// sweep, and nothing in the game yet can touch a tree. It goes on
+			// when something can.
+			Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Component->SetCastShadow(true);
+			Component->RegisterComponent();
+			ScatterComponents.Add(Component);
+		}
+		++ScatterVariants;
+	}
+
+	ScatterBucketDirty.Init(true, ScatterBuckets);
+	UE_LOG(LogLedger, Log, TEXT("scatter: %d variants over %d buckets, %d components"),
+		ScatterVariants, ScatterBuckets, ScatterComponents.Num());
+}
+
+void ALedgerPlanet::RebuildScatter()
+{
+	if (ScatterVariants == 0)
+	{
+		return;
+	}
+	if (ScatterBucketDirty.Num() != ScatterBuckets)
+	{
+		ScatterBucketDirty.Init(true, ScatterBuckets);
+	}
+
+	const double Started = FPlatformTime::Seconds();
+	const FVector PlanetOrigin = GetActorLocation();
+
+	// At most two buckets a frame. Patches arrive faster than that while
+	// streaming, so the queue can be behind -- by up to eight frames, an eighth
+	// of a second, during which a newly arrived patch has ground and no trees.
+	// That is the trade: a visible fill-in against a millisecond of every
+	// frame, and the fill-in is at the edge of the collision radius where
+	// nothing is close enough to notice.
+	constexpr int32 BucketsPerFrame = 2;
+	int32 Rebuilt = 0;
+
+	TArray<TArray<FTransform>> ByVariant;
+	for (int32 Step = 0; Step < ScatterBuckets && Rebuilt < BucketsPerFrame; ++Step)
+	{
+		const int32 Bucket = (ScatterBucketCursor + Step) % ScatterBuckets;
+		if (!ScatterBucketDirty[Bucket])
+		{
+			continue;
+		}
+		ScatterBucketDirty[Bucket] = false;
+		++Rebuilt;
+		ScatterBucketCursor = (Bucket + 1) % ScatterBuckets;
+
+		ByVariant.Reset();
+		ByVariant.SetNum(ScatterVariants);
+
+		for (const TPair<uint64, FPatchScatter>& Patch : LiveScatter)
+		{
+			if (ScatterBucketOf(Patch.Key) != Bucket)
+			{
+				continue;
+			}
+
+			// Instance positions are relative to their patch centre, which is
+			// what keeps them in float precision on a planet 6.37e8 cm across.
+			// The component wants world space, so the centre goes back on here.
+			const FVector Base = PlanetOrigin + FVector(Patch.Value.Centre);
+			for (const FLedgerScatterInstance& Instance : Patch.Value.Instances)
+			{
+				if (!ByVariant.IsValidIndex(Instance.Variant))
+				{
+					continue;
+				}
+				ByVariant[Instance.Variant].Add(FTransform(
+					FQuat(Instance.Rotation),
+					Base + FVector(Instance.Position),
+					FVector(Instance.Scale)));
+			}
+		}
+
+		for (int32 Variant = 0; Variant < ScatterVariants; ++Variant)
+		{
+			UHierarchicalInstancedStaticMeshComponent* Component =
+				ScatterComponents[Variant * ScatterBuckets + Bucket];
+			if (Component == nullptr)
+			{
+				continue;
+			}
+			Component->ClearInstances();
+			if (ByVariant[Variant].Num() > 0)
+			{
+				Component->AddInstances(ByVariant[Variant],
+					/*bShouldReturnIndices*/ false, /*bWorldSpace*/ true);
+			}
+		}
+	}
+
+	if (Rebuilt == 0)
+	{
+		return;
+	}
+
+	int32 Total = 0;
+	for (const TPair<uint64, FPatchScatter>& Patch : LiveScatter)
+	{
+		Total += Patch.Value.Instances.Num();
+	}
+	Stats.ScatterInstances = Total;
+	Stats.LastScatterRebuildMs = (FPlatformTime::Seconds() - Started) * 1000.0;
+
+	// Logged on every rebuild, because the rebuild cost is the whole of T057's
+	// frame-budget question and a number nobody can see is a number nobody
+	// checked.
+	UE_LOG(LogLedger, Verbose,
+		TEXT("scatter: %d instances over %d patches, %d buckets rebuilt in %.2f ms"),
+		Total, LiveScatter.Num(), Rebuilt, Stats.LastScatterRebuildMs);
+}

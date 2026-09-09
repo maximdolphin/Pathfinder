@@ -164,6 +164,29 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			if (Biomes->Num() > 0)
 			{
 				Planet->SetBiomes(Biomes);
+
+				// The same two trees the settlement plants, for now. Scatter
+				// wants its own rocks and shrubs, and the biome files already
+				// have somewhere to name them; until those meshes exist,
+				// borrowing these is honest about what is placed and lets the
+				// placement itself be measured.
+				TArray<UStaticMesh*> ScatterMeshes;
+				for (const TCHAR* Name : { TEXT("SM_Tree_A"), TEXT("SM_Tree_B") })
+				{
+					const FString Path = FString::Printf(TEXT("%s%s.%s"),
+						LedgerMesh::MeshPackageRoot, Name, Name);
+					if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path))
+					{
+						ScatterMeshes.Add(Mesh);
+					}
+					else
+					{
+						UE_LOG(LogLedger, Error,
+							TEXT("no scatter mesh at %s. Run: "
+							     "tools/generate_assets.py --only meshes"), *Path);
+					}
+				}
+				Planet->SetScatterMeshes(ScatterMeshes);
 				ALedgerPlanet* Owner = Planet;
 				Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
 					[Owner, Surface](const FLedgerBiomePalette& Palette,

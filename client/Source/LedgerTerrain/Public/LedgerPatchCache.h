@@ -17,6 +17,7 @@
 
 #include "CoreMinimal.h"
 #include "LedgerBiome.h"
+#include "LedgerScatter.h"
 #include "ProceduralMeshComponent.h"
 
 /// A patch that has been drawn and is not drawn now.
@@ -46,6 +47,10 @@ struct FLedgerCachedPatch
 	/// section under a different palette paints the ground with the wrong
 	/// three grounds.
 	FLedgerBiomePalette Palette;
+
+	/// Cached with the geometry, because regenerating it means sampling the
+	/// height field again -- which is the cost the cache exists to avoid.
+	TArray<FLedgerScatterInstance> Scatter;
 
 	/// Monotonic counter, not a timestamp. Wall clock would make eviction
 	/// depend on frame rate; a serial makes it depend on use, which is what

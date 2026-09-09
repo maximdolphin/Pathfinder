@@ -484,8 +484,35 @@ void ULedgerBiomeSite::Tick(float DeltaSeconds)
 		bFound = true;
 	}
 
+	// Wall clock, not DeltaSeconds: the fixture runs with -useFixedTimeStep so
+	// the engine's delta is a constant by construction and would report a
+	// perfect sixty however slowly the frame actually took.
+	const double Now = FPlatformTime::Seconds();
+	if (LastFrameAt > 0.0)
+	{
+		const double Elapsed = (Now - LastFrameAt) * 1000.0;
+		// Frames during a screenshot are excluded: the capture stalls the
+		// pipeline and its cost is the harness's, not the scene's.
+		if (!bCaptured && !FScreenshotRequest::IsScreenshotRequested())
+		{
+			FrameMs.Add(Elapsed);
+		}
+	}
+	LastFrameAt = Now;
+
 	if (Index >= UE_ARRAY_COUNT(SiteShots))
 	{
+		if (FrameMs.Num() > 30)
+		{
+			TArray<double> Sorted = FrameMs;
+			Sorted.Sort();
+			const double Median = Sorted[Sorted.Num() / 2];
+			const double P99 = Sorted[FMath::Min(Sorted.Num() - 1,
+				FMath::FloorToInt32(Sorted.Num() * 0.99))];
+			UE_LOG(LogLedger, Log,
+				TEXT("biome site frames: %d sampled, median %.1f ms (%.0f fps), p99 %.1f ms"),
+				Sorted.Num(), Median, 1000.0 / FMath::Max(Median, 0.001), P99);
+		}
 		UE_LOG(LogLedger, Log, TEXT("biome site: done"));
 		bRunning = false;
 		FPlatformMisc::RequestExit(false);

@@ -22,13 +22,16 @@
 #include "LedgerPatchCache.h"
 #include "LedgerBiome.h"
 #include "LedgerQuadNode.h"
+#include "LedgerScatter.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerPatchComponents.h"
 #include "ProceduralMeshComponent.h"
 #include <atomic>
 #include "LedgerPlanet.generated.h"
 
+class UHierarchicalInstancedStaticMeshComponent;
 class UMaterialInterface;
+class UStaticMesh;
 class UProceduralMeshComponent;
 
 /// One patch of geometry being generated on a worker thread.
@@ -64,10 +67,6 @@ struct FLedgerPatchJob
 	/// the set itself never changes after load. Null means no biomes were
 	/// loaded, in which case the generator falls back to the height ramp.
 	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
-
-	/// Last computed geomorph scale, so an instance created between frames can
-	/// be brought up to date without waiting for the next one.
-	double MorphScale = 0.0;
 
 	/// Approximate world-space extent of the node, centimetres. Baked into the
 	/// vertices so the shader can work out how close this patch is to being
@@ -137,6 +136,9 @@ struct FLedgerPatchJob
 	TArray<FVector> CaveNormals;
 	TArray<FVector2D> CaveUVs;
 	bool bHasCaves = false;
+
+	/// What is scattered on this patch, generated on the worker with it.
+	TArray<FLedgerScatterInstance> Scatter;
 
 	double GenerationMs = 0.0;
 
@@ -305,6 +307,15 @@ struct FLedgerTerrainStats
 
 	UPROPERTY()
 	double CacheMegabytes = 0.0;
+
+	/// Instances currently in the scatter components, and what the last full
+	/// rebuild of them cost on the game thread. The rebuild is the whole of
+	/// T057's frame-budget question, so it is measured rather than assumed.
+	UPROPERTY()
+	int32 ScatterInstances = 0;
+
+	UPROPERTY()
+	double LastScatterRebuildMs = 0.0;
 };
 
 UCLASS()
@@ -440,6 +451,11 @@ public:
 		Biomes = MoveTemp(InBiomes);
 	}
 
+	/// The meshes a scatter variant can be. Set beside the materials, for the
+	/// same reason: the quadtree decides where things go and not what they are.
+	/// An empty array means no scatter at all.
+	void SetScatterMeshes(const TArray<UStaticMesh*>& Meshes);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
@@ -482,6 +498,57 @@ private:
 	FLedgerPaletteMaterial PaletteMaterial;
 
 	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
+
+	/// How many components each scatter variant is spread across.
+	///
+	/// **The whole of T057's frame budget is in this number.** One component
+	/// per variant is two draw calls and a rebuild that costs 13 ms at a forest
+	/// site, because every arriving patch invalidates all 78,000 instances. One
+	/// component per patch is a rebuild that costs nothing and four hundred
+	/// draw calls. Sixteen buckets is 32 draws and a rebuild of a sixteenth,
+	/// and at most two buckets are rebuilt in a frame -- so a change shows up
+	/// within about a quarter of a second and never costs more than a
+	/// millisecond of it.
+	static constexpr int32 ScatterBuckets = 16;
+
+	/// Instanced components, indexed variant-major: Variant * ScatterBuckets +
+	/// Bucket. Hierarchical, so a stand of trees behind a rise is culled as a
+	/// group rather than one at a time.
+	UPROPERTY()
+	TArray<TObjectPtr<UHierarchicalInstancedStaticMeshComponent>> ScatterComponents;
+
+	/// Which buckets have a patch that arrived or left since they were built,
+	/// and where the round robin got to.
+	TBitArray<> ScatterBucketDirty;
+	int32 ScatterBucketCursor = 0;
+	int32 ScatterVariants = 0;
+
+	/// What each live patch scattered, kept so the components can be rebuilt.
+	///
+	/// **Rebuilt whole, not edited.** An instanced component has no stable
+	/// handle for an instance -- removing one renumbers the rest -- so tracking
+	/// which indices belong to which patch across a stream of arrivals and
+	/// departures is a bookkeeping problem with a known bad ending. Clearing
+	/// and re-adding is one batch call, it happens only when the near set
+	/// actually changes, and the cost is measured in the terrain stats rather
+	/// than assumed.
+	/// A patch's scatter, with the centre its positions are relative to.
+	struct FPatchScatter
+	{
+		FVector3d Centre = FVector3d::ZeroVector;
+		TArray<FLedgerScatterInstance> Instances;
+	};
+	TMap<uint64, FPatchScatter> LiveScatter;
+
+	/// Which bucket a patch's instances live in. A hash of the key rather than
+	/// anything spatial: neighbouring patches landing in different buckets is
+	/// what stops one bucket holding everything in front of the camera.
+	static int32 ScatterBucketOf(uint64 Key)
+	{
+		return static_cast<int32>((Key * 0x9E3779B97F4A7C15ull) >> 60) % ScatterBuckets;
+	}
+
+	void RebuildScatter();
 
 	/// Last computed geomorph scale, so an instance created between frames can
 	/// be brought up to date without waiting for the next one.

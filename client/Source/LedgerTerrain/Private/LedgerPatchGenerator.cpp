@@ -4,6 +4,7 @@
 #include "LedgerCaveMesh.h"
 #include "LedgerCaves.h"
 #include "LedgerLog.h"
+#include "LedgerScatter.h"
 #include "Misc/CommandLine.h"
 #include "LedgerClimate.h"
 #include "LedgerPlanet.h"
@@ -486,6 +487,13 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 				255);
 		}
 	}
+
+	// ---- scatter ---------------------------------------------------------
+	//
+	// On the worker, with the patch, because placement needs the height field
+	// and doing it on the game thread would be a second sampling pass in the
+	// frame. Declines immediately for any patch without collision.
+	LedgerScatter::ScatterPatch(Job);
 
 	// ---- sea surface ----------------------------------------------------
 	//
