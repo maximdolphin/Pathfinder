@@ -2,7 +2,10 @@
   "mcpServers": {
     "unreal-engine": {
       "type": "http",
-      "url": "http://localhost:3000/mcp"
+      "url": "http://127.0.0.1:3000/mcp",
+      "headers": {
+        "X-MCP-Capability-Token": "${UNREAL_MCP_TOKEN}"
+      }
     }
   }
 }
