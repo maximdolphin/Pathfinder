@@ -171,7 +171,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 9
+   "doneCount": 10
   },
   {
    "id": "M02",
@@ -3320,9 +3320,9 @@
    "dependsOn": [
     "T426"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-09",
    "notes": [
     {
      "at": "2026-09-09",
@@ -3338,9 +3338,37 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "THIRD DIAGNOSIS, and this one was tested before it was written. Both previous explanations were about the packaged build. Neither was checked against the obvious control: run the EDITOR build twice and compare it with itself. Seven of eight shots disagree, coast by a mean of 7.67 -- against the 8.26 that had been blamed on the packaged build. The fixture cannot reproduce itself, so no comparison against it meant anything. Cause: the flight is driven by game time, game time advances by however long the last frame took, so position, LOD state and Lumen history are all functions of the frame rate. -useFixedTimeStep -fps=60 takes the worst channel across the set from 128 to 21 and six of eight shots pass outright. Evidence in docs/comparisons/repeatability/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "unblock",
+     "text": "unblocked"
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "MET. Two causes, both found by testing rather than reasoning. (1) The fixture could not reproduce itself; -useFixedTimeStep -fps=60 pins it. (2) With it pinned, the same four shots still failed -- the four with sky in frame -- because UVolumetricCloudComponent takes its material from its own class default, nothing in the project names that asset, and the cooker never saw it. The packaged log said 'the package to load does not exist' and the build rendered a clear sky. /Engine/EngineSky added to DirectoriesToAlwaysCook. Gate now: eight of eight captures match, worst residual 0.89 against a limit of 2.50. Frame times packaged 16.6 ms mean / 27.6 p99 against the editor's 18.0 / 29.0 over 8,760 frames each -- not worse. Both still fail the 16.7 ms budget, which is the terrain work's problem and not this task's."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "docs/comparisons/packaged/README.md"
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T427-2026-09-09T12-54-31-365.png",
+     "caption": "The packaged build with no clouds: the whole of the capture difference, in one frame",
+     "source": "../docs/comparisons/packaged/no-clouds/terrain-town.png",
+     "addedAt": "2026-09-09T12:54:31.371Z"
+    },
+    {
+     "file": "evidence/T427-2026-09-09T12-54-31-467.txt",
+     "caption": "Eight of eight match, worst residual 0.89 against a 2.50 limit",
+     "source": "../docs/comparisons/packaged/with-clouds/against-reference.txt",
+     "addedAt": "2026-09-09T12:54:31.468Z"
+    }
+   ],
    "plannedStartDay": 79.5,
    "plannedEndDay": 80.5,
    "plannedStart": "2026-12-25",
@@ -12381,5 +12409,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T12:39:52.762Z"
+ "updatedAt": "2026-09-09T12:54:31.562Z"
 }

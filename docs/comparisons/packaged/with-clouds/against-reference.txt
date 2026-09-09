@@ -1,0 +1,9 @@
+  terrain-coast.png          residual 0.78, 0.00% changed
+  terrain-entry.png          residual 0.00, 0.00% changed
+  terrain-orbit.png          residual 0.02, 0.00% changed
+  terrain-space.png          residual 0.00, 0.00% changed
+  terrain-surface.png        residual 0.71, 0.03% changed
+  terrain-sweep.png          residual 0.34, 0.00% changed
+  terrain-town.png           residual 0.89, 0.07% changed
+  terrain-underwater.png     residual 0.00, 0.00% changed
+captures match the reference

@@ -35,3 +35,6 @@ __pycache__/
 # wires up.
 /client/Content/Materials
 /client/Content/Meshes
+
+# Build artefacts the packager rewrites
+client/Build/Windows/FileOpenOrder/
