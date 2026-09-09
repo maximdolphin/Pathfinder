@@ -34,6 +34,23 @@ public:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
 
 private:
+	/// The shot that is waiting for the world to stop streaming, and how long
+	/// it has waited. A capture taken before the terrain settles is a
+	/// photograph of the loading state, and two machines load at different
+	/// speeds.
+	const TCHAR* PendingCapture = nullptr;
+	double SettleWaited = 0.0;
+	FTimerHandle SettleTimer;
+
+	void TakeWhenSettled();
+
+	static constexpr double SettlePollSeconds = 0.1;
+
+	/// Bounded, so a world that never settles still yields an image. Four
+	/// seconds is far longer than a settled frame needs and short enough that
+	/// eight of them do not move the phases apart.
+	static constexpr double SettleLimitSeconds = 4.0;
+
 	// ---- what the flight asks the world for -----------------------------
 	//
 	// Looked up rather than cached: subsystem initialisation order is not

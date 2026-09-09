@@ -113,13 +113,64 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 
 void ULedgerFlightHarness::Capture(const TCHAR* Name)
 {
-	// An explicit request with an explicit path. `HighResShot` routes through the
-	// console and lands wherever the screenshot settings point, which is not
-	// somewhere a build script can reliably find.
+	// Queued, not taken. The shot fires once the terrain has finished streaming.
+	//
+	// Captures used to fire on the timer that scheduled them, which made every
+	// image a photograph of whatever had happened to load by that instant. Two
+	// builds running at different frame rates reach the same game time having
+	// streamed different amounts of terrain, so their captures differ for a
+	// reason that has nothing to do with what is being compared -- and the
+	// packaged build failed four of eight comparisons against the editor on
+	// exactly the four phases where the ship moves fastest.
+	//
+	// Waiting for a settled world makes the image a function of where the
+	// camera is rather than of how fast the machine is.
+	PendingCapture = Name;
+	SettleWaited = 0.0;
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(
+			SettleTimer,
+			FTimerDelegate::CreateUObject(this, &ULedgerFlightHarness::TakeWhenSettled),
+			SettlePollSeconds, true);
+	}
+}
+
+void ULedgerFlightHarness::TakeWhenSettled()
+{
+	if (PendingCapture == nullptr)
+	{
+		return;
+	}
+
+	SettleWaited += SettlePollSeconds;
+
+	const ALedgerPlanet* Body = Planet();
+	const bool bSettled = Body != nullptr
+		&& Body->GetStats().PendingBuilds == 0
+		&& Body->GetStats().JobsInFlight == 0;
+
+	// Bounded. A world that never settles must still produce an image, or a
+	// streaming regression turns into a missing file and reads as a harness
+	// fault rather than the thing it is.
+	if (!bSettled && SettleWaited < SettleLimitSeconds)
+	{
+		return;
+	}
+
 	const FString Path = FPaths::ConvertRelativePathToFull(
-		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), FString(Name)));
+		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+			FString(PendingCapture)));
 	FScreenshotRequest::RequestScreenshot(Path, false, false);
-	UE_LOG(LogLedger, Log, TEXT("capture -> %s"), *Path);
+	UE_LOG(LogLedger, Log, TEXT("capture -> %s (settled after %.1f s%s)"),
+		*Path, SettleWaited, bSettled ? TEXT("") : TEXT(", TIMED OUT"));
+
+	PendingCapture = nullptr;
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(SettleTimer);
+	}
 }
 
 void ULedgerFlightHarness::CaptureOrbit()

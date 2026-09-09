@@ -3273,6 +3273,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Not met, and the reason is a flaw in the harness rather than in the build. Packaged against the editor's references, on the same SM6 configuration: 4 of 8 captures pass and 4 fail -- town 4.16, coast 8.26, surface 10.13, sweep 14.70, against a 2.50 limit. The four that fail are exactly the phases where the ship is moving fastest and terrain is streaming; town, the slowest, is closest to passing. CAPTURES ARE TRIGGERED ON GAME TIME, so a build with a different frame rate reaches a given timestamp having streamed a different amount of terrain, and the images differ for a reason that has nothing to do with rendering. Two builds with different performance can never match a time-triggered capture. The fix is to trigger on STATE -- altitude reached, distance travelled, patches resident -- which also makes the existing editor-to-editor comparison mean something stronger than it does now. Frame-time half of the gate: packaged overall 17.2 ms against the editor's 17.5, so the packaged build is not worse. Evidence in docs/comparisons/packaged/."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "CORRECTED DIAGNOSIS. My first explanation was that captures fired before terrain had streamed, and it was wrong. Captures now wait for PendingBuilds and JobsInFlight to reach zero before firing, and seven of eight settle on the first 0.1 s poll -- the terrain was already idle. The comparison barely moved: coast 8.26 to 7.93, sweep 14.70 to 14.68, town 4.16 to 4.16. THE ACTUAL CAUSE, with evidence: the packaged run logs 926 stalls against the editor's 543, from the same seed and the same start position. The flight model integrates at a fixed 120 Hz step with a capped catch-up -- MaxStepsPerFrame 16, accumulator zeroed when capped -- so a stall DROPS simulated time rather than spiralling, which is deliberate and is what the SurvivesAHitch test protects. A build that stalls more has flown less far by any given timestamp, so a time-triggered capture photographs a different place. Nothing to do with rendering, and nothing a settle can fix. THE FIX is to trigger captures on ship state -- altitude crossed, distance travelled -- so the image is a function of where the camera is rather than of how fast the machine is. That is a rewrite of the harness's scheduling, which is timer-driven throughout, and it is worth doing because it also makes the editor-to-editor comparison mean something stronger. The settle wait is kept: it is correct on its own terms, and it is now labelled as not having been the problem."
     }
    ],
    "evidence": [],
@@ -12316,5 +12321,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T07:29:16.480Z"
+ "updatedAt": "2026-09-09T07:40:31.561Z"
 }
