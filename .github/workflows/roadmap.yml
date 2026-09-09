@@ -1,0 +1,66 @@
+# Publishes the roadmap viewer to GitHub Pages.
+#
+# The roadmap is data, not a rebuild: `roadmap/public/roadmap.json` is generated
+# by roadmap/scripts/generate_roadmap.py, committed, and the viewer polls it. So
+# a task changing status is a commit to one JSON file, and this workflow turns
+# that into a live page a few seconds later.
+name: roadmap
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'roadmap/**'
+      - '.github/workflows/roadmap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and a newer push wins rather than queueing behind a
+# page that is already out of date.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The generator is the source of truth for the JSON, so CI regenerates and
+      # checks the committed file matches. A roadmap page that disagrees with
+      # the roadmap data is worse than no page.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Roadmap data is up to date
+        run: |
+          python roadmap/scripts/generate_roadmap.py
+          git diff --exit-code roadmap/public/roadmap.json roadmap/task-ids.json \
+            || (echo "roadmap.json is stale: run roadmap/scripts/generate_roadmap.py and commit"; exit 1)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        working-directory: roadmap
+      - run: npm run build
+        working-directory: roadmap
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: roadmap/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

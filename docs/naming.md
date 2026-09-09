@@ -1,5 +1,18 @@
 # The game has no name
 
+## Three names now, none of them the game's
+
+- **`Pathfinder`** is the *repository*, chosen 2026-09-08 when the project went
+  public. A repository needs a name and the game does not have one; picking one
+  that sounds like a title would have quietly decided the question.
+- **`Ledger`** is the *codename*, and it is all over the source: `LedgerCore`,
+  `LedgerTerrain`, `ALedgerPlanet`, `Ledger.uproject`.
+- The **game's name** is undecided, and nothing in the code should assume one.
+
+The rename cost estimated below is unchanged by the repository name. Renaming a
+GitHub repository is a redirect and five minutes; renaming the code is the part
+that gets more expensive every week.
+
 **Undecided as of 2026-09-08.** Nothing in this repository is a naming decision.
 
 ## "Ledger" is a codename
