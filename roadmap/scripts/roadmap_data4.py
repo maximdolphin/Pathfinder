@@ -10,6 +10,22 @@ with a person in it.
 # ---------------------------------------------------------------------------
 
 M09 = [
+    dict(title="Source character and animation libraries, and audit their licences",
+         detail="ADR-0005 rules out buying assets and rules out generating people: a "
+                "rigged human with a face is not something a rule produces, and a "
+                "convincing walk cycle is captured or authored. So this is a sourcing "
+                "task, and it comes first because every task after it assumes a skeleton "
+                "and a set of clips already exist. Free, licensed libraries only, with "
+                "the terms read rather than remembered -- the surface work asserted the "
+                "Megascans licence from memory and was wrong about it. One skeleton "
+                "chosen and committed to, because retargeting everything later is worse "
+                "than choosing badly now. Manifest and validator, same discipline as "
+                "surfaces: a clip on disk with no recorded source and licence fails the "
+                "build.",
+         acceptance="A rigged character and a locomotion set are in the project, every "
+                    "one of them has a manifest entry naming its source and its licence, "
+                    "and an unaccounted asset fails CI naming the file.",
+         days=3, refs=["SS6.9", "SS14"]),
     dict(title="Character controller with momentum",
          detail="Acceleration, deceleration, turning radius and footing rather than a "
                 "capsule that changes velocity instantly. A body has mass and the "
@@ -152,6 +168,22 @@ M10 = [
          acceptance="Every component in a ship's graph has a physical location inside it "
                     "that can be walked to and worked on.",
          days=4, refs=["SS6.9"]),
+    dict(title="Cockpit generated from the component graph",
+         detail="The strongest case for generating rather than authoring, and it comes "
+                "out of a promise already made: docs/quality-bar.md says every gauge "
+                "traces to a real component. A hand-authored cockpit can lie about that. "
+                "One laid out from the ship's own graph cannot -- a readout exists "
+                "because a component exists, a breaker exists because a power path does, "
+                "and a ship fitted differently gets a different panel without anyone "
+                "redrawing it. Layout from the seat outward: reach envelope from the "
+                "seated eye point, consoles on ergonomic arcs, sightlines to the canopy "
+                "preserved, labels beside every control. Cable and pipe runs routed "
+                "between components rather than drawn.",
+         acceptance="Two ships with different component fits produce different cockpits "
+                    "with no hand editing; every readout in both traces to a component in "
+                    "the graph; and every control is reachable from the seated position "
+                    "without the sightline to the horizon being blocked.",
+         days=5, refs=["SS6.9", "LW SS7"]),
     dict(title="Station interiors",
          detail="Larger, with spin gravity, public and private volumes, docking connections "
                 "and the traffic that implies.",
@@ -236,11 +268,18 @@ M11 = [
                     "parameters alone.",
          days=4, refs=["SS6.8"]),
     dict(title="Wear, dirt and weathering framework",
-         detail="Procedural edge wear, dirt accumulation by cavity and by exposure, driven "
-                "by an object's actual history rather than authored in.",
+         detail="Procedural edge wear, dirt accumulation by cavity and by exposure, "
+                "streaking below seams, heat discolouration near thrusters, driven by an "
+                "object's actual history rather than authored in. Under ADR-0005 this is "
+                "not a finishing touch, it is the single largest quality lever available: "
+                "the gap between generated geometry and shipped-game geometry is mostly "
+                "this layer, all of it curvature and occlusion arithmetic, and none of it "
+                "needing an artist.",
          acceptance="A ship that has flown through dust looks like it, and cleaning it "
-                    "removes exactly that.",
-         days=4, refs=["SS6.8"]),
+                    "removes exactly that. The same asset with the wear layer disabled and "
+                    "enabled, at identical framing and exposure, is the before-and-after "
+                    "this task is judged on.",
+         days=5, refs=["SS6.8"]),
     dict(title="Decal framework",
          detail="Projected detail on hulls, terrain and interiors — markings, damage, "
                 "leaks, signage — with correct normals and a budget.",

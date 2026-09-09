@@ -46,6 +46,8 @@ GATE_CHECKS = {
     ("No texture repetition is identifiable at any distance in the biome capture.", "observed"),
     ("Every river reaches the sea or a basin; none flows uphill.", "auto"),
     ("A cave is entered, traversed and exited with collision and lighting correct throughout.", "capture"),
+    ("One command turns a generated asset into a contact sheet, at fixed exposure, with the camera provably outside the geometry.", "auto"),
+    ("The same asset produces byte-identical contact sheets on two consecutive runs.", "auto"),
     ("Ten thousand scatter instances render inside the frame budget, placed identically across runs.", "measured"),
 ],
 
@@ -136,6 +138,8 @@ GATE_CHECKS = {
     ("Boarding a hovering ship and taking the seat involves no teleport and no cut.", "capture"),
     ("A new interactable is one data declaration and inherits highlighting, reach and animation.", "auto"),
     ("Stepping into vacuum without a sealed suit kills on the modelled schedule, with warnings from the suit's components.", "auto"),
+    ("Every character mesh and animation clip has a manifest entry naming its source and licence.", "auto"),
+    ("An animation asset on disk with no manifest entry fails the build, naming the file.", "auto"),
     ("Two hundred visible characters stay inside the animation budget with no visible LOD switch.", "measured"),
 ],
 
@@ -148,6 +152,9 @@ GATE_CHECKS = {
     ("A habitat on an airless world has an airlock and visible life support; the same archetype on a temperate world does not.", "capture"),
     ("A hundred walkable interiors in view cost no more than the handful visible through their openings.", "measured"),
     ("Cutting power to a building darkens its interior and brings up emergency lighting on its own reserve.", "capture"),
+    ("Two ships with different component fits produce different cockpits with no hand editing.", "auto"),
+    ("Every readout in a generated cockpit traces to a component in that ship's graph; an orphan readout fails the build.", "auto"),
+    ("Every control is reachable from the seated position without blocking the sightline to the horizon.", "auto"),
     ("An automated traversal agent covers every reachable point of ten generated interiors without getting stuck.", "auto"),
 ],
 
@@ -162,6 +169,7 @@ GATE_CHECKS = {
     ("No LOD transition is visible at any distance for any asset class.", "capture"),
     ("A character at conversation distance holds up in three lighting conditions.", "capture"),
     ("A cockpit at dawn, noon and night each hold up, with legible instruments in all three.", "capture"),
+    ("The same asset with the wear layer disabled and enabled, at identical framing and exposure, is captured as one pair.", "capture"),
     ("Every post effect has a measured cost and a documented reason; the chain is inside its budget.", "measured"),
 ],
 
@@ -175,6 +183,11 @@ GATE_CHECKS = {
     ("A complete star system is authored end to end without editing source.", "observed"),
     ("Memory stays inside budget through a two-hour session visiting every content type.", "measured"),
     ("A packaged build runs the full technical slice with no editor present.", "auto"),
+    ("Three ships of visibly different design language come from three data files with no mesh editing.", "capture"),
+    ("No hull plate spans a hard curvature break, and no marking lies across a seam.", "auto"),
+    ("Greeble density correlates with component placement rather than being uniform noise.", "measured"),
+    ("A measured repetition score over a generated street and a generated interior falls below the stated threshold.", "measured"),
+    ("No asset anywhere in the project was purchased; every one is generated or carries a free-licence manifest entry.", "auto"),
     ("Every texture in the project has a recorded source and licence.", "auto"),
 ],
 

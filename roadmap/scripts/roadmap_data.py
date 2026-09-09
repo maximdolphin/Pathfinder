@@ -153,9 +153,12 @@ MILESTONES = [
     ),
     dict(
         id="M12", title="Asset pipeline and world content", week_start=98, week_end=106,
-        goal="A way to get content in that is not a person placing things by hand. "
-             "Import, validation, LOD generation, material assignment, biome and settlement "
-             "generators, and the tooling to author a system.",
+        goal="A way to get content in that is not a person placing things by hand -- "
+             "and under ADR-0005 there is no other way, because nothing is bought and no "
+             "artist is assumed. Generators for hulls, plating, surface detail, markings, "
+             "buildings, settlements and biomes; validation, LOD generation and material "
+             "assignment over their output; and the variation framework that stops all of "
+             "it reading as the same thing repeated.",
         gate="Add a new ship and a new biome end to end through the pipeline, with no "
              "manual step outside the tool, and both appear correctly at every LOD.",
         refs=["SS14"],

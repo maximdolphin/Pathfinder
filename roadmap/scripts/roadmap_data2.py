@@ -129,6 +129,22 @@ M02 = [
          acceptance="Walk into a cave mouth, through a passage, and out the other side, "
                     "with collision and lighting correct throughout.",
          days=6, refs=["SS6.8"]),
+    dict(title="Asset review harness: turntable, framing and lighting rig",
+         detail="One command puts a generated asset on a stand and photographs it: eight "
+                "yaw angles, three framings from silhouette to close, and two lighting "
+                "rigs, at pinned exposure. Scheduled before the first generator that "
+                "needs it, and for the same reason the capture comparison was built "
+                "before the material work. ADR-0005 makes every asset in the game an "
+                "iterated one, and iteration is only affordable if looking at the result "
+                "is cheap and honest. It was not: three separate readings of the surface "
+                "captures were wrong -- a camera underground, an exposure in stops "
+                "mistaken for lux, a camera standing inside a building -- and each cost "
+                "an hour because the picture was believed before the arithmetic.",
+         acceptance="One command turns any generated asset into a contact sheet on disk, "
+                    "with the camera provably outside the geometry, exposure fixed across "
+                    "every frame, and the same asset producing byte-identical sheets on "
+                    "two runs.",
+         days=1.5, refs=["ARCH Rule 6", "SS14"]),
     dict(title="Scatter framework: rocks, vegetation, debris",
          detail="Deterministic placement from biome rules, GPU-instanced, LOD'd, with "
                 "density that survives the frame budget at ground level.",

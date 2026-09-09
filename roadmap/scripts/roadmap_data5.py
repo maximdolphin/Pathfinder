@@ -31,10 +31,19 @@ M12 = [
          days=3, refs=["SS6.8"]),
     dict(title="Procedural building generator",
          detail="Buildings generated from purpose, footprint, environment and owner, "
-                "assembling exteriors that match the interiors M10 generates.",
+                "assembling exteriors that match the interiors M10 generates. Under "
+                "ADR-0005 this is the only source of architecture there will ever be, so "
+                "it carries the whole look rather than filling gaps between bought "
+                "assets: a kit of parts with wall panels, window arrays, parapets, "
+                "rooflines, external plant, ducting, ladders and trim, and openings "
+                "placed because a room is behind them. The thirty-two white boxes in "
+                "every capture to date are the absence of this task, not a placeholder "
+                "waiting on art.",
          acceptance="A generated building's exterior openings correspond exactly to its "
-                    "interior layout.",
-         days=5, refs=["LW SS7.2"]),
+                    "interior layout; three buildings of different purpose read as "
+                    "different building types rather than as one shape rescaled; and none "
+                    "reads as a box with a texture on it at street framing.",
+         days=8, refs=["LW SS7.2"]),
     dict(title="Settlement layout generator",
          detail="Districts, streets, utilities and pads laid out from terrain, resources and "
                 "purpose, at scales from outpost to city.",
@@ -54,12 +63,67 @@ M12 = [
          acceptance="Two streets generated from the same rules are recognisably the same "
                     "kind of place and not the same place.",
          days=3, refs=["LW SS7.1"]),
-    dict(title="Ship art pipeline",
-         detail="From model to flyable: hardpoints, component locations, interior kit "
-                "attachment, damage states, LODs and materials, as a repeatable process.",
-         acceptance="A new ship goes from mesh to flyable with interiors in under a day of "
-                    "work.",
+    dict(title="Parametric hull generator",
+         detail="The shape, from parameters rather than from a modeller. Cross-sections "
+                "lofted along a spine, with chines, chamfers and intakes as operations on "
+                "the surface. A ship is a data file the generator reads, per ADR-0004, so "
+                "a class is a set of numbers and a design language is a set of rules "
+                "about them -- a blocky military hull and a smooth civilian one differ by "
+                "their ruleset, not by two people having modelled them.",
+         acceptance="Three ships of visibly different design language come out of three "
+                    "data files with no mesh editing, each closes into watertight "
+                    "geometry, and each survives the turntable at silhouette framing "
+                    "without reading as the same ship rescaled.",
+         days=6, refs=["SS6.9"]),
+    dict(title="Panel decomposition and seam generation",
+         detail="Breaking a hull into plates with recessed seams, respecting curvature so "
+                "plates do not wrap impossibly, and varying plate size by region the way "
+                "real fabrication does. This is a large share of what reads as expensive "
+                "on a hard-surface asset and almost none of it is aesthetic judgement -- "
+                "it is a partitioning problem with rules.",
+         acceptance="A hull comes back plated with no plate spanning a hard curvature "
+                    "break, seams continuous across the surface, and the seam pattern "
+                    "different between two hulls rather than a tiled texture.",
          days=4, refs=["SS6.9"]),
+    dict(title="Greeble and surface-detail placement framework",
+         detail="Vents, housings, conduits, hardpoint fairings and access panels placed by "
+                "rule on surfaces, sized and oriented to the plate they sit on, denser "
+                "where machinery is and sparse where it is not. The failure mode to design "
+                "against is detail that is busy but meaningless: greebles should cluster "
+                "where the component graph says something is, so that the outside of a "
+                "ship reports its insides.",
+         acceptance="Detail density correlates with component placement rather than being "
+                    "uniform noise, two hulls with the same ruleset are visibly different, "
+                    "and the same hull generates identically across runs.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Markings, registration and stencil placement",
+         detail="Numbers, hazard striping, manufacturer plates, warning stencils and unit "
+                "insignia, placed on flat regions and oriented to the surface, with the "
+                "text coming from the ship's own record rather than being decorative. "
+                "Cheap to build and disproportionate in effect: a hull with correct "
+                "markings reads as manufactured, and one without reads as untextured.",
+         acceptance="Every ship carries its own registration, no marking lies across a "
+                    "seam or wraps a curve it cannot sit on, and markings are legible at "
+                    "the framing a person actually stands at.",
+         days=3, refs=["SS6.9"]),
+    dict(title="Ship assembly pipeline",
+         detail="From generated hull to flyable: hardpoints, component locations, interior "
+                "kit attachment, damage states, LODs and materials, as a repeatable "
+                "process over the output of the generators above.",
+         acceptance="A new ship goes from data file to flyable with interiors in under a "
+                    "day of work, with no mesh editing at any point.",
+         days=4, refs=["SS6.9"]),
+    dict(title="Variation and anti-repetition framework",
+         detail="The characteristic tell of generated content is the same corridor five "
+                "times and the same rock nineteen times, and it is not fixed late -- a "
+                "system with one output per seed has to be rebuilt to get a second. "
+                "Per-instance variation as a first-class input across every generator: "
+                "geometry jitter, wear seeds, marking and colour variation, and rules "
+                "that forbid identical neighbours.",
+         acceptance="A measured repetition score over a generated street and a generated "
+                    "interior falls below a stated threshold, and no two visible instances "
+                    "of the same asset class are identical in the frame.",
+         days=3, refs=["SS6.9", "SS14"]),
     dict(title="Audio asset pipeline and mix framework",
          detail="Import conventions, buses, attenuation curves, occlusion setup and a mix "
                 "that holds from a quiet interior to a storm.",
