@@ -86,6 +86,26 @@ M02 = [
          acceptance="At 900 m/s at 50 m altitude, a downward trace hits terrain on every "
                     "frame of a 200 km transect.",
          days=3, refs=["SS6.8"]),
+    dict(title="Give the planet relief: the height function has no mountains",
+         detail="The mountain band of the elevation function is exactly zero on ninety "
+                "per cent of the land, and the whole planet tops out at 1,372 m against "
+                "a configured 9 km. LedgerNoise::ErodedRidged returns "
+                "(Sum / Normalisation) * 2 - 1, remapping to [-1,1] the way a signed fBm "
+                "should -- but a ridged field with a continuity weight and erosion "
+                "damping concentrates its energy into a few ridges, so its mean sits far "
+                "below 0.5 and the remap puts most of the surface negative, where "
+                "Elevation's FMath::Max(0.0, ...) deletes it. Four tasks are blocked on "
+                "this and it has been living in their blocker notes; it is work in its "
+                "own right. Whatever the fix -- a different pivot, an unsigned return, a "
+                "renormalisation against the field's own measured distribution -- it "
+                "reshapes every landform and invalidates every reference capture, which "
+                "is why it is a task and not a patch.",
+         acceptance="Ranges that read as ranges from 80 km, land reaching a decent "
+                    "fraction of MaxElevation, and slopes steep enough to hold scree -- "
+                    "measured by the existing relief and slope surveys, not by eye. The "
+                    "reference captures are re-adopted in the same commit and the "
+                    "write-up says what changed.",
+         days=2, refs=["SS6.8"]),
     dict(title="Climate model: temperature and moisture fields",
          detail="Latitude, altitude, prevailing wind and distance from water produce "
                 "temperature and moisture as continuous functions. Biomes are read from "

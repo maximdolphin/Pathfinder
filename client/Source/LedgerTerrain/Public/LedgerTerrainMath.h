@@ -50,6 +50,39 @@ struct FLedgerTerrainParams
 
 namespace LedgerTerrain
 {
+	/// Where the ridge field's zero really is, and how far it runs above it.
+	///
+	/// **Measured, not assumed, and that is the whole of T428.**
+	/// `LedgerNoise::ErodedRidged` ends with `(Sum / Normalisation) * 2 - 1`,
+	/// which is the right remap for a field whose mean is 0.5. This one's is
+	/// not: a ridged multifractal with a continuity weight and erosion damping
+	/// puts its energy into a few ridges, so most of the surface sits low.
+	/// Surveyed over the land of this planet, the returned value runs
+	///
+	///     min -1.000   p50 -0.493   p90 -0.139   max 0.440
+	///
+	/// so `FMath::Max(0.0, ...)` in `Elevation` was deleting everything below
+	/// the ninety-seventh percentile. The mountain band was exactly zero on
+	/// ninety per cent of the land and the whole planet topped out at 1,372 m
+	/// against a 9 km maximum.
+	///
+	/// The pivot is set near the eighty-fifth percentile, so ranges stay rare,
+	/// and the span carries the rest of the measured range up to one -- which
+	/// is what gives a peak its full share of `MaxElevation` instead of the
+	/// 0.44 the old remap left it.
+	///
+	/// These are numbers about a distribution, so they belong next to the
+	/// survey that produced them: `-climate` prints it, and
+	/// docs/comparisons/relief/ keeps it.
+	constexpr double RidgePivot = -0.20;
+	constexpr double RidgeSpan = 0.64;
+
+	/// The ridge field, renormalised onto [0,1] against its own distribution.
+	inline double RidgeStrength(double Raw)
+	{
+		return FMath::Clamp((Raw - RidgePivot) / RidgeSpan, 0.0, 1.0);
+	}
+
 	/// Maps a face and a `[0,1]^2` coordinate on it to a point on the unit cube.
 	LEDGERTERRAIN_API FVector3d FaceToCube(ELedgerCubeFace Face, double U, double V);
 
@@ -112,6 +145,11 @@ namespace LedgerTerrain
 		double Land = 0.0;
 		double Province = 0.0;
 		double Ridges = 0.0;
+
+		/// The ridge field before Elevation clamps it at zero. The clamp is what
+		/// deletes the mountains (T428), so the raw value is the thing to look
+		/// at when deciding what to replace the remap with.
+		double RidgesRaw = 0.0;
 		double Mountains = 0.0;
 		double HeightFraction = 0.0;
 	};

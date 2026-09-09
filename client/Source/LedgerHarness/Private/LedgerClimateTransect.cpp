@@ -132,7 +132,7 @@ bool ULedgerClimateTransect::WriteTransect()
 	// doing the damage, and whether "the terrain has no mountains" is a
 	// statement about the noise or about how it is combined.
 	{
-		TArray<double> Ridges, Provinces, Lands, MountainTerm;
+		TArray<double> Ridges, RawRidges, Provinces, Lands, MountainTerm;
 		for (int32 LatStep = -80; LatStep <= 80; LatStep += 2)
 		{
 			for (int32 LonStep = 0; LonStep < 360; LonStep += 2)
@@ -145,6 +145,7 @@ bool ULedgerClimateTransect::WriteTransect()
 					continue;
 				}
 				Ridges.Add(Terms.Ridges);
+				RawRidges.Add(Terms.RidgesRaw);
 				Provinces.Add(Terms.Province);
 				Lands.Add(Terms.Land);
 				MountainTerm.Add(Terms.Mountains);
@@ -166,11 +167,36 @@ bool ULedgerClimateTransect::WriteTransect()
 				TEXT("  %-10s p50 %.3f  p90 %.3f  p99 %.3f  max %.3f\n"),
 				Name, At(0.50), At(0.90), At(0.99), Values.Last());
 		};
+
+		// The ridge field before the clamp, across its whole range.
+		//
+		// This is the measurement T428 needs: whatever replaces the [-1,1]
+		// remap has to be chosen against the distribution the field actually
+		// has, not against an assumption about what a ridged multifractal
+		// returns. Ten points across it, so the shape is visible rather than
+		// summarised.
+		auto ReportSpread = [&Body](const TCHAR* Name, TArray<double>& Values)
+		{
+			if (Values.Num() == 0)
+			{
+				return;
+			}
+			Values.Sort();
+			Body += FString::Printf(TEXT("  %s, min %.4f max %.4f, deciles:\n    "),
+				Name, Values[0], Values.Last());
+			for (int32 Step = 1; Step <= 9; ++Step)
+			{
+				Body += FString::Printf(TEXT("%.4f "), Values[FMath::Clamp(
+					FMath::FloorToInt(Step * 0.1 * Values.Num()), 0, Values.Num() - 1)]);
+			}
+			Body += TEXT("\n");
+		};
 		Body += TEXT("height terms over land (mountains = ridges * land^1.4 * province):\n");
 		Report(TEXT("ridges"), Ridges);
 		Report(TEXT("province"), Provinces);
 		Report(TEXT("land"), Lands);
 		Report(TEXT("mountains"), MountainTerm);
+		ReportSpread(TEXT("ridge field before the clamp"), RawRidges);
 		Body += TEXT("\n");
 	}
 

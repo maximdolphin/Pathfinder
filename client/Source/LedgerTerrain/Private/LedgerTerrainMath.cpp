@@ -245,12 +245,24 @@ namespace LedgerTerrain
 		// belts and stable interiors rather than uniform crumple everywhere.
 		const double Province = FMath::Clamp(
 			LedgerNoise::Fractal(Warped * 12.0, Seed ^ 0x7E7Eu, 3) * 1.4 + 0.35, 0.0, 1.0);
-		const double RangeMask = FMath::Pow(Land, 1.4) * Province;
+		// Land^0.7, not Land^1.4.
+		//
+		// The exponent decides whether ranges can exist anywhere but on the
+		// highest ground. At 1.4 they could not: the continent mask itself
+		// tops out at 0.581, so Land^1.4 capped the range mask at 0.472, and
+		// the survey found no point where a strong ridge and high land
+		// coincided at all -- the two are independent fields. Renormalising
+		// the ridge noise (T428) took the planet from 1,372 m to 1,911 m and
+		// then stopped, because this was the next thing in the way.
+		//
+		// 0.7 lets a range stand on ordinary continent while still keeping it
+		// off the shelf and out of the sea, which is what the mask is for.
+		const double RangeMask = FMath::Pow(Land, 0.7) * Province;
 
 		// Mountains — 130 km ranges resolving to about 500 m, eroded. The slope
 		// damping is what turns a ridged multifractal from uniform crumple into
 		// something with drainage: valleys widen and smooth, ridges stay sharp.
-		const double Ridges = FMath::Max(0.0,
+		const double Ridges = RidgeStrength(
 			LedgerNoise::ErodedRidged(Warped * 310.0, Seed ^ 0x5A5Au, 8, 0.85));
 		const double Mountains = Ridges * RangeMask;
 
@@ -311,9 +323,10 @@ namespace LedgerTerrain
 			(Terms.Continent - Params.SeaLevel) / (1.0 - Params.SeaLevel), 0.0, 1.0);
 		Terms.Province = FMath::Clamp(
 			LedgerNoise::Fractal(Warped * 12.0, Seed ^ 0x7E7Eu, 3) * 1.4 + 0.35, 0.0, 1.0);
-		Terms.Ridges = FMath::Max(0.0,
-			LedgerNoise::ErodedRidged(Warped * 310.0, Seed ^ 0x5A5Au, 8, 0.85));
-		Terms.Mountains = Terms.Ridges * FMath::Pow(Terms.Land, 1.4) * Terms.Province;
+		Terms.RidgesRaw = LedgerNoise::ErodedRidged(
+			Warped * 310.0, Seed ^ 0x5A5Au, 8, 0.85);
+		Terms.Ridges = RidgeStrength(Terms.RidgesRaw);
+		Terms.Mountains = Terms.Ridges * FMath::Pow(Terms.Land, 0.7) * Terms.Province;
 		Terms.HeightFraction = Terms.Land * 0.26 + Terms.Mountains * 0.64;
 		return Terms;
 	}

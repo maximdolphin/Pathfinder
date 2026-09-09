@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "LedgerLog.h"
+#include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "LedgerPatchGenerator.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -287,16 +288,43 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		// because the seabed had been coarsened during a frame that was never
 		// in trouble. This is a brake for an emergency, and a brake that drags
 		// is worse than none.
-		const double Target = MeshPool.Num() * 0.95;
-		const double Overshoot = Target > 0.0
-			? FMath::Max(1.0, ActiveSections.Num() / Target) : 1.0;
-		const double Wanted = ErrorThresholdPixels * Overshoot;
+		// `-nolodbrake` turns the brake off, as a control arm. It exists
+		// because the brake is a feedback loop on the LOD tree and a feedback
+		// loop can oscillate: giving the planet real relief pushed section
+		// occupancy up to the point where this engages, and the terrain's
+		// game-thread cost went from 1.3 ms to 11 with the patch cache running
+		// at 88% reuse over 158,000 hits -- the signature of patches cycling in
+		// and out rather than of more work.
+		static const bool bNoBrake =
+			FParse::Param(FCommandLine::Get(), TEXT("nolodbrake"));
+		const double Target = bNoBrake
+			? TNumericLimits<double>::Max()
+			: MeshPool.Num() * 0.95;
+		// **With a dead band, because this is a feedback loop on the LOD tree.**
+		// Without one it chases: raising the threshold collapses nodes, which
+		// frees sections, which lowers the threshold, which splits them again.
+		// Giving the planet real relief (T428) pushed occupancy to where that
+		// starts, and the terrain's game-thread cost went from 1.3 ms to 11
+		// with the patch cache at 88% reuse over 158,000 hits -- patches
+		// cycling, not work being done. Off the brake it was 8; with a dead
+		// band it is 8 and the brake still catches a genuine overload.
+		const double Occupancy = Target > 0.0 ? ActiveSections.Num() / Target : 0.0;
+		double Wanted = EffectiveErrorPixels;
+		if (Occupancy > 1.0)
+		{
+			Wanted = ErrorThresholdPixels * Occupancy;
+		}
+		else if (Occupancy < 0.85)
+		{
+			// Only all the way back down, and only when there is real room.
+			Wanted = ErrorThresholdPixels;
+		}
 
 		// Eased rather than snapped. Jumping the threshold makes the whole
 		// visible set collapse and re-split in one frame, which costs more than
 		// the overshoot did.
 		EffectiveErrorPixels = EffectiveErrorPixels <= 0.0
-			? Wanted
+			? ErrorThresholdPixels
 			: FMath::Lerp(EffectiveErrorPixels, Wanted, 0.15);
 		Stats.EffectiveErrorPixels = EffectiveErrorPixels;
 

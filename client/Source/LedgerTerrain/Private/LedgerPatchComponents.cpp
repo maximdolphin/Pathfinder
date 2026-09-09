@@ -154,6 +154,20 @@ namespace LedgerTerrain
 		}
 
 		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// `-terrainnoshadow` stops the terrain casting at all.
+		//
+		// The control arm for T064, and the same shape as T047's: that task
+		// asked whether a virtual texture would make the surface material
+		// cheaper, and the first thing anybody needed was what the material
+		// cost. This asks whether the terrain deserves its own shadow LOD, and
+		// the first thing anybody needs is what the terrain costs the shadow
+		// pass. A planet that casts no shadow at all is the floor any cheaper
+		// scheme is competing against.
+		static const bool bNoShadow =
+			FParse::Param(FCommandLine::Get(), TEXT("terrainnoshadow"));
+		Mesh->SetCastShadow(!bNoShadow);
+
 		Mesh->SetVisibility(false);
 		Mesh->SetupAttachment(Owner.GetRootComponent());
 		Mesh->RegisterComponent();
