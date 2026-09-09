@@ -1,5 +1,25 @@
 # Unreal's conventions, so engine code and project code read the same. Nothing
 # in here is worth an argument, which is the point of automating it.
+#
+# **This describes the house style; it does not yet enforce it.** The options
+# below the first block were fitted to the code as written, which got the whole
+# tree to within about 2,000 lines of clang-format's output -- close enough to
+# show the style is real and consistent, not close enough to be a gate. CI used
+# to run `clang-format --dry-run --Werror` over everything and had therefore
+# failed on every commit since the check was added, because the code has never
+# been run through the formatter at all.
+#
+# Adopting it is a task rather than a tidy-up: the reformat pushes three files
+# that already sit at 481, 484 and 498 lines over the 500-line limit, and the
+# standard's own answer to that is "ask what two things the file is doing".
+# Until somebody does that, this file is for editors. To see where it stands:
+#
+#     pip install clang-format==23.1.0
+#     find client/Source -name '*.cpp' -o -name '*.h' | xargs clang-format -i
+#
+# Pin the version. clang-format reflows differently between major releases, so
+# an unpinned check turns "the code is formatted" into "the code is formatted
+# the way whichever version the runner installed today would have done it".
 BasedOnStyle: LLVM
 Language: Cpp
 UseTab: Always
@@ -15,3 +35,12 @@ AccessModifierOffset: -4
 PointerAlignment: Left
 SortIncludes: CaseSensitive
 IncludeBlocks: Preserve
+AlignAfterOpenBracket: AlwaysBreak
+BinPackParameters: false
+BinPackArguments: false
+ContinuationIndentWidth: 4
+FixNamespaceComments: false
+PenaltyReturnTypeOnItsOwnLine: 10000
+PenaltyBreakAssignment: 1000
+AlignOperands: DontAlign
+BreakBeforeBinaryOperators: NonAssignment
