@@ -3706,11 +3706,29 @@
    "dependsOn": [
     "T050"
    ],
-   "status": "active",
+   "status": "blocked",
    "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Temperature done and tested: LedgerClimate::At is a pure function, four automation tests green in ~90 ms (monotonic sea-level temperature pole to equator, lapse rate, bounded moisture, wind bands reversing). Rain shadow NOT demonstrated, and the cause is the terrain. The transect finds two major ranges on the whole planet and both are shadowed -- which is not a pass: at the base rate below, two for two happens by chance about a third of the time. Asking every wind-crossing ridge instead, 1,018 of them with each ridge's own two flanks compared, gives 56% drier on the lee. A coin toss. Two explanations were tried and both wrong: a 25 km march step wider than a ridge (cut to 7.5 km, 54% -> 50%), and a population comparison that said rising ground is WETTER (0.361 vs 0.293 over 2,600 points each) because it was measuring distance from the sea. The real reason is the relief survey: highest land on the planet is 1372 m against MaxElevation configured at 9 km, land p90 673 m. The height function uses fifteen per cent of its range and makes smooth low noise, not ranges. Nothing here is a barrier -- and that is also why the world looks bland from the air."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Blocked on terrain relief, not on the climate model. The rain-shadow half of the acceptance cannot be shown on a planet whose highest land is 1372 m of smooth noise against a 9 km configured maximum. The transect stays as the check and will start passing when the height function produces ranges."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T051-2026-09-09T15-41-16-544.txt",
+     "caption": "Pole-to-equator transect, relief survey and the ridge statistic",
+     "source": "../docs/comparisons/climate/climate-transect.txt",
+     "addedAt": "2026-09-09T15:41:16.546Z"
+    }
+   ],
    "plannedStartDay": 93,
    "plannedEndDay": 96,
    "plannedStart": "2027-01-14",
@@ -12475,5 +12493,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T15:22:03.114Z"
+ "updatedAt": "2026-09-09T15:41:16.642Z"
 }
