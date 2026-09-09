@@ -56,8 +56,29 @@ acceptance that fails, and the driver disk caches were the wrong lever for it �
 they are the driver's copy, not the engine's. The engine's own answer is a
 recorded `.upipelinecache` shipped with the build, which nothing here does yet.
 
-**The 22 stalls in the cold run are mostly the fixture.** They land at t=14.1,
-42.1, 68.1, 78.1, 88.3 and 124.0 seconds — the capture timestamps. Taking a
-screenshot stalls the frame it is taken on, and the perf recorder counts it.
-Any stall attribution here has to exclude the capture frames first, or it is
-counting the measurement.
+**Most of the 22 stalls in the cold run were the fixture.** They landed at
+t=14.1, 42.1, 68.1, 78.1, 88.3 and 124.0 seconds — the capture timestamps.
+Taking a screenshot stalls the frame it is taken on, and the recorder counted
+it. The recorder now drops frames while a screenshot is outstanding, and the
+count goes 22 → 12 (`cold-captures-excluded-stalls.txt`).
+
+A fixed two-frame skip was tried first and was the wrong shape — it removed
+nine and left the coast and underwater captures in the list, because the
+request is served whenever the render thread gets to it. Picking a larger
+number until the list looked clean would have been picking the answer, so the
+skip runs while `FScreenshotRequest::IsScreenshotRequested()` instead.
+
+What is left is not shader compilation:
+
+```
+ 40.2 ms t=63.1s entry     506.0 ms t=124.0s coast    128.6 ms t=140.1s ascent
+209.5 ms t=63.8s entry     197.3 ms t=124.1s coast     57.8 ms t=140.2s ascent
+ 44.2 ms t=78.1s town       47.4 ms t=132.0s under     34.9 ms t=141.0s ascent
+ 36.3 ms t=111.6s sweep    686.9 ms t=133.5s under
+                           192.1 ms t=133.6s under
+```
+
+t=124 is the coast teleport, t=132 the underwater one, t=140 the start of the
+climb. They are the frames where the camera moves somewhere new or the tree
+collapses — the terrain's problem, and the same ~300 ms spike the component
+comparison found. None of them coincides with a precache miss.

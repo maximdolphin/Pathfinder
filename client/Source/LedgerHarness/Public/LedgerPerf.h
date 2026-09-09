@@ -51,6 +51,15 @@ public:
 	/// Names the phase subsequent frames belong to. Called by the flight script.
 	void BeginPhase(const FString& Name);
 
+	/// Drops frames from the record while a capture is outstanding.
+	///
+	/// Taking a screenshot stalls the frame it is taken on -- the request
+	/// blocks on the render thread and reads the back buffer back. Counting
+	/// that is counting the measurement: six of the twenty-two stalls in a
+	/// packaged run landed exactly on the capture timestamps, and were being
+	/// read as evidence about shader compilation.
+	void SkipFrames(int32 Count) { FramesToSkip = FMath::Max(FramesToSkip, Count); }
+
 	/// Writes the report and returns whether the budget held.
 	bool WriteReport(const FString& Path) const;
 
@@ -58,6 +67,8 @@ public:
 	/// against the clock rather than against whatever the engine says the
 	/// simulation step was.
 	double LastTickAt = 0.0;
+
+	int32 FramesToSkip = 0;
 
 	/// Milliseconds a frame may take. 16.7 is sixty per second.
 	double BudgetMs = 16.7;

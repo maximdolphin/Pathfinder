@@ -162,6 +162,16 @@ void ULedgerFlightHarness::TakeWhenSettled()
 	const FString Path = FPaths::ConvertRelativePathToFull(
 		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 			FString(PendingCapture)));
+	// The screenshot frame and the one after it are not frames the game had to
+	// render; see ULedgerPerfSubsystem::SkipFrames.
+	if (UWorld* Recording = GetWorld())
+	{
+		if (ULedgerPerfSubsystem* Perf = Recording->GetSubsystem<ULedgerPerfSubsystem>())
+		{
+			Perf->SkipFrames(2);
+		}
+	}
+
 	FScreenshotRequest::RequestScreenshot(Path, false, false);
 	UE_LOG(LogLedger, Log, TEXT("capture -> %s (settled after %.1f s%s)"),
 		*Path, SettleWaited, bSettled ? TEXT("") : TEXT(", TIMED OUT"));

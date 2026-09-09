@@ -3253,6 +3253,11 @@
      "at": "2026-09-09",
      "kind": "unblock",
      "text": "unblocked"
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Stall attribution done. The recorder now drops frames while a screenshot is outstanding -- a fixed two-frame skip was tried first and removed only nine of twenty-two, because the request is served whenever the render thread gets to it, and picking a larger number until the list looked clean would have been picking the answer. Count 22 -> 12. What is left lands on t=124 (coast teleport), t=132 (underwater teleport) and t=140 (start of the climb): the frames where the camera moves somewhere new or the tree collapses. None coincides with a precache miss. So the 34 misses are 30 in the warm-up window and 4 in flight, and the flight's stalls are the terrain's cache-copy problem rather than shader compilation. Remaining work for the acceptance is a recorded .upipelinecache to take the 34 to zero."
     }
    ],
    "evidence": [],
@@ -12424,5 +12429,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T13:07:53.246Z"
+ "updatedAt": "2026-09-09T13:21:57.551Z"
 }

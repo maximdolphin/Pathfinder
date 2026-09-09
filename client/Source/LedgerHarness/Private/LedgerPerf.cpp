@@ -7,6 +7,7 @@
 #include "EngineUtils.h"
 #include "LedgerPlanet.h"
 #include "RenderTimer.h"
+#include "UnrealClient.h"
 
 namespace
 {
@@ -64,6 +65,24 @@ void ULedgerPerfSubsystem::Tick(float DeltaSeconds)
 
 	if (Phases.Num() == 0 || DeltaSeconds <= 0.0f)
 	{
+		return;
+	}
+
+	// Skip while a screenshot is outstanding, and one frame after it lands.
+	//
+	// A fixed count was tried first and was the wrong shape: two frames removed
+	// nine stalls of twenty-two and left the coast and underwater captures
+	// still in the list, because the request is served whenever the render
+	// thread gets to it rather than on the next tick. Choosing a larger number
+	// until the list looked clean would have been choosing the answer.
+	if (FScreenshotRequest::IsScreenshotRequested())
+	{
+		FramesToSkip = FMath::Max(FramesToSkip, 1);
+	}
+	if (FramesToSkip > 0)
+	{
+		--FramesToSkip;
+		LastTickAt = FPlatformTime::Seconds();
 		return;
 	}
 
