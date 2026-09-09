@@ -107,6 +107,83 @@ namespace
 	}
 }
 
+TStatId ULedgerWorldBuilder::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerWorldBuilder, STATGROUP_Tickables);
+}
+
+void ULedgerWorldBuilder::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	KeepSkyWithViewer();
+}
+
+/// The sky light has to be where the viewer is, and it is the only thing this
+/// subsystem ticks for.
+///
+/// A real-time capture sky light renders its cubemap from its own position. At
+/// the world origin -- the planet's centre -- that cubemap is the inside of the
+/// planet, and the sky light delivers no light at all. Moved to the camera it
+/// captures the sky the camera can see, which is also correct as the ship
+/// climbs: the ambient at 200 km should not be the ambient on the ground.
+///
+/// ponytail: every frame, unconditionally. The capture is throttled by the
+/// renderer, not by this, and a threshold on how far it has moved would be a
+/// second thing to get wrong for no measured saving.
+void ULedgerWorldBuilder::KeepSkyWithViewer()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || Sky == nullptr)
+	{
+		return;
+	}
+
+	const APlayerController* Controller = World->GetFirstPlayerController();
+	const APawn* Pawn = Controller != nullptr ? Controller->GetPawn() : nullptr;
+	if (Pawn == nullptr)
+	{
+		return;
+	}
+	const FVector Was = Sky->GetActorLocation();
+	const FVector Now = Pawn->GetActorLocation();
+	Sky->SetActorLocation(Now);
+
+	// **Moving it is not enough: the capture has to be asked for again.**
+	//
+	// bRealTimeCapture re-captures when the sky itself changes -- the sun
+	// moves, the atmosphere changes -- and not when the light moves. So the one
+	// capture taken at world build time, from the planet's centre, stayed the
+	// answer forever: a black cubemap, and a sky light that delivered nothing
+	// anywhere. Moving the actor to the surface changed nothing at all until
+	// this line, which is how it was established that the position was only
+	// half of it.
+	//
+	// A kilometre of hysteresis. The capture is not free and the sky does not
+	// meaningfully change over less than that; without a threshold this is a
+	// cubemap render every frame.
+	if (FVector::Distance(Was, LastSkyCapture) > 100000.0
+		|| FVector::Distance(Now, LastSkyCapture) > 100000.0)
+	{
+		if (USkyLightComponent* Component = Sky->GetLightComponent())
+		{
+			Component->RecaptureSky();
+		}
+		LastSkyCapture = Now;
+	}
+
+	// Once, so the log says whether this ever ran and where it put it. The
+	// first attempt at this fix changed nothing and there was no way to tell
+	// whether the position was wrong or the tick was never happening.
+	if (!bSkyMoved)
+	{
+		bSkyMoved = true;
+		UE_LOG(LogLedger, Log,
+			TEXT("lighting: sky light moved from %s to %s (%.0f km from the centre)"),
+			*Was.ToCompactString(), *Sky->GetActorLocation().ToCompactString(),
+			Sky->GetActorLocation().Length() / 100000.0);
+	}
+}
+
 void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
@@ -226,7 +303,8 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		}
 	}
 
-	if (ASkyLight* Sky = Placed<ASkyLight>(InWorld, Params))
+	Sky = Placed<ASkyLight>(InWorld, Params);
+	if (Sky != nullptr)
 	{
 		if (USkyLightComponent* Component = Sky->GetLightComponent())
 		{
@@ -239,6 +317,16 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			// Real-time capture: the ambient has to change as the ship descends
 			// through the atmosphere, or the ground stays lit like space and the
 			// transition reads as a cut.
+			//
+			// **A real-time capture happens at the actor's own position, and
+			// this actor spawned at the world origin, which on this project is
+			// the centre of the planet.** It was capturing a cubemap from six
+			// thousand kilometres underground: solid rock in every direction,
+			// so the capture was black and the sky contributed exactly nothing
+			// to anything, for as long as there has been a sky light. Turning
+			// direct lighting off rendered the entire world -- terrain, town,
+			// trees -- as a pure black silhouette against a blue sky, which is
+			// what found it. Tick moves it to the viewer; see KeepSkyWithViewer.
 			Component->bRealTimeCapture = true;
 			Component->RecaptureSky();
 		}

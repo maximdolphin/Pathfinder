@@ -34,12 +34,31 @@ public:
 
 /// Spawns the scene: planet, atmosphere, lighting, a town, and the ship.
 UCLASS()
-class LEDGERCLIENT_API ULedgerWorldBuilder : public UWorldSubsystem
+class LEDGERCLIENT_API ULedgerWorldBuilder : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 
 public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
+
+	/// Only to keep the sky light where the viewer is. See KeepSkyWithViewer.
+	virtual void Tick(float DeltaSeconds) override;
+	virtual TStatId GetStatId() const override;
+
+private:
+	void KeepSkyWithViewer();
+
+	/// Kept so Tick can move it to the viewer every frame.
+	UPROPERTY()
+	TObjectPtr<class ASkyLight> Sky;
+
+	bool bSkyMoved = false;
+
+	/// Where the sky was last captured from, so it is re-captured when the
+	/// viewer has actually gone somewhere.
+	FVector LastSkyCapture = FVector(TNumericLimits<double>::Max());
+
+public:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
 
 	ALedgerPlanet* GetPlanet() const { return Planet; }
