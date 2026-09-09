@@ -3924,11 +3924,30 @@
    "dependsOn": [
     "T055"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "Partial, and the acceptance cannot be finished here. It asks to WALK into a mouth, through a passage and out the other side with collision and lighting correct throughout; there is no pawn with legs until M09, so two of the three things that sentence asks to be correct cannot be checked at all. What works and is photographed: the cave field (26.6% of the surface is cave country; the first mouth leads to a passage of 1,123 cells spanning 680 m and 648 m deep, meeting the sky at 35 cells with its two furthest mouths 120 m apart -- the acceptance's substance measured by flood fill without a mesher), and the hole in the surface, which is a deletion because a height field cannot have a hole. What does not: the wall mesh runs on 745 patches and is visible from outside, but is NOT verifiably closed -- a camera 18 m under the mouth sees uniform sky, so from in there every surface is back-facing, and whether that is winding or coverage is unanswered. Not started at all: LOD (caves pop in at the 1.2 km patch boundary), brick seams (left open rather than capped, so a crack rather than a wall across the passage), a material for cave rock, and any light inside. Meshing is behind -cavemesh and off by default so no other measurement in the repository is affected. Write-up with all of this in docs/comparisons/caves/, commit 4d3312d."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T056-2026-09-09T17-24-24-122.png",
+     "caption": "The hole in the surface where a passage breaches, from 90 m away. Sawtoothed because the terrain resolves 4.8 m against a 14 m passage.",
+     "source": "../out/cave-approach.png",
+     "addedAt": "2026-09-09T17:24:24.123Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-09T17-24-24-216.txt",
+     "caption": "A passage of 1,123 cells spanning 680 m with two mouths 120 m apart, measured by flood fill without a mesher.",
+     "source": "../docs/comparisons/caves/caves.txt",
+     "addedAt": "2026-09-09T17:24:24.217Z"
+    }
+   ],
    "plannedStartDay": 108,
    "plannedEndDay": 113,
    "plannedStart": "2027-02-04",
@@ -12573,5 +12592,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T17:07:57.327Z"
+ "updatedAt": "2026-09-09T17:24:24.308Z"
 }

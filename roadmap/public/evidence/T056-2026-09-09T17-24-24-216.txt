@@ -1,0 +1,15 @@
+Caves, measured before anything is meshed (T056).
+
+cave country: 26.6% of the surface by area (16407 of 61560 samples)
+
+surface mouths found in a quarter-degree sweep: 12
+first mouth at 14.00 lat, 54.50 lon, ground 158 m
+
+local box 256 x 256 x 96 cells at 8 m: 840 open (0.013% of the rock)
+the passage from that mouth: 840 cells, 560 m across, 112 m deep
+it meets the sky at 93 cells, and its two furthest mouths are 578 m apart
+
+in one mouth and out another, at least 100 m apart: yes
+walking it is M09's business; there is no pawn with legs yet.
+
+VERDICT: PASS
