@@ -81,6 +81,11 @@ def build():
     with open(report, "w") as handle:
         handle.write("Level: %s\n" % LEVEL)
         handle.write("Placed: %s\n" % (", ".join(placed) if placed else "nothing"))
+        # The level's provenance lives here rather than on the asset. Unreal
+        # drops package metadata set before a map save and does not persist it
+        # when set afterwards; both were tried. tools/verify_assets.py checks
+        # this line, so the level is not simply exempt from the rule.
+        handle.write("Generator: tools/make_level.py\n")
         handle.write("VERDICT: %s\n" % ("PASS" if len(placed) == 3 else "FAIL"))
 
 

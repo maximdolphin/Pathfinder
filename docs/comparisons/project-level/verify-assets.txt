@@ -1,0 +1,10 @@
+Asset provenance, across the whole content tree.
+
+  /Game/Maps            1  level
+  /Game/Materials       3  baked material
+  /Game/Meshes          3  baked static mesh
+  /Game/Surfaces       69  imported surface texture
+
+  76 assets checked
+
+VERDICT: PASS

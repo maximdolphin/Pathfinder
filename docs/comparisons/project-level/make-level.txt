@@ -1,0 +1,4 @@
+Level: /Game/Maps/Ledger
+Placed: Sun, SkyLight, WorldPostProcess
+Generator: tools/make_level.py
+VERDICT: PASS

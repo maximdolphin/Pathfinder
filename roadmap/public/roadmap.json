@@ -3116,10 +3116,16 @@
    "dependsOn": [
     "T421"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Every asset's package path is derived from its definition -- /Game/Materials, /Game/Meshes, /Game/Surfaces and /Game/Maps, each root owned by one generator -- and tools/verify_assets.py walks the whole content tree and fails on anything without a Ledger.Generator tag or outside a known root. Evidence: 76 assets checked, VERDICT PASS, kept at docs/comparisons/project-level/verify-assets.txt. Materials and meshes tag themselves as they are baked. The 69 textures are imported by Unreal's own commandlet, which knows nothing about this project, so tools/tag_surfaces.py writes their source and licence on afterwards FROM THE MANIFEST rather than from a second copy of the same facts. The validator caught itself first: its opening version reported '/Game/Maps 0' and passed, having never looked at the level, because get_assets_by_path does not return World assets. A validator that quietly checks nothing is worse than none, because it is believed. ONE HONEST EXCEPTION, written down rather than waved through: the level cannot record its generator in the asset. Package metadata set before a map save is dropped and metadata set afterwards is not persisted by save_asset -- both were tried, and an actor tag on the world settings did not take either. Its provenance is kept beside it in build/make-level.txt and the validator checks that line, so the level is held to the rule rather than exempted from it."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 68.5,
    "plannedEndDay": 69.5,
@@ -12276,5 +12282,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T06:35:25.018Z"
+ "updatedAt": "2026-09-09T06:42:41.479Z"
 }

@@ -76,6 +76,14 @@ STEPS = [
             "-bakemeshes", "-livematerials"],
     ),
     dict(
+        name="provenance",
+        makes="Ledger.Generator tags",
+        why="The textures are imported by Unreal's own commandlet, which knows "
+            "nothing about this project, so their source and licence are written "
+            "on afterwards from the manifest.",
+        command=lambda: python_step("tools/tag_surfaces.py"),
+    ),
+    dict(
         name="materials",
         makes="/Game/Materials/*",
         why="The C++ graph builders, run once and saved, so a packaged build "
@@ -114,7 +122,16 @@ def verify_meshes():
     return "VERDICT: PASS" in body, body.strip().splitlines()[-1]
 
 
+def verify_provenance():
+    report = os.path.join(ROOT, "out", "tag-surfaces.txt")
+    if not os.path.isfile(report):
+        return False, "no provenance report"
+    body = io.open(report, encoding="utf-8").read()
+    return "VERDICT: PASS" in body, body.strip().splitlines()[-1]
+
+
 VERIFY = {"level": verify_level, "surfaces": verify_surfaces,
+          "provenance": verify_provenance,
           "meshes": verify_meshes, "materials": verify_materials}
 
 
