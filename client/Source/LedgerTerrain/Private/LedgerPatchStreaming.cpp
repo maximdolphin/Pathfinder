@@ -38,6 +38,7 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 	Job->Params = TerrainParams();
 	Job->Side = GridResolution;
 	Job->WorldSize = Node.WorldSize;
+	Job->Biomes = Biomes;
 
 	// Neighbour depths are read here, on the game thread, while the tree is
 	// stable. The worker never touches the tree.
@@ -87,7 +88,7 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		// Section 1 is the sea. Same component, so it moves and culls with the
 		// land it belongs to and costs no extra transform.
 		const double UploadStart = FPlatformTime::Seconds();
-		LedgerTerrain::UploadPatch(*Mesh, *Job, TerrainMaterial(), WaterMaterial);
+		LedgerTerrain::UploadPatch(*Mesh, *Job, TerrainMaterial(Job->Palette), WaterMaterial);
 		if (Job->bHasWater)
 		{
 			++Stats.WaterSections;
@@ -106,7 +107,8 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
 		SectionMeta[Job->SectionIndex] = FLedgerSectionMeta{
 			Job->Key, Job->Centre,
-			Job->bStitchLeft, Job->bStitchRight, Job->bStitchBottom, Job->bStitchTop };
+			Job->bStitchLeft, Job->bStitchRight, Job->bStitchBottom, Job->bStitchTop,
+			Job->Palette };
 
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
 		++Stats.TotalBuilds;
@@ -175,7 +177,7 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	Mesh->SetProcMeshSection(0, Entry.Land);
 	if (SurfaceMaterial != nullptr)
 	{
-		Mesh->SetMaterial(0, TerrainMaterial());
+		Mesh->SetMaterial(0, TerrainMaterial(Entry.Palette));
 	}
 
 	if (Entry.bHasWater)
@@ -200,7 +202,8 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	ActiveSections.Add(Key, SectionIndex);
 	SectionMeta[SectionIndex] = FLedgerSectionMeta{
 		Key, Entry.Centre,
-		Entry.bStitchLeft, Entry.bStitchRight, Entry.bStitchBottom, Entry.bStitchTop };
+		Entry.bStitchLeft, Entry.bStitchRight, Entry.bStitchBottom, Entry.bStitchTop,
+		Entry.Palette };
 
 	// Removed, not kept: the geometry is on screen again and holding a second
 	// copy of it is exactly the waste this cache is shaped to avoid.
@@ -212,20 +215,42 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	return true;
 }
 
-UMaterialInterface* ALedgerPlanet::TerrainMaterial() const
+UMaterialInterface* ALedgerPlanet::TerrainMaterial(const FLedgerBiomePalette& Palette)
 {
-	return SurfaceInstance != nullptr
-		? Cast<UMaterialInterface>(SurfaceInstance)
-		: SurfaceMaterial.Get();
+	// No biomes on this patch, or nobody able to bind them: the plain instance,
+	// which is what the whole planet used before T053.
+	if (Palette.IsEmpty() || !PaletteMaterial.IsBound() || !Biomes.IsValid())
+	{
+		return SurfaceInstance != nullptr
+			? Cast<UMaterialInterface>(SurfaceInstance)
+			: SurfaceMaterial.Get();
+	}
+
+	const uint32 Key = Palette.Key();
+	if (const TObjectPtr<UMaterialInstanceDynamic>* Existing = PaletteInstances.Find(Key))
+	{
+		return *Existing;
+	}
+
+	UMaterialInstanceDynamic* Instance = PaletteMaterial.Execute(Palette, *Biomes);
+	if (Instance == nullptr)
+	{
+		// Do not cache the failure: whatever went wrong is worth retrying, and
+		// a null in the map would paint this palette with nothing forever.
+		return SurfaceInstance != nullptr
+			? Cast<UMaterialInterface>(SurfaceInstance)
+			: SurfaceMaterial.Get();
+	}
+
+	PaletteInstances.Add(Key, Instance);
+	// A palette created between frames would otherwise render one frame with an
+	// unset morph scale, which reads as every patch on that palette popping.
+	ApplyMorphParameters(*Instance);
+	return Instance;
 }
 
 void ALedgerPlanet::UpdateMorphParameters(double ViewportWidth, double FovRadians)
 {
-	if (SurfaceInstance == nullptr)
-	{
-		return;
-	}
-
 	// Same projection the screen-space error metric uses, rearranged.
 	//
 	// Error in pixels is NodeWorldSize * Scale / Distance, so a node is at its
@@ -235,8 +260,25 @@ void ALedgerPlanet::UpdateMorphParameters(double ViewportWidth, double FovRadian
 	const double HalfFov = FMath::Max(FovRadians * 0.5, 0.001);
 	const double Scale = (ViewportWidth * 0.5) / (FMath::Tan(HalfFov) * FMath::Max(ErrorThresholdPixels, 1.0));
 
-	SurfaceInstance->SetScalarParameterValue(TEXT("MorphScale"), static_cast<float>(Scale));
-	SurfaceInstance->SetVectorParameterValue(TEXT("PlanetCentre"), FLinearColor(
+	MorphScale = Scale;
+
+	if (SurfaceInstance != nullptr)
+	{
+		ApplyMorphParameters(*SurfaceInstance);
+	}
+	for (const TPair<uint32, TObjectPtr<UMaterialInstanceDynamic>>& Palette : PaletteInstances)
+	{
+		if (Palette.Value != nullptr)
+		{
+			ApplyMorphParameters(*Palette.Value);
+		}
+	}
+}
+
+void ALedgerPlanet::ApplyMorphParameters(UMaterialInstanceDynamic& Instance) const
+{
+	Instance.SetScalarParameterValue(TEXT("MorphScale"), static_cast<float>(MorphScale));
+	Instance.SetVectorParameterValue(TEXT("PlanetCentre"), FLinearColor(
 		static_cast<float>(GetActorLocation().X),
 		static_cast<float>(GetActorLocation().Y),
 		static_cast<float>(GetActorLocation().Z),
@@ -267,6 +309,7 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 			Entry->bStitchRight = Meta.bStitchRight;
 			Entry->bStitchBottom = Meta.bStitchBottom;
 			Entry->bStitchTop = Meta.bStitchTop;
+			Entry->Palette = Meta.Palette;
 			Entry->Land = *Land;
 
 			if (const FProcMeshSection* Water = Mesh->GetProcMeshSection(1))

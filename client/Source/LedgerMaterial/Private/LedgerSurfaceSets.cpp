@@ -1,8 +1,6 @@
-// Reading surfaces/manifest.json, and loading the assets it names.
+// Reading client/Config/surfaces.json, and loading the assets it names.
 
 #include "LedgerSurfaceSets.h"
-
-#if WITH_EDITOR
 
 #include "Dom/JsonObject.h"
 #include "Engine/Texture2D.h"
@@ -30,10 +28,11 @@ namespace LedgerSurface
 			bTried = true;
 
 			// Outside Content on purpose: Content holds the imported .uasset,
-			// and the manifest describes where those came from.
+			// and the manifest describes where those came from. In Config
+			// rather than beside the source images because the packaged game
+			// reads it too, and Config is what stages.
 			const FString Path = FPaths::ConvertRelativePathToFull(
-				FPaths::Combine(FPaths::ProjectDir(), TEXT(".."),
-					TEXT("surfaces"), TEXT("manifest.json")));
+				FPaths::ProjectConfigDir() / TEXT("surfaces.json"));
 
 			FString Body;
 			if (!FFileHelper::LoadFileToString(Body, *Path))
@@ -150,5 +149,3 @@ namespace LedgerSurface
 		return Set;
 	}
 }
-
-#endif

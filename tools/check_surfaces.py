@@ -46,7 +46,7 @@ from compare_captures import read_png
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SURFACES = os.path.join(ROOT, "surfaces")
-MANIFEST = os.path.join(SURFACES, "manifest.json")
+MANIFEST = os.path.join(ROOT, "client", "Config", "surfaces.json")
 
 TEXTURE_SUFFIXES = (".png", ".tga", ".exr", ".jpg", ".jpeg", ".tif", ".tiff")
 
@@ -297,7 +297,7 @@ def main():
             failures.append(
                 "%s is on disk and in no manifest entry.\n"
                 "    Where did it come from, and under what licence? Answer in "
-                "manifest.json." % path)
+                "client/Config/surfaces.json." % path)
 
     if failures:
         sys.stderr.write("\nSurface manifest:\n\n")
@@ -310,7 +310,7 @@ def main():
         print("%d sets in the manifest with no files here: %s"
               % (len(unfetched), ", ".join(sorted(unfetched))))
         print("  Textures are not in version control. Re-fetch from the asset "
-              "ids in manifest.json and run tools/import_surfaces.py.")
+              "ids in client/Config/surfaces.json and run tools/import_surfaces.py.")
     print("surfaces: %d sets, %d textures, all accounted for"
           % (len(sets), len(textures)))
     for entry in sets:

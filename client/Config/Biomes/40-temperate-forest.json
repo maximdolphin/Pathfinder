@@ -7,9 +7,9 @@
   "maxSlopeDegrees": 35.0,
   "surfaceSet": "forest_floor_compost_teiowah",
   "tint": [
-    0.38,
-    0.44,
-    0.28
+    0.13,
+    0.15,
+    0.1
   ],
   "scatterDensity": 1.0
 }

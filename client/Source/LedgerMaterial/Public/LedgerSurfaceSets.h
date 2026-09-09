@@ -1,17 +1,20 @@
 // Loading an authored surface set, by the name the manifest gives it.
 //
 // The textures are imported into /Game/Surfaces by Unreal's own ImportAssets
-// commandlet, from a plan generated out of surfaces/manifest.json. This reads
-// the same manifest, so the two cannot drift: the tiling distance the shader
-// scales by, and the mean colour it divides out, are the numbers that were
-// measured off the actual images at import time rather than constants somebody
-// typed into a shader and then forgot the provenance of.
+// commandlet, from a plan generated out of client/Config/surfaces.json. This
+// reads the same manifest, so the two cannot drift: the tiling distance the
+// shader scales by, and the mean colour it divides out, are the numbers that
+// were measured off the actual images at import time rather than constants
+// somebody typed into a shader and then forgot the provenance of.
+//
+// **Runtime, not editor-only.** It used to be editor-only because the only
+// caller was the material graph builder, which is. T053 binds a patch's
+// surface sets from its biomes at streaming time, in the packaged game, so
+// the manifest moved into Config -- where it stages -- and this came with it.
 
 #pragma once
 
 #include "CoreMinimal.h"
-
-#if WITH_EDITOR
 
 class UTexture2D;
 
@@ -45,7 +48,5 @@ namespace LedgerSurface
 
 	/// Loads one set by manifest name. Returns an invalid set, and logs which
 	/// part was missing, rather than half of one.
-	FSurfaceSet LoadSurfaceSet(const FString& Name);
+	LEDGERMATERIAL_API FSurfaceSet LoadSurfaceSet(const FString& Name);
 }
-
-#endif

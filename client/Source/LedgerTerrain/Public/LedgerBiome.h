@@ -56,6 +56,35 @@ struct FLedgerBiome
 	double ScatterDensity = 0.0;
 };
 
+/// The biomes one patch is painted with.
+///
+/// **Three, because a patch's vertex colour has three channels.** The material
+/// carries three parameterised surface slots and the mesh carries the weights,
+/// so a patch is a choice of three from the whole set. The census says 33.9% of
+/// land is in a transition and essentially none of it is a four-way one, which
+/// is what makes three enough rather than a compromise.
+///
+/// Slots are biome indices into the loaded set, or INDEX_NONE for an unused
+/// slot. The order is the order of the vertex colour channels.
+struct FLedgerBiomePalette
+{
+	int32 Slots[3] = { INDEX_NONE, INDEX_NONE, INDEX_NONE };
+
+	/// A key that is equal exactly when the palettes are, so materials can be
+	/// shared between patches instead of built per patch.
+	uint32 Key() const
+	{
+		uint32 Value = 0;
+		for (const int32 Slot : Slots)
+		{
+			Value = Value * 251u + static_cast<uint32>(Slot + 1);
+		}
+		return Value;
+	}
+
+	bool IsEmpty() const { return Slots[0] == INDEX_NONE; }
+};
+
 namespace LedgerBiomes
 {
 	/// Where the shipped biomes live, absolute.
@@ -84,6 +113,21 @@ namespace LedgerBiomes
 		const FLedgerClimate& Climate,
 		double SlopeDegrees,
 		TArray<double>& OutWeights);
+
+	/// The three biomes with the most weight in an accumulated total, heaviest
+	/// first. Totals shorter than the biome set, or all zero, give an empty
+	/// palette rather than a wrong one.
+	LEDGERTERRAIN_API FLedgerBiomePalette ChoosePalette(const TArray<double>& Totals);
+
+	/// The weights of a palette's three slots, renormalised over just those
+	/// three, for writing into a vertex colour.
+	///
+	/// A point whose true biome is not in its patch's palette gets the nearest
+	/// thing the patch has. That is a real approximation and it is bounded by
+	/// how much of one patch a fourth biome can cover before it displaces one
+	/// of the three -- which is the case the palette is chosen to avoid.
+	LEDGERTERRAIN_API FVector3f SlotWeights(
+		const TArray<double>& Weights, const FLedgerBiomePalette& Palette);
 
 	/// Index of the heaviest biome, or INDEX_NONE for an empty set.
 	LEDGERTERRAIN_API int32 Dominant(

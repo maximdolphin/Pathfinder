@@ -16,6 +16,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LedgerBiome.h"
 #include "ProceduralMeshComponent.h"
 
 /// A patch that has been drawn and is not drawn now.
@@ -39,6 +40,12 @@ struct FLedgerCachedPatch
 	FProcMeshSection Land;
 	FProcMeshSection Water;
 	bool bHasWater = false;
+
+	/// Which biomes the vertex colours in `Land` are weights of. Cached with
+	/// the geometry because the two only mean anything together: replaying a
+	/// section under a different palette paints the ground with the wrong
+	/// three grounds.
+	FLedgerBiomePalette Palette;
 
 	/// Monotonic counter, not a timestamp. Wall clock would make eviction
 	/// depend on frame rate; a serial makes it depend on use, which is what

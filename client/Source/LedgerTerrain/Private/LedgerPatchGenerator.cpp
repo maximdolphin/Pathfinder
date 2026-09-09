@@ -1,5 +1,8 @@
 #include "LedgerPatchGenerator.h"
 
+#include "LedgerBiome.h"
+#include "Misc/CommandLine.h"
+#include "LedgerClimate.h"
 #include "LedgerPlanet.h"
 #include "LedgerTerrainMath.h"
 
@@ -16,6 +19,11 @@ namespace
 	}
 
 	/// Surface colour from height and steepness.
+	///
+	/// **Superseded by the biome weights, and kept for the case where no biomes
+	/// load.** A fresh clone with an empty Config/Biomes still gets a planet
+	/// that reads as terrain rather than as flat white, and the fallback is
+	/// visibly a colour ramp, so nobody mistakes it for the real thing.
 	///
 	/// Deliberately dark: these are albedos, and albedo near 1.0 blows out the
 	/// moment a sun hits it. Slope matters as much as height — a cliff is bare
@@ -57,6 +65,40 @@ namespace
 		// applied last and wins.
 		const double Bare = FMath::SmoothStep(0.45, 0.78, Steepness);
 		return Blend(Ground, FColor(78, 72, 66), Bare);
+	}
+}
+
+namespace
+{
+	/// How many climate samples across a patch. Three, on a 2x2 cell grid.
+	///
+	/// **Because climate is expensive, and elevation is the reason.** One
+	/// LedgerClimate::At marches forty steps upwind and samples the height
+	/// field at every one, so a climate sample costs forty times what a vertex
+	/// costs. Per vertex on a 33x33 patch that is 43,560 height samples against
+	/// the patch's own 1,089 -- a fortyfold increase in the one cost this
+	/// project has spent the most effort measuring.
+	///
+	/// Nine samples bilinearly interpolated cost 360, about a third on top. The
+	/// approximation is worst in the middle and harmless at both ends: at fine
+	/// LOD a patch spans metres and climate really is constant across it, at
+	/// coarse LOD the patch is far enough away that a smooth gradient is right
+	/// anyway. Corner samples sit at the patch's true corners, so two patches
+	/// at the same depth agree exactly along their shared edge.
+	///
+	/// Slope is NOT interpolated. It is per vertex, and it is what makes a
+	/// cliff bare rock in the middle of a rainforest.
+	///
+	/// **Scaled with the patch, because "climate is constant across it" is only
+	/// true of a small one.** Three samples across a root patch is three across
+	/// a whole cube face, and the orbit and space captures came back with
+	/// flat-coloured continents: correct interpolation of a grid far too coarse
+	/// to have a biome boundary in it. A patch's grid is now proportional to
+	/// its extent, so the handful of coarse patches pay for a real sampling and
+	/// the thousands of fine ones still pay for three.
+	int32 ClimateGridFor(double Extent)
+	{
+		return FMath::Clamp(FMath::RoundToInt32(3.0 + Extent * 20.0), 3, 13);
 	}
 }
 
@@ -201,6 +243,65 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	// the centre, so the centre's direction is the local vertical.
 	const FVector LocalUp = FVector(Job.Centre.GetSafeNormal());
 
+	// ---- climate ---------------------------------------------------------
+	//
+	// Sampled on the coarse grid and interpolated. See ClimateGrid.
+	const TArray<FLedgerBiome>* Biomes = Job.Biomes.IsValid() ? Job.Biomes.Get() : nullptr;
+	const bool bBiomes = Biomes != nullptr && Biomes->Num() > 0;
+
+	const int32 ClimateGrid = ClimateGridFor(Job.Extent);
+	TArray<FLedgerClimate> Grid;
+	if (bBiomes)
+	{
+		Grid.SetNumUninitialized(ClimateGrid * ClimateGrid);
+		for (int32 GridY = 0; GridY < ClimateGrid; ++GridY)
+		{
+			for (int32 GridX = 0; GridX < ClimateGrid; ++GridX)
+			{
+				const double GridU = Job.U
+					+ (static_cast<double>(GridX) / (ClimateGrid - 1)) * Job.Extent;
+				const double GridV = Job.V
+					+ (static_cast<double>(GridY) / (ClimateGrid - 1)) * Job.Extent;
+				Grid[GridY * ClimateGrid + GridX] = LedgerClimate::At(
+					LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(Job.Face, GridU, GridV)),
+					Job.Params);
+			}
+		}
+	}
+
+	auto ClimateAt = [&Grid, ClimateGrid](double LocalU, double LocalV)
+	{
+		const double GridU = FMath::Clamp(LocalU, 0.0, 1.0) * (ClimateGrid - 1);
+		const double GridV = FMath::Clamp(LocalV, 0.0, 1.0) * (ClimateGrid - 1);
+		const int32 X0 = FMath::Clamp(FMath::FloorToInt32(GridU), 0, ClimateGrid - 2);
+		const int32 Y0 = FMath::Clamp(FMath::FloorToInt32(GridV), 0, ClimateGrid - 2);
+		const double FracX = GridU - X0;
+		const double FracY = GridV - Y0;
+
+		auto Mix = [&Grid, ClimateGrid, X0, Y0, FracX, FracY](double FLedgerClimate::* Field)
+		{
+			const double A = Grid[Y0 * ClimateGrid + X0].*Field;
+			const double B = Grid[Y0 * ClimateGrid + X0 + 1].*Field;
+			const double C = Grid[(Y0 + 1) * ClimateGrid + X0].*Field;
+			const double D = Grid[(Y0 + 1) * ClimateGrid + X0 + 1].*Field;
+			return FMath::Lerp(FMath::Lerp(A, B, FracX), FMath::Lerp(C, D, FracX), FracY);
+		};
+
+		FLedgerClimate Out;
+		Out.SeaLevelTemperatureC = Mix(&FLedgerClimate::SeaLevelTemperatureC);
+		Out.Moisture = Mix(&FLedgerClimate::Moisture);
+		return Out;
+	};
+
+	// Weights per vertex, and the patch totals the palette is chosen from.
+	TArray<double> PatchTotals;
+	TArray<TArray<double>> VertexWeights;
+	if (bBiomes)
+	{
+		PatchTotals.SetNumZeroed(Biomes->Num());
+		VertexWeights.SetNum(VertexCount);
+	}
+
 	for (int32 Index = 0; Index < VertexCount; ++Index)
 	{
 		FVector Normal = Job.Normals[Index].GetSafeNormal();
@@ -212,7 +313,32 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 
 		const double Steepness = 1.0 - FMath::Clamp(
 			static_cast<double>(FVector::DotProduct(Normal, LocalUp)), 0.0, 1.0);
-		Job.Colors[Index] = SurfaceColour(Elevations[Index], Job.Params.MaxElevation, Steepness);
+
+		if (!bBiomes)
+		{
+			Job.Colors[Index] = SurfaceColour(
+				Elevations[Index], Job.Params.MaxElevation, Steepness);
+		}
+		else
+		{
+			// Temperature is recomputed from this vertex's own altitude rather
+			// than interpolated: the lapse rate is the term relief moves most,
+			// and interpolating it would flatten every mountain the biome map
+			// is supposed to notice.
+			FLedgerClimate Climate = ClimateAt(Job.UVs[Index].X, Job.UVs[Index].Y);
+			Climate.AltitudeMetres = Elevations[Index] / 100.0;
+			Climate.TemperatureC = Climate.SeaLevelTemperatureC
+				- LedgerClimate::LapseRateCPerKm
+					* FMath::Max(0.0, Climate.AltitudeMetres) / 1000.0;
+
+			const double SlopeDegrees = FMath::RadiansToDegrees(
+				FMath::Acos(FMath::Clamp(1.0 - Steepness, -1.0, 1.0)));
+			LedgerBiomes::Weigh(*Biomes, Climate, SlopeDegrees, VertexWeights[Index]);
+			for (int32 Biome = 0; Biome < PatchTotals.Num(); ++Biome)
+			{
+				PatchTotals[Biome] += VertexWeights[Index][Biome];
+			}
+		}
 
 		// A tangent perpendicular to the normal. Nothing samples a normal map
 		// yet, but ProcMesh wants the channel and a degenerate basis shows up as
@@ -220,6 +346,94 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		const FVector Reference = FMath::Abs(Normal.Z) < 0.9f ? FVector::UpVector : FVector::ForwardVector;
 		Job.Tangents[Index] = FProcMeshTangent(
 			FVector::CrossProduct(Reference, Normal).GetSafeNormal(), false);
+	}
+
+	if (bBiomes)
+	{
+		// The palette is the patch's own three heaviest biomes, so whichever it
+		// leaves out is the least present on it. Two neighbouring patches can
+		// still choose differently, and where they do the discontinuity is
+		// bounded by the weight of the biome one of them dropped -- which is,
+		// by construction, below the three it kept.
+		// `-onepalette` gives every patch on the planet the same three biomes.
+		//
+		// The control arm for the seams. A palette chosen per patch means two
+		// neighbours can drop different biomes, and where they do the ground
+		// changes composition along a straight line -- which is what a patch
+		// boundary is. Rectangular seams appeared in the first T053 captures
+		// and that is the obvious suspect, but "obvious suspect" is how this
+		// project has been wrong four times already. With one palette
+		// everywhere the palette cannot be the cause; if the seams survive,
+		// they are somebody else's.
+		static const bool bOnePalette =
+			FParse::Param(FCommandLine::Get(), TEXT("onepalette"));
+		if (bOnePalette)
+		{
+			Job.Palette.Slots[0] = 0;
+			Job.Palette.Slots[1] = FMath::Min(1, Biomes->Num() - 1);
+			Job.Palette.Slots[2] = FMath::Min(2, Biomes->Num() - 1);
+		}
+		else if (FParse::Param(FCommandLine::Get(), TEXT("patchpalette")))
+		{
+			// The other control arm: each patch picks its own three. This is
+			// what T053 shipped first and it seams along patch boundaries.
+			// Kept so the comparison in docs/comparisons/biome-surfaces/ is a
+			// command line rather than a pair of images somebody has to trust.
+			Job.Palette = LedgerBiomes::ChoosePalette(PatchTotals);
+		}
+		else
+		{
+			// The palette belongs to a cell, not to a patch.
+			//
+			// **A patch cannot choose its own three.** Two neighbours whose own
+			// totals rank the biomes differently keep different triples, and
+			// along their shared edge the ground changes composition in a
+			// straight line -- a seam exactly as long as a patch is wide. The
+			// captures showed them, a one-palette control made them vanish, and
+			// truncating the weight field to three (LedgerBiome.cpp) did not:
+			// the problem is not which weights are dropped, it is that the two
+			// patches drop different *biomes*.
+			//
+			// So the choice is made for a fixed cell of the cube face that both
+			// patches lie inside, from climate sampled at that cell's corners.
+			// Every patch in the cell gets the same three, so there is no seam
+			// inside one; the seams that remain are on cell lines, which are
+			// six hundred kilometres apart and fall where the palette genuinely
+			// changes. It is not free of them, and the write-up says so.
+			constexpr double CellExtent = 1.0 / 16.0;
+			const double CellU = FMath::Floor(Job.U / CellExtent) * CellExtent;
+			const double CellV = FMath::Floor(Job.V / CellExtent) * CellExtent;
+
+			TArray<double> CellTotals;
+			CellTotals.SetNumZeroed(Biomes->Num());
+			TArray<double> CellWeights;
+			for (int32 CellY = 0; CellY <= 4; ++CellY)
+			{
+				for (int32 CellX = 0; CellX <= 4; ++CellX)
+				{
+					const FVector3d Point = LedgerTerrain::CubeToSphere(
+						LedgerTerrain::FaceToCube(Job.Face,
+							CellU + (CellX / 4.0) * CellExtent,
+							CellV + (CellY / 4.0) * CellExtent));
+					LedgerBiomes::Weigh(
+						*Biomes, LedgerClimate::At(Point, Job.Params), 0.0, CellWeights);
+					for (int32 Biome = 0; Biome < CellTotals.Num(); ++Biome)
+					{
+						CellTotals[Biome] += CellWeights[Biome];
+					}
+				}
+			}
+			Job.Palette = LedgerBiomes::ChoosePalette(CellTotals);
+		}
+		for (int32 Index = 0; Index < VertexCount; ++Index)
+		{
+			const FVector3f Slots = LedgerBiomes::SlotWeights(VertexWeights[Index], Job.Palette);
+			Job.Colors[Index] = FColor(
+				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.X, 0.0f, 1.0f) * 255.0f)),
+				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Y, 0.0f, 1.0f) * 255.0f)),
+				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Z, 0.0f, 1.0f) * 255.0f)),
+				255);
+		}
 	}
 
 	// ---- sea surface ----------------------------------------------------

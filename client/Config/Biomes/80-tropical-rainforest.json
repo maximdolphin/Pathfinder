@@ -7,9 +7,9 @@
   "maxSlopeDegrees": 35.0,
   "surfaceSet": "rocky_forest_floor_wjvpaff",
   "tint": [
-    0.24,
-    0.4,
-    0.2
+    0.1,
+    0.16,
+    0.08
   ],
   "scatterDensity": 1.0
 }

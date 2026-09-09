@@ -7,9 +7,9 @@
   "maxSlopeDegrees": 30.0,
   "surfaceSet": "grassy_soil_xbreair",
   "tint": [
-    0.62,
-    0.56,
-    0.31
+    0.28,
+    0.25,
+    0.14
   ],
   "scatterDensity": 0.35
 }

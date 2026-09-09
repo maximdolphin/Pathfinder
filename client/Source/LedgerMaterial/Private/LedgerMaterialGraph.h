@@ -30,6 +30,9 @@
 #include "Materials/MaterialExpressionSaturate.h"
 #include "Materials/MaterialExpressionSubtract.h"
 #include "Materials/MaterialExpressionTextureSample.h"
+#include "Materials/MaterialExpressionTextureSampleParameter2D.h"
+#include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
 
 namespace LedgerSurface
 {
@@ -176,6 +179,34 @@ namespace LedgerSurface
 			Node->Texture = Texture;
 			Node->SamplerType = Type;
 			Node->Coordinates.Expression = Coordinates;
+			// The shared wrap sampler, not the texture asset's own.
+			//
+			// A shader gets sixteen sampler slots and the terrain now reaches
+			// for twelve textures -- three biome surface sets plus rock, three
+			// maps each. Every SSM_FromTextureAsset sample takes a slot of its
+			// own and the material simply fails to compile past sixteen. Every
+			// one of these textures wants exactly the same state anyway.
+			Node->SamplerSource = SSM_Wrap_WorldGroupSettings;
+			return Node;
+		}
+
+		/// A texture sample whose texture is a material parameter, so a dynamic
+		/// instance can swap it. Used for the terrain's biome surface slots:
+		/// which three grounds a patch is made of is a property of the patch,
+		/// and the alternative is one material per combination.
+		UMaterialExpression* SampleParameter(
+			const TCHAR* ParameterName,
+			UTexture2D* Default,
+			UMaterialExpression* Coordinates,
+			EMaterialSamplerType Type)
+		{
+			UMaterialExpressionTextureSampleParameter2D* Node =
+				Make<UMaterialExpressionTextureSampleParameter2D>();
+			Node->ParameterName = ParameterName;
+			Node->Texture = Default;
+			Node->SamplerType = Type;
+			Node->Coordinates.Expression = Coordinates;
+			Node->SamplerSource = SSM_Wrap_WorldGroupSettings;
 			return Node;
 		}
 
@@ -198,6 +229,50 @@ namespace LedgerSurface
 			UMaterialExpression* SampleZ = Multiply(Sample(Texture, PlaneXY, Type), WeightZ);
 
 			return Add(Add(SampleX, SampleY), SampleZ);
+		}
+
+		/// The same projection, with the texture as a parameter. All three
+		/// samples share one parameter name, so one instance value swaps the
+		/// whole projection.
+		UMaterialExpression* TriplanarParameter(
+			const TCHAR* ParameterName,
+			UTexture2D* Default,
+			UMaterialExpression* ScaledPosition,
+			UMaterialExpression* WeightX,
+			UMaterialExpression* WeightY,
+			UMaterialExpression* WeightZ,
+			EMaterialSamplerType Type)
+		{
+			UMaterialExpression* PlaneYZ = Mask(ScaledPosition, false, true, true);
+			UMaterialExpression* PlaneXZ = Mask(ScaledPosition, true, false, true);
+			UMaterialExpression* PlaneXY = Mask(ScaledPosition, true, true, false);
+
+			UMaterialExpression* SampleX =
+				Multiply(SampleParameter(ParameterName, Default, PlaneYZ, Type), WeightX);
+			UMaterialExpression* SampleY =
+				Multiply(SampleParameter(ParameterName, Default, PlaneXZ, Type), WeightY);
+			UMaterialExpression* SampleZ =
+				Multiply(SampleParameter(ParameterName, Default, PlaneXY, Type), WeightZ);
+
+			return Add(Add(SampleX, SampleY), SampleZ);
+		}
+
+		/// A named scalar parameter with a default.
+		UMaterialExpression* ScalarParameter(const TCHAR* ParameterName, float Default)
+		{
+			UMaterialExpressionScalarParameter* Node = Make<UMaterialExpressionScalarParameter>();
+			Node->ParameterName = ParameterName;
+			Node->DefaultValue = Default;
+			return Node;
+		}
+
+		/// A named vector parameter with a default.
+		UMaterialExpression* VectorParameter(const TCHAR* ParameterName, const FLinearColor& Default)
+		{
+			UMaterialExpressionVectorParameter* Node = Make<UMaterialExpressionVectorParameter>();
+			Node->ParameterName = ParameterName;
+			Node->DefaultValue = Default;
+			return Node;
 		}
 	};
 }

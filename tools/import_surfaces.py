@@ -49,7 +49,7 @@ except ImportError:
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INCOMING = os.path.join(ROOT, "incoming")
 SURFACES = os.path.join(ROOT, "surfaces")
-MANIFEST = os.path.join(SURFACES, "manifest.json")
+MANIFEST = os.path.join(ROOT, "client", "Config", "surfaces.json")
 
 # Where the Epic launcher unpacks Fab downloads. Downloading through the
 # launcher rather than the browser gives extracted folders instead of zips,

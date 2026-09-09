@@ -19,6 +19,8 @@
 #include "LedgerAtmosphere.h"
 #include "LedgerMeshBake.h"
 #include "LedgerMeshBuilder.h"
+#include "LedgerBiome.h"
+#include "LedgerBiomeSurfaces.h"
 #include "LedgerPlanet.h"
 #include "LedgerSettlement.h"
 #include "LedgerShip.h"
@@ -139,6 +141,39 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		}
 
 		Planet->SetMaterials(Surface, LedgerSurface::CreateWaterMaterial(Planet));
+
+		// ---- biomes -------------------------------------------------------
+		//
+		// Loaded here for the same reason the materials are: the planet reads
+		// climate, and what climate *looks* like is not the quadtree's call.
+		// The control arm skips them, because a flat terrain has no surface
+		// sets to bind and binding them anyway would put the cost being
+		// measured back into the arm measuring it.
+		if (!bFlatTerrain)
+		{
+			TArray<FString> BiomeErrors;
+			TSharedPtr<TArray<FLedgerBiome>> Biomes = MakeShared<TArray<FLedgerBiome>>(
+				LedgerBiomes::Load(LedgerBiomes::DefaultDirectory(), BiomeErrors));
+			for (const FString& Error : BiomeErrors)
+			{
+				UE_LOG(LogLedger, Error, TEXT("biome: %s"), *Error);
+			}
+			UE_LOG(LogLedger, Log, TEXT("biomes: %d loaded from %s"),
+				Biomes->Num(), *LedgerBiomes::DefaultDirectory());
+
+			if (Biomes->Num() > 0)
+			{
+				Planet->SetBiomes(Biomes);
+				ALedgerPlanet* Owner = Planet;
+				Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
+					[Owner, Surface](const FLedgerBiomePalette& Palette,
+						const TArray<FLedgerBiome>& Set)
+					{
+						return LedgerBiomeSurfaces::CreatePaletteInstance(
+							Owner, Surface, Palette, Set);
+					}));
+			}
+		}
 	}
 	if (Planet == nullptr)
 	{

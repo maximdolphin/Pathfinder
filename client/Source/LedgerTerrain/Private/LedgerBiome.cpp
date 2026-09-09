@@ -157,6 +157,41 @@ namespace LedgerBiomes
 			Total += Weight;
 		}
 
+		// ---- truncate to three, continuously ------------------------------
+		//
+		// **The mesh can carry three weights, so the field has to be a
+		// three-biome field.** Left as eight, a patch keeps its own three
+		// heaviest and silently drops the rest -- and two neighbouring patches
+		// that drop different ones disagree along their shared edge, which is a
+		// straight line across the ground. Those seams were visible in the first
+		// T053 captures, and a control run with one palette everywhere made them
+		// vanish, which is how this stopped being a suspicion.
+		//
+		// Subtracting the fourth-largest weight and clamping leaves at most three
+		// non-zero, and does it *continuously*: the fourth-largest moves smoothly,
+		// so a biome entering or leaving the top three fades rather than appears.
+		if (OutWeights.Num() > 3)
+		{
+			double First = 0.0;
+			double Second = 0.0;
+			double Third = 0.0;
+			double Fourth = 0.0;
+			for (const double Weight : OutWeights)
+			{
+				if (Weight > First) { Fourth = Third; Third = Second; Second = First; First = Weight; }
+				else if (Weight > Second) { Fourth = Third; Third = Second; Second = Weight; }
+				else if (Weight > Third) { Fourth = Third; Third = Weight; }
+				else if (Weight > Fourth) { Fourth = Weight; }
+			}
+
+			Total = 0.0;
+			for (double& Weight : OutWeights)
+			{
+				Weight = FMath::Max(0.0, Weight - Fourth);
+				Total += Weight;
+			}
+		}
+
 		if (Total <= UE_DOUBLE_SMALL_NUMBER)
 		{
 			// Nothing claims this point. Give it to the nearest in climate space
@@ -193,5 +228,63 @@ namespace LedgerBiomes
 			}
 		}
 		return Best;
+	}
+}
+
+namespace LedgerBiomes
+{
+	FLedgerBiomePalette ChoosePalette(const TArray<double>& Totals)
+	{
+		FLedgerBiomePalette Palette;
+
+		// Three passes of "the largest one not already taken". A sort would
+		// allocate and this runs once per patch on a worker thread.
+		for (int32 Slot = 0; Slot < 3; ++Slot)
+		{
+			int32 Best = INDEX_NONE;
+			double BestWeight = 0.0;
+			for (int32 Index = 0; Index < Totals.Num(); ++Index)
+			{
+				if (Index == Palette.Slots[0] || Index == Palette.Slots[1])
+				{
+					continue;
+				}
+				if (Totals[Index] > BestWeight)
+				{
+					BestWeight = Totals[Index];
+					Best = Index;
+				}
+			}
+			Palette.Slots[Slot] = Best;
+		}
+		return Palette;
+	}
+
+	FVector3f SlotWeights(const TArray<double>& Weights, const FLedgerBiomePalette& Palette)
+	{
+		double Slot[3] = { 0.0, 0.0, 0.0 };
+		double Total = 0.0;
+		for (int32 Index = 0; Index < 3; ++Index)
+		{
+			if (Weights.IsValidIndex(Palette.Slots[Index]))
+			{
+				Slot[Index] = Weights[Palette.Slots[Index]];
+				Total += Slot[Index];
+			}
+		}
+
+		if (Total <= UE_DOUBLE_SMALL_NUMBER)
+		{
+			// Every one of this patch's three biomes has abandoned this vertex.
+			// The first slot is the patch's own dominant biome, so giving it the
+			// vertex is the least wrong answer available and it keeps the sum at
+			// one, which the shader relies on.
+			return FVector3f(1.0f, 0.0f, 0.0f);
+		}
+
+		return FVector3f(
+			static_cast<float>(Slot[0] / Total),
+			static_cast<float>(Slot[1] / Total),
+			static_cast<float>(Slot[2] / Total));
 	}
 }

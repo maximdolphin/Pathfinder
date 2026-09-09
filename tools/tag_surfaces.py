@@ -8,7 +8,7 @@ makes them is ours. The textures are imported by Unreal's own ImportAssets
 commandlet, which knows nothing about this project, so their provenance has to
 be written afterwards.
 
-It comes from surfaces/manifest.json rather than being invented here: the
+It comes from client/Config/surfaces.json rather than being invented here: the
 manifest already records the Fab asset id and the licence for every set, and a
 second place to type that is a second place for it to be wrong.
 """
@@ -18,7 +18,7 @@ import os
 import unreal
 
 ROOT = os.path.normpath(os.path.join(unreal.Paths.project_dir(), ".."))
-MANIFEST = os.path.join(ROOT, "surfaces", "manifest.json")
+MANIFEST = os.path.join(ROOT, "client", "Config", "surfaces.json")
 
 with open(MANIFEST) as handle:
     manifest = json.load(handle)
@@ -52,7 +52,7 @@ for data in registry.get_assets_by_path("/Game/Surfaces", recursive=True):
     tagged += 1
 
 lines = ["Surface provenance tags.", ""]
-lines.append("  %d textures tagged from surfaces/manifest.json" % tagged)
+lines.append("  %d textures tagged from client/Config/surfaces.json" % tagged)
 for package in unknown:
     lines.append("  no manifest entry for %s" % package)
 lines.append("")

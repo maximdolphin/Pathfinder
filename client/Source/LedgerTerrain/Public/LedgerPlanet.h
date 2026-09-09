@@ -20,6 +20,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "LedgerPatchCache.h"
+#include "LedgerBiome.h"
 #include "LedgerQuadNode.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerPatchComponents.h"
@@ -36,6 +37,10 @@ class UProceduralMeshComponent;
 /// quadtree, or anything else the game thread may be mutating. That is the whole
 /// thread-safety argument, and it is why the inputs are values rather than
 /// pointers.
+/// Returns the material for a patch painted with these biomes, or null.
+DECLARE_DELEGATE_RetVal_TwoParams(UMaterialInstanceDynamic*, FLedgerPaletteMaterial,
+	const FLedgerBiomePalette&, const TArray<FLedgerBiome>&);
+
 struct FLedgerPatchJob
 {
 	// ---- inputs, immutable once launched --------------------------------
@@ -51,6 +56,18 @@ struct FLedgerPatchJob
 
 	FLedgerTerrainParams Params;
 	int32 Side = 33;
+
+	/// The biome set, shared with every job in flight.
+	///
+	/// A shared pointer to a const array rather than a copy per job: it is read
+	/// on a worker thread while the game thread may be launching more jobs, and
+	/// the set itself never changes after load. Null means no biomes were
+	/// loaded, in which case the generator falls back to the height ramp.
+	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
+
+	/// Last computed geomorph scale, so an instance created between frames can
+	/// be brought up to date without waiting for the next one.
+	double MorphScale = 0.0;
 
 	/// Approximate world-space extent of the node, centimetres. Baked into the
 	/// vertices so the shader can work out how close this patch is to being
@@ -79,8 +96,18 @@ struct FLedgerPatchJob
 	/// that chord-versus-arc error at patch scale is a fraction of a millimetre
 	/// — far below the elevation difference this is correcting.
 	TArray<FVector2D> MorphUVs;
+
+	/// Vertex colour. RGB are the weights of the patch's three palette slots,
+	/// summing to one; A is unused. **Not a colour** any more -- the surface
+	/// sets carry the colour, and painting a tint on top of an authored scan is
+	/// what made the old ramp read as a contour map (T053).
 	TArray<FColor> Colors;
 	TArray<FProcMeshTangent> Tangents;
+
+	/// Which three biomes this patch's vertex colours are weights of. Chosen
+	/// from the patch's own totals, so the biome the palette leaves out is by
+	/// construction the least present one on it.
+	FLedgerBiomePalette Palette;
 
 	/// The sea surface for this patch, as a second mesh section.
 	///
@@ -124,6 +151,10 @@ struct FLedgerSectionMeta
 	bool bStitchRight = false;
 	bool bStitchBottom = false;
 	bool bStitchTop = false;
+
+	/// Carried so the geometry can be put back in the cache with the palette
+	/// its vertex colours were written against.
+	FLedgerBiomePalette Palette;
 };
 
 /// What the terrain is doing, for the Â§15.1 build/buy decision.
@@ -377,6 +408,25 @@ public:
 		WaterMaterial = Water;
 	}
 
+	/// How a palette becomes a material. Set beside SetMaterials, and for the
+	/// same reason: binding a biome's surface set needs the manifest and the
+	/// texture assets, which is the material module's business, and reaching
+	/// for it from here is what would make these two modules a pair.
+	///
+	/// Left unbound, every patch gets the one surface instance and the ground
+	/// is whatever the material's default slots are.
+	void SetPaletteMaterialProvider(FLedgerPaletteMaterial Provider)
+	{
+		PaletteMaterial = MoveTemp(Provider);
+	}
+
+	/// The biome set the patches are weighed against. Shared with every job in
+	/// flight, so it is fixed at BeginPlay and never mutated after.
+	void SetBiomes(TSharedPtr<const TArray<FLedgerBiome>> InBiomes)
+	{
+		Biomes = MoveTemp(InBiomes);
+	}
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
@@ -406,6 +456,23 @@ private:
 	/// thing that differs per patch is baked into its vertices.
 	UPROPERTY()
 	TObjectPtr<UMaterialInstanceDynamic> SurfaceInstance;
+
+	/// One instance per distinct palette, not per patch.
+	///
+	/// Eight biomes give at most a few dozen palettes a planet actually uses,
+	/// and patches sharing a palette share a material -- which is the point,
+	/// because binding nine textures per patch at 762 uploads a second would
+	/// cost more than the blend it is setting up.
+	UPROPERTY()
+	TMap<uint32, TObjectPtr<UMaterialInstanceDynamic>> PaletteInstances;
+
+	FLedgerPaletteMaterial PaletteMaterial;
+
+	TSharedPtr<const TArray<FLedgerBiome>> Biomes;
+
+	/// Last computed geomorph scale, so an instance created between frames can
+	/// be brought up to date without waiting for the next one.
+	double MorphScale = 0.0;
 
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> WaterMaterial;
@@ -459,12 +526,16 @@ private:
 	/// The instance if there is one, the base material otherwise. Patches take
 	/// this rather than SurfaceMaterial, because the geomorph parameters live on
 	/// the instance and a patch wearing the base material would not blend.
-	UMaterialInterface* TerrainMaterial() const;
+	UMaterialInterface* TerrainMaterial(const FLedgerBiomePalette& Palette);
 
 	/// Feeds the geomorph blend the same numbers the LOD decision uses. Called
 	/// once a frame; if the two ever disagree the pop does not disappear, it
 	/// moves somewhere else.
 	void UpdateMorphParameters(double ViewportWidth, double FovRadians);
+
+	/// Binds the geomorph parameters onto one instance. Every palette needs
+	/// them, and a palette created mid-frame needs them before it draws.
+	void ApplyMorphParameters(UMaterialInstanceDynamic& Instance) const;
 
 	void ReleaseSection(uint64 Key);
 	void AbandonJob(uint64 Key);

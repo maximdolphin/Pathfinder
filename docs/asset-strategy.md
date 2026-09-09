@@ -98,7 +98,7 @@ worse, succeeds on failure.
 
 | | |
 |---|---|
-| Committed | `surfaces/manifest.json`, `client/Content/Maps/Ledger.umap`, every generator and every validator |
+| Committed | `client/Config/surfaces.json`, `client/Content/Maps/Ledger.umap`, every generator and every validator |
 | Ignored | `client/Content/Materials`, `client/Content/Meshes`, `client/Content/Surfaces`, `surfaces/<set>/`, `build/` |
 
 Derived things are not in version control. A clone still runs: the editor falls

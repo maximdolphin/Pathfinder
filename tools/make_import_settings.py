@@ -31,7 +31,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SURFACES = os.path.join(ROOT, "surfaces")
-MANIFEST = os.path.join(SURFACES, "manifest.json")
+MANIFEST = os.path.join(ROOT, "client", "Config", "surfaces.json")
 PLAN = os.path.join(ROOT, "build", "surface-import.json")
 
 # Role -> the compression setting that also decides its colour space.

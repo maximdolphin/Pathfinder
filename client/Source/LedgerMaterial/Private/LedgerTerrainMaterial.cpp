@@ -1,4 +1,10 @@
-// The ground: two authored surface scans, triplanar, interlocked by height.
+// The ground: three biome surface scans and a rock, triplanar, interlocked by
+// height rather than cross-faded.
+//
+// The three ground slots are *parameters*. Which three a patch is made of comes
+// from its biomes (T053), the weights come down the vertex colour, and a
+// dynamic instance per palette binds the textures. One material, one shader,
+// any three grounds.
 
 #include "LedgerSurface.h"
 
@@ -28,15 +34,22 @@ namespace LedgerSurface
 {
 	namespace
 	{
-		// Which two scans the ground is made of.
+		// What the ground slots hold when nobody has bound a palette.
 		//
-		// Two, not twenty. The planet has one climate model's worth of biomes
-		// coming in M04, and this will become a lookup against it; until that
-		// exists, picking sixteen sets would be picking them for biomes whose
-		// boundaries are not decided. These two are the pair the scripted
-		// flight actually lands in.
-		const TCHAR* FlatSurface = TEXT("grassy_soil_xbklfix");
+		// A default, not a choice: the biome that owns a patch supplies the
+		// real texture through the instance. This is what a fresh clone with no
+		// biome files, or the editor viewport before the planet has streamed,
+		// draws with -- and it is deliberately a plausible ground rather than a
+		// checkerboard, because it is also the fallback if binding ever fails.
+		const TCHAR* DefaultSurface = TEXT("grassy_soil_xbklfix");
+
+		// Rock is not a biome. It is what any biome becomes on a face too steep
+		// to hold anything, so it is fixed in the material rather than bound
+		// per patch -- and it is why there are three ground slots and not four.
 		const TCHAR* SteepSurface = TEXT("rock_cliff_xbknedb");
+
+		/// The three parameterised ground slots.
+		constexpr int32 GroundSlots = 3;
 
 		// Where rock takes over from soil, as the cosine of the angle between
 		// the surface normal and straight up. Soil holds to about 26 degrees;
@@ -61,6 +74,48 @@ namespace LedgerSurface
 			UMaterialExpression* Roughness = nullptr;
 			UMaterialExpression* Occlusion = nullptr;
 		};
+
+		/// A ground slot's parameter names. One place, so the material and the
+		/// instance that binds it cannot disagree about spelling.
+		FString SlotParameter(int32 Slot, const TCHAR* Suffix)
+		{
+			return FString::Printf(TEXT("Ground%d%s"), Slot, Suffix);
+		}
+
+		/// One parameterised ground slot, sampled.
+		///
+		/// Tiling is a parameter too: these scans are not all the same size on
+		/// the ground -- half a metre for forest floor, two for most -- and a
+		/// set tiled at the wrong distance reads as a pattern rather than as
+		/// ground. Baking one constant in would make the slot only correct for
+		/// whichever set it was baked for.
+		FSampled SampleSlot(
+			FGraph& Graph,
+			int32 Slot,
+			const FSurfaceSet& Default,
+			UMaterialExpression* WorldPosition,
+			UMaterialExpression* WeightX,
+			UMaterialExpression* WeightY,
+			UMaterialExpression* WeightZ)
+		{
+			UMaterialExpression* Position = Graph.Multiply(WorldPosition,
+				Graph.ScalarParameter(*SlotParameter(Slot, TEXT("Tiling")),
+					1.0f / static_cast<float>(Default.TilingMetres * 100.0)));
+
+			FSampled Out;
+			Out.Albedo = Graph.TriplanarParameter(*SlotParameter(Slot, TEXT("Albedo")),
+				Default.Albedo, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color);
+			Out.Normal = Graph.TriplanarParameter(*SlotParameter(Slot, TEXT("Normal")),
+				Default.Normal, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Normal);
+
+			UMaterialExpression* Packed = Graph.TriplanarParameter(
+				*SlotParameter(Slot, TEXT("Packed")),
+				Default.Packed, Position, WeightX, WeightY, WeightZ, SAMPLERTYPE_Masks);
+			Out.Occlusion = Graph.Mask(Packed, true, false, false);
+			Out.Roughness = Graph.Mask(Packed, false, true, false);
+			Out.Height = Graph.Mask(Packed, false, false, true);
+			return Out;
+		}
 
 		FSampled SampleSet(
 			FGraph& Graph,
@@ -95,7 +150,7 @@ namespace LedgerSurface
 
 	UMaterialInterface* BuildTerrainMaterial(UObject* Outer, uint32 Seed)
 	{
-		const FSurfaceSet Flat = LoadSurfaceSet(FlatSurface);
+		const FSurfaceSet Flat = LoadSurfaceSet(DefaultSurface);
 		const FSurfaceSet Steep = LoadSurfaceSet(SteepSurface);
 		if (!Flat.IsValid() || !Steep.IsValid())
 		{
@@ -158,8 +213,78 @@ namespace LedgerSurface
 		UMaterialExpression* WeightY = Graph.Mask(Weights, false, true, false);
 		UMaterialExpression* WeightZ = Graph.Mask(Weights, false, false, true);
 
-		const FSampled Soil = SampleSet(Graph, Flat, WorldPosition, WeightX, WeightY, WeightZ);
 		const FSampled Rock = SampleSet(Graph, Steep, WorldPosition, WeightX, WeightY, WeightZ);
+
+		// ---- three grounds, weighted by the mesh --------------------------
+		//
+		// Vertex colour RGB is the weight of each ground slot at this vertex,
+		// summing to one. The patch generator wrote them from the climate
+		// field, so the boundary between two grounds is the boundary between
+		// two biomes and nothing else decides it.
+		//
+		// Height blending across all three at once, not two nested lerps: a
+		// nested pair makes the second boundary a blend of a blend, so the same
+		// two biomes meeting read differently depending on which slot they
+		// landed in. Every slot bids its own height plus its own weight and the
+		// proudest texel within BlendDepth wins, which is symmetric in the
+		// three by construction.
+		UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
+		UMaterialExpression* SlotWeight[GroundSlots] = {
+			Graph.Mask(VertexColour, true, false, false),
+			Graph.Mask(VertexColour, false, true, false),
+			Graph.Mask(VertexColour, false, false, true),
+		};
+
+		FSampled Slot[GroundSlots];
+		UMaterialExpression* SlotMean[GroundSlots] = {};
+		UMaterialExpression* SlotTint[GroundSlots] = {};
+		UMaterialExpression* SlotBid[GroundSlots] = {};
+		for (int32 Index = 0; Index < GroundSlots; ++Index)
+		{
+			Slot[Index] = SampleSlot(Graph, Index, Flat, WorldPosition, WeightX, WeightY, WeightZ);
+			SlotMean[Index] = Graph.VectorParameter(
+				*SlotParameter(Index, TEXT("Mean")), Flat.MeanAlbedo);
+			SlotTint[Index] = Graph.VectorParameter(
+				*SlotParameter(Index, TEXT("Tint")), FLinearColor::White);
+			SlotBid[Index] = Graph.Add(Slot[Index].Height, SlotWeight[Index]);
+		}
+
+		UMaterialExpression* GroundThreshold = Graph.Subtract(
+			Graph.Max(SlotBid[0], Graph.Max(SlotBid[1], SlotBid[2])), Graph.Constant(BlendDepth));
+
+		UMaterialExpression* SlotShare[GroundSlots] = {};
+		UMaterialExpression* ShareSum = Graph.Constant(0.0001f);
+		for (int32 Index = 0; Index < GroundSlots; ++Index)
+		{
+			// A slot with no weight must contribute nothing even if its height
+			// map happens to be proud here, or an unused third slot would show
+			// through the two that are actually on this patch.
+			SlotShare[Index] = Graph.Multiply(
+				Graph.Saturate(Graph.Subtract(SlotBid[Index], GroundThreshold)),
+				SlotWeight[Index]);
+			ShareSum = Graph.Add(ShareSum, SlotShare[Index]);
+		}
+
+		auto MixSlots = [&Graph, &SlotShare, ShareSum](
+			UMaterialExpression* A, UMaterialExpression* B, UMaterialExpression* C)
+		{
+			return Graph.Divide(
+				Graph.Add(Graph.Add(
+					Graph.Multiply(A, SlotShare[0]),
+					Graph.Multiply(B, SlotShare[1])),
+					Graph.Multiply(C, SlotShare[2])),
+				ShareSum);
+		};
+
+		FSampled Soil;
+		Soil.Albedo = MixSlots(Slot[0].Albedo, Slot[1].Albedo, Slot[2].Albedo);
+		Soil.Normal = MixSlots(Slot[0].Normal, Slot[1].Normal, Slot[2].Normal);
+		Soil.Roughness = MixSlots(Slot[0].Roughness, Slot[1].Roughness, Slot[2].Roughness);
+		Soil.Occlusion = MixSlots(Slot[0].Occlusion, Slot[1].Occlusion, Slot[2].Occlusion);
+		Soil.Height = MixSlots(Slot[0].Height, Slot[1].Height, Slot[2].Height);
+
+		UMaterialExpression* SoilMean = MixSlots(SlotMean[0], SlotMean[1], SlotMean[2]);
+		UMaterialExpression* SoilTint = MixSlots(SlotTint[0], SlotTint[1], SlotTint[2]);
 
 		// ---- which surface, and where the two meet -------------------------
 		//
@@ -210,8 +335,12 @@ namespace LedgerSurface
 		// and a sand scan under a snow tint is dirty snow. The averages were
 		// measured off the images at import and live in the manifest.
 		UMaterialExpression* MeanMix = Graph.Lerp(
-			Graph.Constant3(Flat.MeanAlbedo), Graph.Constant3(Steep.MeanAlbedo), Blend);
+			SoilMean, Graph.Constant3(Steep.MeanAlbedo), Blend);
 		UMaterialExpression* Variation = Graph.Divide(AlbedoMix, MeanMix);
+
+		// Rock has no biome and takes no tint, so the ground's tint fades out
+		// with it. Otherwise a cliff in a rainforest would be green rock.
+		UMaterialExpression* TintMix = Graph.Lerp(SoilTint, Graph.Constant(1.0f), Blend);
 
 		// Macro breakup. One tile of ground is two metres; from a kilometre up,
 		// two metres is a pixel and the repeat becomes a visible grid. A second
@@ -220,9 +349,20 @@ namespace LedgerSurface
 		UMaterialExpression* MacroPosition =
 			Graph.Multiply(WorldPosition, Graph.Constant(1.0f / 9000.0f));
 		UMaterialExpression* Macro = Graph.Divide(
-			Graph.Triplanar(Flat.Albedo, MacroPosition, WeightX, WeightY, WeightZ,
-				SAMPLERTYPE_Color),
-			Graph.Constant3(Flat.MeanAlbedo));
+			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Albedo")), Flat.Albedo,
+				MacroPosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color),
+			SlotMean[0]);
+
+		// And again at 1.2 km, because ninety metres is itself a tile once the
+		// camera is high enough, and a repeat at any scale is the tell. The two
+		// are coprime enough that their product does not beat: the visible
+		// period is the least common multiple, which is far past the horizon.
+		UMaterialExpression* MacroFarPosition =
+			Graph.Multiply(WorldPosition, Graph.Constant(1.0f / 120000.0f));
+		UMaterialExpression* MacroFar = Graph.Divide(
+			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Albedo")), Flat.Albedo,
+				MacroFarPosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color),
+			SlotMean[0]);
 
 		// Distance fade. Mips stop the near detail aliasing, but by the time a
 		// two-metre pattern is a couple of pixels across it is only noise on
@@ -233,9 +373,20 @@ namespace LedgerSurface
 
 		UMaterialExpression* FadedVariation = Graph.Lerp(Variation, Graph.Constant(1.0f), Fade);
 
-		UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
-		UMaterialExpression* BaseColour =
-			Graph.Multiply(Graph.Multiply(VertexColour, FadedVariation), Macro);
+		// The ninety-metre macro fades out with the detail it modulates, and for
+		// the same reason: past its mip range it is a few pixels per tile, and
+		// what it contributes there is a visible grid rather than variation.
+		// The kilometre one does not fade -- at ten kilometres its features are
+		// still hundreds of pixels across, which is exactly why it is there.
+		UMaterialExpression* FadedMacro = Graph.Lerp(Macro, Graph.Constant(1.0f), Fade);
+
+		// Saturated, because three mean-one multipliers stacked on a tint have
+		// a tail that goes above one and albedo above one is not a colour, it
+		// is a light source. This clamps rather than rescales on purpose: if it
+		// is doing real work the ground is blowing out and the tints are wrong,
+		// which is a thing to fix in the data, not to hide with a divide.
+		UMaterialExpression* BaseColour = Graph.Saturate(Graph.Multiply(
+			Graph.Multiply(Graph.Multiply(TintMix, FadedVariation), FadedMacro), MacroFar));
 
 		// Normal, faded to flat over the same distance. A normal map that
 		// survives past its mip range is the other half of the shimmer.

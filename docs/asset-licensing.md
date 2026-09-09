@@ -93,7 +93,7 @@ assistant should click on somebody's behalf, and it was not clicked.
 
 ## The rule going forward
 
-Every texture in `client/Content/Surfaces` has an entry in `manifest.json`
+Every texture in `client/Content/Surfaces` has an entry in `client/Config/surfaces.json`
 naming its source and licence, and `tools/check_surfaces.py` fails the build on
 any that does not. That check runs in CI beside the module layering.
 

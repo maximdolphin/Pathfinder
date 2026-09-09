@@ -7,9 +7,9 @@
   "maxSlopeDegrees": 35.0,
   "surfaceSet": "mossy_forest_floor_vfylbge",
   "tint": [
-    0.4,
-    0.48,
-    0.38
+    0.13,
+    0.16,
+    0.12
   ],
   "scatterDensity": 0.7
 }
