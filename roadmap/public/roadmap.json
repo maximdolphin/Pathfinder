@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 9
+   "doneCount": 10
   },
   {
    "id": "M03",
@@ -4137,11 +4137,24 @@
    "dependsOn": [
     "T060"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Acceptance met: 996 of 996 queries that found ground agree with a physics trace within a millimetre, worst 0.0225 mm and mean 0.006. Four of the thousand found nothing to hit, which is the collision ring's edge -- there the API and the trace agree that nothing is there. SampleTerrain returns surface radius, altitude, normal, slope, climate, biome mix and snow, and bValid is the first field because a caller that ignores it puts something at the centre of the planet. It reads the MESH, not the height function: the two are different surfaces, the mesh sitting over a metre from the field it interpolates on rough ground (the measurement that made T057's scatter hover), and a trace hits the mesh. It walks to the node that is drawn rather than the tree's leaf, and interpolates over the same two triangles the generator emitted rather than over the quad. The fixture was wrong twice first, both times in ways that would have read as an API defect: it traced into empty sky a thousand times because the scripted flight was still teleporting the ship, and then four queries called the API 29.5 m wrong because a single-hit trace at the settlement takes the nearest thing, which was a rooftop. Commit 015385a, write-up in docs/comparisons/terrain-query/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T061-2026-09-09T19-00-26-269.txt",
+     "caption": "996 of 996 queries within a millimetre of a physics trace; worst 0.0225 mm.",
+     "source": "../docs/comparisons/terrain-query/terrain-query.txt",
+     "addedAt": "2026-09-09T19:00:26.271Z"
+    }
+   ],
    "plannedStartDay": 124.5,
    "plannedEndDay": 126,
    "plannedStart": "2027-02-26",
@@ -12635,5 +12648,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T18:39:41.429Z"
+ "updatedAt": "2026-09-09T19:00:26.361Z"
 }
