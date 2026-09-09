@@ -1,0 +1,49 @@
+Where three biomes meet (T053).
+
+site: 38.00 lat, 75.50 lon, 438 m altitude
+climate there: 6.3 C surface, 9.2 C at sea level, moisture 0.099
+
+weights at the site, and 3 km across the boundary:
+  biome                   here   across
+  Tundra                  0.309    0.481
+  Temperate grassland     0.310    0.263
+  Desert                  0.381    0.256
+
+along the camera's line, every 500 m:
+     km   alt m   dominant biome         weight
+    0.0     438   Desert                  0.381
+    0.5     466   Tundra                  0.397
+    1.0     472   Tundra                  0.447
+    1.5     478   Tundra                  0.485
+    2.0     481   Tundra                  0.484
+    2.5     486   Tundra                  0.502
+    3.0     481   Tundra                  0.481
+    3.5     475   Tundra                  0.482
+    4.0     477   Tundra                  0.462
+    4.5     475   Tundra                  0.478
+    5.0     469   Tundra                  0.434
+    5.5     465   Tundra                  0.425
+    6.0     471   Tundra                  0.425
+    6.5     470   Tundra                  0.467
+    7.0     463   Tundra                  0.429
+    7.5     471   Tundra                  0.442
+    8.0     464   Tundra                  0.420
+
+the three heaviest here: 0.381, 0.310, 0.309
+
+biomes present in one palette cell (1/16 of a cube face, ~600 km),
+counted over 700 cells with land in them, at 5% of the cell or more:
+  1 biome     213 cells   30.4%
+  2 biomes    241 cells   34.4%
+  3 biomes    169 cells   24.1%
+  4 biomes     54 cells    7.7%
+  5 biomes     22 cells    3.1%
+  6 biomes      1 cells    0.1%
+  cells needing more than the three slots the mesh can carry: 11.0%
+
+sharpest boundary anywhere on land: 2.000 of the weight moves over 3 km
+  (at 30.0 lat, 89.0 lon; 2.0 would be one biome replaced by another)
+
+three biomes each above 10%: yes
+
+VERDICT: PASS

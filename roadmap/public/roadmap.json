@@ -3790,11 +3790,47 @@
    "dependsOn": [
     "T052"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-09",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "note",
+     "text": "Mechanism done and measured. Three surface scans per patch as material parameters, weighted by biome from the climate field, height-blended all three at once, with macro variation at 90 m and 1.2 km; a dynamic instance per palette binds the scans. Climate is sampled on a grid sized with the patch and interpolated, because one LedgerClimate::At marches 40 steps and samples the height field at each, so per vertex would be a fortyfold increase in the cost this project has measured most carefully. Acceptance met on three biomes meeting (0.381/0.310/0.309 at the site the fixture finds), on the boundary being explained by the climate field (the report prints temperature, moisture, every weight, and the dominant biome every 500 m along the camera's line), and on repetition -- the 90 m macro was not distance-faded and put a moire grid over the middle distance; it now fades with the detail it modulates. Cost: 21 texture samples to 42, at most 1.3 ms anywhere on the flight and nothing measurable where terrain fills the screen, so T047's conclusion survives its premise changing."
+    },
+    {
+     "at": "2026-09-09",
+     "kind": "block",
+     "text": "NOT accepted on 'no visible blend band', and the cause is measured rather than suspected. Three control arms, all command lines: -onepalette (no seams), -patchpalette (a seam per patch edge), default. A patch keeps its own three heaviest biomes and two neighbours that rank differently drop different ones, so the ground changes composition along their shared edge. Truncating the weight field to three continuously is right, is kept, and did NOT move the seams -- the problem is not which weights are dropped but that neighbours drop different biomes. The palette is now chosen per fixed 600 km cell of a cube face, which removes every patch seam (twelve palettes cover the planet) and relocates the problem: one hard line on the cell boundary. Counted over every cell with land in it, three slots cover 89% of the land and a fourth would reach 96.9%. Neither is 100%. The only thing that is would be a texture array indexed per vertex, so a vertex names any three of the whole biome set rather than three of its cell's -- a change to how the terrain material is built and to what the bake produces. That is a decision about the material architecture and belongs to the user, not to me. Evidence and all three arms in docs/comparisons/biome-surfaces/, commit 70c9c08."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T053-2026-09-09T16-57-36-060.png",
+     "caption": "The sharpest biome boundary on the planet, with the palette chosen per 600 km cell: no patch seams, one cell line across the foreground.",
+     "source": "../docs/comparisons/biome-surfaces/edge-cell-palette.png",
+     "addedAt": "2026-09-09T16:57:36.062Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-09T16-57-36-152.png",
+     "caption": "The same view with a palette per patch (-patchpalette): rectangular seams, one per patch edge.",
+     "source": "../docs/comparisons/biome-surfaces/edge-patch-palette.png",
+     "addedAt": "2026-09-09T16:57:36.154Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-09T16-57-36-246.png",
+     "caption": "Control arm (-onepalette): one palette for the whole planet, no seams. This is what made the palette the cause rather than the suspect.",
+     "source": "../docs/comparisons/biome-surfaces/edge-one-palette-control.png",
+     "addedAt": "2026-09-09T16:57:36.248Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-09T16-57-36-342.txt",
+     "caption": "Where three biomes meet, what the climate is there, and how many biomes a palette cell needs.",
+     "source": "../docs/comparisons/biome-surfaces/biome-site.txt",
+     "addedAt": "2026-09-09T16:57:36.343Z"
+    }
+   ],
    "plannedStartDay": 98.5,
    "plannedEndDay": 101.5,
    "plannedStart": "2027-01-21",
@@ -12511,5 +12547,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T15:55:07.680Z"
+ "updatedAt": "2026-09-09T16:57:49.191Z"
 }
