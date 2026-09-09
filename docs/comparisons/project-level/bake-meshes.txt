@@ -1,7 +1,9 @@
 Baked meshes.
 
-  SM_ShipHull         144 tris  nanite on   lods 1  collision yes  dist field yes
+  SM_ShipHull         144 tris  nanite on   lods 1  slots 1  collision yes  dist field yes
+  SM_Tree_A            46 tris  nanite off  lods 1  slots 2  collision yes  dist field yes
+  SM_Tree_B            46 tris  nanite off  lods 1  slots 2  collision yes  dist field yes
 
-  1 of 1 saved
+  3 of 3 saved
 
 VERDICT: PASS

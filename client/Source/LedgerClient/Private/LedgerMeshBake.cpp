@@ -16,6 +16,8 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/StaticMesh.h"
+#include "MaterialDomain.h"
+#include "Materials/Material.h"
 #include "HAL/FileManager.h"
 #include "LedgerLog.h"
 #include "LedgerMeshBuilder.h"
@@ -38,7 +40,8 @@ namespace LedgerMesh
 		/// material per mesh so far. Normals and tangents come across rather
 		/// than being recomputed: the builder made them deliberately flat, and
 		/// a hull with recomputed shared normals reads as soap.
-		void Describe(const FLedgerMeshBuilder& Builder, FMeshDescription& Out)
+		void Describe(const FLedgerMeshBuilder& Builder, FMeshDescription& Out,
+			int32 SecondGroupStartTriangle)
 		{
 			FStaticMeshAttributes Attributes(Out);
 			Attributes.Register();
@@ -63,11 +66,30 @@ namespace LedgerMesh
 				VertexIds.Add(Id);
 			}
 
-			const FPolygonGroupID Group = Out.CreatePolygonGroup();
-			Attributes.GetPolygonGroupMaterialSlotNames()[Group] = TEXT("Default");
+			// One group, or two if the caller says where the second starts.
+			//
+			// Two exists because a tree is a brown trunk and a green canopy in
+			// one mesh, and the colour was carried per vertex -- which survives
+			// a procedural mesh component and does not survive the trip through
+			// a baked static mesh onto an instanced component. Three attempts
+			// to make it survive were three wrong guesses. A material slot each
+			// is how this is normally done and does not depend on any of it.
+			const FPolygonGroupID Groups[2] = { Out.CreatePolygonGroup(), FPolygonGroupID() };
+			Attributes.GetPolygonGroupMaterialSlotNames()[Groups[0]] = TEXT("Slot0");
+
+			const bool bSplit = SecondGroupStartTriangle > 0;
+			FPolygonGroupID Second = Groups[0];
+			if (bSplit)
+			{
+				Second = Out.CreatePolygonGroup();
+				Attributes.GetPolygonGroupMaterialSlotNames()[Second] = TEXT("Slot1");
+			}
 
 			for (int32 Index = 0; Index + 2 < Builder.Triangles.Num(); Index += 3)
 			{
+				const int32 Triangle = Index / 3;
+				const FPolygonGroupID Group =
+					(bSplit && Triangle >= SecondGroupStartTriangle) ? Second : Groups[0];
 				FVertexInstanceID Corners[3];
 				for (int32 Corner = 0; Corner < 3; ++Corner)
 				{
@@ -77,9 +99,20 @@ namespace LedgerMesh
 						? FVector3f(Builder.Normals[Vertex]) : FVector3f::UpVector;
 					UVs.Set(Instance, 0, Builder.UVs.IsValidIndex(Vertex)
 						? FVector2f(Builder.UVs[Vertex]) : FVector2f::ZeroVector);
-					Colours[Instance] = Builder.Colors.IsValidIndex(Vertex)
-						? FVector4f(FLinearColor(Builder.Colors[Vertex]))
-						: FVector4f(1.0f, 1.0f, 1.0f, 1.0f);
+					// Straight 0-1, not through FLinearColor.
+					//
+					// FLinearColor(FColor) applies the sRGB decode, and these
+					// colours were authored for the procedural mesh path, which
+					// does not. Decoding them turned a canopy green of (44, 68,
+					// 36) into roughly 0.02 of linear and rendered three hundred
+					// and forty-two trees as black cut-outs -- correctly placed,
+					// correctly instanced, lit, and the wrong colour by a factor
+					// of twelve.
+					const FColor Colour = Builder.Colors.IsValidIndex(Vertex)
+						? Builder.Colors[Vertex] : FColor::White;
+					Colours[Instance] = FVector4f(
+						Colour.R / 255.0f, Colour.G / 255.0f,
+						Colour.B / 255.0f, Colour.A / 255.0f);
 					Corners[Corner] = Instance;
 				}
 				Out.CreateTriangle(Group, Corners);
@@ -88,7 +121,8 @@ namespace LedgerMesh
 	}
 
 	UStaticMesh* Bake(const FLedgerMeshBuilder& Builder, const FString& PackageName,
-		const TCHAR* AssetName, FString& Line)
+		const TCHAR* AssetName, FString& Line, bool bNanite,
+		int32 SecondGroupStartTriangle)
 	{
 		if (Builder.Triangles.Num() < 3)
 		{
@@ -101,7 +135,24 @@ namespace LedgerMesh
 			Package, FName(AssetName), RF_Public | RF_Standalone);
 
 		FMeshDescription Description;
-		Describe(Builder, Description);
+		Describe(Builder, Description, SecondGroupStartTriangle);
+
+		// One material slot, matching the polygon group's slot name.
+		//
+		// BuildFromMeshDescriptions does not create these, and a static mesh
+		// with no slots cannot be given a material at all: SetMaterial(0, ...)
+		// on the component succeeds, reports the material back, and renders
+		// nothing. Three hundred and forty-two trees came out as black cut-outs
+		// and both earlier explanations for it -- a missing assignment and an
+		// sRGB decode -- were wrong. The component was asked what it had and
+		// answered "0 material slots".
+		Mesh->GetStaticMaterials().Add(FStaticMaterial(
+			UMaterial::GetDefaultMaterial(MD_Surface), TEXT("Slot0"), TEXT("Slot0")));
+		if (SecondGroupStartTriangle > 0)
+		{
+			Mesh->GetStaticMaterials().Add(FStaticMaterial(
+				UMaterial::GetDefaultMaterial(MD_Surface), TEXT("Slot1"), TEXT("Slot1")));
+		}
 
 		UStaticMesh::FBuildMeshDescriptionsParams Params;
 		// Built like an asset, not like a runtime mesh: this is the whole point.
@@ -117,10 +168,14 @@ namespace LedgerMesh
 			return nullptr;
 		}
 
-		// Nanite. The reason this task exists: a procedural mesh cannot have it,
-		// and a hull that does gets its own LOD selection per cluster instead of
-		// the whole-mesh switch a manual chain gives.
-		Mesh->NaniteSettings.bEnabled = true;
+		// Nanite where it earns its place. A procedural mesh cannot have it at
+		// all, which is the reason this task exists -- but it is for meshes
+		// dense enough that per-cluster selection beats drawing the whole
+		// thing, and it does not carry mesh vertex colours through to the
+		// material. On a forty-six triangle tree that trade is all cost: the
+		// trees came back uniformly pale because the only colour they have is
+		// per-vertex.
+		Mesh->NaniteSettings.bEnabled = bNanite;
 
 		// A distance field, which is what Lumen's software tracing needs and
 		// what nothing in this project has ever had -- it is why Lumen had to be
@@ -160,10 +215,11 @@ namespace LedgerMesh
 
 		const int32 Lods = Mesh->GetNumSourceModels();
 		Line = FString::Printf(
-			TEXT("  %-16s %6d tris  nanite %s  lods %d  collision %s  dist field %s"),
+			TEXT("  %-16s %6d tris  nanite %s  lods %d  slots %d  collision %s  dist field %s"),
 			AssetName, Builder.Triangles.Num() / 3,
 			Mesh->NaniteSettings.bEnabled ? TEXT("on ") : TEXT("off"),
 			Lods,
+			Mesh->GetStaticMaterials().Num(),
 			Mesh->GetBodySetup() != nullptr ? TEXT("yes") : TEXT("NO "),
 			Mesh->bGenerateMeshDistanceField ? TEXT("yes") : TEXT("NO "));
 

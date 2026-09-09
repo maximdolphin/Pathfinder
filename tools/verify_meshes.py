@@ -13,7 +13,7 @@ import os
 
 import unreal
 
-EXPECTED = {"SM_ShipHull": True}
+EXPECTED = {"SM_ShipHull": True, "SM_Tree_A": True, "SM_Tree_B": True}
 
 registry = unreal.AssetRegistryHelpers.get_asset_registry()
 registry.scan_paths_synchronous(["/Game/Meshes"], force_rescan=True)

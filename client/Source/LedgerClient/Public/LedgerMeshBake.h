@@ -23,10 +23,16 @@ namespace LedgerMesh
 	/// whether Nanite, the LOD chain, collision and the distance field are
 	/// actually on it. Reported rather than assumed, because "I set the flag" and
 	/// "the asset has it" are different claims and only the second one matters.
+	/// `bNanite` is a choice, not a default. Nanite is for meshes dense enough
+	/// that per-cluster detail selection beats drawing the whole thing, and it
+	/// does not carry mesh vertex colours through to the material -- which on a
+	/// forty-six triangle tree costs the only colour it has and buys nothing.
 	LEDGERCLIENT_API UStaticMesh* Bake(
 		const FLedgerMeshBuilder& Builder,
 		const FString& PackageName,
 		const TCHAR* AssetName,
-		FString& Line);
+		FString& Line,
+		bool bNanite = true,
+		int32 SecondGroupStartTriangle = INDEX_NONE);
 #endif
 }

@@ -3086,10 +3086,16 @@
    "dependsOn": [
     "T420"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Trees are now instances of a baked static mesh: two UHierarchicalInstancedStaticMeshComponents, 174 and 168 instances, replacing a single merged procedural mesh of 43,092 runtime-generated vertices. MEASURED, steady state, two consecutive runs: settlement build 3.0 and 3.2 ms against a 5.4 ms baseline, of which loading both tree meshes is 1.2-1.4 ms and placing all 342 instances is 0.0 ms. Draw count is independent of instance count by construction -- two components whether there are 342 trees or 3,420. Hierarchical rather than plain instanced, so a group of trees behind a hill is culled as a cluster; the merged mesh was one primitive, drawn whole or not at all. First readings were 38.9 ms and then 8.8 ms and I nearly recorded the task as a regression on them; both were first-load-after-bake, where the asset's derived data is built on demand. THREE WRONG GUESSES before the trees rendered correctly, each looking like the last: they came back black, and I blamed a missing material assignment, then an sRGB decode on the vertex colours, then Nanite. The actual causes were two. A material without bUsedWithInstancedStaticMeshes is silently swapped for the default on an instanced component, and BuildFromMeshDescriptions creates no material slots at all -- so SetMaterial(0, ...) succeeded, reported the material back, and drew nothing. The component was asked what it had and answered '0 material slots'. Vertex colours were then dropped entirely in favour of a material slot each for trunk and canopy, which is how this is normally done and depends on none of it. A correction to the task's own text: it claimed 342 trees were 342 procedural mesh components. They were one."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 66.5,
    "plannedEndDay": 68.5,
@@ -12270,5 +12276,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T05:13:07.914Z"
+ "updatedAt": "2026-09-09T06:35:25.018Z"
 }

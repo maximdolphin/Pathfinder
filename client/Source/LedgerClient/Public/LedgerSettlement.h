@@ -14,6 +14,8 @@
 #include "GameFramework/Actor.h"
 #include "LedgerSettlement.generated.h"
 
+struct FLedgerMeshBuilder;
+
 class ALedgerPlanet;
 class UProceduralMeshComponent;
 
@@ -45,7 +47,24 @@ public:
 
 	FVector GetPadLocation() const { return PadLocation; }
 
+public:
+	/// One tree at the origin, unit scale, +Z up. Static, because the mesh bake
+	/// runs before any settlement exists. `bAltCanopy` picks the lower cone's
+	/// colour, which is the only variation between the two baked trees.
+	/// Returns the triangle index where the canopy begins, so the mesh bake
+	/// can give the trunk and the canopy a material slot each.
+	static int32 DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCanopy);
+
 private:
+	void PlaceTrees();
+
+	/// Where trees go, gathered during placement and handed to the instanced
+	/// components in one call. Split by canopy variant.
+	TArray<FTransform> TreeTransforms[2];
+
+	UPROPERTY()
+	TObjectPtr<class UHierarchicalInstancedStaticMeshComponent> TreeInstances[2];
+
 	UPROPERTY()
 	TObjectPtr<UProceduralMeshComponent> Structures;
 

@@ -22,6 +22,16 @@ namespace LedgerSurface
 		Material->MaterialDomain = MD_Surface;
 		Material->SetShadingModel(MSM_DefaultLit);
 
+		// Declared usable on instanced components, and this is not optional.
+		//
+		// Unreal validates material usage per component type, and a material
+		// without this flag is silently swapped for the default one on an
+		// instanced static mesh. Three hundred and forty-two instanced trees
+		// rendered as black cut-outs with the material assigned, the material
+		// slot present and the vertex colours present -- because the thing being
+		// drawn was not this material at all.
+		Material->bUsedWithInstancedStaticMeshes = true;
+
 		FGraph Graph;
 		Graph.Material = Material;
 

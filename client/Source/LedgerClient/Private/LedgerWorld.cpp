@@ -273,8 +273,30 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			Body += Line + TEXT("\n");
 		}
 
-		Body += FString::Printf(TEXT("\n  %d of 1 saved\n\n"), Saved);
-		Body += FString::Printf(TEXT("VERDICT: %s\n"), Saved == 1 ? TEXT("PASS") : TEXT("FAIL"));
+		// Two trees, differing only in the lower canopy colour, because the
+		// variation is baked into vertex colour and an instance cannot carry
+		// its own. Two draws for the whole forest.
+		for (int32 Variant = 0; Variant < 2; ++Variant)
+		{
+			FLedgerMeshBuilder Builder;
+			const int32 CanopyStartsAt =
+				ALedgerSettlement::DescribeTree(Builder, Variant == 1);
+			const FString Name = FString::Printf(TEXT("SM_Tree_%s"),
+				Variant == 0 ? TEXT("A") : TEXT("B"));
+			FString Line;
+			// No Nanite on the trees: forty-six triangles, and their colour is
+			// per-vertex.
+			if (LedgerMesh::Bake(Builder,
+				FString(LedgerMesh::MeshPackageRoot) + Name, *Name, Line,
+				/*bNanite*/ false, CanopyStartsAt) != nullptr)
+			{
+				++Saved;
+			}
+			Body += Line + TEXT("\n");
+		}
+
+		Body += FString::Printf(TEXT("\n  %d of 3 saved\n\n"), Saved);
+		Body += FString::Printf(TEXT("VERDICT: %s\n"), Saved == 3 ? TEXT("PASS") : TEXT("FAIL"));
 
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
