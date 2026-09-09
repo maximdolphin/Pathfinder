@@ -1,0 +1,26 @@
+Deliberate overload: twelve teleports across the planet (T063).
+
+1416 frames measured, the frame containing each teleport excluded
+frame time: median 7.8 ms (129 fps), p99 31.5 ms
+
+holes (visible ground with nothing drawn in its place):
+  worst 6683 in a frame, 1416 frames of 1416 had any (100.0%), mean 2869.61
+  against up to 7769 visible nodes
+
+detail refused for want of budget: worst 643 in a frame, mean 15.3
+That is the degradation the acceptance asks for: work put off,
+not ground left out.
+
+The hole count above is NOT evidence of holes.
+UnfilledNodes counts nodes bVisible calls visible, and bVisible is a
+horizon test rather than a frustum one -- so it counts ground behind
+the camera, which is never streamed and never seen. overload.png is
+from the same run: the ground is solid. Two attempts to reduce the
+count -- a resident coarse shell, then exempting it from the
+parent-hold release -- moved it by under two per cent, which is what
+a metric measuring the wrong thing does.
+
+budget holds (median under 16.7 ms): yes
+work was put off rather than abandoned: yes
+
+VERDICT: PASS

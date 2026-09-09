@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 11
+   "doneCount": 12
   },
   {
    "id": "M03",
@@ -4211,11 +4211,30 @@
    "dependsOn": [
     "T062"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-09",
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Acceptance met. Under twelve teleports across the planet two seconds apart, each invalidating the whole visible set, the median frame is 7.8 ms against a 16.7 ms budget and the degradation is work put off -- 15 requests a frame refused on average, 643 in the worst -- with the ground solid in a photograph from the same run. One authority (FLedgerStreamingBudget) replaces three separate limits that a frame could pay in full simultaneously; requests are classified collision/hole/detail/speculative and sorted by class before distance; collision is exempt and reported separately. An LOD brake raises the error threshold when the section pool is nearly full, at 95% occupancy rather than 80 because at 80 it dragged during ordinary flight and coarsened the seabed in a frame that was never in trouble. The finding worth keeping: the first run reported 7,105 holes against 8,644 visible nodes in every frame, and three separate fixes each moved it by under 2%. UnfilledNodes counts nodes bVisible calls visible, and bVisible is a horizon test rather than a frustum one -- it counts the ground behind the camera. The photograph settled it. The brake was being driven by that same number and is now driven by pool occupancy; the fixture's verdict asserts on refusals rather than on the hole count. All eight flight captures are back to baseline. Commit 39622ae, write-up in docs/comparisons/overload/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T063-2026-09-09T19-58-57-988.png",
+     "caption": "Mid-teleport under deliberate overload: solid ground, while the hole counter claimed 2,869 holes. The counter was wrong.",
+     "source": "../docs/comparisons/overload/overload.png",
+     "addedAt": "2026-09-09T19:58:57.990Z"
+    },
+    {
+     "file": "evidence/T063-2026-09-09T19-58-58-080.txt",
+     "caption": "Twelve teleports, two seconds apart: median 7.8 ms against a 16.7 ms budget, 15 requests a frame refused.",
+     "source": "../docs/comparisons/overload/overload.txt",
+     "addedAt": "2026-09-09T19:58:58.082Z"
+    }
+   ],
    "plannedStartDay": 129,
    "plannedEndDay": 131.5,
    "plannedStart": "2027-03-05",
@@ -12661,5 +12680,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T19:12:53.786Z"
+ "updatedAt": "2026-09-09T19:58:58.175Z"
 }
