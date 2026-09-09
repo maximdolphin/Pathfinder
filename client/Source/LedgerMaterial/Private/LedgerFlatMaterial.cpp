@@ -7,11 +7,13 @@
 #include "LedgerMaterialGraph.h"
 #include "MaterialDomain.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
+#include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionVertexColor.h"
 
 namespace LedgerSurface
 {
-	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness)
+	UMaterialInterface* BuildFlatMaterial(UObject* Outer)
 	{
 		UMaterial* Material = NewMaterial(Outer, TEXT("M_Flat"));
 		if (Material == nullptr)
@@ -35,8 +37,17 @@ namespace LedgerSurface
 		FGraph Graph;
 		Graph.Material = Material;
 
-		UMaterialExpressionConstant3Vector* Tint = Graph.Make<UMaterialExpressionConstant3Vector>();
-		Tint->Constant = Colour;
+		// Parameters, not constants.
+		//
+		// The settlement wants a different colour per building and the trees a
+		// different one per canopy, and a constant means a material each --
+		// which cannot be baked, which is why a packaged build had no material
+		// on any building, tree or hull at all. As parameters there is one
+		// baked material and a dynamic instance per colour, which works in a
+		// cooked build because the parent is a real asset.
+		UMaterialExpressionVectorParameter* Tint = Graph.Make<UMaterialExpressionVectorParameter>();
+		Tint->ParameterName = TEXT("Tint");
+		Tint->DefaultValue = FLinearColor::White;
 
 		// Multiplied by vertex colour, not replacing it. The buildings and trees
 		// carry all their variation per-vertex, so passing white here yields
@@ -44,13 +55,18 @@ namespace LedgerSurface
 		UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
 		UMaterialExpression* Base = Graph.Multiply(Tint, VertexColour);
 
+		UMaterialExpressionScalarParameter* Roughness =
+			Graph.Make<UMaterialExpressionScalarParameter>();
+		Roughness->ParameterName = TEXT("Roughness");
+		Roughness->DefaultValue = 0.82f;
+
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
 		if (EditorData == nullptr)
 		{
 			return nullptr;
 		}
 		EditorData->BaseColor.Expression = Base;
-		EditorData->Roughness.Expression = Graph.Constant(Roughness);
+		EditorData->Roughness.Expression = Roughness;
 		EditorData->Specular.Expression = Graph.Constant(0.4f);
 
 		Material->PostEditChange();

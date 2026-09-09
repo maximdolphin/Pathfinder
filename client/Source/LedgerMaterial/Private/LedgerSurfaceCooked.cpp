@@ -1,36 +1,12 @@
-// What the material factory does in a packaged build, now that most of it is
-// an asset.
+// Nothing left here.
 //
-// Terrain, water and underwater are baked by `BakeMaterials` and loaded by
-// `LedgerMaterialLoad.cpp`, in editor and packaged builds alike -- so they are
-// no longer here. What is left is the one material that is not baked.
+// This file existed because shaders only compile at runtime in an editor
+// build, so every material factory returned null in a packaged one and a
+// cooked build had no look at all. Every material is now a baked asset
+// loaded by LedgerMaterialLoad.cpp, in editor and packaged builds alike,
+// and the last holdout -- the flat material, which used to bake a colour
+// into a constant -- takes its colour as a parameter and is one asset with
+// a dynamic instance per user.
 //
-// `CreateFlatMaterial` takes a colour and a roughness, and the settlement asks
-// for a different pair per building. Baking it would mean a material instance
-// per colour, which is the instancing task in this milestone and not this one.
-// So in a packaged build it is still absent, and that is now a small and
-// specific hole rather than the whole look of the game.
-
-#include "LedgerSurface.h"
-
-#if !WITH_EDITOR
-
-#include "LedgerLog.h"
-
-namespace LedgerSurface
-{
-	UMaterialInterface* CreateFlatMaterial(UObject*, const FLinearColor&, float)
-	{
-		static bool bSaid = false;
-		if (!bSaid)
-		{
-			bSaid = true;
-			UE_LOG(LogLedger, Warning,
-				TEXT("flat materials are not baked yet, so buildings and the ship hull "
-				     "have no material in a packaged build. M2W: instanced rendering."));
-		}
-		return nullptr;
-	}
-}
-
-#endif
+// Kept as a marker rather than deleted, because "why is there no cooked
+// path" is a reasonable question and this is where somebody looks.

@@ -3194,10 +3194,16 @@
    "dependsOn": [
     "T424"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "A packaged Windows build launches with no editor present, flies the whole scripted flight, and writes its eight captures and its frame-time report. build/package/Windows/Ledger.exe, 901 MB, packaged by RunUAT BuildCookRun. Evidence kept in docs/comparisons/packaged/. Two real failures found, which is what packaging was for. FIRST: nothing was cooked. Generated assets are loaded by path string at runtime, so no asset in the project references them and the cooker never saw them -- the first packaged build came up reporting 'SkipPackage: /Game/Materials/M_Terrain, the package to load does not exist on disk or in the loader' for every material and mesh, and rendered a planet with no material. Fixed by naming the directories in DirectoriesToAlwaysCook. SECOND: the flat material could not be baked at all, because it took its colour as a constant and the settlement wants a different one per building -- so buildings, trees and the hull rendered as black cut-outs on correctly textured ground. Its colour and roughness are parameters now, one baked asset with a dynamic instance per user, and LedgerSurfaceCooked.cpp is empty of fallbacks for the first time. NOT MET, and it belongs to the milestone gate rather than this task: the packaged captures do not match the editor's within tolerance, worst channel 193. And the reason is worth more than the mismatch -- BOTH builds report 'Using Highest Feature Level of D3D12: SM5' and raytracing=0. Nanite and Lumen hardware ray tracing both require SM6, so neither has been running since I enabled them, in either build. Every claim I have made about Lumen HWRT and about Nanite being on the hull needs re-checking against that."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 75.5,
    "plannedEndDay": 78.5,
@@ -12288,5 +12294,5 @@
    "plannedEnd": "2031-01-03"
   }
  ],
- "updatedAt": "2026-09-09T06:43:43.377Z"
+ "updatedAt": "2026-09-09T07:03:39.055Z"
 }

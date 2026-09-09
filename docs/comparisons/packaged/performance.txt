@@ -1,0 +1,39 @@
+Frame times for the scripted flight.
+
+VALID ONLY ON AN IDLE MACHINE. Anything else using the GPU is measured
+as part of this. A day went into optimising a cloud pass that costs
+0.24 ms, because the profile saying 90 ms was taken through another
+game running behind the capture.
+
+budget 16.7 ms (60 fps), warm-up 6 s excluded from the verdict
+
+phase              frames    mean   median     p95     p99     max   over    game  render     gpu
+startup              1788     7.8     2.4    16.8    16.8    20.6    24%     1.7   248.0     1.3   (warm-up)
+orbit                 239    16.8    16.7    16.8    17.0    67.1    60%     1.6    16.6     1.5
+descent              1436    16.7    16.7    16.8    16.9    17.1    59%     2.2    16.5     2.2
+atmospheric entry    1455    17.9    16.7    27.1    36.0   116.2    68%     9.6    11.7     2.5
+surface               569    17.6    17.0    18.7    19.2   182.0    97%    17.5     4.1     3.7
+town                  581    17.2    16.6    18.3    19.6   165.6    40%    17.2     4.3     3.9
+ridge sweep          1076    33.4    33.2    43.3    47.0   190.3   100%    33.4     6.3     4.2
+coast                 296    27.1    27.8    34.5   180.4   400.0    78%    24.5     7.9     3.1
+underwater            236    33.9    32.8    37.2    62.6   400.0    97%    34.2     9.1     4.8
+ascent               2312     6.1     4.7    11.3    30.5   322.7     2%     6.0     1.9     1.0
+space                 354    17.0    16.7    16.8    17.0   178.6    59%     3.9    16.0     2.5
+
+overall  8554 frames, mean 17.1 ms (59 fps), p99 43.1 ms, max 400.0 ms
+         53.2% of frames over budget
+
+p99 per phase, one column per millisecond:
+  startup              16.8 |#################
+  orbit                17.0 |#################
+  descent              16.9 |#################
+  atmospheric entry    36.0 |#################################
+  surface              19.2 |###################
+  town                 19.6 |####################
+  ridge sweep          47.0 |#################################
+  coast               180.4 |#################################
+  underwater           62.6 |#################################
+  ascent               30.5 |###############################
+  space                17.0 |#################
+
+VERDICT: FAIL (p99 43.1 ms against a 16.7 ms budget)

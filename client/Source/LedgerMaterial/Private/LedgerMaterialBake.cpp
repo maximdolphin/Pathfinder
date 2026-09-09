@@ -125,10 +125,10 @@ namespace LedgerSurface
 		Record(TEXT("M_Water"), [](UObject* Outer) { return BuildWaterMaterial(Outer); });
 		Record(TEXT("M_Underwater"), [](UObject* Outer) { return BuildUnderwaterMaterial(Outer); });
 
-		// M_Flat is not baked. It is a colour and a roughness, and the
-		// settlement asks for a different pair per building -- a baked one would
-		// have to be a material instance per colour, which is the instancing
-		// task in this milestone rather than this one.
+		// M_Flat is baked now that its colour and roughness are parameters,
+		// so one asset serves every building, tree and hull through a dynamic
+		// instance each.
+		Record(TEXT("M_Flat"), [](UObject* Outer) { return BuildFlatMaterial(Outer); });
 
 		Report = TEXT("Baked materials.\n\n");
 		for (const FString& Line : Lines)

@@ -18,6 +18,7 @@
 #include "LedgerSurface.h"
 
 #include "LedgerLog.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
@@ -98,5 +99,42 @@ namespace LedgerSurface
 #else
 		return Fallback(TEXT("M_Underwater"));
 #endif
+	}
+
+	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour,
+		float Roughness)
+	{
+		// A dynamic instance of one baked material, not a material per colour.
+		//
+		// This is what makes buildings, trees and the ship hull exist in a
+		// packaged build. They had no material at all: CreateFlatMaterial built
+		// a fresh UMaterial with the colour as a constant, which cannot be
+		// baked, so the cooked path returned null and the first packaged build
+		// came up with the town and the forest rendered as black cut-outs on
+		// correctly textured ground.
+		UMaterialInterface* Parent = LoadBaked(TEXT("M_Flat"));
+
+#if WITH_EDITOR
+		if (Parent == nullptr)
+		{
+			UE_LOG(LogLedger, Warning,
+				TEXT("flat material built in memory: no baked asset."));
+			Parent = BuildFlatMaterial(Outer);
+		}
+#endif
+
+		if (Parent == nullptr)
+		{
+			return Fallback(TEXT("M_Flat"));
+		}
+
+		UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Parent, Outer);
+		if (Instance == nullptr)
+		{
+			return Parent;
+		}
+		Instance->SetVectorParameterValue(TEXT("Tint"), Colour);
+		Instance->SetScalarParameterValue(TEXT("Roughness"), Roughness);
+		return Instance;
 	}
 }
