@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 12
+   "doneCount": 13
   },
   {
    "id": "M03",
@@ -3705,11 +3705,30 @@
    "dependsOn": [
     "T050"
    ],
-   "status": "active",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "completedAt": "2026-09-09",
+   "notes": [
+    {
+     "at": "2026-09-09",
+     "kind": "done",
+     "text": "Highest land 1,372 -> 2,462 m, steepest slope 57.0 -> 62.1 degrees with 1.08% of land above 30 and 0.015% above 60 where there had been none, and major ranges on the planet 2 -> 609. Two changes. ErodedRidged's [-1,1] remap assumes a mean of 0.5 and this field's is -0.49 -- measured over the land and printed by -climate -- so FMath::Max(0.0, ...) was deleting everything below the 97th percentile; RidgeStrength renormalises against the measured distribution. That reached 1,911 m and stopped, because Land^1.4 in the range mask capped it: the continent mask only reaches 0.581 and no point had a strong ridge and high land at once, since they are independent fields. Land^0.7 lets a range stand on ordinary continent. Cost, measured over the same flight: terrain game thread in the surface phase 1.28 -> 10.5 ms, GPU 7.2 -> 11.7, frame p99 31.5 -> 32.8. A flat planet was cheap. It also found a defect in T063's LOD brake -- with relief, occupancy reaches the engagement point and the loop chased itself, patch cache at 88% reuse over 158,000 hits; a dead band fixes it and -nolodbrake stays as a control arm. All twenty reference captures re-adopted. Commit 317a620, write-up in docs/comparisons/relief/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T428-2026-09-09T20-44-59-272.png",
+     "caption": "The ridge phase after the fix: a peak with a snow line, rock on the steep faces, and further ranges on the horizon. Before, this frame was a flat plain.",
+     "source": "../docs/comparisons/relief/ridge-sweep.png",
+     "addedAt": "2026-09-09T20:44:59.274Z"
+    },
+    {
+     "file": "evidence/T428-2026-09-09T20-44-59-360.txt",
+     "caption": "Highest land 1,372 -> 2,462 m; steepest slope 57.0 -> 62.1 degrees; major ranges 2 -> 609.",
+     "source": "../docs/comparisons/relief/relief-survey.txt",
+     "addedAt": "2026-09-09T20:44:59.361Z"
+    }
+   ],
    "plannedStartDay": 93,
    "plannedEndDay": 94.5,
    "plannedStart": "2027-01-14",
@@ -12704,5 +12723,5 @@
    "plannedEnd": "2031-01-06"
   }
  ],
- "updatedAt": "2026-09-09T20:21:35.739Z"
+ "updatedAt": "2026-09-09T20:44:59.429Z"
 }
