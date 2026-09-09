@@ -111,6 +111,12 @@ struct FLedgerPatchJob
 	/// — far below the elevation difference this is correcting.
 	TArray<FVector2D> MorphUVs;
 
+	/// Elevation at each vertex, centimetres. Kept on the job rather than local
+	/// to the generator because it is the expensive part -- 4,225 noise samples
+	/// -- and the disk cache stores it instead of the finished geometry
+	/// (LedgerPatchDisk.h).
+	TArray<double> Elevations;
+
 	/// Vertex colour. RGB are the weights of the patch's three palette slots,
 	/// summing to one; A is unused. **Not a colour** any more -- the surface
 	/// sets carry the colour, and painting a tint on top of an authored scan is

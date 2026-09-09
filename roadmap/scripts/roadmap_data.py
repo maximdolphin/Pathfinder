@@ -87,7 +87,26 @@ MILESTONES = [
         refs=["SS6.8"],
     ),
     dict(
-        id="M03", title="Planetary bodies and orbital mechanics", week_start=22, week_end=29,
+    dict(
+        # Inserted 2026-09-09 and everything after it moved seven weeks. The
+        # ground was measured -- 4.77 m triangles, a height field with nothing
+        # under 33 m, height maps sampled and thrown away -- and the terrain
+        # milestone's own gate says nothing about whether the surface is worth
+        # standing on. See scripts/roadmap_data_surface.py for what "on par with
+        # Star Citizen" was taken to mean, and for the part that is already
+        # equal: the scans themselves.
+        id="M2S", title="Close-range surface fidelity", week_start=22, week_end=28,
+        goal="Make the ground convincing at walking distance and out to the horizon. "
+             "The source scans are already photogrammetry at 4K; what is missing is "
+             "displacement, variation across scales, an end to the visible tiling grid, "
+             "and geometry fine enough to carry any of it.",
+        gate="Twelve side-by-side pairs against real photographs at 2 m, 20 m and 200 m, "
+             "each with a written verdict; no terrain triangle edge over 40 px while "
+             "standing; no visible tiling period in an overhead capture; and the 200 km "
+             "transect still holds its frame budget.",
+        refs=["SS6.8", "QB", "ADR-0005"],
+    ),
+        id="M03", title="Planetary bodies and orbital mechanics", week_start=29, week_end=36,
         goal="A solar system that moves. Planets, moons, rings and stations on real "
              "orbits, axial tilt, rotation, day and night, seasons, eclipses — all "
              "deterministic from seed and all consistent between the map and the sky.",
@@ -97,7 +116,7 @@ MILESTONES = [
         refs=["LW SS8", "SS6.8"],
     ),
     dict(
-        id="M04", title="Atmosphere, weather and environment", week_start=30, week_end=37,
+        id="M04", title="Atmosphere, weather and environment", week_start=37, week_end=44,
         goal="Air that behaves. Layered atmospheres per body, volumetric weather that "
              "moves and matters, storms with real wind fields, temperature and pressure "
              "as physical quantities the rest of the game reads.",
@@ -107,7 +126,7 @@ MILESTONES = [
         refs=["SS6.8", "LW SS7.2"],
     ),
     dict(
-        id="M05", title="Ship framework: hulls, components, subsystems", week_start=38, week_end=47,
+        id="M05", title="Ship framework: hulls, components, subsystems", week_start=45, week_end=54,
         goal="Ships as systems, not props. A component graph — power plant, thrusters, "
              "fuel, cooling, avionics, life support, shields — with real dependencies, "
              "damage that propagates through it, and hulls assembled from parts.",
@@ -117,7 +136,7 @@ MILESTONES = [
         refs=["SS6.9"],
     ),
     dict(
-        id="M06", title="Flight model in vacuum and in air", week_start=48, week_end=56,
+        id="M06", title="Flight model in vacuum and in air", week_start=55, week_end=63,
         goal="Flight worth doing. Six-degree thruster allocation solved rather than "
              "faked, aerodynamic lift and drag in atmosphere, control surfaces, landing "
              "gear, gravity, and the transition between the two regimes.",
@@ -127,7 +146,7 @@ MILESTONES = [
         refs=["SS6.9"],
     ),
     dict(
-        id="M07", title="Seamless travel across a system", week_start=57, week_end=65,
+        id="M07", title="Seamless travel across a system", week_start=64, week_end=72,
         goal="Distance made crossable without a loading screen. Origin rebasing, "
              "multi-scale rendering from centimetres to astronomical units, and a "
              "high-speed travel mode with a real spool, a real interruption, and a real "
@@ -138,7 +157,7 @@ MILESTONES = [
         refs=["LW SS8", "SS6.8"],
     ),
     dict(
-        id="M08", title="Physics at scale and local grids", week_start=66, week_end=74,
+        id="M08", title="Physics at scale and local grids", week_start=73, week_end=81,
         goal="The hardest engine problem in the project: walking around inside a ship "
              "that is itself moving at speed near a rotating planet. Nested reference "
              "frames, which Chaos does not have.",
@@ -148,7 +167,7 @@ MILESTONES = [
         refs=["SS6.9"],
     ),
     dict(
-        id="M09", title="Embodiment and animation", week_start=75, week_end=85,
+        id="M09", title="Embodiment and animation", week_start=82, week_end=92,
         goal="A body worth being in. Character controller with real momentum, full-body "
              "IK, procedural foot and hand placement, first and third person from one "
              "skeleton, interaction, seats, ladders, EVA.",
@@ -158,7 +177,7 @@ MILESTONES = [
         refs=["SS6.9", "LW SS4"],
     ),
     dict(
-        id="M10", title="Interiors and modular architecture", week_start=86, week_end=94,
+        id="M10", title="Interiors and modular architecture", week_start=93, week_end=101,
         goal="Insides. Ship interiors, station interiors and building interiors built "
              "from a modular kit, generated where they should be generated and authored "
              "where they should be authored, with no door that is a loading screen.",
@@ -168,7 +187,7 @@ MILESTONES = [
         refs=["LW SS7", "SS6.8"],
     ),
     dict(
-        id="M11", title="Rendering fidelity", week_start=95, week_end=105,
+        id="M11", title="Rendering fidelity", week_start=102, week_end=112,
         goal="The look. A real PBR material pipeline, lighting that works from a lit "
              "cockpit at night to a sunlit dune, volumetrics, decals, wear, post, and the "
              "LOD and impostor chain that lets it survive at range.",
@@ -178,7 +197,7 @@ MILESTONES = [
         refs=["SS6.8", "SS14"],
     ),
     dict(
-        id="M12", title="Asset pipeline and world content", week_start=106, week_end=114,
+        id="M12", title="Asset pipeline and world content", week_start=113, week_end=121,
         goal="A way to get content in that is not a person placing things by hand -- "
              "and under ADR-0005 there is no other way, because nothing is bought and no "
              "artist is assumed. Generators for hulls, plating, surface detail, markings, "
@@ -190,7 +209,7 @@ MILESTONES = [
         refs=["SS14"],
     ),
     dict(
-        id="M13", title="Performance and optimisation", week_start=115, week_end=122,
+        id="M13", title="Performance and optimisation", week_start=122, week_end=129,
         goal="Budgets met with everything running at once. Rendering, streaming, physics "
              "and memory, at the densities the design actually asks for.",
         gate="Sixty frames a second with a full city, a docked ship interior and traffic "
@@ -198,7 +217,7 @@ MILESTONES = [
         refs=["SS14"],
     ),
     dict(
-        id="M14", title="Technical vertical slice", week_start=123, week_end=130,
+        id="M14", title="Technical vertical slice", week_start=130, week_end=137,
         goal="Prove the model. One system, one planet, one moon, one city, one station, "
              "three ships — everything above running together and holding up under an "
              "hour of unscripted play.",
@@ -208,7 +227,7 @@ MILESTONES = [
         refs=["ARCH Rule 6"],
     ),
     dict(
-        id="M15", title="Simulation core and determinism", week_start=131, week_end=138,
+        id="M15", title="Simulation core and determinism", week_start=138, week_end=145,
         goal="The substrate the living world is written against: event log, reducer "
              "contract, snapshots, replay, and a harness that proves reproducibility "
              "before there is anything complicated to reproduce.",
@@ -217,7 +236,7 @@ MILESTONES = [
         refs=["SS3", "ARCH Rule 5"],
     ),
     dict(
-        id="M16", title="Agent framework", week_start=139, week_end=150,
+        id="M16", title="Agent framework", week_start=146, week_end=157,
         goal="The longest simulation milestone, and the one every other system reduces "
              "to. Needs, goals, planning, schedules, competence, loyalty — and agents "
              "that act on their own beliefs rather than on world state.",
@@ -227,7 +246,7 @@ MILESTONES = [
         refs=["LW SS6", "SS4"],
     ),
     dict(
-        id="M17", title="Organisation framework", week_start=151, week_end=158,
+        id="M17", title="Organisation framework", week_start=158, week_end=165,
         goal="Membership, roles, holdings, treasury, doctrine and span of control. A "
              "player organisation and an NPC organisation are the same type, founded "
              "through the same API, subject to the same drift.",
@@ -237,7 +256,7 @@ MILESTONES = [
         refs=["LW SS2", "ARCH Rule 4"],
     ),
     dict(
-        id="M18", title="Economy and logistics", week_start=159, week_end=166,
+        id="M18", title="Economy and logistics", week_start=166, week_end=173,
         goal="Goods, markets, production, contracts and convoys. Materials that have to "
              "physically arrive, which is what turns a build order into a logistics "
              "problem and a convoy into a target.",
@@ -247,7 +266,7 @@ MILESTONES = [
         refs=["SS7", "LW SS7.4"],
     ),
     dict(
-        id="M19", title="Sites, construction and city life", week_start=167, week_end=176,
+        id="M19", title="Sites, construction and city life", week_start=174, week_end=183,
         goal="Claims, construction projects, four utility networks, condition that "
              "degrades, maintenance crews that respond, and a first-person tell for every "
              "mechanic.",
@@ -257,7 +276,7 @@ MILESTONES = [
         refs=["LW SS7"],
     ),
     dict(
-        id="M20", title="Power, threat and coalitions", week_start=177, week_end=184,
+        id="M20", title="Power, threat and coalitions", week_start=184, week_end=191,
         goal="The ceiling. Threat models built on belief rather than truth, alarm that "
              "rises with believed power and falls with dependency, and coalitions that "
              "form because several organisations independently reached one conclusion.",
@@ -267,7 +286,7 @@ MILESTONES = [
         refs=["LW SS3", "SS4"],
     ),
     dict(
-        id="M21", title="Missions and directives", week_start=185, week_end=193,
+        id="M21", title="Missions and directives", week_start=192, week_end=200,
         goal="Missions generated from tension rather than authored, with stakes that are "
              "changes to the world. Directives: standing orders resolved by agents whether "
              "or not anyone is watching.",
@@ -277,7 +296,7 @@ MILESTONES = [
         refs=["LW SS5", "LW SS4.1"],
     ),
     dict(
-        id="M22", title="Presence and Command", week_start=194, week_end=200,
+        id="M22", title="Presence and Command", week_start=201, week_end=207,
         goal="The second lens. A map of what your organisation is doing, built from what "
              "your people have reported rather than from ground truth, with directives "
              "issued from it and your body still standing where you left it.",
@@ -287,7 +306,7 @@ MILESTONES = [
         refs=["LW SS4"],
     ),
     dict(
-        id="M23", title="The living world, integrated", week_start=201, week_end=209,
+        id="M23", title="The living world, integrated", week_start=208, week_end=216,
         goal="Everything at once, for a long time, without supervision. This is where the "
              "frameworks either compose or they do not.",
         gate="Run one simulated year unattended. No runaway monopoly, no dead economy, no "
@@ -296,7 +315,7 @@ MILESTONES = [
         refs=["LW SS3", "SS12"],
     ),
     dict(
-        id="M24", title="Vertical slice: nothing to coalition", week_start=210, week_end=220,
+        id="M24", title="Vertical slice: nothing to coalition", week_start=217, week_end=227,
         goal="The game. Arrive with nothing, take work, build a crew, charter an "
              "organisation, claim ground, build on it, and grow until the galaxy decides "
              "you are the problem.",

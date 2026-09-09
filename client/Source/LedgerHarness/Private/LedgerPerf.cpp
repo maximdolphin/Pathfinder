@@ -1,5 +1,8 @@
 #include "LedgerPerf.h"
 
+#include "ContentStreaming.h"
+#include "LedgerPatchDisk.h"
+
 #include "DynamicRHI.h"
 #include "Engine/World.h"
 #include "LedgerLog.h"
@@ -244,6 +247,47 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 	const bool bPassed = All.Num() > 0 && P99 <= BudgetMs;
 	Body += FString::Printf(TEXT("\nVERDICT: %s (p99 %.1f ms against a %.1f ms budget)\n"),
 		bPassed ? TEXT("PASS") : TEXT("FAIL"), P99, BudgetMs);
+
+	// ---- what the frame time was actually waiting on -----------------------
+	//
+	// Two things upstream of the renderer decide whether a fast frame is also a
+	// good-looking one, and neither shows up in a frame time. Both are cheap to
+	// ask and both have been wrong for a whole milestone without anybody
+	// noticing, so they go in the report rather than in a console command
+	// somebody has to remember to run.
+	Body += TEXT("\n---- streaming and caches ----\n\n");
+
+	// The texture pool. A streamer that cannot fit the working set does not
+	// fail; it serves a lower mip, everywhere, silently. "Required" over "pool"
+	// is the whole diagnosis.
+	if (IStreamingManager::Get().IsTextureStreamingEnabled())
+	{
+		IRenderAssetStreamingManager& Textures =
+			IStreamingManager::Get().GetTextureStreamingManager();
+		const int64 Pool = Textures.GetPoolSize();
+		const int64 Required = Textures.GetRequiredPoolSize();
+		Body += FString::Printf(
+			TEXT("texture pool   %5.0f MB pool, %5.0f MB required  %s\n"),
+			Pool / 1048576.0, Required / 1048576.0,
+			Required > Pool ? TEXT("OVER -- the ground is being drawn from low mips")
+							: TEXT("fits"));
+	}
+	else
+	{
+		Body += TEXT("texture pool   streaming disabled\n");
+	}
+
+	// The patch cache on disk. On a second visit to the same ground these
+	// should be nearly all hits and no writes; if they are not, generation is
+	// repeating work it has already done.
+	int32 Hits = 0;
+	int32 Misses = 0;
+	int32 Writes = 0;
+	LedgerPatchDisk::Stats(Hits, Misses, Writes);
+	Body += FString::Printf(
+		TEXT("patch cache    %5d hits, %5d misses, %5d written  (%.0f%% served from disk)\n"),
+		Hits, Misses, Writes,
+		Hits + Misses > 0 ? 100.0 * Hits / (Hits + Misses) : 0.0);
 
 	FFileHelper::SaveStringToFile(Body, *Path);
 

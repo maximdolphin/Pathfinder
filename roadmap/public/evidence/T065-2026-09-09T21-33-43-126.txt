@@ -1,0 +1,44 @@
+Frame times for the scripted flight.
+
+VALID ONLY ON AN IDLE MACHINE. Anything else using the GPU is measured
+as part of this. A day went into optimising a cloud pass that costs
+0.24 ms, because the profile saying 90 ms was taken through another
+game running behind the capture.
+
+budget 16.7 ms (60 fps), warm-up 6 s excluded from the verdict
+
+phase              frames    mean   median     p95     p99     max   over    game  render     gpu terrain
+startup              1329    10.5    16.3    16.9    17.1   156.4    28%     2.6   334.3     2.7    0.24   (warm-up)
+orbit                 217    16.6    16.7    16.9    17.2    17.3    53%     1.8    16.6     3.1    0.11
+descent              1428    16.7    16.7    17.8    18.7    21.8    53%     1.9    16.7     5.6    0.31
+atmospheric entry    1385    19.2    16.9    20.5    36.2  1086.1    59%     8.0    15.7     6.4    2.44
+surface               490    19.9    19.4    22.4    23.8    59.7   100%    20.2     0.0     7.9    6.52
+town                  536    18.2    17.4    21.1    21.6    36.6    99%    18.5     0.0     7.4    5.79
+ridge sweep          1391    25.7    25.5    33.3    35.4    66.5    97%    25.8     0.0    11.0    9.39
+coast                 406    19.0    16.9    26.1    31.4   280.5    64%    14.0     0.0     8.1    4.72
+underwater            347    23.2    20.2    36.2    54.8   443.2    75%    20.0     0.0     9.7    8.32
+ascent                804    17.2    16.8    20.6    30.7    42.4    55%     7.6     0.0     3.6    2.68
+space                 344    16.6    16.7    18.0    20.4    20.9    52%     5.0     0.0     7.4    0.92
+
+overall  7348 frames, mean 19.7 ms (51 fps), p99 34.4 ms, max 1086.1 ms
+         70.7% of frames over budget
+
+p99 per phase, one column per millisecond:
+  startup              17.1 |#################
+  orbit                17.2 |#################
+  descent              18.7 |###################
+  atmospheric entry    36.2 |#################################
+  surface              23.8 |########################
+  town                 21.6 |######################
+  ridge sweep          35.4 |#################################
+  coast                31.4 |###############################
+  underwater           54.8 |#################################
+  ascent               30.7 |###############################
+  space                20.4 |####################
+
+VERDICT: FAIL (p99 34.4 ms against a 16.7 ms budget)
+
+---- streaming and caches ----
+
+texture pool    6144 MB pool,   273 MB required  fits
+patch cache    13759 hits,  5096 misses,  5095 written  (73% served from disk)

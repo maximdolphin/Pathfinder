@@ -2,6 +2,7 @@
 
 #include "LedgerBiome.h"
 #include "LedgerCaveMesh.h"
+#include "LedgerPatchDisk.h"
 #include "LedgerCaves.h"
 #include "LedgerLog.h"
 #include "LedgerScatter.h"
@@ -121,10 +122,18 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	Job.Colors.SetNumUninitialized(VertexCount);
 	Job.Tangents.SetNumUninitialized(VertexCount);
 
-	// Elevation is kept alongside the positions so colouring can use it without
-	// re-sampling the noise, which is the expensive part.
-	TArray<double> Elevations;
-	Elevations.SetNumUninitialized(VertexCount);
+	// ---- the disk cache ---------------------------------------------------
+	//
+	// Everything expensive about this patch, if this machine has built it
+	// before: the elevation grid, the vertex colours the climate produced, the
+	// palette and the scatter. What is left below is arithmetic.
+	const bool bFromDisk = LedgerPatchDisk::Load(Job);
+
+	TArray<double>& Elevations = Job.Elevations;
+	if (!bFromDisk)
+	{
+		Elevations.SetNumUninitialized(VertexCount);
+	}
 
 	for (int32 Y = 0; Y < Side; ++Y)
 	{
@@ -161,15 +170,21 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			const FVector3d UnitSphere = LedgerTerrain::CubeToSphere(
 				LedgerTerrain::FaceToCube(Job.Face, U, V));
 
-			const double Elevation = LedgerTerrain::Elevation(UnitSphere, Job.Params);
-			const FVector3d Surface = UnitSphere * (Job.Params.Radius + Elevation);
-
 			const int32 Index = Y * Side + X;
+
+			// The one line the whole disk cache exists for.
+			const double Elevation = bFromDisk
+				? Elevations[Index]
+				: LedgerTerrain::Elevation(UnitSphere, Job.Params);
+			const FVector3d Surface = UnitSphere * (Job.Params.Radius + Elevation);
 			// Relative to the node centre: this is what keeps float precision
 			// local, and it is why the same code works at planetary scale.
 			Job.Vertices[Index] = FVector(Surface - Job.Centre);
 			Job.UVs[Index] = FVector2D(LocalU, LocalV);
-			Elevations[Index] = Elevation;
+			if (!bFromDisk)
+			{
+				Elevations[Index] = Elevation;
+			}
 		}
 	}
 
@@ -299,7 +314,11 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	//
 	// Sampled on the coarse grid and interpolated. See ClimateGrid.
 	const TArray<FLedgerBiome>* Biomes = Job.Biomes.IsValid() ? Job.Biomes.Get() : nullptr;
-	const bool bBiomes = Biomes != nullptr && Biomes->Num() > 0;
+
+	// Skipped entirely when the colours came off disk: every one of those
+	// climate samples marches forty steps upwind through the height field, and
+	// they are the second half of what a patch costs.
+	const bool bBiomes = !bFromDisk && Biomes != nullptr && Biomes->Num() > 0;
 
 	const int32 ClimateGrid = ClimateGridFor(Job.Extent);
 	TArray<FLedgerClimate> Grid;
@@ -512,7 +531,10 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	// On the worker, with the patch, because placement needs the height field
 	// and doing it on the game thread would be a second sampling pass in the
 	// frame. Declines immediately for any patch without collision.
-	LedgerScatter::ScatterPatch(Job);
+	if (!bFromDisk)
+	{
+		LedgerScatter::ScatterPatch(Job);
+	}
 
 	// ---- sea surface ----------------------------------------------------
 	//
@@ -610,6 +632,14 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		}
 
 		Job.bHasWater = Job.WaterTriangles.Num() > 0;
+	}
+
+	// Written after everything, so a half-generated patch is never stored --
+	// and only when this run actually did the work, so a cache hit does not
+	// rewrite the file it just read.
+	if (!bFromDisk)
+	{
+		LedgerPatchDisk::Store(Job);
 	}
 
 	Job.GenerationMs = (FPlatformTime::Seconds() - Started) * 1000.0;
