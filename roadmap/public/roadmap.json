@@ -6213,6 +6213,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "All three decks are computed and one of the three renders. Delivered: deck altitudes as temperatures converted to heights -- Earth gives cumulus 1230-3853 m, middle to 6164, cirrus 8476-10941, tropopause 10941, all from the air's own lapse rate; the distinction between the dry adiabat that sets a cumulus base and the environmental rate that sets everything above it, which is worth three kilometres on the cirrus; and coverage as a query on the pressure field, 40 to 61 per cent along one line of latitude instead of solid. That last is the line T088 needed. Not delivered: Unreal renders one volumetric cloud per scene, so three decks need one volume-domain material with three density bands against CloudSampleAttribute's altitude. This project builds its materials procedurally in C++ already, so the road is clear and the graph has not been built. docs/comparisons/cloud-decks/"
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "The three-band volume material is built (BuildCloudMaterial, same procedural style as the terrain and water materials) and sits behind -threedecks. Two faults found and fixed: the CloudSampleAttribute output index (NormAltitudeInLayer is 2, not 1 -- found by logging the node's outputs rather than guessing), and turbulent noise being biased towards zero so a coverage threshold passed almost nothing. It still renders nothing, for a reason not yet found. The default remains the engine material driven at this project's altitude and coverage: one deck of three, in the right place. Also found: the home world's LCL is 1237 m and T072 put the landing site on a 2.4 km peak, so the town is a kilometre above the cloud tops -- a climb capture has to start below one."
     }
    ],
    "evidence": [],
@@ -13916,5 +13921,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T19:40:51.591Z"
+ "updatedAt": "2026-09-10T19:55:27.247Z"
 }

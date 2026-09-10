@@ -72,4 +72,13 @@ namespace LedgerSurface
 	/// constant. Reaching scene depth means a material, and once there is a
 	/// material there is no reason left for the volume.
 	LEDGERMATERIAL_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
+
+	/// The volumetric cloud material: three decks in one layer. T094.
+	///
+	/// Unreal draws one volumetric cloud per scene, so three decks cannot be
+	/// three components -- they are three bands inside one layer, and the
+	/// material reads its own altitude to know which is which. The band
+	/// centres, widths, coverages and densities are all parameters, because a
+	/// deck's height is a temperature and temperatures move.
+	LEDGERMATERIAL_API UMaterialInterface* CreateCloudMaterial(UObject* Outer);
 }

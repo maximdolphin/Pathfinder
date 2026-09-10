@@ -4,6 +4,8 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
 #include "LedgerLog.h"
+#include "LedgerSurface.h"
+#include "Misc/CommandLine.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 
@@ -198,25 +200,43 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 		return;
 	}
 
-	const FLedgerCloudDeck& Deck = Decks.Cumulus;
-	Clouds->SetVisibility(Deck.bPresent);
-	if (!Deck.bPresent)
+	const bool bAny = Decks.Cumulus.bPresent || Decks.Middle.bPresent
+		|| Decks.Cirrus.bPresent;
+	Clouds->SetVisibility(bAny);
+	if (!bAny)
 	{
 		return;
 	}
 
-	// **The base is the lifting condensation level and nothing else.** It used
-	// to be a two-kilometre default with a comment about cumulus; it is now
-	// whatever height the air's own dew point depression and lapse rate put it
-	// at, which moves when the weather does.
-	Clouds->LayerBottomAltitude =
-		static_cast<float>(Deck.BaseMetres / 1000.0);
-	Clouds->LayerHeight = FMath::Max(
-		static_cast<float>((Deck.TopMetres - Deck.BaseMetres) / 1000.0), 0.5f);
+	// **One layer from the lowest base to the highest top**, because Unreal
+	// draws one volumetric cloud per scene. The three decks live inside it as
+	// bands, and the material is told where each one is.
+	const double Bottom = Decks.LowestMetres;
+	const double Span = FMath::Max(Decks.HighestMetres - Bottom, 500.0);
+	Clouds->LayerBottomAltitude = static_cast<float>(Bottom / 1000.0);
+	Clouds->LayerHeight = static_cast<float>(Span / 1000.0);
 
+	// **Which material draws the deck, and why the choice exists.**
+	//
+	// `-threedecks` uses the volume material this project builds, which has a
+	// band per deck and is the only way to get three of them out of one
+	// component. It compiles, it is assigned, its altitude coordinate is the
+	// one the engine says it is -- and it renders nothing yet. Left on by
+	// default that is a sky with the clouds computed, placed, and invisible,
+	// which is worse than one deck drawn correctly.
+	//
+	// So the default is the engine's own cloud material, driven at the
+	// altitude and the coverage this project computes. One deck of three, in
+	// the right place, at the right density. The flag is where the other two
+	// are worked on.
+	const bool bThreeDecks =
+		FParse::Param(FCommandLine::Get(), TEXT("threedecks"));
 	if (CloudMaterial == nullptr)
 	{
-		if (UMaterialInterface* Source = Clouds->GetMaterial())
+		UMaterialInterface* Source = bThreeDecks
+			? LedgerSurface::CreateCloudMaterial(this)
+			: Clouds->GetMaterial();
+		if (Source != nullptr)
 		{
 			CloudMaterial = UMaterialInstanceDynamic::Create(Source, this);
 			if (CloudMaterial != nullptr)
@@ -224,37 +244,81 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 				Clouds->SetMaterial(CloudMaterial);
 			}
 		}
+		else
+		{
+			// **No material, no clouds, and that is the safe failure.** A
+			// volume component with the wrong material draws an opaque grey
+			// slab across the whole sky, which is worse than a clear day.
+			UE_LOG(LogLedger, Warning,
+				TEXT("clouds: no cloud material, so the deck is hidden"));
+			Clouds->SetVisibility(false);
+			return;
+		}
 	}
 
-	if (CloudMaterial != nullptr
-		&& FMath::Abs(Deck.Coverage - LastCoverage) > 0.001)
+	if (!bThreeDecks)
 	{
-		// **This is the line T088 needed.** The deck used to cover the whole
-		// sky at whatever the material shipped with, so a moon the ephemeris
-		// had placed correctly was behind cloud in every frame of a night. It
-		// now covers as much as the pressure overhead says, which on a ridge
-		// day is under half.
+		// The engine's material has one deck and its own parameter names, so
+		// the layer is the cumulus deck alone and the coverage is that deck's.
+		const FLedgerCloudDeck& Only = Decks.Cumulus;
+		Clouds->LayerBottomAltitude = static_cast<float>(Only.BaseMetres / 1000.0);
+		Clouds->LayerHeight = FMath::Max(
+			static_cast<float>((Only.TopMetres - Only.BaseMetres) / 1000.0), 0.5f);
 		CloudMaterial->SetScalarParameterValue(
-			TEXT("Cloud_GlobalCoverage"), static_cast<float>(Deck.Coverage));
+			TEXT("Cloud_GlobalCoverage"), static_cast<float>(Only.Coverage));
 		CloudMaterial->SetScalarParameterValue(
-			TEXT("Cloud_GlobalDensity"), static_cast<float>(Deck.Opacity));
-		LastCoverage = Deck.Coverage;
+			TEXT("Cloud_GlobalDensity"), static_cast<float>(Only.Opacity));
+	}
 
+	if (CloudMaterial == nullptr)
+	{
+		return;
+	}
+
+	// Each deck's window as a fraction of the layer, which is the coordinate
+	// the material reads its own altitude in.
+	auto Band = [this, Bottom, Span](
+		const TCHAR* Prefix, const FLedgerCloudDeck& Deck)
+	{
+		const float Centre = static_cast<float>(
+			((Deck.BaseMetres + Deck.TopMetres) * 0.5 - Bottom) / Span);
+		// Half the deck's thickness, with a floor: a deck thinner than a
+		// twentieth of the layer would be a sheet of paper and the renderer
+		// would step straight over it.
+		const float Width = FMath::Max(static_cast<float>(
+			(Deck.TopMetres - Deck.BaseMetres) * 0.5 / Span), 0.05f);
+		CloudMaterial->SetScalarParameterValue(
+			*FString::Printf(TEXT("%sCentre"), Prefix), Centre);
+		CloudMaterial->SetScalarParameterValue(
+			*FString::Printf(TEXT("%sWidth"), Prefix), Width);
+		CloudMaterial->SetScalarParameterValue(
+			*FString::Printf(TEXT("%sCoverage"), Prefix),
+			Deck.bPresent ? static_cast<float>(Deck.Coverage) : 0.0f);
+		CloudMaterial->SetScalarParameterValue(
+			*FString::Printf(TEXT("%sDensity"), Prefix),
+			static_cast<float>(Deck.Opacity));
+	};
+
+	if (bThreeDecks)
+	{
+		Band(TEXT("Cumulus"), Decks.Cumulus);
+		Band(TEXT("Middle"), Decks.Middle);
+		Band(TEXT("Cirrus"), Decks.Cirrus);
+	}
+
+	if (FMath::Abs(Decks.Cumulus.Coverage - LastCoverage) > 0.001)
+	{
+		LastCoverage = Decks.Cumulus.Coverage;
 		UE_LOG(LogLedger, Log,
-			TEXT("clouds: cumulus %.0f to %.0f m, %.0f%% cover; middle %s; "
-				 "cirrus %s; tropopause %.0f m"),
-			Deck.BaseMetres, Deck.TopMetres, Deck.Coverage * 100.0,
-			Decks.Middle.bPresent
-				? *FString::Printf(TEXT("%.0f to %.0f m at %.0f%%"),
-					Decks.Middle.BaseMetres, Decks.Middle.TopMetres,
-					Decks.Middle.Coverage * 100.0)
-				: TEXT("none"),
-			Decks.Cirrus.bPresent
-				? *FString::Printf(TEXT("%.0f to %.0f m at %.0f%%"),
-					Decks.Cirrus.BaseMetres, Decks.Cirrus.TopMetres,
-					Decks.Cirrus.Coverage * 100.0)
-				: TEXT("none"),
-			Decks.TropopauseMetres);
+			TEXT("clouds: layer %.0f to %.0f m; cumulus %.0f-%.0f at %.0f%%, "
+				 "middle %.0f-%.0f at %.0f%%, cirrus %.0f-%.0f at %.0f%%"),
+			Bottom, Bottom + Span,
+			Decks.Cumulus.BaseMetres, Decks.Cumulus.TopMetres,
+			Decks.Cumulus.Coverage * 100.0,
+			Decks.Middle.BaseMetres, Decks.Middle.TopMetres,
+			Decks.Middle.bPresent ? Decks.Middle.Coverage * 100.0 : 0.0,
+			Decks.Cirrus.BaseMetres, Decks.Cirrus.TopMetres,
+			Decks.Cirrus.bPresent ? Decks.Cirrus.Coverage * 100.0 : 0.0);
 	}
 	Clouds->MarkRenderStateDirty();
 }

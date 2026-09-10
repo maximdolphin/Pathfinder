@@ -67,6 +67,24 @@ component used to run at whatever coverage the material shipped with, over a
 fixed 2–8 km layer, on every world with air. It now sits at the lifting
 condensation level and covers as much of the sky as the pressure overhead says.
 
+## The landing site is above the clouds
+
+```
+clouds: layer 1237 to 8538 m; cumulus 1237-1732 at 38%,
+middle 1732-3733 at 4%, cirrus 6058-8538 at 43%
+```
+
+The home world is colder than Earth — 272 K rather than 288 — so its lifting
+condensation level is at 1237 m and its cumulus deck is 500 m thick rather than
+2600. **And T072 moved the landing site to a 2.4 km peak.** The site is
+therefore a kilometre above the cloud tops, which is why a camera standing on it
+photographs a clear blue sky with a hazy sheet along the horizon.
+
+That is not a bug in either the clouds or the site. It is a mountain above the
+weather, and it is what the two models jointly say. It does mean the ground
+camera at the town is a poor instrument for judging a cloud deck, and a climb
+capture has to start below one.
+
 ## What renders, and what does not
 
 The deck the renderer draws is now in the right place with the right coverage,
@@ -81,16 +99,35 @@ cirrus 6058 to 8538 m at 43%; tropopause 8538 m
 lower and thinner. Nobody chose that either.)
 
 **But only the cumulus deck is drawn.** Unreal renders one volumetric cloud per
-scene: `UVolumetricCloudComponent` is a single layer with one bottom altitude and
-one height, and adding a second component does not add a second deck. Three decks
-in one component means one *material* with three density bands as a function of
-altitude in the layer — `UMaterialExpressionCloudSampleAttribute` gives that
-altitude, and this project builds its materials procedurally in C++ already, so
-the road is clear. It is a volume-domain material graph that has not been built.
+scene: `UVolumetricCloudComponent` is a single layer, and adding a second
+component does not add a second deck. Three decks in one component means one
+*material* with three density bands against the sample's own altitude.
 
-So **T094 is blocked on its render**, with the physics done and one deck of three
-in the sky. Marking it done on a single deck when the acceptance says "climb
-through three distinct cloud decks" would be marking it done on a third.
+That material now exists — `BuildCloudMaterial`, in the same procedural style as
+the terrain, water and flat materials this project already builds. It compiles,
+it is assigned, and **it renders nothing yet**. Two things were found and fixed on
+the way and a third is still open:
+
+- **The altitude output was the wrong one.** The node offers `Altitude`,
+  `AltitudeInLayer`, `NormAltitudeInLayer` and `ShadowSampleDistance` in that
+  order; only the third is the 0-to-1 coordinate the bands are drawn in. Picking
+  index 1 by its name put every band in the bottom millimetre of the layer. The
+  fix came from logging the node's outputs rather than guessing at them.
+- **Turbulent noise is biased towards zero**, so a coverage threshold at
+  `1 - 0.38` passed almost none of it. Plain gradient noise is centred on a half,
+  which is what makes a coverage number mean coverage.
+- **And it is still invisible**, for a reason not yet found.
+
+So it sits behind `-threedecks`, and the default is the engine's own cloud
+material driven at the altitude and coverage this project computes. One deck of
+three, in the right place, at the right density. Left on by default a material
+that draws nothing is a sky with the clouds computed, placed and invisible —
+which is worse than one deck drawn correctly, and exactly the sort of thing that
+gets mistaken for working.
+
+**T094 is blocked on its render.** Marking it done on a single deck when the
+acceptance says "climb through three distinct cloud decks" would be marking it
+done on a third.
 
 ## And T088 is still blocked, for a different reason now
 

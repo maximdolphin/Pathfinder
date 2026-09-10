@@ -101,6 +101,25 @@ namespace LedgerSurface
 #endif
 	}
 
+	UMaterialInterface* CreateCloudMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Clouds")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning,
+			TEXT("cloud material built in memory: no baked asset. It will not "
+			     "exist in a packaged build until the bake is run."));
+		return BuildCloudMaterial(Outer);
+#else
+		// **No fallback, on purpose.** A surface without its material renders
+		// the wrong colour; a volume without its material renders as an opaque
+		// grey slab across the whole sky, which is worse than no cloud at all.
+		return nullptr;
+#endif
+	}
+
 	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour,
 		float Roughness)
 	{

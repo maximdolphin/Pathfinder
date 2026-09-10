@@ -129,6 +129,7 @@ namespace LedgerSurface
 		// so one asset serves every building, tree and hull through a dynamic
 		// instance each.
 		Record(TEXT("M_Flat"), [](UObject* Outer) { return BuildFlatMaterial(Outer); });
+		Record(TEXT("M_Clouds"), [](UObject* Outer) { return BuildCloudMaterial(Outer); });
 
 		Report = TEXT("Baked materials.\n\n");
 		for (const FString& Line : Lines)
