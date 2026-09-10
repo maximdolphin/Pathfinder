@@ -5664,11 +5664,35 @@
    "dependsOn": [
     "T079"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "HALF DELIVERED AND COMMITTED. The ring's geometry and its shadow are built and measured; flying through it is not. THE SHADOW SWEEPS A YEAR, and three things fall out of the table that nobody wrote: the shadow is always in the hemisphere the star is NOT over (declination negative, shadow north, and the reverse), because the ring shades the winter side -- that is the side the light has to cross it to reach; it VANISHES ENTIRELY at the equinox, where the star is 0.25 degrees out of the ring plane and the ring throws a line of zero width, which is what Saturn does every fifteen years; and its width tracks the declination, 23 degrees across when the star is 16 degrees out of the plane and 5 degrees when it is 3.7. There is no shadow code that knows about seasons -- there is a line from a point on the surface towards the star and a question about whether it crosses the annulus. WHERE A RING CAN BE: the outer edge is the Roche limit for icy rubble, computed rather than chosen -- 158530 km, or 1.96 body radii, against Saturn's rings ending at about 2.3 of its own. THE REASONING THIS TASK GOT WRONG: the first version refused rings to rocky bodies on the grounds that a rocky body's Roche limit sits barely outside its surface so there is nowhere to put them. That is BACKWARDS and the test said so with both numbers side by side -- the rocky planet's limit is 4.40 radii against the giant's 1.96, because the limit scales with the cube root of THE PRIMARY'S density and a dense body has MORE room for icy rings than a puffy one. Earth's Roche limit for ice is over four Earth radii. The real reason the inner planets have none is supply: ring material is ice, ice is not solid inside the frost line, and what little arrives is swept up or dragged down. So the condition is now about where a body formed, and the Roche limit does the job it actually does, which is setting the outer edge. GAPS ARE RESONANCES: a particle whose period is a simple ratio of a shepherd moon's gets the same nudge at the same place every few orbits and ends up elsewhere. Five gaps covering 23.94% of the ring's width, landing where the moon puts them since a period ratio of N is a radius ratio of N to the two-thirds -- and the converse is checked, because with no moon the ring has ZERO gap samples. They come from the moon rather than from a stripe pattern. NOT DELIVERED: you cannot fly through it. Density resolving into particles at close range needs the same volumetric machinery T079's descent needs, behind the same atmosphere calibration. 91 tests pass, module layering legal."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The ring geometry and its shadow are done and measured; flying through the plane and resolving density into particles is not. Same volumetric dependency as T079, behind the same M04 atmosphere calibration."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T080-2026-09-10T15-27-02-943.png",
+     "caption": "A year in twelfths: the ring shadow sweeps from +27 to -27 degrees and vanishes at the equinox",
+     "source": "../out/t080-ring-shadow.png",
+     "addedAt": "2026-09-10T15:27:02.944Z"
+    },
+    {
+     "file": "evidence/T080-2026-09-10T15-27-03-078.txt",
+     "caption": "Roche limit 1.96 body radii, shadow always in the hemisphere the star is not over, zero width at equinox",
+     "source": "../out/t080-rings.txt",
+     "addedAt": "2026-09-10T15:27:03.079Z"
+    }
+   ],
    "plannedStartDay": 197.5,
    "plannedEndDay": 199.5,
    "plannedStart": "2027-06-09",
@@ -13706,5 +13730,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:21:30.160Z"
+ "updatedAt": "2026-09-10T15:27:03.082Z"
 }

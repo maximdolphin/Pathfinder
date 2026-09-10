@@ -1,0 +1,21 @@
+BeginEvents: Ledger.Rings.RingsLieWhereAMoonCannotForm
+gas giant radius 80715 km; Roche limit for ice 158530 km (1.96 radii); rings from 96858 to 158530 km
+who gets rings:
+BeginEvents: Ledger.Rings.TheShadowSweepsAcrossTheYear
+the giant is tilted 17.7 degrees; its year is 14.05 of this system's
+the ring shadow across one year:
+  0.00 of a year: declination -16.65, shadow from   +4.00 to  +27.00 ( 23.00 degrees wide)
+  0.08 of a year: declination -14.27, shadow from   +3.50 to  +22.50 ( 19.00 degrees wide)
+  0.17 of a year: declination  -7.78, shadow from   +2.00 to  +13.00 ( 11.00 degrees wide)
+  0.25 of a year: declination  +0.25, shadow from   +0.00 to   +0.00 (  0.00 degrees wide)
+  0.33 of a year: declination  +7.82, shadow from  -12.00 to   -2.00 ( 10.00 degrees wide)
+  0.42 of a year: declination +13.56, shadow from  -21.00 to   -3.50 ( 17.50 degrees wide)
+  0.50 of a year: declination +16.46, shadow from  -27.00 to   -4.00 ( 23.00 degrees wide)
+  0.58 of a year: declination +15.80, shadow from  -25.50 to   -4.00 ( 21.50 degrees wide)
+  0.67 of a year: declination +11.34, shadow from  -18.50 to   -3.00 ( 15.50 degrees wide)
+  0.75 of a year: declination  +3.68, shadow from   -6.00 to   -1.00 (  5.00 degrees wide)
+  0.83 of a year: declination  -5.49, shadow from   +1.50 to   +7.50 (  6.00 degrees wide)
+  0.92 of a year: declination -13.31, shadow from   +3.50 to  +20.50 ( 17.00 degrees wide)
+
+widest 23.00 degrees, narrowest 5.00, reaching from -27.00 to +27.00
+EndEvents: Ledger.Rings.TheShadowSweepsAcrossTheYear
