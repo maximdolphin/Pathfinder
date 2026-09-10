@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 16
+   "doneCount": 17
   },
   {
    "id": "M04",
@@ -5926,10 +5926,16 @@
    "dependsOn": [
     "T086"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A quote of 6.80 days flies in 7.34 -- +7.5% to +10.4% across three departures, arriving 1 km out at 133.6 m/s against the 132.9 that stops in that distance. The overrun is accounted for: 2.7% is the 10% steering margin by arithmetic, the rest is 1,154 km/s of the 6,140 burned going sideways to match a destination that moves across the route. Four pilots were tried; three unrelated ones all came out at exactly +21%, which was the clue that it was never the steering -- the curve and the brake were drawn at the same throttle, so a ship above the curve could never come back. Ruled out: integration error (20x finer steps moved it 0.05 points). docs/comparisons/travel-time/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 212.5,
    "plannedEndDay": 214,
@@ -13800,5 +13806,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T16:18:29.656Z"
+ "updatedAt": "2026-09-10T16:43:56.909Z"
 }
