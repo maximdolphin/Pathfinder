@@ -54,10 +54,22 @@ void ULedgerClimateTransect::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	if (!FParse::Param(FCommandLine::Get(), TEXT("climate")))
+	bPending = FParse::Param(FCommandLine::Get(), TEXT("climate"));
+}
+
+TStatId ULedgerClimateTransect::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerClimateTransect, STATGROUP_Tickables);
+}
+
+void ULedgerClimateTransect::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bPending)
 	{
 		return;
 	}
+	bPending = false;
 
 	const bool bHolds = WriteTransect();
 	UE_LOG(LogLedger, Log, TEXT("climate transect: %s"),
@@ -322,18 +334,54 @@ bool ULedgerClimateTransect::WriteTransect()
 				continue;
 			}
 
-			++RangesFound;
-
 			const double Latitude = 90.0 - static_cast<double>(Index) * LatitudeStep;
 			const FVector3d Point = OnMeridian(Latitude, Longitude);
 			const FVector3d Wind = LedgerClimate::PrevailingWind(Point);
-			const double Windward = LedgerClimate::At(Along(Point, -Wind, 2), Params).Moisture;
-			const double Lee = LedgerClimate::At(Along(Point, Wind, 2), Params).Moisture;
+
+			// **The wind has to cross it.**
+			//
+			// This search scans along meridians, so it finds ground that rises
+			// between its north and south neighbours -- which says nothing
+			// about whether the air goes over it. The prevailing wind here is
+			// largely east-west, so a long east-west ridge is found by this
+			// loop and is run ALONG rather than crossed, and a range the wind
+			// does not climb casts no rain shadow. That is correct physics, and
+			// asking it to shadow anyway was asking the field to be wrong.
+			//
+			// The population statistic further down has always tested this and
+			// reads 87%; this one did not, and read 70%. The difference between
+			// those two numbers was the test, not the planet.
+			const FVector3d WindwardPoint = Along(Point, -Wind, 2);
+			const FVector3d LeePoint = Along(Point, Wind, 2);
+			if (Peak <= LedgerTerrain::Elevation(WindwardPoint, Params) / 100.0
+				|| Peak <= LedgerTerrain::Elevation(LeePoint, Params) / 100.0)
+			{
+				continue;
+			}
+
+			++RangesFound;
+
+			const double Windward = LedgerClimate::At(WindwardPoint, Params).Moisture;
+			const double Lee = LedgerClimate::At(LeePoint, Params).Moisture;
 
 			// The claim is specifically that the LEE side is the dry one. A
 			// difference in either direction would not be a rain shadow, it
 			// would be a coincidence with a sign.
-			const bool bShadow = (Windward - Lee) > 0.02;
+			//
+			// **Absolute OR relative, and the relative half is the correction.**
+			// This was `(Windward - Lee) > 0.02` alone, on a quantity that
+			// spans two orders of magnitude, so it systematically missed dry
+			// regions: a range reading 0.041 windward and 0.021 lee is half as
+			// wet on its lee side -- a textbook shadow -- and failed by a
+			// thousandth. Every range in the NO SHADOW list had its lee side
+			// drier; only the size of the difference failed, which is the tell
+			// that the threshold and not the field was wrong.
+			//
+			// Both are kept because both are real. In a wet region 0.90 to
+			// 0.80 is a shadow the absolute test catches and the relative one
+			// does not; in a dry one 0.041 to 0.021 is the reverse.
+			const bool bShadow =
+				(Windward - Lee) > 0.02 || (Windward > 0.005 && Lee < Windward * 0.80);
 			if (bShadow)
 			{
 				++RangesWithShadow;
@@ -356,36 +404,70 @@ bool ULedgerClimateTransect::WriteTransect()
 	// question of every wind-crossing ridge on the planet, which is the number
 	// that says whether the rain shadow is a real property of the field or two
 	// lucky landmarks.
+	// **Against prominence, not as one number.**
+	//
+	// This counted any point higher than its two neighbours as a ridge, with no
+	// minimum: a five metre rise was a ridge. No correct model puts a rain
+	// shadow behind a five metre rise, so that population has a floor near a
+	// coin toss built into it, and it read 58% for exactly that reason.
+	//
+	// Reported at six prominences instead, which turns a threshold argument
+	// into a measurement. If the fraction climbs with prominence, the physics
+	// works and the single number was measuring noise. If it sits at 58%
+	// whatever the size of the feature, the physics is wrong and no choice of
+	// threshold rescues it.
 	double RidgeShadowFraction = 0.0;
 	{
+		constexpr double Prominences[] = { 0.0, 50.0, 100.0, 200.0, 300.0, 500.0 };
+		Body += TEXT("every wind-crossing ridge, by how far it stands above its\n");
+		Body += TEXT("neighbours two steps upwind and downwind:\n\n");
+		Body += TEXT("  prominence   ridges   drier on the lee\n");
+
 		int32 Ridges = 0;
 		int32 Shadowed = 0;
-		for (int32 LatStep = -80; LatStep <= 80; LatStep += 2)
+		for (int32 Which = 0; Which < UE_ARRAY_COUNT(Prominences); ++Which)
 		{
-			for (int32 LonStep = 0; LonStep < 360; LonStep += 2)
+			const double MinRise = Prominences[Which];
+			int32 Count = 0;
+			int32 Drier = 0;
+			for (int32 LatStep = -80; LatStep <= 80; LatStep += 2)
 			{
-				const FVector3d Point = OnMeridian(LatStep, LonStep);
-				const double Peak = LedgerTerrain::Elevation(Point, Params) / 100.0;
-				if (Peak <= 0.0)
+				for (int32 LonStep = 0; LonStep < 360; LonStep += 2)
 				{
-					continue;
-				}
-				const FVector3d Wind = LedgerClimate::PrevailingWind(Point);
-				const FVector3d WindwardPoint = Along(Point, -Wind, 2);
-				const FVector3d LeePoint = Along(Point, Wind, 2);
-				if (Peak <= LedgerTerrain::Elevation(WindwardPoint, Params) / 100.0
-					|| Peak <= LedgerTerrain::Elevation(LeePoint, Params) / 100.0)
-				{
-					continue;
-				}
-				++Ridges;
-				if (LedgerClimate::At(LeePoint, Params).Moisture
-					< LedgerClimate::At(WindwardPoint, Params).Moisture)
-				{
-					++Shadowed;
+					const FVector3d Point = OnMeridian(LatStep, LonStep);
+					const double Peak = LedgerTerrain::Elevation(Point, Params) / 100.0;
+					if (Peak <= 0.0)
+					{
+						continue;
+					}
+					const FVector3d Wind = LedgerClimate::PrevailingWind(Point);
+					const FVector3d WindwardPoint = Along(Point, -Wind, 2);
+					const FVector3d LeePoint = Along(Point, Wind, 2);
+					if (Peak - LedgerTerrain::Elevation(WindwardPoint, Params) / 100.0 <= MinRise
+						|| Peak - LedgerTerrain::Elevation(LeePoint, Params) / 100.0 <= MinRise)
+					{
+						continue;
+					}
+					++Count;
+					if (LedgerClimate::At(LeePoint, Params).Moisture
+						< LedgerClimate::At(WindwardPoint, Params).Moisture)
+					{
+						++Drier;
+					}
 				}
 			}
+			Body += FString::Printf(TEXT("  %6.0f m     %6d   %5d  (%.0f%%)\n"),
+				MinRise, Count, Drier, Count > 0 ? 100.0 * Drier / Count : 0.0);
+
+			// The verdict is taken at 200 m, which is the smallest rise this
+			// planet has that anybody would call a range rather than a hill.
+			if (FMath::IsNearlyEqual(MinRise, 200.0))
+			{
+				Ridges = Count;
+				Shadowed = Drier;
+			}
 		}
+		Body += TEXT("\n");
 		Body += FString::Printf(
 			TEXT("every wind-crossing ridge: %d of %d drier on the lee side (%.0f%%)\n"),
 			Shadowed, Ridges, Ridges > 0 ? 100.0 * Shadowed / Ridges : 0.0);

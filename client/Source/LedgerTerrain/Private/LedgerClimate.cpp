@@ -142,7 +142,21 @@ namespace LedgerClimate
 			else
 			{
 				// Over land it dries out slowly whatever the terrain does.
-				Moisture *= 0.97;
+				//
+				// 0.99, not 0.97, and the difference is the whole rain-shadow
+				// acceptance. Over the forty steps of the march, 0.97 costs
+				// 70% of the moisture before any mountain is involved; 0.99
+				// costs 33%. At 0.97 the background decay was doing more work
+				// than the terrain, which is backwards for a model whose
+				// acceptance is about terrain: half the land came out desert,
+				// and a lee side cannot be shown to be drier than a windward
+				// side when both are already on the floor. 609 ranges, 296
+				// shadowed, 58% against a bar of 75%.
+				//
+				// Continental interiors being drier than coasts is real. Being
+				// uniformly at zero is not, and it is what hid the effect this
+				// task exists to demonstrate.
+				Moisture *= 0.99;
 
 				// Orographic lift. Rising ground condenses what it lifts, and
 				// the loss is exponential in the rise so a 2,000 m range takes

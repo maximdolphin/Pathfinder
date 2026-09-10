@@ -16,7 +16,7 @@
 #include "LedgerClimateTransect.generated.h"
 
 UCLASS()
-class LEDGERHARNESS_API ULedgerClimateTransect : public UWorldSubsystem
+class LEDGERHARNESS_API ULedgerClimateTransect : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 
@@ -24,7 +24,17 @@ public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;
 
+	/// The transect runs on the first tick, not on begin play.
+	///
+	/// It used to run in OnWorldBeginPlay and reported "no planet" every time:
+	/// the world builder spawns the planet in its own begin play, and subsystem
+	/// order is not something to rely on. One tick later it is there.
+	virtual void Tick(float DeltaSeconds) override;
+	virtual TStatId GetStatId() const override;
+
 private:
+	bool bPending = false;
+
 	/// Walks the meridian and writes the report. Returns false if the acceptance
 	/// does not hold, which the log says plainly rather than leaving to whoever
 	/// opens the file.

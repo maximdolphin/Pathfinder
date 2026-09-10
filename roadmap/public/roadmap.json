@@ -3846,6 +3846,11 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "Root cause found, and it is one line. ElevationTerms exposes the height function's factors; surveyed over the land surface, the mountain band is exactly zero on 90% of land (ridges p50 0.000, p90 0.000, p99 0.183). LedgerNoise::ErodedRidged returns (Sum/Normalisation)*2-1, remapping to [-1,1] the way a signed fBm should -- but a ridged field with continuity weighting and erosion damping concentrates its energy into a few ridges, so the mean sits far below 0.5 and the remap puts most of the surface negative, where Elevation's FMath::Max(0.0, ...) deletes it. Arithmetic agrees with the survey: max reachable height fraction 0.581*0.26 + 0.056*0.64 = 0.187, times 9 km = 1.68 km against a surveyed maximum of 1.37 km. NOT fixed here on purpose: changing the remap reshapes every landform and invalidates every committed reference capture, and which fix it should be is a decision about how the world looks. Diagnosis in docs/comparisons/climate/README.md, commit 7473932."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "No longer blocked on terrain relief -- that was T428 -- and still short of its literal acceptance. Three changes, each argued: (1) the background drying over land was 0.97 per step over a forty-step march, costing 70% of the moisture before any mountain was involved, which is backwards for a model whose acceptance is about mountains; 0.99 costs 33%, and desert went 50.6% -> 32.9% of land. (2) The per-range criterion was an ABSOLUTE moisture difference of 0.02 on a quantity spanning two orders of magnitude, so it systematically missed dry regions -- a range at 0.041 windward and 0.021 lee is half as wet on its lee side and failed by a thousandth. Absolute OR relative now; both are real in different regimes. (3) The major-range search never checked that the wind crosses the range, only that ground rises between north and south neighbours. Fixed, and it was mostly the WRONG hypothesis: it removed 32 of 609 ranges and barely moved the rate, which is worth recording as a wrong guess. Where it stands: 478 of 577 wind-crossing major ranges shadow (83%), and the population statistic reads 87% against its 75% bar. The literal 'every major range' is not met and 99 ranges genuinely do not shadow. Also fixed on the way: the fixture ran in OnWorldBeginPlay and reported 'no planet' every time, because the world builder spawns the planet in its own begin play and subsystem order is not orderable; it runs on the first tick now."
     }
    ],
    "evidence": [
@@ -3854,6 +3859,12 @@
      "caption": "Pole-to-equator transect, relief survey and the ridge statistic",
      "source": "../docs/comparisons/climate/climate-transect.txt",
      "addedAt": "2026-09-09T15:41:16.546Z"
+    },
+    {
+     "file": "evidence/T051-2026-09-10T05-01-58-492.txt",
+     "caption": "Desert 50.6 -> 32.9% of land; 478 of 577 wind-crossing ranges shadowed; 87% of ridges above 200 m prominence, against a 75% bar.",
+     "source": "../out/climate-t051.txt",
+     "addedAt": "2026-09-10T05:01:58.496Z"
     }
    ],
    "plannedStartDay": 94.5,
@@ -13401,5 +13412,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T04:47:02.896Z"
+ "updatedAt": "2026-09-10T05:01:58.499Z"
 }
