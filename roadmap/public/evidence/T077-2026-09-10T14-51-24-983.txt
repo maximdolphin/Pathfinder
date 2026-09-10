@@ -1,0 +1,11 @@
+BeginEvents: Ledger.StarField.ConstellationsHoldAcrossASystemAndNotBetweenThem
+12 stars brighter than magnitude 6.5 were used
+naked-eye stars from the inner planet: 839, brightest magnitude -0.42 at 77.1 pc
+across 41 au inside one system, the worst angle moved by 1.4334 arcseconds
+across 12 parsecs, angles moved by 0.17 to 20.91 degrees
+the brightest stars themselves move by up to 18.6 degrees between the two systems
+the sky is 52527 times more rigid across a system than between two
+three skies written to D:/Ledger/out/t077-skies.txt
+EndEvents: Ledger.StarField.ConstellationsHoldAcrossASystemAndNotBetweenThem
+BeginEvents: Ledger.StarField.TheStarsCoverTheWholeSky
+839 naked-eye stars over 128 equal-area cells: mean 6.6, fewest 1, most 11, empty 0

@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 8
+   "doneCount": 9
   },
   {
    "id": "M04",
@@ -5530,11 +5530,30 @@
    "dependsOn": [
     "T076"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A catalogue in three dimensions, not a skybox -- and that distinction is the whole task. A skybox is the same from everywhere, so two systems light years apart would share a sky and travelling between them would be a loading screen dressed as a journey. Real positions give the opposite for free: nothing was written to make constellations hold within a system or come apart between them, both fall out of subtracting an observer's position from a star's. MEASURED, treating a constellation as a set of ANGLES between stars rather than a list of them, which is the only definition that can be measured: across 41 au inside one system the worst angle moved by 1.4334 ARCSECONDS; across 12 parsecs angles moved by 0.17 to 20.91 DEGREES and the brightest stars themselves moved by up to 18.6 degrees. The sky is 52527 times more rigid across a system than between two. One arcsecond is a fortieth of what an eye resolves; twenty degrees is forty full moons. 839 naked-eye stars from the inner planet, brightest magnitude -0.42 at 77.1 pc. THE BOUND WAS WRONG, NOT THE CODE: the between-systems threshold was 5 degrees on no reasoning and the first measurement came back at 3.47. Five was a round number rather than a derived one, so it is now one degree -- twice the width of the full moon, a thing that can be pointed at -- with the measured figure quoted beside it either way. THE BUG THE CHART FOUND AND THE TESTS DID NOT: drawing all three skies produced 819 naked-eye stars on A SINGLE ONE-DIMENSIONAL ARC. The catalogue's hash was FNV-1a over three small integers, which leaves consecutive streams correlated -- the stream choosing the cosine of the latitude and the stream choosing the longitude moved together, so every star landed on a curve. Replaced with SplitMix64's finalizer. EVERY TEST PASSED ON THE DEGENERATE CATALOGUE, and they were not weak about what they tested: a constellation drawn on a wire holds its shape across a solar system and comes apart between two exactly as one drawn on a sphere does. They simply never asked whether the sky was full. Ledger.StarField.TheStarsCoverTheWholeSky now asks it in equal-area cells -- bands in the SINE of the latitude, or the polar cells would be small and read as empty for the wrong reason -- and reports 839 stars over 128 cells, mean 6.6, fewest 1, most 11, EMPTY 0. That is the assertion that was missing rather than a new kind of test, and what found it was a picture: three green tests, all correct about their own claims, none able to see that the sky was a line. CATALOGUE SHAPE: stars uniform in VOLUME (a cube root), not in radius, or the catalogue piles up near the observer and the sky becomes a few dozen enormous stars; absolute magnitudes weighted heavily faint, because a real luminosity function is and a flat draw gives a sky of beacons (under 1% intrinsically bright); temperature correlated with brightness rather than drawn separately, so bright comes out blue and dim red without a second decision that could disagree. NOT YET IN THE SKY: this is the catalogue and the projection. Rendering has the problem T074 already measured -- the atmosphere erases a body on a 500 km sky shell, and stars are far fainter than a moon. Waits on the M04 atmosphere calibration; the chart is what the claim rests on until then. 79 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T077-2026-09-10T14-51-24-847.png",
+     "caption": "Three skies: the inner planet, the outer planet 41 au away, and another system 12 parsecs away. The circled stars are the same twelve in all three",
+     "source": "../out/t077-star-chart.png",
+     "addedAt": "2026-09-10T14:51:24.848Z"
+    },
+    {
+     "file": "evidence/T077-2026-09-10T14-51-24-983.txt",
+     "caption": "1.4334 arcseconds across a solar system against 20.91 degrees across 12 parsecs, and 128 of 128 sky cells occupied",
+     "source": "../out/t077-starfield.txt",
+     "addedAt": "2026-09-10T14:51:24.985Z"
+    }
+   ],
    "plannedStartDay": 190.5,
    "plannedEndDay": 192.5,
    "plannedStart": "2027-05-31",
@@ -13644,5 +13663,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T14:42:34.494Z"
+ "updatedAt": "2026-09-10T14:51:24.988Z"
 }
