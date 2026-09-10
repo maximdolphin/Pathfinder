@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 15
+   "doneCount": 16
   },
   {
    "id": "M04",
@@ -5896,10 +5896,16 @@
    "dependsOn": [
     "T085"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Sky and ephemeris agree to 6.4705 arcseconds at 100 random times and places, against an arcminute asked. The residual is parallax -- 6.4802 arcsec predicted from radius over distance, worst case with the sun 0.6 degrees up -- and is asserted with a floor as well as a ceiling. The first draft (navigator's identity vs SolarAltitude) agreed to zero because both come from the same SunDirectionInBody vector; it was replaced with a route that goes the other way round the frames. Determinism: 44 rows across two processes, 0.0000 m. docs/comparisons/determinism/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 211,
    "plannedEndDay": 212.5,
@@ -13794,5 +13800,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T16:11:28.480Z"
+ "updatedAt": "2026-09-10T16:18:29.656Z"
 }
