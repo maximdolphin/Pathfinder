@@ -55,45 +55,64 @@ horizon and there is no moon in the frame. Steps 3 and 5 are the same altitude
 and read 200.9 against 127.0, which is the atmosphere being looked through in
 different directions rather than a difference in the light.
 
-## The near ground is black, and it is not this task's doing
+## A correction: what the near-black foreground actually was
 
-Every daylight frame has a foreground reading 0 to 7 out of 255 while the sky
-and the distant ground track the sun exactly. That is worth stating plainly
-because it makes these photographs worse than they should be, and because the
-cause is now measured:
+The first version of this page claimed the terrain took no direct light at all,
+on the strength of a foreground band in these frames reading 0 to 7 out of 255
+while the sky and distant ground tracked the sun. That claim was wrong, and the
+way it was wrong is worth more than the claim was.
 
-```
-noon, sun 75 degrees above the horizon, eye 40 m above the ground
+**The measurement was of the camera's framing, not of the ground.** This fixture
+stands 40 m up and looks at the horizon, so the bottom fifth of the frame is a
+slope seen almost edge-on and falling away. Running the same sweep at the site
+the project used before T072 -- a 660 m lowland instead of a 2.4 km mountain --
+gives a foreground of **0.00 at every one of the eight steps**, darker still,
+while the scripted flight at that same site photographs ground at **97 and 102
+out of 255**. Same build, same lighting, same hour. The ground is lit; this
+fixture's lower frame edge is not a good place to ask about it.
 
-unlit base colour                      foreground 128.90   distant 217.91
-lit, with fog and atmosphere off       foreground   0.00   distant  26.56
-```
+Three separate errors produced the original claim, all of them mine:
 
-**The terrain has a perfectly good albedo and takes no direct light.** What a
-normal frame shows is in-scattered air in front of a black surface, which is why
-the brightness falls smoothly from 190 at the horizon to 0.24 at the bottom of
-the frame: that gradient is the scattering integral, not the ground.
+- **Two Unreal processes at once.** Several comparisons were run with a second
+  instance still going. One of them never wrote fresh captures at all, so a
+  "before and after" was measured against leftover PNGs from a different commit,
+  and reported a difference that did not exist. This project's notes already
+  record that exact trap; it was walked into again to save wall-clock.
+- **A conclusion from one site.** Everything was measured at the site T072
+  happens to choose, which is a mountain. Nothing was checked anywhere else
+  until much later.
+- **A fix validated where it could not show.** The triplanar normal was missing
+  the sign of the facing axis, which is a real defect and is fixed. It was then
+  tested only in the frames above, where the foreground was dark for an
+  unrelated reason, and pronounced inert. It is not inert; it was untestable
+  there.
 
-Ruled out, each by measurement rather than by argument:
+## What T072 did change: the landing site moved
 
-- **Shadows.** `showflag.DynamicShadows 0` changes the foreground from 6.96 to
-  6.95 and 3.87 to 3.87.
-- **A stale baked material.** Re-running `-bakematerials` changes nothing.
-- **The camera being under the ground.** The terrain query and the height field
-  agree on the site to 0.0 m; the fixture reports both.
-- **Another fixture fighting for the ship.** The flight harness was indeed still
-  running — that is fixed, it now stands down for `-daysweep` — and standing it
-  down changed no measurement.
-- **The triplanar normal missing its sign.** That was a real defect and is fixed
-  in `LedgerMaterialGraph.h`: a normal map's blue channel is the component out
-  of the surface and is always positive, so swizzling it onto +x, +y or +z
-  assumed every projection faced the positive axis, which on a sphere is half of
-  it. Correcting it moved the render by nothing at all — the frames are
-  bit-identical — which is itself the finding: **if changing the surface normal
-  changes no pixel, the surface is not being shaded.** The cause is upstream of
-  shading.
+The sun's direction chooses where the world lands -- `ChooseSite` wants relief
+and daylight, so a different sun qualifies a different band of the sphere. The
+hardcoded sun put the site on a **660 m lowland**; the ephemeris sun at t = 0
+puts it on a **2.4 km mountain**.
 
-So the sun is where the ephemeris says, at every hour of the day, and something
-between the directional light and the terrain is dropping the light entirely.
-The second half is not T072 and is written down here so the next person starts
-from these numbers instead of from the pictures.
+That is the intended behaviour of a sun that is no longer hand-placed, and it
+has a consequence worth stating: **every committed reference capture is of the
+old site.** Comparing the flight against them now compares two different places
+and reads as a regression:
+
+| capture | old site | new site |
+|---|---|---|
+| terrain-surface | 97.05 | 23.30 |
+| terrain-town | 102.36 | 12.89 |
+| terrain-coast | 19.57 | 0.50 |
+
+Mean brightness of the lower third, out of 255. The references need regenerating
+against the site the world now chooses, or the site needs pinning independently
+of the sun. That is a decision, not a bug, and it is recorded on T072 rather
+than settled here.
+
+The one measurement from the original investigation that still stands on its own
+is the atmosphere's share of the light: with `SetAtmosphereSunLight(false)` the
+same frame reads 177.20 against 3.87. Most of what reaches the ground at this
+site is being taken by atmospheric transmittance. Whether that is correct for a
+2.4 km site under a 62-degree sun is a question for M04, and it is not what this
+task was about.
