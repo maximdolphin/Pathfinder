@@ -98,6 +98,15 @@ double ULedgerDaySweep::AimSunAt(double SecondsFromEpoch)
 		return 0.0;
 	}
 
+	// Move the world's clock, which moves the sun and everything else the sky
+	// derives from time. Without this the sun swept across the day while the
+	// moon hung where it was at t=0 -- a light-lapse wearing a time-lapse's
+	// caption.
+	if (ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>())
+	{
+		Builder->SetWhenSeconds(SecondsFromEpoch);
+	}
+
 	const FVector3d Facing =
 		LedgerSky::SunDirectionInBody(System, DaySweepBody, SecondsFromEpoch);
 
@@ -223,8 +232,26 @@ void ULedgerDaySweep::Tick(float DeltaSeconds)
 			FString::Printf(TEXT("day-sweep-%d.png"), Step)));
 	FScreenshotRequest::RequestScreenshot(Path, false, false);
 
-	UE_LOG(LogLedger, Log, TEXT("day sweep %d/%d: t=%.0f s, solar altitude %.2f deg"),
-		Step, DaySweepSteps, At, Altitude);
+	// And where the other bodies are at that same moment, which is the half of
+	// T074 a photograph can show.
+	FString Sky;
+	{
+		TArray<FLedgerSkyBody> Seen;
+		LedgerSky::VisibleBodies(System, DaySweepBody, Anchor, At, Seen);
+		for (const FLedgerSkyBody& Body : Seen)
+		{
+			if (Body.BodyIndex == 0)
+			{
+				continue;
+			}
+			Sky += FString::Printf(TEXT(", body %d %.0f%% lit at %+.0f deg"),
+				Body.BodyIndex, Body.IlluminatedFraction * 100.0,
+				FMath::RadiansToDegrees(FMath::Asin(
+					FMath::Clamp(Body.DirectionInSurface.Z, -1.0, 1.0))));
+		}
+	}
+	UE_LOG(LogLedger, Log, TEXT("day sweep %d/%d: t=%.0f s, solar altitude %.2f deg%s"),
+		Step, DaySweepSteps, At, Altitude, *Sky);
 
 	++Step;
 	bPlaced = true;

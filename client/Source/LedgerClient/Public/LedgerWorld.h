@@ -71,6 +71,23 @@ public:
 	/// Direction from the planet's centre toward the sun.
 	FVector3d GetSunFacing() const { return SunFacing; }
 
+	/// The bodies this world is one of, when it is, and which one is underfoot.
+	const FLedgerSystem& GetSystem() const { return System; }
+	double GetWhenSeconds() const { return WhenSeconds; }
+
+	/// Moves the world's clock, and everything the clock decides.
+	///
+	/// **That includes the sun.** The first version set only the number, and
+	/// the consequence took a while to find: the moon moved to the new time
+	/// while the directional light stayed where it was at begin play, so a body
+	/// the ephemeris called 99.7% lit was photographed as a thin crescent --
+	/// lit correctly, for the wrong moment.
+	///
+	/// The terrain does not follow. It carries the season it was generated
+	/// with, so this is a knob for hours and not for months.
+	void SetWhenSeconds(double Seconds);
+	int32 GetHomeBodyIndex() const;
+
 private:
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;

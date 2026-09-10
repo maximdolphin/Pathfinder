@@ -247,6 +247,120 @@ namespace LedgerSky
 			SolarDeclination(System, BodyIndex, SecondsFromEpoch));
 	}
 
+	FVector3d ObserverPosition(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		if (!System.Bodies.IsValidIndex(BodyIndex))
+		{
+			return FVector3d::ZeroVector;
+		}
+		FLedgerBodyPoint Standing;
+		Standing.BodyIndex = BodyIndex;
+		Standing.Metres =
+			AnchorDirection.GetSafeNormal() * System.Bodies[BodyIndex].RadiusMetres;
+		return LedgerFrames::ToSystem(System, Standing, SecondsFromEpoch).Metres;
+	}
+
+	double PhaseAngle(
+		const FLedgerSystem& System, int32 TargetIndex,
+		const FVector3d& ObserverPositionMetres, double SecondsFromEpoch)
+	{
+		const int32 Star = PrimaryIndex(System);
+		if (!System.Bodies.IsValidIndex(TargetIndex) || Star == INDEX_NONE)
+		{
+			return 0.0;
+		}
+
+		TArray<FLedgerState> States;
+		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
+
+		// The angle at the TARGET, between the star and the observer. Measured
+		// there rather than anywhere more convenient because that is where the
+		// terminator is.
+		const FVector3d Target = States[TargetIndex].PositionMetres;
+		const FVector3d ToStar = (States[Star].PositionMetres - Target).GetSafeNormal();
+		const FVector3d ToObserver = (ObserverPositionMetres - Target).GetSafeNormal();
+		if (ToStar.IsNearlyZero() || ToObserver.IsNearlyZero())
+		{
+			return 0.0;
+		}
+		return FMath::Acos(
+			FMath::Clamp(FVector3d::DotProduct(ToStar, ToObserver), -1.0, 1.0));
+	}
+
+	double IlluminatedFraction(double PhaseAngleRadians)
+	{
+		return (1.0 + FMath::Cos(PhaseAngleRadians)) * 0.5;
+	}
+
+	void VisibleBodies(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch,
+		TArray<FLedgerSkyBody>& Out)
+	{
+		Out.Reset();
+		if (!System.Bodies.IsValidIndex(ObserverBodyIndex))
+		{
+			return;
+		}
+
+		const FVector3d Eye =
+			ObserverPosition(System, ObserverBodyIndex, AnchorDirection, SecondsFromEpoch);
+
+		TArray<FLedgerState> States;
+		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
+
+		for (int32 Index = 0; Index < System.Bodies.Num(); ++Index)
+		{
+			if (Index == ObserverBodyIndex)
+			{
+				continue;
+			}
+
+			const FVector3d Offset = States[Index].PositionMetres - Eye;
+			const double Distance = Offset.Length();
+			if (!(Distance > 0.0))
+			{
+				continue;
+			}
+
+			FLedgerSkyBody Seen;
+			Seen.BodyIndex = Index;
+			Seen.DistanceMetres = Distance;
+
+			// asin rather than the small-angle ratio: a moon seen from low
+			// orbit is not a small angle, and the ratio would put its limb
+			// outside its own disc.
+			const double Radius = System.Bodies[Index].RadiusMetres;
+			Seen.AngularRadiusRadians = Radius < Distance
+				? FMath::Asin(Radius / Distance) : LedgerPi * 0.5;
+
+			Seen.PhaseAngleRadians = PhaseAngle(System, Index, Eye, SecondsFromEpoch);
+			Seen.IlluminatedFraction = IlluminatedFraction(Seen.PhaseAngleRadians);
+
+			// Into the observer's east-north-up. The direction is a direction,
+			// so it goes through the body frame without a radius on it.
+			FLedgerBodyPoint InBody;
+			InBody.BodyIndex = ObserverBodyIndex;
+			InBody.Metres = LedgerFrames::BodyOrientation(
+				System.Bodies[ObserverBodyIndex], SecondsFromEpoch)
+					.UnrotateVector(Offset / Distance);
+			Seen.DirectionInSurface =
+				LedgerFrames::ToSurface(InBody, AnchorDirection).Metres.GetSafeNormal();
+
+			Out.Add(Seen);
+		}
+
+		// Brightest-looking first: lit area, which is what decides whether a
+		// thing is worth drawing before it decides how.
+		Out.Sort([](const FLedgerSkyBody& A, const FLedgerSkyBody& B)
+		{
+			return A.AngularRadiusRadians * A.AngularRadiusRadians * A.IlluminatedFraction
+				> B.AngularRadiusRadians * B.AngularRadiusRadians * B.IlluminatedFraction;
+		});
+	}
+
 	double NextLocalNoon(
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double AfterSeconds)

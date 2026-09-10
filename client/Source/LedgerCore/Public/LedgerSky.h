@@ -18,8 +18,62 @@
 #include "CoreMinimal.h"
 #include "LedgerBody.h"
 
+/// Another body as it appears from somewhere. T074.
+struct FLedgerSkyBody
+{
+	int32 BodyIndex = INDEX_NONE;
+
+	/// Where to look, as a unit vector in the observer's east-north-up frame.
+	/// Z above zero is above the horizon.
+	FVector3d DirectionInSurface = FVector3d::ZeroVector;
+
+	/// Half the angle the disc subtends, radians.
+	double AngularRadiusRadians = 0.0;
+
+	/// The angle at the target between the star and the observer. Zero is
+	/// full, pi is new, and it is the only thing the lit fraction depends on.
+	double PhaseAngleRadians = 0.0;
+
+	/// How much of the visible disc is lit, 0 to 1.
+	double IlluminatedFraction = 0.0;
+
+	double DistanceMetres = 0.0;
+};
+
 namespace LedgerSky
 {
+	/// The angle at a target between the star and an observer, radians. T074.
+	///
+	/// **Everything about a phase is this one angle.** A crescent is not a
+	/// property of a moon or of a time of night; it is the observer, the moon
+	/// and the star not being in a line, and how far from a line they are.
+	LEDGERCORE_API double PhaseAngle(
+		const FLedgerSystem& System, int32 TargetIndex,
+		const FVector3d& ObserverPositionMetres, double SecondsFromEpoch);
+
+	/// How much of the visible disc is lit, from the phase angle alone.
+	///
+	/// (1 + cos a) / 2. Exact for a sphere lit by a point source and seen from
+	/// far enough away that the terminator projects to a half-ellipse, which is
+	/// every case in a solar system and none in a close-up.
+	LEDGERCORE_API double IlluminatedFraction(double PhaseAngleRadians);
+
+	/// Where an observer standing at an anchor on a body is, in system metres.
+	LEDGERCORE_API FVector3d ObserverPosition(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch);
+
+	/// Every other body in the system as it appears from a place, sorted
+	/// brightest-looking first (largest disc times lit fraction).
+	///
+	/// The observer is a point on a body's surface rather than its centre,
+	/// which matters for a moon: at this system's distances the parallax
+	/// between the two is a measurable fraction of the moon's own disc.
+	LEDGERCORE_API void VisibleBodies(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch,
+		TArray<FLedgerSkyBody>& Out);
+
 	/// Unit vector towards the star, in the body's ROTATING frame.
 	///
 	/// Body frame rather than system frame because that is the frame a place on

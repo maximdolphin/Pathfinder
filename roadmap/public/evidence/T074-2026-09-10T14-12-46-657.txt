@@ -1,0 +1,21 @@
+A moon photographed around its month (T074).
+
+body            2
+month           2608811 s (30.19 days of 24.00 h)
+field of view   10 degrees
+
+step   lit      across      altitude   image
+   0   61.0%   0.642 deg     +85.0 deg   moon-0.png
+   1   26.6%   0.608 deg     +85.9 deg   moon-1.png
+   2    4.9%   0.585 deg     +78.0 deg   moon-2.png
+   3    0.7%   0.581 deg     +66.6 deg   moon-3.png
+   4   14.6%   0.596 deg     +56.0 deg   moon-4.png
+   5   44.5%   0.627 deg     +51.1 deg   moon-5.png
+   6   80.3%   0.659 deg     +57.0 deg   moon-6.png
+   7   99.7%   0.669 deg     +71.5 deg   moon-7.png
+
+lit fraction runs from 0.7% to 99.7% around the month.
+
+Nothing here draws a phase. The body is a sphere in the sky lit by the same
+directional light as the ground, so the terminator is where the geometry puts
+it and there is no second implementation to disagree with LedgerSky.

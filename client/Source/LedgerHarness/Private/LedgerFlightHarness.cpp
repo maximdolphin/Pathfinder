@@ -66,7 +66,7 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 	// pawn is two fixtures measuring neither.
 	for (const TCHAR* Fixture :
 		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate"),
-		  TEXT("daysweep") })
+		  TEXT("daysweep"), TEXT("moonshot") })
 	{
 		if (FParse::Param(FCommandLine::Get(), Fixture))
 		{

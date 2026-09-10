@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 5
+   "doneCount": 6
   },
   {
    "id": "M04",
@@ -5395,11 +5395,36 @@
    "dependsOn": [
     "T073"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A moon's phase matches the geometry, checked as a computation and as a photograph, because those fail separately. THE COMPUTATION: (1 + cos alpha)/2 against counting -- 200,000 points spread over the target's sphere, each marked lit if it faces the star and visible if it faces the observer and weighted by how square-on it is, with no phase angle anywhere in it. Twenty combinations, every non-star body seen from every other, at eight points around a month plus two much later times. Worst disagreement 0.003751, on the planet seen from its own moon at a 125.3 degree phase angle. That residual is not error: the formula is the far-field one and assumes a hemisphere, and a finite distance sees slightly less, which is largest exactly where it showed. Across a month the moon runs 0.0003 to 0.9996 lit. THE PHOTOGRAPH: new -moonshot fixture, a 10 degree lens on the ground, eight frames around the month, forwarding at each point to the moment the body is highest. Nothing draws a phase -- the body is a sphere lit by the same directional light as the ground, so the terminator is where the geometry puts it and there is no second implementation to disagree. That makes counting lit pixels an independent check on both: against what the computed fraction and angular diameter predict, the frames land within about ten per cent everywhere the disc is more than a sliver (99.7% lit 0.0%, 80.3% -5.8%, 61.0% -3.6%, 44.5% -8.8%, 14.6% +0.1%), and badly out only at 0.7% where a twenty-pixel crescent is measuring antialiasing. The angular diameter breathes 0.581 to 0.669 degrees around one month because the orbit is eccentric, which nothing was written to produce. THREE BUGS FOUND BY LOOKING, ALL WITH THE TESTS GREEN, each producing eight frames of empty sky while the log insisted the moon was overhead. (1) A degenerate camera basis: the fixture forwards to the moment the body is HIGHEST, which puts it near the zenith, where the look direction and local up are the same vector and MakeFromXZ has no basis to build. Falls back to east when overhead. (2) A one-step-stale sky: the spheres are placed by ULedgerSkyBodies on its own tick, so setting the clock and photographing in the same frame photographs the sky as it was one step ago. Aiming and capturing are two ticks now. (3) A clock that moved the moon but not the sun: SetWhenSeconds set the number while the directional light kept the direction it was given at begin play, so a body the ephemeris called 99.7% lit was photographed as a thin crescent -- lit correctly, for the wrong moment. The clock now moves the sun. ALSO FIXED A TEST THAT PASSED BY LUCK: an assertion that the star dominates the sky passed only because the moon happened to be 0.5% lit at the timestamp chosen. The moon is the LARGER disc from this planet -- 0.58 degrees against 0.49 -- so a full one sorts first, and the assertion would have been true then and false a fortnight later, which is worse than no assertion. It now checks the ordering is self-consistent and says plainly that real brightness needs T076. That larger disc also means this system can have total eclipses: the moon subtends 1.184 of the star. T075 starts from there. STILL WRONG AND NOT THIS TASK'S: with the atmosphere on the moon is invisible. These frames needed showflag.Atmosphere 0. The aerial perspective is strong enough to erase a body on a 500 km sky shell -- the same over-dense atmosphere measured in docs/comparisons/day-sweep where ground two kilometres away is already flat blue. Belongs with atmosphere calibration in M04, and the number is recorded so that work starts from one. 69 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T074-2026-09-10T14-12-46-657.txt",
+     "caption": "Eight frames around one month: 61.0, 26.6, 4.9, 0.7, 14.6, 44.5, 80.3, 99.7 per cent lit, with the disc breathing 0.581 to 0.669 degrees on an eccentric orbit",
+     "source": "../out/moon-shot.txt",
+     "addedAt": "2026-09-10T14:12:46.659Z"
+    },
+    {
+     "file": "evidence/T074-2026-09-10T14-12-46-784.png",
+     "caption": "80.3% lit: a gibbous moon with a real elliptical terminator, lit by the same directional light as the ground",
+     "source": "../out/moon-6.png",
+     "addedAt": "2026-09-10T14:12:46.785Z"
+    },
+    {
+     "file": "evidence/T074-2026-09-10T14-12-46-914.png",
+     "caption": "99.7% lit at the other end of the same month",
+     "source": "../out/moon-7.png",
+     "addedAt": "2026-09-10T14:12:46.915Z"
+    }
+   ],
    "plannedStartDay": 185,
    "plannedEndDay": 187,
    "plannedStart": "2027-05-24",
@@ -13581,5 +13606,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T13:52:06.537Z"
+ "updatedAt": "2026-09-10T14:12:46.918Z"
 }

@@ -243,6 +243,31 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 	}
 }
 
+int32 ULedgerWorldBuilder::GetHomeBodyIndex() const
+{
+	return HomeBodyIndex;
+}
+
+void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
+{
+	WhenSeconds = Seconds;
+	SunFacing = SunDirectionAt(System, WhenSeconds);
+
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	// The world's own light, found rather than remembered: the builder does not
+	// keep a handle on it, and one directional light is what this world has.
+	const FRotator Rotation = (-FVector(SunFacing)).Rotation();
+	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+	{
+		It->SetActorRotation(Rotation);
+	}
+}
+
 void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
