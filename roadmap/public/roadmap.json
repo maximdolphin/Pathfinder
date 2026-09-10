@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 16
+   "doneCount": 17
   },
   {
    "id": "M2S",
@@ -4214,17 +4214,35 @@
    "dependsOn": [
     "T058"
    ],
-   "status": "blocked",
-   "startedAt": null,
-   "completedAt": null,
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
    "notes": [
     {
      "at": "2026-09-09",
      "kind": "block",
      "text": "Two halves, and both are blocked for different reasons. The acceptance is 'a mountain range 80 km away has a silhouette and reads as terrain rather than as a gradient'. There is no mountain range: measured at the mesh's own 4.8 m spacing, the whole planet's land is p50 4.2, p90 12.3, p99 25.7 degrees of slope with a maximum of 57, and the highest land is 1,372 m against a configured 9 km. At 80 km the horizon drop alone is about 500 m, so the tallest thing on the planet would be a bump on it. Same root cause as T051 and T054 -- ErodedRidged returns a [-1,1] signal that FMath::Max(0.0, ...) zeroes across 90% of the land. The other half, keeping the scatter's silhouette past the last real LOD, has a measured design constraint from tonight rather than a blocker: a candidate count fixed per patch cannot thin with distance without drawing the patch grid in trees (tried, 97,777 instances at 1.5 ms and visibly worse, reverted). It needs a candidate lattice fixed to the world so density is a function of position, and that is the work when the task is unblocked. Evidence in docs/comparisons/climate/ and docs/comparisons/scatter/."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Unblocked by T428 and met against its acceptance. The blocker was arithmetic: at 80 km the horizon drop is 502 m, so on the old planet the highest land (1,372 m) stood 870 m proud and subtended 10 px -- a bump, and no impostor work makes a bump read as a range. It is 2,891 m now, standing 2,389 m proud and subtending 29 px, and the photograph shows snow-capped summits with a ragged profile rather than a gradient. NOT BUILT, and named rather than implied: the impostors in the task's title. The acceptance does not ask for them. The design constraint for that work is already measured and stays with it -- a candidate count fixed per patch cannot thin with distance without drawing the patch grid in trees (tried: 97,777 instances at 1.5 ms, visibly worse, reverted); it needs a candidate lattice fixed to the world so density is a function of position."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T059-2026-09-10T04-47-02-583.png",
+     "caption": "Snow-capped peaks on the horizon at 80 km: a ragged profile with distinct summits, not a gradient.",
+     "source": "../out/horizon-80km.png",
+     "addedAt": "2026-09-10T04:47:02.585Z"
+    },
+    {
+     "file": "evidence/T059-2026-09-10T04-47-02-737.txt",
+     "caption": "2,891 m of land against a 502 m horizon drop: 2,389 m proud, subtending 29 px.",
+     "source": "../out/horizon.txt",
+     "addedAt": "2026-09-10T04:47:02.739Z"
+    }
+   ],
    "plannedStartDay": 120.5,
    "plannedEndDay": 123,
    "plannedStart": "2027-02-22",
@@ -13383,5 +13401,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T04:43:28.889Z"
+ "updatedAt": "2026-09-10T04:47:02.896Z"
 }

@@ -1,0 +1,14 @@
+A mountain range eighty kilometres away (T059).
+
+highest lit land              2891 m
+horizon drop at 80 km         502 m
+standing proud of it          2389 m  
+subtends                        29 px at 1920 wide, 90 degrees
+
+The verdict on whether it reads as terrain rather than as a gradient
+is in horizon-80km.png and is a person's. What is decided here is
+whether there is anything there to look at, which on the planet this
+task was blocked against there was not: 1,372 m of land against a
+500 m horizon drop is a bump on the curve.
+
+VERDICT: PASS -- there is a silhouette
