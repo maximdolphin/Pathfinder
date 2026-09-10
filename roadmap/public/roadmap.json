@@ -4001,6 +4001,16 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Two of three, and the third is stated rather than tuned. Unblocked by T428: the planet's steepest ground was 57 degrees with none above 60, and is now 62.1 with 1.08% of land above 30. Scree is in and visible -- loose rock will not stand steeper than about 34 degrees, so it is the band between ground too steep for soil and rock too steep for anything, and the debris under a face is derived from the same number that makes the face bare. The flight's town phase shows the settlement in a valley at the foot of a mountain with a grey debris band along the base of the slope. Bedding is in -- horizontal strata as a function of distance from the planet centre, modulating rock that is already sampled so it costs no extra texture reads -- and NO capture demonstrates it: the amplitudes are 0.10 and 0.05 on albedo, chosen subtle rather than photogenic, and nothing survives the material's 600 m detail fade. Tuning them up to make a screenshot would be tuning for the screenshot. The -cliffsite fixture took five attempts and every failure was its own: it maximised a scale-free gradient and found a kerb; it tested the point rather than the face against the sun and photographed a silhouette; it found an ice cap; and it framed past the detail fade. Commit a472b2f, write-up in docs/comparisons/cliffs/."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Re-measured after T428, T429 and the material work. The fixture now finds 55.7 degrees with a 291 m drop at 1,899 m -- short of the 60 the acceptance names, and the planet does have 62.7 (0.010% of land above 60, per the climate transect). That is a search-density problem, not a terrain one: the search steps 0.2 degrees of latitude and longitude, which is about 22 km, while slope is measured at the mesh's 4.8 m spacing. A face steep enough exists and the search cannot land on it. The capture also comes back blown out pale rather than reading as rock with bedding -- and NOT because of snow, which the search already rejects by temperature; it is a bright scan at full exposure. Two concrete next steps: sample the search at something near the spacing slope is measured at, at least locally around promising candidates, and pin the capture's exposure the way the channel views do."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "The 60-degree face is found and photographed: 70.3 degrees with a 385 m drop, reading as rock. Two things were wrong and both were the search rather than the terrain. (1) The coarse grid stepped 0.2 degrees -- about 22 km -- while slope is measured over a few metres, and only 0.010% of this planet's land stands above 60. A grid that wide lands on none of it. A second pass now walks a hundred metres around each candidate at eight-metre steps, and finds 70.3 where the planetary maximum had been measured at 62.7. (2) The angle gate was 50 while the score maximises the DROP, so the search returned the tallest face above fifty rather than the steepest above sixty -- it reported 53.9 degrees with a 429 m drop and called it a cliff. A gate looser than the acceptance lets the search answer a different question. Still not met: 'debris at its foot'. cliff-foot.png is framed up the face rather than at its base, so the scree that T057 places is not in shot. That is framing, and it is the remaining work."
     }
    ],
    "evidence": [
@@ -4021,6 +4031,18 @@
      "caption": "The steepest warm sunlit face the fixture finds: 57.5 degrees at 1,900 m, falling 295 m.",
      "source": "../docs/comparisons/cliffs/cliff.txt",
      "addedAt": "2026-09-09T21:00:53.353Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-10T05-06-38-859.png",
+     "caption": "55.7 degrees at 1,899 m, blown out pale: no bedding and no debris legible.",
+     "source": "../out/cliff-face.png",
+     "addedAt": "2026-09-10T05:06:38.861Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-10T05-23-06-014.png",
+     "caption": "70.3 degrees, 385 m drop, at 1,014 m: grey rock with relief and shadow, not a blown-out slope.",
+     "source": "../out/cliff-face.png",
+     "addedAt": "2026-09-10T05:23:06.016Z"
     }
    ],
    "plannedStartDay": 103,
@@ -13412,5 +13434,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T05:01:58.499Z"
+ "updatedAt": "2026-09-10T05:23:06.169Z"
 }

@@ -88,11 +88,51 @@ bool ULedgerCliffSite::FindFace()
 	const double Step = (SampleMetres * 100.0) / Params.Radius;
 
 	double Steepest = 0.0;
+	// **Two passes, because one cannot work.**
+	//
+	// The coarse grid steps 0.2 degrees, about twenty-two kilometres, and slope
+	// is measured over a few metres. Only 0.010% of this planet's land stands
+	// above 60 degrees; a grid that wide lands on none of it, and this search
+	// reported 55.7 degrees while the climate transect measured a planetary
+	// maximum of 62.7 over the same field. The search was the limit, not the
+	// terrain.
+	//
+	// So the coarse pass proposes and the fine pass walks a hundred metres
+	// around each proposal at eight-metre steps, which is the scale slope is
+	// measured at.
+	constexpr int32 RefineSteps = 12;
+	const double RefineArc = 800.0 / Params.Radius;
+
 	for (double Latitude = -80.0; Latitude <= 80.0; Latitude += 0.2)
 	{
 		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 0.2)
 		{
-			const FVector3d Point = CliffOnSphere(Latitude, Longitude);
+			const FVector3d Coarse = CliffOnSphere(Latitude, Longitude);
+
+			// Rejected before refining, because walking a hundred metres around
+			// ground that is dark or under water is a hundred metres wasted.
+			if (FVector3d::DotProduct(Coarse, SunDirection) < 0.2
+				|| LedgerTerrain::Elevation(Coarse, Params) <= 0.0)
+			{
+				continue;
+			}
+
+			FVector3d CoarseEast = FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Coarse);
+			if (CoarseEast.IsNearlyZero())
+			{
+				continue;
+			}
+			CoarseEast.Normalize();
+			const FVector3d CoarseNorth =
+				FVector3d::CrossProduct(Coarse, CoarseEast).GetSafeNormal();
+
+			for (int32 OffsetY = -RefineSteps; OffsetY <= RefineSteps; ++OffsetY)
+			{
+			for (int32 OffsetX = -RefineSteps; OffsetX <= RefineSteps; ++OffsetX)
+			{
+			const FVector3d Point = (Coarse
+				+ CoarseEast * (OffsetX * RefineArc)
+				+ CoarseNorth * (OffsetY * RefineArc)).GetSafeNormal();
 
 			// Lit, because a black frame cannot tell rock from nothing -- three
 			// captures were misread that way in one session before every
@@ -142,7 +182,15 @@ bool ULedgerCliffSite::FindFace()
 			const FVector2d Gradient(RiseEast, RiseNorth);
 			const double Degrees = FMath::RadiansToDegrees(
 				FMath::Atan2(Gradient.Length() / 100.0, SampleMetres));
-			if (Degrees < 50.0)
+			// Sixty, because sixty is what the acceptance says.
+			//
+			// It was fifty, and the score below maximises the DROP with the
+			// angle only as a gate -- so the search returned the tallest face
+			// above fifty rather than the steepest above sixty, and reported
+			// 53.9 degrees with a 429 m drop while the planet has ground at
+			// 62.7. A gate looser than the acceptance is a gate that lets the
+			// search answer a different question.
+			if (Degrees < 60.0)
 			{
 				continue;
 			}
@@ -191,6 +239,8 @@ bool ULedgerCliffSite::FindFace()
 			Face = Point;
 			AltitudeMetres = Here / 100.0;
 			Downhill = Down;
+			}
+			}
 		}
 	}
 
