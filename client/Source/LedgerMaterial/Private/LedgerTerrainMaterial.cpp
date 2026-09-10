@@ -522,20 +522,39 @@ namespace LedgerSurface
 			const FSampled Lying =
 				SampleSet(Graph, Snowfall, ParallaxPosition, WeightX, WeightY, WeightZ);
 
-			// Where it settles, given that any is settling at all.
+			// **Patchy, not proportional.**
 			//
-			// Hollows first, driven by the ground's own height map, so a thin
-			// cover picks out low ground and the texture underneath still reads
-			// through. And less on bare rock: a face steep enough to be rock is
-			// steep enough to shed most of what lands on it, and Blend is
-			// already the rock weight so this costs nothing to ask for.
-			UMaterialExpression* Settles = Graph.Saturate(
-				Graph.Multiply(
-					Graph.Add(Graph.Constant(1.0f),
-						Graph.Multiply(Graph.OneMinus(Soil.Height), Graph.Constant(1.5f))),
-					Graph.OneMinus(Graph.Multiply(Blend, Graph.Constant(0.7f)))));
+			// The first version of this multiplied cover by a shaping term and
+			// lerped by the result, so half cover rendered as a fifty-fifty mix
+			// of snow and ground -- which is grey, and is why a desert at half
+			// cover came back looking washed rather than dusted. Real partial
+			// snow is not a uniform blend: it is white in the hollows and bare
+			// on everything proud of them, and the transition between those is
+			// sharp because snow either covers a texel or does not.
+			//
+			// So cover raises a level and the ground's own height map decides
+			// what is under it:
+			//
+			//     weight = saturate((Cover - Height) * Sharpness + Cover)
+			//
+			// At cover zero that is saturate(-Height * Sharpness), which is
+			// zero for every height -- the identity property survives, which is
+			// the one thing this blend is not allowed to lose. At cover one it
+			// is saturate((1 - Height) * Sharpness + 1), which is one
+			// everywhere. In between it is a threshold that walks up the height
+			// map as cover rises.
+			//
+			// Steep ground still sheds it: Blend is already the rock weight.
+			constexpr float Sharpness = 4.0f;
+			UMaterialExpression* Shed =
+				Graph.OneMinus(Graph.Multiply(Blend, Graph.Constant(0.7f)));
+			UMaterialExpression* Level = Graph.Multiply(Cover, Shed);
 
-			SnowWeight = Graph.Saturate(Graph.Multiply(Cover, Settles));
+			SnowWeight = Graph.Saturate(
+				Graph.Add(
+					Graph.Multiply(
+						Graph.Subtract(Level, Soil.Height), Graph.Constant(Sharpness)),
+					Level));
 
 			AlbedoMix = Graph.Lerp(AlbedoMix, Lying.Albedo, SnowWeight);
 			NormalMix = Graph.Lerp(NormalMix, Lying.Normal, SnowWeight);

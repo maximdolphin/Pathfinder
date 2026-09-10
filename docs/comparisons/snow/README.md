@@ -66,9 +66,19 @@ it was recorded as being; it was never separated from the field it was reading.
    per step in the same session, which moved desert from 50.6% to 32.9% of land.
    More moisture where it is cold is more snow, and nobody has looked at what
    that did to cover.
-3. Only then decide whether the overlay's own shaping — hollows first, less on
-   rock — is right, because none of that can be judged through a field that is
-   reporting half a metre of snow on a desert.
+3. **The shaping was made patchy and it did not help**, which narrows the
+   question rather than answering it. Cover now raises a level and the ground's
+   height map decides what is under it —
+   `saturate((Cover - Height) * 4 + Cover)`, still exactly zero at zero cover —
+   so half cover should dapple rather than mix. The mean difference against no
+   snow is unchanged (40.63 against 40.68 on the desert, which is what a
+   variance change looks like through a mean) and the desert still reads
+   uniformly grey.
+
+   The likely reason is that the overlay also fades the biome tint and the
+   scan's own mean with `SnowWeight`, so partial cover desaturates the whole
+   surface instead of dappling it. That is the next thing to try, and it is a
+   different fix from the blend.
 
 The overlay stays behind `-snow` until those are answered. The work, the control
 arm and the measurement are all kept; what is not kept is a snowed desert in
