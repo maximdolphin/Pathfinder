@@ -626,7 +626,13 @@ namespace LedgerSurface
 		MorphScale->ParameterName = TEXT("MorphScale");
 		// A sane still-frame default, so the material is correct even if nobody
 		// ever sets it. The planet overrides it every frame.
-		MorphScale->DefaultValue = 12.0f;
+		// `-breakmorph` is the other deliberate fault. Zero means a vertex is
+		// never eased towards where its parent would put it, so the surface
+		// snaps the whole distance the moment its node collapses -- which is
+		// the pop this exists to hide, and the amount is reported as
+		// pop_hidden_metres whether or not it is being hidden.
+		MorphScale->DefaultValue =
+			FParse::Param(FCommandLine::Get(), TEXT("breakmorph")) ? 0.0f : 12.0f;
 
 		UMaterialExpressionScalarParameter* MorphBegin =
 			Graph.Make<UMaterialExpressionScalarParameter>();

@@ -309,6 +309,27 @@ struct FLedgerTerrainStats
 	UPROPERTY()
 	int32 WorstDepthDifference = 0;
 
+	/// Cached patches rejected because their stitch flags no longer match what
+	/// the tree says their neighbours are. T067's crack metric.
+	///
+	/// A patch is generated with its edges collapsed towards whichever
+	/// neighbours were coarser at the time. When a neighbour changes depth the
+	/// two no longer share an edge, and there is a hole a few metres long
+	/// between them until the patch is rebuilt. The streaming code already
+	/// makes this comparison to decide what to rebuild; this counts how often
+	/// it found one, because every one of them was a crack on screen.
+	int32 StitchRejects = 0;
+
+	/// The largest LOD transition among patches built this run, measured in
+	/// each patch's own quads.
+	///
+	/// A vertex at an odd grid position does not exist in the parent LOD, so
+	/// when its node collapses the surface snaps by this much. Morphing hides
+	/// it (T048), and this is the size of what is being hidden -- which is what
+	/// makes it the popping metric: a build where morphing has stopped working
+	/// shows exactly this much movement, all at once.
+	double WorstMorphQuads = 0.0;
+
 	UPROPERTY()
 	int32 WaterSections = 0;
 
@@ -430,8 +451,26 @@ public:
 	/// Paired with the patch resolution above: together they set how many
 	/// components the visible set needs. 150 px with 65-vertex patches lands
 	/// near a thousand, which the pool can actually serve.
+	/// Raised from 150 after T429, because 150 with MaxDepth 18 asks for a
+	/// visible set nothing can build fast enough.
+	///
+	/// At 150 a depth-18 node subdivides out to 244 m in every direction. At
+	/// 1920x1080 that wanted about seven thousand sections against a pool of
+	/// 3,600, and the flight reported 3,363 unfilled nodes: holes everywhere,
+	/// and -- worse -- a starved brake collapsing patches unevenly, which is
+	/// what cut the flat wedge into the mountain in the sweep capture.
+	///
+	/// 250 stops depth 18 at 147 m, which is about a third of the area and so
+	/// about a third of the finest-ring nodes. **The quad the camera is looking
+	/// at is unchanged**: twenty metres is well inside 147, so the ground under
+	/// a standing person is still 0.60 m and 29 px, which is the criterion T429
+	/// is held to. What gets coarser is the silhouette a few hundred metres out.
+	///
+	/// A per-depth penalty was tried first and broke SampleTerrain; see
+	/// LedgerQuadTree.cpp. This is the same intent applied globally, where the
+	/// leaf lookup cannot tell the difference.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
-	double ErrorThresholdPixels = 150.0;
+	double ErrorThresholdPixels = 250.0;
 
 	/// Depth down to which every visible node keeps geometry, always.
 	///

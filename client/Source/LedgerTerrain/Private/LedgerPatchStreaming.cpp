@@ -47,10 +47,27 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 
 	// Neighbour depths are read here, on the game thread, while the tree is
 	// stable. The worker never touches the tree.
+	// `-breakstitching` is a deliberate fault, and it is here so T067's
+	// acceptance can be met rather than asserted. Every edge is declared
+	// un-stitched, so a patch beside a coarser neighbour keeps vertices its
+	// neighbour does not have and the seam opens. A regression suite that
+	// cannot be shown to fail is a regression suite nobody should trust.
+	static const bool bBreakStitching =
+		FParse::Param(FCommandLine::Get(), TEXT("breakstitching"));
+	if (bBreakStitching)
+	{
+		Job->bStitchLeft = false;
+		Job->bStitchRight = false;
+		Job->bStitchBottom = false;
+		Job->bStitchTop = false;
+	}
+	else
+	{
 	Job->bStitchLeft = LeafDepthAtFace(Node.Face, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
 	Job->bStitchRight = LeafDepthAtFace(Node.Face, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
 	Job->bStitchBottom = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth;
 	Job->bStitchTop = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth;
+	}
 
 	InFlight.Add(Job->Key, Job);
 
@@ -125,6 +142,25 @@ void ALedgerPlanet::HarvestCompletedPatches()
 			Job->Palette };
 
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
+
+		// How far this patch's surface would jump if morphing stopped hiding
+		// it. MorphUVs.x is the distance from a vertex to where its parent
+		// would put it, in centimetres. T067's popping metric.
+		// **In quads, not in metres.** In metres the worst reading on a clean
+		// run is 2,307 -- and it is the root node, a patch ten thousand
+		// kilometres across whose transition is colossal and is never a pop,
+		// because nothing is ever near enough to one for it to subtend
+		// anything. Divided by the patch's own quad size the number is
+		// scale-free, comparable between depths, and can carry a threshold.
+		const double QuadCm = Job->WorldSize / 64.0;
+		if (QuadCm > 0.0)
+		{
+			for (const FVector2D& Morph : Job->MorphUVs)
+			{
+				Stats.WorstMorphQuads = FMath::Max(
+					Stats.WorstMorphQuads, FMath::Abs(Morph.X) / QuadCm);
+			}
+		}
 		++Stats.TotalBuilds;
 
 		// The same allowance the request loop spends from, so a frame that
@@ -191,6 +227,9 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 		|| Entry.bStitchBottom != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth)
 		|| Entry.bStitchTop != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth))
 	{
+		// Counted as well as acted on. The rebuild fixes it; T067 wants to know
+		// how often it happened, because each one was a crack until it landed.
+		++Stats.StitchRejects;
 		PatchCache.Remove(Key);
 		Stats.CacheEntries = PatchCache.Num();
 		return false;

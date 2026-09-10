@@ -189,29 +189,69 @@ namespace LedgerTerrain
 	}
 
 	/// The generated field, before anything anybody did to it.
-	/// How much of the near-field band a given vertex spacing can carry.
+	/// The near-field band, faded one octave at a time.
 	///
-	/// Nyquist, applied honestly. The band's finest octave has a wavelength of
-	/// about 1.9 m, so a grid with 1 m between vertices resolves it and a grid
-	/// with 5 m between them samples it at random and turns it into noise that
-	/// changes every time the LOD does. Full strength up to a metre, gone by
-	/// four, smooth in between -- which lines up with the quadtree: depth 18
-	/// (0.60 m) and 17 (1.19 m) carry all of it, 16 (2.39 m) about half, and 15
-	/// (4.77 m) and coarser none.
+	/// **Whole-band fading is what made the ground slide.** The first version
+	/// of this attenuated all five octaves together with one smoothstep, so
+	/// depth 16 carried 56% of the band and depth 17 carried 99% -- and the
+	/// surface between two adjacent LOD rings differed by 43% of the whole
+	/// band at once. Flying moves those rings across the ground continuously,
+	/// so the terrain re-formed under the camera as they passed: waves, and a
+	/// texture that appeared to slide.
 	///
-	/// Zero spacing means "no grid, give me the field" -- what SurfaceRadiusAt
-	/// and every query wants.
+	/// Morphing could not hide it, and the reason is worth writing down.
+	/// A morph target is the bilinear average of the patch's own samples --
+	/// what the parent's surface would be *if the parent were a smoothed copy
+	/// of this one*. Under whole-band fading it is not: the parent samples a
+	/// materially different field. The morph therefore eased the surface
+	/// towards a shape the parent never drew, and the discrepancy appeared as
+	/// motion at every transition.
 	///
-	/// ponytail: one fade for the whole band rather than one per octave. Per
-	/// octave is more correct and the band is under 1.5 m of amplitude, which
-	/// the LOD morph already blends across; revisit if a transition is visible.
-	double NearFieldStrength(double SampleSpacingMetres)
+	/// Per octave, each fades out around its own Nyquist limit. An octave of
+	/// wavelength W is carried in full while the grid resolves it at two
+	/// samples per wavelength, and is gone by one sample per wavelength where
+	/// it is pure aliasing. Adjacent depths then differ by at most one
+	/// octave's amplitude -- a sixteenth of the band at the finest, not
+	/// half of it -- and that is inside what a morph can absorb.
+	constexpr int32 NearFieldOctaves = 5;
+
+	/// 30 m, from 2*pi*R / 1334000 on a 6,371 km planet.
+	constexpr double NearFieldBaseWavelength = 30.0;
+	constexpr double NearFieldBaseFrequency = 1334000.0;
+
+	double NearFieldBand(
+		const FVector3d& UnitSphere, uint32 Seed, double SampleSpacingMetres)
 	{
-		if (SampleSpacingMetres <= 0.0)
+		double Sum = 0.0;
+		double Normalisation = 0.0;
+		double Amplitude = 1.0;
+		double Frequency = NearFieldBaseFrequency;
+		double Wavelength = NearFieldBaseWavelength;
+
+		for (int32 Octave = 0; Octave < NearFieldOctaves; ++Octave)
 		{
-			return 1.0;
+			// Zero spacing means "no grid": the whole field, which is what
+			// SurfaceRadiusAt and the diagnostics want.
+			const double Strength = SampleSpacingMetres <= 0.0
+				? 1.0
+				: 1.0 - FMath::SmoothStep(
+					Wavelength * 0.5, Wavelength, SampleSpacingMetres);
+
+			Normalisation += Amplitude;
+			if (Strength > 0.0)
+			{
+				Sum += LedgerNoise::Fractal(
+					UnitSphere * Frequency,
+					Seed + static_cast<uint32>(Octave) * 2731u, 1)
+					* Amplitude * Strength;
+			}
+
+			Amplitude *= 0.5;
+			Frequency *= 2.0;
+			Wavelength *= 0.5;
 		}
-		return 1.0 - FMath::SmoothStep(1.0, 4.0, SampleSpacingMetres);
+
+		return Normalisation > 0.0 ? Sum / Normalisation : 0.0;
 	}
 
 	double GeneratedElevation(
@@ -326,19 +366,14 @@ namespace LedgerTerrain
 		// from a kilometre up; making it larger would put bumps on mountains
 		// that are supposed to read as mountains.
 		//
-		// **It is skipped entirely on any grid too coarse to resolve it**, and
-		// that is a load-bearing early-out rather than an optimisation. A patch
-		// at 4.8 m spacing sampling a 1.9 m wavelength does not get less
-		// detail, it gets a different random surface each time it is rebuilt at
-		// a different depth -- which is a shimmer, not a texture. See
-		// NearFieldStrength, and docs/comparisons/near-field/.
-		const double Near = NearFieldStrength(SampleSpacingMetres);
-		if (Near > 0.0)
-		{
-			const double Detail = LedgerNoise::Eroded(
-				UnitSphere * 1334000.0, Seed ^ 0x4D4Du, 5, 2.0);
-			Height += Detail * Near * 0.00017;
-		}
+		// **Each octave is faded out on the grid that stops resolving it**, and
+		// that is load-bearing rather than an optimisation. A patch at 4.8 m
+		// spacing sampling a 1.9 m wavelength does not get less detail, it gets
+		// a different random surface each time it is rebuilt at a different
+		// depth -- which is a shimmer, not a texture. Fading the whole band as
+		// one unit was worse and shipped for a few hours: see NearFieldBand.
+		Height += NearFieldBand(UnitSphere, Seed ^ 0x4D4Du, SampleSpacingMetres)
+			* 0.00017;
 
 		return Height * Params.MaxElevation;
 	}

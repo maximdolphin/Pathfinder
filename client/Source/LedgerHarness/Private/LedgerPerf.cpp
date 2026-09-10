@@ -6,6 +6,7 @@
 #include "DynamicRHI.h"
 #include "Engine/World.h"
 #include "LedgerLog.h"
+#include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "EngineUtils.h"
 #include "LedgerPlanet.h"
@@ -288,6 +289,36 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 		TEXT("patch cache    %5d hits, %5d misses, %5d written  (%.0f%% served from disk)\n"),
 		Hits, Misses, Writes,
 		Hits + Misses > 0 ? 100.0 * Hits / (Hits + Misses) : 0.0);
+
+	// ---- the regression block, for a script rather than a person ----------
+	//
+	// T067. Key and value, one per line, no prose: the four failure modes M02's
+	// gate names, in a form tools/terrain_regression.py can compare against a
+	// reference without parsing a table meant for reading.
+	Body += TEXT("\n---- regression metrics ----\n\n");
+	if (const UWorld* MetricWorld = GetWorld())
+	{
+		for (TActorIterator<ALedgerPlanet> It(const_cast<UWorld*>(MetricWorld)); It; ++It)
+		{
+			const FLedgerTerrainStats& Terrain = It->GetStats();
+			Body += FString::Printf(TEXT("holes_worst %d\n"), Terrain.WorstUnfilled);
+			Body += FString::Printf(TEXT("cracks_stitch_rejects %d\n"), Terrain.StitchRejects);
+			Body += FString::Printf(TEXT("pop_hidden_quads %.3f\n"), Terrain.WorstMorphQuads);
+			Body += FString::Printf(TEXT("imbalanced_edges %d\n"), Terrain.ImbalancedEdges);
+			break;
+		}
+	}
+	// Whether the transition above is being hidden. The planet cannot know:
+	// morphing is a material parameter, and the switch that disables it is
+	// read where it is used. Both numbers are reported because they fail
+	// for different reasons -- the transition growing is an LOD problem,
+	// and morphing being off is a rendering one.
+	Body += FString::Printf(TEXT("pop_morph_enabled %d\n"),
+		FParse::Param(FCommandLine::Get(), TEXT("breakmorph")) ? 0 : 1);
+	Body += FString::Printf(TEXT("budget_p99_ms %.2f\n"), P99);
+	Body += FString::Printf(TEXT("budget_max_ms %.2f\n"), Max);
+	Body += FString::Printf(TEXT("budget_mean_ms %.2f\n"), Mean);
+	Body += FString::Printf(TEXT("frames %d\n"), All.Num());
 
 	FFileHelper::SaveStringToFile(Body, *Path);
 

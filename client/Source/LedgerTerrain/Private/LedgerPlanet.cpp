@@ -125,6 +125,22 @@ void ALedgerPlanet::BeginPlay()
 	// Sized against the measured visible-leaf count with headroom for a fast
 	// turn. Undersizing does not degrade gracefully on its own — the parent-hold
 	// rule in `UpdateTree` is what stops a starved pool from punching holes.
+	// 3,600 was sized for MaxDepth 15. T429 took it to 18 and did not resize
+	// this, and the consequence was not subtle: at 1920x1080 the tree wants
+	// about seven thousand sections, the flight reported 3,363 unfilled nodes,
+	// and the ground was full of holes. Worse than the holes, the starvation
+	// made the LOD brake collapse patches hard and unevenly, so neighbours
+	// ended up several depths apart -- which is the flat wedge cut into the
+	// mountain in the sweep capture, and the terrain "sliding" as the rings
+	// swept past.
+	//
+	// Screen-space error scales with viewport width, so this is a function of
+	// resolution: the same build at 1280x720 reported zero holes, which is why
+	// the first measurement of T429 missed it entirely.
+	// Left at 3,600, and 8,000 was tried. It made everything worse: holes went
+	// from 1,774 to 2,960 and p99 from 84 to 124 ms, because the shortage is
+	// not sections, it is the rate at which patches can be generated, cooked
+	// and uploaded. A bigger pool just puts more work in flight.
 	constexpr int32 PoolSize = 3600;
 	ComponentKind = LedgerTerrain::PatchComponentKind();
 	UE_LOG(LogLedger, Log, TEXT("terrain component type: %s (pool %d)"),
@@ -308,7 +324,22 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		// with the patch cache at 88% reuse over 158,000 hits -- patches
 		// cycling, not work being done. Off the brake it was 8; with a dead
 		// band it is 8 and the brake still catches a genuine overload.
-		const double Occupancy = Target > 0.0 ? ActiveSections.Num() / Target : 0.0;
+		// **Demand, not supply.**
+		//
+		// This was ActiveSections.Num() / Target, and ActiveSections is capped
+		// by the pool -- so however badly the tree out-runs it, occupancy could
+		// never read much above 1.0 and the brake could never apply much more
+		// than a 5% correction. At 1080p after T429 took MaxDepth to 18 the
+		// tree wanted about seven thousand sections against a pool of 3,600,
+		// the flight reported 3,363 unfilled nodes, and the ground was full of
+		// holes -- while the brake, looking only at what it had been given,
+		// saw occupancy 1.05 and nudged the threshold from 150 to 157.
+		//
+		// Unfilled nodes are the rest of the demand. Adding them makes
+		// occupancy read 2.0 in that state, which is what it actually was.
+		const double Demand =
+			static_cast<double>(ActiveSections.Num() + Stats.UnfilledNodes);
+		const double Occupancy = Target > 0.0 ? Demand / Target : 0.0;
 		double Wanted = EffectiveErrorPixels;
 		if (Occupancy > 1.0)
 		{
