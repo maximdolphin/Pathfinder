@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 14
+   "doneCount": 15
   },
   {
    "id": "M04",
@@ -5866,10 +5866,16 @@
    "dependsOn": [
     "T084"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A year of 29,013,065 s stepped hourly in 12 ms, ending on the analytic answer to the bit (0.000e+00 s out, 0.000000 m). Skipping a century and placing every body: 3 microseconds, because the ephemeris is a function of time rather than an integration. Advance was rewritten to measure every step from the interval's start -- accumulating SecondsFromEpoch eight thousand times is an integration of the clock itself, and it drifts. docs/comparisons/time-acceleration/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 209.5,
    "plannedEndDay": 211,
@@ -13788,5 +13794,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T16:04:08.555Z"
+ "updatedAt": "2026-09-10T16:11:28.480Z"
 }
