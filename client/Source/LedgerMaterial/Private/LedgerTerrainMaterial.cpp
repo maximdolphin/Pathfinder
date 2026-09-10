@@ -181,6 +181,7 @@ namespace LedgerSurface
 		const FSurfaceSet Flat = LoadSurfaceSet(DefaultSurface);
 		const FSurfaceSet Steep = LoadSurfaceSet(SteepSurface);
 		const FSurfaceSet Scree = LoadSurfaceSet(ScreeSurface);
+		const FSurfaceSet Snowfall = LoadSurfaceSet(TEXT("fresh_windswept_snow_ugspafgdy"));
 		if (!Flat.IsValid() || !Steep.IsValid() || !Scree.IsValid())
 		{
 			// Loudly, and with nothing returned. A terrain material that
@@ -480,19 +481,67 @@ namespace LedgerSurface
 			Graph.Lerp(Soil.Occlusion, ScreeSampled.Occlusion, ScreeWeight),
 			Rock.Occlusion, Blend);
 
-		// ---- snow: the field is here, the blend is not --------------------
+		// ---- snow, as an overlay that is provably nothing at zero ---------
 		//
-		// The vertex colour's alpha carries snow cover (T060), the climate
-		// function that produces it is tested, and the blend that would put it
-		// on screen is NOT in this material.
+		// The vertex colour's alpha carries snow cover (T060) and the climate
+		// function producing it has four green tests. What was missing was a
+		// blend that puts it on screen without touching ground that has none.
 		//
-		// It was, for one evening. Height-blending a snow set over the finished
-		// ground changed every terrain capture on the planet -- including at
-		// season zero, where the climate is identical to before it and nothing
-		// should have moved at all. That is a bug in the blend rather than the
-		// snow, and shipping it would have meant every measurement in this
-		// repository being taken against a look nobody chose. The channel and
-		// the field stay; the blend comes back when it is understood.
+		// **The first attempt height-blended a snow set into the finished
+		// ground, and a height blend competes whether or not it is wanted.** It
+		// changed every terrain capture on the planet including at season zero,
+		// where the climate is identical and nothing should have moved, and it
+		// was reverted rather than shipped -- every measurement in this
+		// repository would have been taken against a look nobody chose.
+		//
+		// This is a lerp whose alpha is multiplied by cover. At cover zero the
+		// alpha is exactly zero and a lerp at zero is the identity: not
+		// approximately, the arithmetic cannot do anything else. Everything
+		// clever about where snow settles happens inside that multiplication,
+		// where it is harmless.
+		// **Off unless `-snow` asks for it, and the reason is measured.**
+		//
+		// The blend below is provably the identity at zero cover -- a lerp
+		// whose alpha is multiplied by cover cannot be anything else -- so
+		// unlike the first attempt, it is not the blend that misbehaves. The
+		// cover does. `-channel=snow` over grassland at season zero reads 0.5,
+		// and the four-biome desert comes back grey and half-snowed.
+		//
+		// So the overlay is right and the field feeding it is not, and the two
+		// have to be separated before either ships. Opt-in keeps the work, the
+		// control arm and the measurement without putting a snowed desert in
+		// front of anybody. See docs/comparisons/snow/.
+		UMaterialExpression* SnowWeight = Graph.Constant(0.0f);
+		if (Snowfall.IsValid()
+			&& FParse::Param(FCommandLine::Get(), TEXT("snow")))
+		{
+			UMaterialExpressionVertexColor* SnowCover =
+				Graph.Make<UMaterialExpressionVertexColor>();
+			UMaterialExpression* Cover = Graph.Mask(SnowCover, false, false, false, true);
+
+			const FSampled Lying =
+				SampleSet(Graph, Snowfall, ParallaxPosition, WeightX, WeightY, WeightZ);
+
+			// Where it settles, given that any is settling at all.
+			//
+			// Hollows first, driven by the ground's own height map, so a thin
+			// cover picks out low ground and the texture underneath still reads
+			// through. And less on bare rock: a face steep enough to be rock is
+			// steep enough to shed most of what lands on it, and Blend is
+			// already the rock weight so this costs nothing to ask for.
+			UMaterialExpression* Settles = Graph.Saturate(
+				Graph.Multiply(
+					Graph.Add(Graph.Constant(1.0f),
+						Graph.Multiply(Graph.OneMinus(Soil.Height), Graph.Constant(1.5f))),
+					Graph.OneMinus(Graph.Multiply(Blend, Graph.Constant(0.7f)))));
+
+			SnowWeight = Graph.Saturate(Graph.Multiply(Cover, Settles));
+
+			AlbedoMix = Graph.Lerp(AlbedoMix, Lying.Albedo, SnowWeight);
+			NormalMix = Graph.Lerp(NormalMix, Lying.Normal, SnowWeight);
+			RoughMix = Graph.Lerp(RoughMix, Lying.Roughness, SnowWeight);
+			OcclusionMix = Graph.Lerp(OcclusionMix, Lying.Occlusion, SnowWeight);
+		}
 
 		// ---- colour ---------------------------------------------------------
 		//
@@ -502,10 +551,14 @@ namespace LedgerSurface
 		// own average out first, or a green scan under a green tint is a swamp
 		// and a sand scan under a snow tint is dirty snow. The averages were
 		// measured off the images at import and live in the manifest.
+		// Snow takes no biome colour -- a snowfield in a rainforest is not
+		// green -- so both the tint and the scan's own mean fade out with it,
+		// exactly as they already do for rock.
 		UMaterialExpression* MeanMix = Graph.Lerp(
 			Graph.Lerp(SoilMean, Graph.Constant3(Scree.MeanAlbedo), ScreeWeight),
 			Graph.Constant3(Steep.MeanAlbedo), Blend);
-		UMaterialExpression* Variation = Graph.Divide(AlbedoMix, MeanMix);
+		UMaterialExpression* Variation = Graph.Divide(AlbedoMix,
+			Graph.Lerp(MeanMix, Graph.Constant3(Snowfall.MeanAlbedo), SnowWeight));
 
 		// Rock has no biome and takes no tint, so the ground's tint fades out
 		// with it. Otherwise a cliff in a rainforest would be green rock.
@@ -513,6 +566,7 @@ namespace LedgerSurface
 			Graph.Lerp(SoilTint, Graph.Constant3(FLinearColor(0.30f, 0.29f, 0.27f)),
 				ScreeWeight),
 			Graph.Constant(1.0f), Blend);
+		TintMix = Graph.Lerp(TintMix, Graph.Constant(1.0f), SnowWeight);
 
 		// Macro breakup. One tile of ground is two metres; from a kilometre up,
 		// two metres is a pixel and the repeat becomes a visible grid. A second
@@ -748,6 +802,13 @@ namespace LedgerSurface
 			{
 				Isolated = Soil.Height;
 			}
+			else if (Channel == TEXT("snow"))
+			{
+				// The vertex colour's alpha, which is what the snow overlay
+				// multiplies by and therefore the thing to look at when the
+				// overlay changes ground that should have no snow on it.
+				Isolated = SnowWeight;
+			}
 
 			if (Isolated != nullptr)
 			{
@@ -760,7 +821,7 @@ namespace LedgerSurface
 			{
 				UE_LOG(LogLedger, Error,
 					TEXT("terrain material: -channel=%s is not one of "
-					     "albedo, normal, roughness, ao, height"), *Channel);
+					     "albedo, normal, roughness, ao, height, snow"), *Channel);
 			}
 		}
 

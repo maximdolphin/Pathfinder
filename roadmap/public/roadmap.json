@@ -4319,6 +4319,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Partial. The acceptance's two claims are met as properties of the climate function and are four green tests: 55 N at 800 m reads 0.00 snow in summer and 1.00 in winter, and 45 N reads 0.00 at sea level and 1.00 at 4,000 m. The snow line is not a parameter -- it is where surface temperature crosses zero, so it moves with altitude because the lapse rate was already there, and a test walks it from the equator to 80 degrees and fails if it ever rises poleward. Seasons are opposite by construction (the term is odd in the sine of latitude) and the equator has none. Snow rides the vertex colour's alpha, the one channel the biome weights left free, and scatter reads it. What is missing is the look: a snow surface set height-blended over the finished ground changed every terrain capture on the planet, including at season zero where the climate is identical and nothing should have moved -- a bug in the blend, not the snow, and shipping it would have put every measurement in the repository against a look nobody chose. Reverted with the place it goes marked in LedgerTerrainMaterial.cpp. So 'has snow' is currently a number rather than a photograph, and the seasonal captures show the scatter changing rather than the ground. Commit d0febcd, write-up in docs/comparisons/snow/."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "The blend now exists and is off by default, and the reason is a measurement rather than a doubt. It is a lerp whose alpha is multiplied by cover, so at zero cover it is provably the identity -- unlike the first attempt, which height-blended and therefore competed whether or not it was wanted. It still changes every biome: ice cap 61.4, rainforest 52.1, desert 40.7, savanna 36.4 of 255. A desert changing by forty levels is not a blend competing; the COVER is that high. -channel=snow over grassland at season zero reads 131 of 255, and the four-biome desert comes back grey and half-snowed. That also reframes the original revert, whose reasoning was 'at season zero the climate is identical and nothing should have moved' -- which assumed cover is zero at season zero. It is not; season zero is a season. Next, in order: (1) the fallback colour path SurfaceColour returns alpha 255 through Blend, which is full snow, and it runs whenever a patch has no biomes; (2) T051 raised the drying rate 0.97 -> 0.99 in the same session and nobody has looked at what that did to cover; (3) only then judge the overlay's own shaping. Behind -snow until those are answered."
     }
    ],
    "evidence": [
@@ -4327,6 +4332,12 @@
      "caption": "The same coast at the northern winter solstice. The difference from summer is the scatter, because the material does not yet draw the snow itself.",
      "source": "../docs/comparisons/snow/coast-winter.png",
      "addedAt": "2026-09-09T18:39:41.340Z"
+    },
+    {
+     "file": "evidence/T060-2026-09-10T06-44-02-513.png",
+     "caption": "Desert with the overlay on: grey and half-snowed. The blend is identity at zero cover, so this is the field, not the blend.",
+     "source": "../out/snowtest-four-biomes-3-desert.png",
+     "addedAt": "2026-09-10T06:44:02.515Z"
     }
    ],
    "plannedStartDay": 123,
@@ -13467,5 +13478,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T06:29:58.644Z"
+ "updatedAt": "2026-09-10T06:44:02.518Z"
 }

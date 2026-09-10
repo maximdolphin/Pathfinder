@@ -1,84 +1,76 @@
-# Snow, ice and seasonal cover (T060) — the field, not yet the look
+# Snow: the overlay is right, the field is not
 
-## The acceptance, as properties of the climate function
+T060. The blend that puts snow on screen exists, is correct by construction, and
+is **off by default** because what feeds it is wrong.
 
-> The same location has snow in winter and not in summer, and the snow line
-> moves with altitude.
+Run it: `-snow` turns the overlay on. `-channel=snow` photographs the weight it
+is driven by.
 
-Both halves are things `LedgerClimate` either does or does not do, so both are
-tests rather than two screenshots taken six months apart. Four, all green:
+## The first attempt, and why this one is shaped differently
+
+The blend was written once before and reverted the same evening. It
+height-blended a snow set into the finished ground, and a height blend competes
+whether or not it is wanted: it changed every terrain capture on the planet,
+including at season zero where the climate is identical and nothing should have
+moved. Shipping it would have meant every measurement in this repository being
+taken against a look nobody chose.
+
+So this one is a lerp whose alpha is multiplied by cover:
 
 ```
-Ledger.Snow.SameLocationHasSnowInWinterAndNotInSummer
-Ledger.Snow.TheSnowLineMovesWithAltitudeAndLatitude
-Ledger.Snow.SeasonsAreOppositeInTheTwoHemispheres
-Ledger.Snow.ColdAndDryIsBareRock
+Settles    = saturate((1 + (1 - GroundHeight) * 1.5) * (1 - RockWeight * 0.7))
+SnowWeight = saturate(Cover * Settles)
+Albedo     = lerp(Albedo, SnowAlbedo, SnowWeight)
 ```
 
+At cover zero the alpha is exactly zero, and a lerp at zero is the identity.
+Not approximately — the arithmetic cannot do anything else. Everything clever
+about where snow settles lives inside that multiplication, where it is harmless:
+hollows fill first because the ground's own height map drives it, and a face
+steep enough to be rock sheds most of what lands on it.
+
+## And it still changed everything, which is the finding
+
+Four biomes, with and without:
+
 ```
-55 N at 800 m: 0.00 in summer, 1.00 in winter
-45 N: 0.00 at sea level, 1.00 at 4,000 m
+ice cap             61.4 / 255 mean difference
+tropical rainforest 52.1
+desert              40.7
+savanna             36.4
 ```
 
-Fifty-five north at eight hundred metres is chosen because the answer is not
-obvious from the latitude: sea level there is about 6 °C on the annual mean, the
-seasonal swing is ±16, and the lapse rate takes another five. It sits either
-side of freezing across a year, which is the case the acceptance is about.
+A desert changing by forty levels is not a blend competing. **The cover really
+is that high.** `-channel=snow` over grassland at season zero reads a mean of
+131 of 255, and `four-biomes-3-desert` comes back grey and half-snowed.
 
-**The snow line is not a parameter anywhere.** It is where the surface
-temperature crosses zero, and it moves with altitude because the lapse rate was
-already in the climate model — snow is the first thing to read it. The test
-walks the line from the equator to eighty degrees and fails if it ever rises
-going poleward.
+That reframes the original revert, too. Its reasoning was "at season zero the
+climate is identical and nothing should have moved" — which assumed cover is
+zero at season zero. Season zero is a season, not an absence of winter, and
+cover at these sites is not zero. The first blend may have been less wrong than
+it was recorded as being; it was never separated from the field it was reading.
 
-The seasonal term is odd in the sine of latitude, so the hemispheres are
-opposite by construction rather than by a rule somebody has to remember, and the
-equator has no seasons at all. A term that was even in latitude would give both
-poles winter at once, which is wrong everywhere and obvious from orbit.
+## What has to happen next, in order
 
-Snow needs moisture as well as cold. The coldest deserts on Earth are bare rock,
-and a model that puts a snowfield on everything cold paints all of this planet's
-high ground white.
+1. **Check the channel end to end.** The vertex colour's alpha is supposed to
+   carry `SnowCover`. On the biome path it does. On the fallback path
+   `SurfaceColour` returns alpha 255 through `Blend`, which is full snow, and
+   the fallback runs whenever a patch has no biomes.
+2. **Check whether T051 raised it.** The drying rate over land went 0.97 to 0.99
+   per step in the same session, which moved desert from 50.6% to 32.9% of land.
+   More moisture where it is cold is more snow, and nobody has looked at what
+   that did to cover.
+3. Only then decide whether the overlay's own shaping — hollows first, less on
+   rock — is right, because none of that can be judged through a field that is
+   reporting half a metre of snow on a desert.
 
-## What is wired up
+The overlay stays behind `-snow` until those are answered. The work, the control
+arm and the measurement are all kept; what is not kept is a snowed desert in
+front of anybody.
 
-The season is a constant for a run, set by `-season=` (0 to 1, 0.25 the northern
-summer). Not a clock: the snow a patch carries is baked into its vertices, so a
-season that moved would invalidate every cached patch continuously. A year that
-turns belongs with the weather, in M04.
+## Files
 
-Snow cover rides the **vertex colour's alpha**, which was the one channel the
-biome weights left free. Snow is not a biome — it lies on top of whichever
-ground is there — so giving it a palette slot would have cost a biome and made a
-snowy forest and a snowy desert the same place. As a fourth channel it is an
-overlay, which is what it is. It does not lie on cliffs: the same slope the
-biomes are weighed by sheds it.
-
-Scatter reads it, and deep cover buries four fifths of the undergrowth.
-`coast-summer.png` and `coast-winter.png` are the same coast at the two
-solstices; the difference between them is the trees.
-
-## What is not
-
-**The material does not draw the snow.** A snow surface set height-blended over
-the finished ground was written, and it changed every terrain capture on the
-planet — including at season zero, where the climate is identical to before it
-and nothing should have moved at all. That is a bug in the blend rather than in
-the snow, and shipping it would have meant every measurement in this repository
-being taken against a look nobody chose. Reverted; the channel and the field
-stay, and `LedgerTerrainMaterial.cpp` says where the blend goes.
-
-So the seasonal pictures show the scatter changing and not the ground, and the
-acceptance's "has snow" is a number rather than a photograph. That is the honest
-state.
-
-## And one thing the control caught
-
-Season zero not reproducing the reference captures was how the material bug was
-found — but it also caught something else that had nothing to do with snow. The
-scatter's `bWithCollision` gate had been dropped during T059's thinning
-experiment and not restored by the revert, which quietly doubled the forest and
-put trees across a desert the references had bare. Restored, and the two
-conditions are now commented as the different things they are: patch size is
-about how big an instance is on screen, and collision is the planet's own
-statement about how close the patch is.
+| | |
+|---|---|
+| `client/Source/LedgerMaterial/Private/LedgerTerrainMaterial.cpp` | the overlay, `-snow`, and `-channel=snow` |
+| `client/Source/LedgerTerrain/Private/LedgerPatchGenerator.cpp` | where alpha is written, on both paths |
