@@ -194,6 +194,62 @@ void ALedgerPlanet::UpdateTree(
 	// written down for T436, which is where the milestone's cost is priced.
 	const double Threshold = EffectiveErrorPixels;
 
+	// ---- a region at a depth distance did not choose. T049 ----------------
+	//
+	// `-forcedepth=N` pins every node within two kilometres of the camera to
+	// depth N, whatever the error says. That is the case this task exists for.
+	//
+	// Edge stitching collapses a patch's edge towards a COARSER neighbour, and
+	// that is all pure-distance LOD can produce: depth falls off smoothly with
+	// distance, so no edge differs by more than one level and the finer side is
+	// always the one that collapses. Force a region and the boundary can differ
+	// by several levels at once, and the mirror case has never been exercised.
+	//
+	// A switch rather than a fixture, because it has to affect the tree itself.
+	// And measured before anything is built: whether this needs a balancing
+	// pass is the open question, and building one first would answer it by
+	// assumption.
+	static const int32 Forced = []() -> int32
+	{
+		int32 Depth = 0;
+		return FParse::Value(FCommandLine::Get(), TEXT("forcedepth="), Depth)
+			? FMath::Clamp(Depth, 1, 20) : 0;
+	}();
+
+	if (Forced > 0 && CameraLocal.SizeSquared() > 0.0)
+	{
+		const double Angle = FMath::Acos(FMath::Clamp(FVector3d::DotProduct(
+			Node.Centre.GetSafeNormal(), CameraLocal.GetSafeNormal()), -1.0, 1.0));
+		if (Angle < (200000.0 / Radius))
+		{
+			if (Node.Depth < Forced)
+			{
+				if (!Node.bHasChildren)
+				{
+					Split(Node);
+				}
+				for (int32 Index = 0; Index < 4; ++Index)
+				{
+					if (Node.Children[Index].IsValid())
+					{
+						UpdateTree(*Node.Children[Index], CameraLocal, LeadLocal,
+							ViewportWidth, FovRadians, false);
+					}
+				}
+				return;
+			}
+
+			// At the forced depth exactly. A leaf, whatever the error says.
+			if (Node.bHasChildren)
+			{
+				Collapse(Node);
+			}
+			Node.bWantsCollapse = false;
+			Node.CollapseWaitFrames = 0;
+			return;
+		}
+	}
+
 	if (!bForceCollapse && Error > Threshold && Node.Depth < MaxDepth)
 	{
 		if (!Node.bHasChildren)

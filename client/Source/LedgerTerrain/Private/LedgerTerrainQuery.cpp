@@ -36,16 +36,32 @@ const FLedgerQuadNode* ALedgerPlanet::DrawnNodeAt(
 		? Roots[static_cast<int32>(Face)].Get()
 		: nullptr;
 
+	// **The DEEPEST node with geometry, not the shallowest.**
+	//
+	// This used to stop at the first ancestor it found in ActiveSections, on
+	// the reasoning that a split node keeps its geometry until all four
+	// children have theirs, so during streaming the thing under the point is
+	// the parent. True, and not the whole rule: children draw over their
+	// parent, so once they have geometry the parent is behind them. And the
+	// resident shell (ResidentDepth) never releases its sections at all, so
+	// there is almost always an ancestor holding one.
+	//
+	// The consequence was a query that answered from a patch ten thousand
+	// kilometres across whenever the tree was shaped by anything other than
+	// distance. It appeared twice before it was understood: once under a
+	// per-depth error threshold, which was reverted for it, and once under
+	// `-forcedepth`, which is what made it reproducible. Both times the drawn
+	// geometry was visibly correct in the same frame -- because the renderer
+	// draws every section, and only this walk was picking the wrong one.
+	//
+	// SampleTerrain is what collision and gameplay read (T061). It has been
+	// answering from the wrong patch for as long as the resident shell has
+	// existed, in any situation that produced an unusual tree.
+	const FLedgerQuadNode* Deepest =
+		(Node != nullptr && ActiveSections.Contains(NodeKey(*Node))) ? Node : nullptr;
+
 	while (Node != nullptr && Node->bHasChildren)
 	{
-		// Stop at whatever is drawn, for the same reason LeafDepthAt does: a
-		// split node keeps its geometry until all four children have theirs, so
-		// during streaming the thing under this point is the parent.
-		if (ActiveSections.Contains(NodeKey(*Node)))
-		{
-			break;
-		}
-
 		const double Half = Node->Extent * 0.5;
 		const int32 Child = (U >= Node->U + Half ? 1 : 0) + (V >= Node->V + Half ? 2 : 0);
 		const FLedgerQuadNode* Next = Node->Children[Child].Get();
@@ -54,8 +70,15 @@ const FLedgerQuadNode* ALedgerPlanet::DrawnNodeAt(
 			break;
 		}
 		Node = Next;
+		if (ActiveSections.Contains(NodeKey(*Node)))
+		{
+			Deepest = Node;
+		}
 	}
-	return Node;
+
+	// Nothing along the path is drawing this ground: a hole. Answering from the
+	// leaf anyway would be answering from a patch that is not on screen.
+	return Deepest;
 }
 
 bool ALedgerPlanet::SampleTerrain(
