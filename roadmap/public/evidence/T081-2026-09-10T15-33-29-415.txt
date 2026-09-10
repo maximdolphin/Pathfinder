@@ -1,0 +1,16 @@
+BeginEvents: Ledger.Asteroid.ASphereGivesBackTheTextbookAnswer
+integrated mass 1.04657e+15 kg against an exact 1.0472e+15 kg (0.060% out)
+a sphere, against GM/r^2:
+  at  1.05 radii: magnitude 0.6221% out, direction 0.1954 degrees off
+  at  1.50 radii: magnitude 0.1192% out, direction 0.0105 degrees off
+  at  3.00 radii: magnitude 0.0662% out, direction 0.0005 degrees off
+  at 10.00 radii: magnitude 0.0603% out, direction 0.0000 degrees off
+
+BeginEvents: Ledger.Asteroid.GravityDoesNotPointAtTheCentre
+across 400 surface points: gravity leans 3.09 degrees off the radial direction on average, 7.64 at worst
+the same integrator on a sphere leans 1.0242 degrees, so the 7.64 above is the shape and not the arithmetic
+the lumpy body leans 7.5 times as far as the integrator's own floor
+BeginEvents: Ledger.Asteroid.YouCanStandAnywhereOnIt
+2000 surface points: 0 with gravity pointing outwards, worst local slope 34.79 degrees at (-0.83 0.43 0.35)
+surface gravity runs 0.002546 to 0.002765 m/s^2, a factor of 1.09 -- because the near end of a lumpy body is nearer its own mass
+BeginEvents: Ledger.Biome.AddingABiomeIsOneFileAndNoRecompile

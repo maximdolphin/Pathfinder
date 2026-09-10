@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 10
+   "doneCount": 11
   },
   {
    "id": "M04",
@@ -5712,11 +5712,30 @@
    "dependsOn": [
     "T080"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Gravity on an irregular body from a sum over its actual mass, not a formula about its centre. 'Correct' is the load-bearing word in the acceptance: the cheap answer -- straight at the centre -- is exactly right on a sphere, wrong on everything else, and looks right in a screenshot either way. THE CHECK THAT THE SUM IS A GRAVITY FIELD: set irregularity to zero and the shell theorem says the answer must be GM/r^2 at the centre. Integrated mass 0.060% out; at 10 radii the magnitude is 0.06% out and the direction 0.0000 degrees off. A fifty-thousand-term sum that cannot do the one case anybody can do by hand is not doing the others either. THE LEAN: across 400 surface points gravity leans 3.09 degrees off radial on average and 7.64 at worst, against the same integrator's 1.0242 degrees on a sphere -- so 7.5 times its own floor. THE FLOOR IS MEASURED, NOT ASSUMED, AND THE CLAIM IS STATED AGAINST IT. Evaluating gravity exactly ON a surface is the integrator's worst case, since the point sits amid the cells it is summing, so a perfect sphere still reads about a degree of false lean there; that is real and will not go without a much finer grid. An earlier version asserted the floor was under half a degree. It is not. Comparing signal to a measured floor is a better test than comparing it to a number somebody picked. EVERY POINT, which is what the acceptance says: 2000 surface points, ZERO with gravity pointing outwards, worst local slope 34.79 degrees, and surface gravity running 0.002546 to 0.002765 m/s2 -- you weigh nine per cent more at one end than the other because the near end of a lumpy body is nearer its own mass. THE SHAPE WAS WALKED DOWN, NOT THE BOUND WALKED UP: at irregularity 0.32 the body carried 50-degree slopes and at 0.22 it carried 40. Loose material sits at an angle of repose near 35 and slumps past it, so faces that steep would have rearranged themselves long before anybody landed. It is 0.18 now and its slopes are ones a real asteroid is observed to hold. A TRAP WORTH NAMING: the first run reported gravity 90.0000 degrees off at ten radii while the magnitudes were right to a fifth of a per cent all the way out. GetSafeNormal tests the SQUARED length against a default 1e-8; an asteroid pulls at thousandths of a metre per second squared, and ten radii out it is 2.8e-5, whose square is 7.8e-10 -- under the threshold. The default normalise returned a zero vector and every angle taken from it came out a right angle. Documented on GravityAt, because any caller normalising a micro-gravity vector meets the same wall. NOT HERE: the drawn mesh. The shape is a displaced sphere -- defined everywhere, askable in any direction, and the same function that gives the surface gives the mass distribution -- and turning it into geometry reuses the icosahedron path T434 built for stones. That is a rendering job and not what decides whether the gravity is right. 94 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T081-2026-09-10T15-33-29-278.png",
+     "caption": "Shape and gravity lean over the surface: radius 0.90 to 1.12 of mean, lean up to 7.64 degrees off radial",
+     "source": "../out/t081-asteroid.png",
+     "addedAt": "2026-09-10T15:33:29.279Z"
+    },
+    {
+     "file": "evidence/T081-2026-09-10T15-33-29-415.txt",
+     "caption": "Shell theorem to 0.0000 degrees at 10 radii; 7.64 degree lean against a 1.02 degree floor; zero of 2000 points pointing outwards",
+     "source": "../out/t081-gravity.txt",
+     "addedAt": "2026-09-10T15:33:29.416Z"
+    }
+   ],
    "plannedStartDay": 199.5,
    "plannedEndDay": 202.5,
    "plannedStart": "2027-06-11",
@@ -13730,5 +13749,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:27:03.082Z"
+ "updatedAt": "2026-09-10T15:33:29.419Z"
 }
