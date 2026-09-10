@@ -43,7 +43,18 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerClimateSeaLevelTemperatureIsMonotonic,
 
 bool FLedgerClimateSeaLevelTemperatureIsMonotonic::RunTest(const FString&)
 {
-	const FLedgerTerrainParams Params = ThisPlanet();
+	// **Asked of a planet with no tilt, which is what this test always meant.**
+	//
+	// The claim is about the latitude band -- that it runs monotonically from
+	// pole to equator and hits EquatorC and PoleC at the ends. Seasons are a
+	// departure from that band and are Ledger.Snow's business. Under the drawn
+	// sine those two questions happened to coincide, because phase zero made
+	// the seasonal term identically zero; under T073's insolation anomaly a
+	// phase of zero is an equinox, which is a real moment with a real offset,
+	// and the pole at an equinox is genuinely colder than its annual mean.
+	// Setting the tilt to zero asks the question the test is named after.
+	FLedgerTerrainParams Params = ThisPlanet();
+	Params.AxialTiltRadians = 0.0;
 
 	// Pole to equator in one-degree steps. Strictly increasing, every step.
 	double Previous = -1000.0;

@@ -1,0 +1,22 @@
+Display: Test Completed. Result={Success} Name={AHighLatitudeDayIsShorterInWinter} Path={Ledger.Season.AHighLatitudeDayIsShorterInWinter}
+axial tilt 17.18 degrees, year 30597692 s, solar day 77914 s
+declination at the two solstices: +17.72 and -17.71 degrees
+latitude  0.0: summer 10.82 h, winter 10.82 h, difference -0.00 h (sampled 10.82 and 10.82)
+latitude 15.0: summer 11.41 h, winter 10.23 h, difference +1.18 h (sampled 11.41 and 10.23)
+latitude 40.0: summer 12.69 h, winter 8.95 h, difference +3.74 h (sampled 12.69 and 8.96)
+latitude 60.0: summer 14.86 h, winter 6.79 h, difference +8.08 h (sampled 14.86 and 6.79)
+latitude 75.0: summer 21.64 h, winter 0.00 h, difference +21.64 h (sampled 21.64 and 0.00)
+closed form against sampling: worst 0.0001 of a day
+Display: Test Completed. Result={Success} Name={InsolationFollowsTheTilt} Path={Ledger.Season.InsolationFollowsTheTilt}
+insolation at +65: 0.2975 summer, 0.0217 winter
+insolation at -65: 0.0217 summer, 0.2974 winter
+insolation at the equator: 0.3032 and 0.3032
+Display: Test Completed. Result={Success} Name={APlanetWithNoTiltHasNoSeasons} Path={Ledger.Snow.APlanetWithNoTiltHasNoSeasons}
+at 60 degrees in midsummer: +2.87 C with a 5 degree tilt, +22.27 C with 35
+Display: Test Completed. Result={Success} Name={ColdAndDryIsBareRock} Path={Ledger.Snow.ColdAndDryIsBareRock}
+Display: Test Completed. Result={Success} Name={SameLocationHasSnowInWinterAndNotInSummer} Path={Ledger.Snow.SameLocationHasSnowInWinterAndNotInSummer}
+Display: Test Completed. Result={Success} Name={SeasonsAreOppositeInTheTwoHemispheres} Path={Ledger.Snow.SeasonsAreOppositeInTheTwoHemispheres}
+Display: Test Completed. Result={Success} Name={TheSnowLineMovesAcrossAYear} Path={Ledger.Snow.TheSnowLineMovesAcrossAYear}
+snow line at latitude 55 across one year:
+lowest 0 m at phase 0.00, highest 1230 m at phase 0.25, range 1230 m
+Display: Test Completed. Result={Success} Name={TheSnowLineMovesWithAltitudeAndLatitude} Path={Ledger.Snow.TheSnowLineMovesWithAltitudeAndLatitude}

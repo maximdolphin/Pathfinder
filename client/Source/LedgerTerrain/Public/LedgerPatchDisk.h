@@ -59,7 +59,12 @@ namespace LedgerPatchDisk
 	/// LedgerTerrainMath. Correcting them moves the terrain by an amount nobody
 	/// can see and by an amount every cached patch disagrees about, and the
 	/// second is the one that matters here.
-	constexpr uint32 FormatVersion = 8;
+	/// 9: T073 made the seasonal temperature swing an insolation anomaly driven
+	/// by the axial tilt, instead of a drawn sine that produced seasons on a
+	/// planet with no tilt at all. The tilt is now in the key above as well --
+	/// both are needed, because the key covers the number and this covers the
+	/// formula that reads it.
+	constexpr uint32 FormatVersion = 9;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

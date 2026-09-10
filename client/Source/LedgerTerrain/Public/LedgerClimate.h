@@ -80,13 +80,24 @@ namespace LedgerClimate
 	/// year and the poles are a different world twice in one.
 	constexpr double SeasonalSwingC = 20.0;
 
+	/// The tilt SeasonalSwingC is quoted at, radians. Earth's 23.44 degrees.
+	///
+	/// **A reference rather than the body's own tilt, and the difference is the
+	/// whole point of T073.** Normalising the seasonal anomaly by the actual
+	/// tilt divides out the thing being modelled: a planet leaning 5 degrees
+	/// and one leaning 35 come out with identical seasons, which is what the
+	/// drawn sine did and what this replaced. Against a fixed reference, 20 C
+	/// is the polar swing of an Earth-tilted planet and everything else scales
+	/// from it -- this system's 17.2 degree planet gets about 15.
+	constexpr double ReferenceTiltRadians = 0.40910518;
+
 	/// The temperature this latitude gains or loses at this point in the year.
 	///
 	/// SeasonPhase runs 0 to 1 through a year, with 0.25 the northern summer.
 	/// The two hemispheres are opposite by construction -- the term is odd in
 	/// the sine of latitude -- rather than by a rule somebody has to remember.
 	LEDGERTERRAIN_API double SeasonalOffsetC(
-		const FVector3d& UnitSphere, double SeasonPhase);
+		const FVector3d& UnitSphere, double SeasonPhase, double TiltRadians);
 
 	/// Climate at a point on the unit sphere, at a point in the year.
 	///

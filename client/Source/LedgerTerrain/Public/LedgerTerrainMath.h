@@ -38,6 +38,17 @@ struct FLedgerTerrainParams
 	/// Fraction of `MaxElevation` that counts as sea level, from the bottom.
 	double SeaLevel = 0.0;
 
+	/// How far the rotation axis leans from the orbit's normal, radians. T073.
+	///
+	/// **This is what a season is.** A body with no tilt has the star over its
+	/// equator all year, the same insolation at every latitude on every day,
+	/// and no seasons whatever its orbit does. The climate field reads it, so
+	/// it belongs to the terrain's parameters rather than to the renderer.
+	///
+	/// The default is Earth's, for a fixture that builds params by hand. The
+	/// world overwrites it from the body the ephemeris describes.
+	double AxialTiltRadians = 0.40910518;
+
 	/// Ground somebody has changed, or null for a planet as generated (T062).
 	///
 	/// A shared pointer to an immutable delta, not a delta. The terrain is

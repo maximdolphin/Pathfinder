@@ -261,6 +261,11 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			WhenSeconds, Home.RotationPeriodSeconds,
 			FMath::RadiansToDegrees(Home.AxialTiltRadians),
 			SunFacing.X, SunFacing.Y, SunFacing.Z);
+		UE_LOG(LogLedger, Log,
+			TEXT("season: phase %.4f of the year, declination %+.2f deg"),
+			LedgerSky::SeasonPhase(System, HomeBodyIndex, WhenSeconds),
+			FMath::RadiansToDegrees(
+				LedgerSky::SolarDeclination(System, HomeBodyIndex, WhenSeconds)));
 	}
 
 	FActorSpawnParameters Params;
@@ -372,6 +377,17 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	{
 		UE_LOG(LogLedger, Error, TEXT("failed to spawn the planet"));
 		return;
+	}
+
+	// The season is a consequence of the orbit, not a switch. T073.
+	//
+	// Set before anything streams, because a patch carries the snow it was
+	// generated with: a season that arrived after the first patches would give
+	// a planet with two winters on it.
+	if (System.Bodies.IsValidIndex(HomeBodyIndex))
+	{
+		Planet->AxialTiltRadians = System.Bodies[HomeBodyIndex].AxialTiltRadians;
+		Planet->SeasonFromOrbit = LedgerSky::SeasonPhase(System, HomeBodyIndex, WhenSeconds);
 	}
 
 	Atmosphere = InWorld.SpawnActor<ALedgerAtmosphere>(

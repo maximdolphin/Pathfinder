@@ -89,6 +89,10 @@ namespace LedgerPatchDisk
 		MixValue(Hash, Job.Params.MaxElevation);
 		MixValue(Hash, Job.Params.SeaLevel);
 		MixValue(Hash, Job.SeasonPhase);
+		// The tilt, because T073 made it the amplitude of the seasonal term:
+		// the same phase on a differently tilted planet is a different climate,
+		// and therefore different vertex colours and different scatter.
+		MixValue(Hash, Job.Params.AxialTiltRadians);
 
 		// Ground somebody has changed. Every edit, because an edit anywhere can
 		// reach this patch and a delta with one more edit in it is a different

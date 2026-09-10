@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M04",
@@ -5358,11 +5358,24 @@
    "dependsOn": [
     "T072"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Tilt drives insolation, insolation drives the climate field, and the snow line moves. Both halves of the acceptance measured. DAY LENGTH: on the generated planet (tilt 17.18 deg, year 30597692 s, solar day 77914 s), latitude 60 gets 14.86 h at one solstice and 6.79 h at the other, a swing of 8.08 h; latitude 75 is inside the polar circle -- 21.64 h against 0.00 h. The equator reads 10.82 h at both, which is half of this planet's 21.6-hour day, because a twelve-hour day is Earth's number and not a law. The closed form cos(H0) = -tan(lat)tan(dec) is checked against sampling the solar altitude 20000 times and counting the lit fraction: worst disagreement 0.0001 of a day, about 8 seconds, over every latitude and both solstices. SNOW LINE: at latitude 55 the line runs from sea level in deep winter to 1230 m at the height of summer and returns to where it started after one year. THE DRAWN CURVE IS GONE. The climate's seasonal term was SeasonalSwingC * sin(latitude) * sin(2*pi*phase) -- right shape, no cause, and THE TILT DOES NOT APPEAR IN IT. It gave a planet with no tilt a full set of seasons and gave planets tilted 10 and 40 degrees identical ones, and no test written against it could notice, because the quantity it was wrong about was not one of its inputs. It is now the difference between today's insolation at a latitude and that latitude's annual mean, normalised against a REFERENCE tilt rather than the body's own -- dividing by its own tilt divides out the season and reproduces the original bug exactly. At 60 degrees in midsummer: +2.87 C with a 5 degree tilt, +22.27 C with 35, and identically zero at every latitude and phase when the tilt is zero. TWO ARTEFACTS OF THE OLD MODEL SURFACED AND BOTH WERE REAL FINDINGS. (1) The annual mean is not the midpoint of the two solstices. The first version used that midpoint and the pole caught it: the star sits on the horizon at an equinox and below it all winter, so insolation is zero at both, while the midpoint reads half the summer value -- an equinox came out 20 C below its own annual mean. Now integrated over eight points of the year, which is eight sines against a climate that already marches forty steps upwind resampling the height field per point. (2) The seasonal offset is not antisymmetric in latitude; the SWING is. sin(lat)sin(2 pi phase) is antisymmetric by construction and a test asserted it. Sunlight is not: at 10 degrees the two hemispheres read +1.65 and -3.51, because a latitude's annual mean is not halfway between its solstices. What is exactly equal and opposite is the distance between the two solstices, since I(-lat,dec) = I(lat,-dec) and it is the same year. The test now asserts that instead. Ledger.Climate.SeaLevelTemperatureIsMonotonicPoleToEquator now asks its question of a zero-tilt planet, which is what it always meant -- the claim is about the latitude band, and under the old sine a phase of zero made the seasonal term vanish, while under insolation a phase of zero is an equinox and a real moment. IN THE WORLD: the season is no longer a switch. The world reads phase 0.6903 and declination -6.01 deg from the orbit at begin play, and that agrees with the sun's own direction (asin(-0.105) = -6.03 deg) because both come from the same ephemeris rather than two settings kept in step by hand. -season= still overrides, because the fixtures that photograph a summer and a winter side by side must be able to ask for one. Patch-disk FormatVersion is 9 and the tilt is mixed into the content key. 66 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T073-2026-09-10T13-52-06-533.txt",
+     "caption": "Day length 14.86 h against 6.79 h at latitude 60, polar night at 75, closed form agreeing with sampling to 0.0001 of a day, and the snow line running 0 to 1230 m across the year",
+     "source": "../out/t073-seasons.txt",
+     "addedAt": "2026-09-10T13:52:06.535Z"
+    }
+   ],
    "plannedStartDay": 183.5,
    "plannedEndDay": 185,
    "plannedStart": "2027-05-20",
@@ -13568,5 +13581,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T13:34:51.892Z"
+ "updatedAt": "2026-09-10T13:52:06.537Z"
 }

@@ -580,6 +580,20 @@ public:
 	/// the current height function.
 	void InvalidateTerrain();
 
+	/// How far this body's rotation axis leans from its orbit's normal.
+	///
+	/// Set by the world from the ephemeris. The default is Earth's, so a
+	/// fixture that spawns a planet without a system still gets seasons.
+	UPROPERTY()
+	double AxialTiltRadians = 0.40910518;
+
+	/// Where the orbit says the body is in its year, 0 to 1, or negative if
+	/// nobody has said. `-season=` still wins when it is given, because the
+	/// fixtures that photograph a summer and a winter side by side need to ask
+	/// for one; this is what the season is when nothing asks.
+	UPROPERTY()
+	double SeasonFromOrbit = -1.0;
+
 	/// Where in the year this planet is, 0 to 1. Set from -season=.
 	double SeasonPhase() const;
 

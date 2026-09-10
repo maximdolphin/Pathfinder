@@ -9,11 +9,18 @@
 #include "LedgerClimate.h"
 
 #include "Misc/AutomationTest.h"
+#include "LedgerTerrainMath.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 namespace
 {
+	/// The tilt these tests reason about, read from the terrain parameters
+	/// rather than written down again -- T073 made the seasonal swing depend on
+	/// it, so a test carrying its own copy would pass while the generator did
+	/// something else.
+	const double SnowTiltRadians = FLedgerTerrainParams().AxialTiltRadians;
+
 	constexpr double NorthernSummer = 0.25;
 	constexpr double NorthernWinter = 0.75;
 
@@ -46,7 +53,7 @@ namespace
 		const double SinLat = FMath::Sin(FMath::DegreesToRadians(LatitudeDegrees));
 		Climate.SeaLevelTemperatureC =
 			FMath::Lerp(LedgerClimate::EquatorC, LedgerClimate::PoleC, SinLat * SinLat)
-			+ LedgerClimate::SeasonalOffsetC(Point, SeasonPhase);
+			+ LedgerClimate::SeasonalOffsetC(Point, SeasonPhase, SnowTiltRadians);
 		Climate.AltitudeMetres = AltitudeMetres;
 		Climate.TemperatureC = Climate.SeaLevelTemperatureC
 			- LedgerClimate::LapseRateCPerKm * FMath::Max(0.0, AltitudeMetres) / 1000.0;
@@ -146,22 +153,45 @@ bool FLedgerSnowSeasonsAreOpposite::RunTest(const FString&)
 {
 	// Not a nicety. A seasonal term that is even in latitude gives both poles
 	// winter at once, which is wrong everywhere and obviously wrong from orbit.
+	//
+	// **What is antisymmetric is the swing, not the offset.** This used to
+	// assert that the southern offset was the exact negative of the northern
+	// one, which was true of `sin(latitude) * sin(2 pi phase)` by construction
+	// and is not true of sunlight: a latitude's annual mean insolation is not
+	// the midpoint of its two solstices, so its summer excess and its winter
+	// deficit are not equal. At 10 degrees they now read +1.65 and -3.51. What
+	// is exactly equal and opposite is the distance between the two solstices,
+	// because I(-lat, d) = I(lat, -d) and the year is the same year.
 	for (double Latitude = 10.0; Latitude <= 80.0; Latitude += 10.0)
 	{
 		const double North = LedgerClimate::SeasonalOffsetC(
-			AtLatitude(Latitude), NorthernSummer);
+			AtLatitude(Latitude), NorthernSummer, SnowTiltRadians);
 		const double South = LedgerClimate::SeasonalOffsetC(
-			AtLatitude(-Latitude), NorthernSummer);
+			AtLatitude(-Latitude), NorthernSummer, SnowTiltRadians);
 
 		TestTrue(FString::Printf(TEXT("%.0f N is warmed in northern summer"), Latitude),
 			North > 0.0);
-		TestEqual(FString::Printf(TEXT("%.0f S is cooled by as much"), Latitude),
-			South, -North, 0.001);
+		TestTrue(FString::Printf(
+			TEXT("%.0f S is cooled at the same moment (%.2f C)"), Latitude, South),
+			South < 0.0);
+
+		const double NorthSwing = North - LedgerClimate::SeasonalOffsetC(
+			AtLatitude(Latitude), NorthernWinter, SnowTiltRadians);
+		const double SouthSwing = LedgerClimate::SeasonalOffsetC(
+			AtLatitude(-Latitude), NorthernWinter, SnowTiltRadians) - South;
+		TestEqual(FString::Printf(
+			TEXT("%.0f S has the same size of year as %.0f N"), Latitude, Latitude),
+			SouthSwing, NorthSwing, 0.001);
 	}
 
-	// And the equator does not have seasons at all.
-	TestEqual(TEXT("the equator"),
-		LedgerClimate::SeasonalOffsetC(AtLatitude(0.0), NorthernWinter), 0.0, 0.001);
+	// And the equator's two solstices are the same as each other, which is the
+	// equatorial version of the claim: no hemisphere, no opposite season. It is
+	// not zero -- the star is off the equator at both, so both are slightly
+	// cooler than an equinox -- but the year has no north and south to it.
+	TestEqual(TEXT("the equator's two solstices match"),
+		LedgerClimate::SeasonalOffsetC(AtLatitude(0.0), NorthernWinter, SnowTiltRadians),
+		LedgerClimate::SeasonalOffsetC(AtLatitude(0.0), NorthernSummer, SnowTiltRadians),
+		0.001);
 	return true;
 }
 
@@ -180,6 +210,94 @@ bool FLedgerSnowNeedsMoisture::RunTest(const FString&)
 
 	TestTrue(TEXT("cold and dry is bare"), LedgerClimate::SnowCover(Dry) < 0.01);
 	TestTrue(TEXT("cold and wet is covered"), LedgerClimate::SnowCover(Wet) > 0.9);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerSnowLineAcrossAYear,
+	"Ledger.Snow.TheSnowLineMovesAcrossAYear",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerSnowLineAcrossAYear::RunTest(const FString&)
+{
+	// The second half of T073's acceptance. The first half -- a high-latitude
+	// day being measurably shorter in winter -- is Ledger.Season; this is the
+	// consequence on the ground.
+	constexpr double Latitude = 55.0;
+
+	double Lowest = TNumericLimits<double>::Max();
+	double Highest = -TNumericLimits<double>::Max();
+	double LowestAt = 0.0;
+	double HighestAt = 0.0;
+
+	FString Table;
+	for (int32 Step = 0; Step < 12; ++Step)
+	{
+		const double Phase = Step / 12.0;
+		const double Line = SnowLine(Latitude, Phase);
+		Table += FString::Printf(TEXT("  phase %.2f -> %s\n"), Phase,
+			Line < 0.0 ? TEXT("no snow below the summit")
+				: *FString::Printf(TEXT("%.0f m"), Line));
+		if (Line >= 0.0)
+		{
+			if (Line < Lowest) { Lowest = Line; LowestAt = Phase; }
+			if (Line > Highest) { Highest = Line; HighestAt = Phase; }
+		}
+	}
+	AddInfo(FString::Printf(TEXT("snow line at latitude %.0f across one year:\n%s"),
+		Latitude, *Table));
+
+	TestTrue(TEXT("the snow line exists somewhere in the year"),
+		Lowest < TNumericLimits<double>::Max());
+	AddInfo(FString::Printf(
+		TEXT("lowest %.0f m at phase %.2f, highest %.0f m at phase %.2f, range %.0f m"),
+		Lowest, LowestAt, Highest, HighestAt, Highest - Lowest));
+
+	// A snow line that moves by less than the depth of the band it is drawn as
+	// has not moved. Several hundred metres is what a real mid-latitude one
+	// does between February and August.
+	TestTrue(*FString::Printf(TEXT("the snow line moves across the year (%.0f m)"),
+		Highest - Lowest),
+		Highest - Lowest > 300.0);
+
+	// And it comes back: a year is a cycle, not a ramp.
+	TestEqual(TEXT("the year closes"), SnowLine(Latitude, 0.0), SnowLine(Latitude, 1.0), 1.0);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerSnowNoTiltNoSeasons,
+	"Ledger.Snow.APlanetWithNoTiltHasNoSeasons",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerSnowNoTiltNoSeasons::RunTest(const FString&)
+{
+	// **The reason T073 replaced a drawn curve with an insolation anomaly.**
+	//
+	// The old seasonal term was `swing * sin(latitude) * sin(2 pi phase)`, which
+	// gives a planet with no axial tilt a full set of seasons, and gives planets
+	// tilted 10 and 40 degrees exactly the same ones. Neither is true, and
+	// neither could be detected by any test written against that formula,
+	// because the tilt did not appear in it.
+	for (double Latitude = -80.0; Latitude <= 80.0; Latitude += 20.0)
+	{
+		for (double Phase = 0.0; Phase < 1.0; Phase += 0.125)
+		{
+			TestEqual(
+				*FString::Printf(TEXT("no tilt, latitude %.0f, phase %.3f"), Latitude, Phase),
+				LedgerClimate::SeasonalOffsetC(AtLatitude(Latitude), Phase, 0.0), 0.0, 1e-9);
+		}
+	}
+
+	// And more tilt is more season, which is the other half of the claim.
+	const double Small = LedgerClimate::SeasonalOffsetC(
+		AtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(5.0));
+	const double Large = LedgerClimate::SeasonalOffsetC(
+		AtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(35.0));
+	AddInfo(FString::Printf(
+		TEXT("at 60 degrees in midsummer: %+.2f C with a 5 degree tilt, %+.2f C with 35"),
+		Small, Large));
+	TestTrue(*FString::Printf(
+		TEXT("a steeper tilt makes a stronger summer (%.2f against %.2f)"), Large, Small),
+		Large > Small * 1.5);
 	return true;
 }
 

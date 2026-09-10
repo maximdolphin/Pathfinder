@@ -1,5 +1,6 @@
 #include "LedgerClimate.h"
 #include "LedgerMath.h"
+#include "LedgerSky.h"
 
 namespace
 {
@@ -70,13 +71,69 @@ namespace LedgerClimate
 		return (East * Eastward).GetSafeNormal();
 	}
 
-	double SeasonalOffsetC(const FVector3d& UnitSphere, double SeasonPhase)
+	double SeasonalOffsetC(
+		const FVector3d& UnitSphere, double SeasonPhase, double TiltRadians)
 	{
-		// Odd in the sine of latitude, so the two hemispheres are opposite
-		// without a rule anybody has to remember, and zero at the equator
-		// because a tropical year is not a sequence of seasons.
-		return SeasonalSwingC * SinLatitude(UnitSphere)
-			* FMath::Sin(LedgerTwoPi * SeasonPhase);
+		// **Insolation, not a drawn curve.** T073.
+		//
+		// This used to be `SeasonalSwingC * sin(latitude) * sin(2 pi phase)`,
+		// which has the right shape and no cause: it produced seasons on a
+		// planet with no tilt, and identical seasons on planets tilted 10
+		// degrees and 40. Now it is the difference between how much sun this
+		// latitude gets today and how much it gets averaged over the year, and
+		// the tilt is the only thing that makes those differ.
+		//
+		// The two agree closely where the old one was calibrated, which is why
+		// the swap does not move the biomes: at 65 degrees the old curve gave
+		// +18.1 C at the solstice and this gives +18.2. At the pole both give
+		// the full +/- 20. Below the tropics they diverge, and this one is
+		// right -- the equator is very slightly *cooler* at a solstice, because
+		// the star has moved off it.
+		//
+		// The declination is modelled as tilt * sin(2 pi phase) rather than
+		// read from the ephemeris. Eccentricity makes the real one asymmetric
+		// by a few per cent, which is a smaller error than the one-value-per-run
+		// season already carries, and it keeps the phase as the single knob
+		// every existing caller already holds.
+		const double Declination = TiltRadians * FMath::Sin(LedgerTwoPi * SeasonPhase);
+		const double Latitude =
+			FMath::Asin(FMath::Clamp(SinLatitude(UnitSphere), -1.0, 1.0));
+
+		const double Today = LedgerSky::DailyInsolationAt(Latitude, Declination);
+
+		// The year's mean, integrated. **The midpoint of the two solstices is
+		// not it, and the pole is where that shows.** There the sun is on the
+		// horizon at an equinox and below it all winter, so insolation is zero
+		// at both -- the solstice midpoint reads half the summer value, and an
+		// equinox came out 20 C below its own annual mean. Eight samples of the
+		// real year cost eight sines against a climate that already marches
+		// forty steps upwind resampling the height field for every point.
+		constexpr int32 YearSamples = 8;
+		double Mean = 0.0;
+		for (int32 Step = 0; Step < YearSamples; ++Step)
+		{
+			Mean += LedgerSky::DailyInsolationAt(Latitude,
+				TiltRadians * FMath::Sin(LedgerTwoPi * Step / YearSamples));
+		}
+		Mean /= YearSamples;
+
+		// Normalised by the largest anomaly a REFERENCE planet would see, which
+		// is at its pole: there the summer mean is sin(tilt) and the winter
+		// mean is zero, so half of sin(tilt) is the amplitude.
+		//
+		// The reference, not this body's own tilt. Dividing by its own tilt
+		// divides out the season: a 5 degree lean and a 35 degree lean would
+		// come out identical, which is precisely the failure the drawn sine
+		// had. Ledger.Snow.APlanetWithNoTiltHasNoSeasons is where that shows.
+		// Computed rather than written down: a derived constant sitting beside
+		// the thing it is derived from is a constant waiting to disagree with
+		// it. One more sine, against the three already here.
+		// The reference planet's polar summer anomaly: its pole sees sin(tilt)
+		// at the solstice against an annual mean of tilt/pi, and the difference
+		// is what SeasonalSwingC is quoted against.
+		const double Amplitude = FMath::Sin(ReferenceTiltRadians)
+			- ReferenceTiltRadians / LedgerPi;
+		return SeasonalSwingC * (Today - Mean) / Amplitude;
 	}
 
 	double SnowCover(const FLedgerClimate& Climate)
@@ -103,7 +160,7 @@ namespace LedgerClimate
 		// the square puts the steep part of the gradient in the mid latitudes
 		// where the real one is, instead of spreading it evenly.
 		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat)
-			+ SeasonalOffsetC(UnitSphere, SeasonPhase);
+			+ SeasonalOffsetC(UnitSphere, SeasonPhase, Params.AxialTiltRadians);
 
 		Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
 		const double AboveWater = FMath::Max(0.0, Climate.AltitudeMetres);

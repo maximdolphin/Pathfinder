@@ -607,11 +607,19 @@ double ALedgerPlanet::SeasonPhase() const
 {
 	// Read once. FParse on every patch would be a string scan per patch, and
 	// the season cannot change during a run by design.
-	static const double Season = []()
+	//
+	// `-season=` wins where it is given: the fixtures that photograph a summer
+	// and a winter side by side have to be able to ask for one. Where it is
+	// not, the season is whatever the orbit says -- T073 -- and that is the
+	// case the game runs in.
+	static const TOptional<double> Asked = []()
 	{
 		float Parsed = 0.0f;
-		FParse::Value(FCommandLine::Get(), TEXT("season="), Parsed);
-		return static_cast<double>(FMath::Frac(Parsed));
+		if (FParse::Value(FCommandLine::Get(), TEXT("season="), Parsed))
+		{
+			return TOptional<double>(static_cast<double>(FMath::Frac(Parsed)));
+		}
+		return TOptional<double>();
 	}();
-	return Season;
+	return Asked.IsSet() ? Asked.GetValue() : FMath::Max(0.0, SeasonFromOrbit);
 }

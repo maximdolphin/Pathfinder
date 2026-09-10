@@ -93,6 +93,160 @@ namespace LedgerSky
 		return Wrap(Azimuth(AnchorDirection) - Azimuth(Sun));
 	}
 
+	double SolarDeclination(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch)
+	{
+		// The body frame's axis is +Z -- the tilt and the spin are what carry
+		// that frame into the system -- so declination is just how far up the
+		// sun sits in it. No spherical triangle, and no dependence on the time
+		// of day, which is the property that makes it a season rather than an
+		// hour.
+		const FVector3d Sun = SunDirectionInBody(System, BodyIndex, SecondsFromEpoch);
+		return Sun.IsNearlyZero() ? 0.0 : FMath::Asin(FMath::Clamp(Sun.Z, -1.0, 1.0));
+	}
+
+	double SolarDaySeconds(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		// Measured rather than derived: the interval between the two noons
+		// either side of the moment asked about. NextLocalNoon already solves
+		// for an hour angle of zero, and two of those is a solar day by
+		// definition -- no separate formula to disagree with it.
+		const double First = NextLocalNoon(System, BodyIndex, AnchorDirection, SecondsFromEpoch);
+		const double Second = NextLocalNoon(System, BodyIndex, AnchorDirection, First + 1.0);
+		const double Length = Second - First;
+		if (Length > 0.0)
+		{
+			return Length;
+		}
+		// Tidally stopped, or a body with no rotation. There is no solar day.
+		return System.Bodies.IsValidIndex(BodyIndex)
+			? FMath::Abs(System.Bodies[BodyIndex].RotationPeriodSeconds) : 0.0;
+	}
+
+	double DayLengthSeconds(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		const FVector3d Anchor = AnchorDirection.GetSafeNormal();
+		if (Anchor.IsNearlyZero())
+		{
+			return 0.0;
+		}
+
+		const double Day = SolarDaySeconds(System, BodyIndex, AnchorDirection, SecondsFromEpoch);
+		if (!(Day > 0.0))
+		{
+			return 0.0;
+		}
+
+		const double Latitude = FMath::Asin(FMath::Clamp(Anchor.Z, -1.0, 1.0));
+		const double Declination = SolarDeclination(System, BodyIndex, SecondsFromEpoch);
+
+		// cos(H0) = -tan(latitude) tan(declination), the hour angle at which the
+		// star crosses the horizon. Outside [-1, 1] there is no crossing, which
+		// is not a failure -- it is the polar day and the polar night, and they
+		// are the whole reason a high-latitude site is where this is tested.
+		const double CosH0 = -FMath::Tan(Latitude) * FMath::Tan(Declination);
+		if (CosH0 <= -1.0)
+		{
+			return Day;
+		}
+		if (CosH0 >= 1.0)
+		{
+			return 0.0;
+		}
+		return Day * FMath::Acos(CosH0) / LedgerPi;
+	}
+
+	double SeasonPhase(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch)
+	{
+		if (!System.Bodies.IsValidIndex(BodyIndex))
+		{
+			return 0.0;
+		}
+		const FLedgerBody& Body = System.Bodies[BodyIndex];
+		const int32 Parent = Body.ParentIndex;
+		if (!System.Bodies.IsValidIndex(Parent))
+		{
+			return 0.0;
+		}
+
+		const double Year = LedgerEphemeris::PeriodSeconds(
+			System.Bodies[Parent].MassKg, Body.Orbit.SemiMajorAxisMetres);
+		if (!(Year > 0.0))
+		{
+			return 0.0;
+		}
+
+		// Phase measured from maximum northern declination, found rather than
+		// assumed: the epoch is not a solstice and the orbit is not a circle, so
+		// there is no closed form for where in the year the tilt points hardest
+		// at the star. A scan and a refinement.
+		//
+		// Not cached. This is asked once per run -- the world reads it at begin
+		// play and hands the answer to the terrain, because a season that moved
+		// while patches were being built would invalidate each one as it landed.
+		// A cache keyed on the system's address would be a dangling pointer
+		// waiting for a system that happened to be rebuilt at the same place.
+		constexpr int32 Samples = 360;
+		double BestAt = 0.0;
+		double Best = -2.0;
+		for (int32 Index = 0; Index < Samples; ++Index)
+		{
+			const double At = Year * Index / Samples;
+			const double D = SolarDeclination(System, BodyIndex, At);
+			if (D > Best) { Best = D; BestAt = At; }
+		}
+		double Low = BestAt - Year / Samples;
+		double High = BestAt + Year / Samples;
+		for (int32 Step = 0; Step < 80; ++Step)
+		{
+			const double A = Low + (High - Low) / 3.0;
+			const double B = High - (High - Low) / 3.0;
+			if (SolarDeclination(System, BodyIndex, A)
+				< SolarDeclination(System, BodyIndex, B)) { Low = A; } else { High = B; }
+		}
+		const double Solstice = (Low + High) * 0.5;
+
+		double Phase = FMath::Fmod((SecondsFromEpoch - Solstice) / Year, 1.0);
+		if (Phase < 0.0) { Phase += 1.0; }
+		return Phase;
+	}
+
+	double DailyInsolationAt(double LatitudeRadians, double DeclinationRadians)
+	{
+		const double CosH0 =
+			-FMath::Tan(LatitudeRadians) * FMath::Tan(DeclinationRadians);
+		const double H0 = CosH0 <= -1.0 ? LedgerPi : (CosH0 >= 1.0 ? 0.0 : FMath::Acos(CosH0));
+
+		// The mean of cos(zenith) over a whole rotation, counting only the lit
+		// part. Integrating sin(lat)sin(dec) + cos(lat)cos(dec)cos(H) from -H0
+		// to H0 and dividing by 2pi gives this, and it is the standard daily
+		// insolation up to the solar constant and the inverse square -- both of
+		// which belong to the star, not to the season.
+		const double Mean = (H0 * FMath::Sin(LatitudeRadians) * FMath::Sin(DeclinationRadians)
+			+ FMath::Cos(LatitudeRadians) * FMath::Cos(DeclinationRadians) * FMath::Sin(H0))
+			/ LedgerPi;
+		return FMath::Max(0.0, Mean);
+	}
+
+	double DailyInsolation(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		const FVector3d Anchor = AnchorDirection.GetSafeNormal();
+		if (Anchor.IsNearlyZero())
+		{
+			return 0.0;
+		}
+		return DailyInsolationAt(
+			FMath::Asin(FMath::Clamp(Anchor.Z, -1.0, 1.0)),
+			SolarDeclination(System, BodyIndex, SecondsFromEpoch));
+	}
+
 	double NextLocalNoon(
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double AfterSeconds)
