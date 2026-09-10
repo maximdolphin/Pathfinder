@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 9
+   "doneCount": 10
   },
   {
    "id": "M04",
@@ -5573,11 +5573,30 @@
    "dependsOn": [
     "T077"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A moon on the same terrain framework, and the interface is one switch: -body=2 chooses which row of the system description the world builds, and nothing else changes -- same quadtree, streamer, materials, scatter and climate field. Planet: radius 6320 km, gravity 9.55 m/s2 (0.973 g), escape 10985 m/s, air yes. Moon: radius 2159 km, gravity 0.99 m/s2 (0.101 g), escape 2067 m/s, air none. THE MOON PULLS AT 0.104 OF THE PLANET'S SURFACE GRAVITY and nobody chose that number -- it is GM/r^2 for a mass and radius generated back in T069, handed to the flight model in the centimetres it works in. WHO KEEPS AN ATMOSPHERE IS DERIVED, NOT DECLARED. A flag on the body would be a second opinion about something the mass and radius already decide, so the rule is the physical one: escape velocity against the thermal speed of a nitrogen molecule at the body's equilibrium temperature, because a gas is a distribution and its fast tail leaves first. Checked against six bodies somebody has been to -- Earth 23.5 air, Mars 11.6 air, Titan 9.1 air, Mercury 6.8 none, Moon 4.8 none, Ceres 1.1 none. Titan is why it is worth doing properly: SMALLER than the Moon, thicker atmosphere than Earth, because it is cold, so any rule that looks only at size gets it backwards. THE THRESHOLD WAS WRONG AND THE TEST SAID SO: six is the textbook figure and it shipped with that for about ten minutes before Mercury failed at 6.8. The cases sort with a clean gap between 6.8 and 9.1 and nothing in it gets any of them wrong, so eight sits in the middle. The number came out of the cases rather than being chosen and then defended. NO AIR, NO WATER: the first moon came back with SNOW-CAPPED PEAKS UNDER A BLACK SKY. The sky was right; the snow was not -- the climate field was still marching moisture upwind from an ocean on a body with neither ocean nor wind. It now returns zero moisture immediately when bHasAtmosphere is false, before the march rather than after, because marching forty steps to arrive at zero is forty steps wasted on every climate sample of an airless world. Snow, vegetation and the wet end of the biome set all follow from moisture and all go at once. Sea level goes below zero, which is to say the whole surface is land. FormatVersion 10 and bHasAtmosphere is in the content key. A FIXTURE THAT WAS QUIETLY LYING: -daysweep -body=2 produced correct pictures of the moon under a report quoting the PLANET's rotation period and axial tilt, because the fixture had constexpr int32 DaySweepBody = 1. It now asks the world which body it built, and reads 724.67 hours and 0.0 degrees -- what a tidally locked moon should. STILL THE PLANET'S: the settlement spawns on the moon too, which is a base rather than a town and is not obviously wrong but nothing decided it; and the surface reads as pale rock on a tan plain, which is the shared material's height blend rather than snow, since moisture is zero by construction. Whether an airless body wants its own surface composition is T053's, and T053 waits on a texture-array decision. 82 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T078-2026-09-10T15-10-27-850.txt",
+     "caption": "0.104 g on the moon and no atmosphere, with the retention rule checked against Earth, Mars, Titan, Mercury, the Moon and Ceres",
+     "source": "../out/t078-bodies.txt",
+     "addedAt": "2026-09-10T15:10:27.854Z"
+    },
+    {
+     "file": "evidence/T078-2026-09-10T15-10-27-989.png",
+     "caption": "Noon on the moon: black sky, no atmosphere, same terrain code path as the planet",
+     "source": "../out/moon-noon.png",
+     "addedAt": "2026-09-10T15:10:27.991Z"
+    }
+   ],
    "plannedStartDay": 192.5,
    "plannedEndDay": 194.5,
    "plannedStart": "2027-06-02",
@@ -13663,5 +13682,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T14:51:24.988Z"
+ "updatedAt": "2026-09-10T15:10:27.995Z"
 }

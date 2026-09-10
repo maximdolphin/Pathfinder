@@ -49,6 +49,18 @@ struct FLedgerTerrainParams
 	/// world overwrites it from the body the ephemeris describes.
 	double AxialTiltRadians = 0.40910518;
 
+	/// Whether this body holds an atmosphere. T078.
+	///
+	/// **No air, no water cycle.** The climate field marches moisture upwind
+	/// from an ocean; on an airless body there is neither wind nor ocean, so
+	/// moisture is zero everywhere and everything downstream of it -- snow,
+	/// vegetation, the wet end of the biome set -- goes with it. Without this
+	/// the first moon came back with snow-capped peaks under a black sky.
+	///
+	/// Decided by LedgerSky::RetainsAtmosphere from the body's mass, radius and
+	/// temperature, not declared. See the note there.
+	bool bHasAtmosphere = true;
+
 	/// Ground somebody has changed, or null for a planet as generated (T062).
 	///
 	/// A shared pointer to an immutable delta, not a delta. The terrain is

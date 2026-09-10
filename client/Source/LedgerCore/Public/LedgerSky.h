@@ -196,6 +196,36 @@ namespace LedgerSky
 	LEDGERCORE_API double IlluminanceFromDisc(
 		double TemperatureKelvin, double AngularRadiusRadians);
 
+	/// How warm a body is, from the light it receives. T078.
+	///
+	/// The radiative equilibrium temperature: what a grey ball at that distance
+	/// settles at, absorbing sunlight and radiating it away again. It ignores
+	/// greenhouse warming and internal heat, so it reads about 33 K cold for an
+	/// Earth -- which is the right kind of wrong for deciding whether a body can
+	/// hold onto air, because it is the upper atmosphere's temperature that
+	/// decides that and the upper atmosphere is not warmed by a greenhouse.
+	LEDGERCORE_API double EquilibriumTemperatureKelvin(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch);
+
+	/// Speed needed to leave a body for good, metres per second.
+	LEDGERCORE_API double EscapeVelocity(const FLedgerBody& Body);
+
+	/// Whether a body holds an atmosphere, derived rather than declared. T078.
+	///
+	/// **Nitrogen escapes if the body cannot outrun it.** Compare the escape
+	/// velocity with the thermal speed of a nitrogen molecule at the body's
+	/// temperature: gas is a distribution, so the tail of it leaves whenever
+	/// escape is merely a few times the typical speed, and a body needs about
+	/// six times over to keep an atmosphere for the age of a system.
+	///
+	/// The rule gets the real cases right, which is why it is a rule rather
+	/// than a flag on the body. Earth escapes at 23 times thermal and has air;
+	/// the Moon at 4.9 and does not; Mars at 12 and has a thin one; Titan at 9
+	/// and has a thick one despite being smaller than the Moon, because it is
+	/// cold. A stored boolean could not have told the last two apart.
+	LEDGERCORE_API bool RetainsAtmosphere(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch);
+
 	/// How much of the star's disc is hidden by another body, 0 to 1. T075.
 	///
 	/// An eclipse is two circles on the sky overlapping, so this is the area

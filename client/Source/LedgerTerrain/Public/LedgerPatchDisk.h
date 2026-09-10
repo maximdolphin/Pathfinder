@@ -64,7 +64,10 @@ namespace LedgerPatchDisk
 	/// planet with no tilt at all. The tilt is now in the key above as well --
 	/// both are needed, because the key covers the number and this covers the
 	/// formula that reads it.
-	constexpr uint32 FormatVersion = 9;
+	/// 10: T078's airless bodies. The climate now returns zero moisture without
+	/// marching when a body holds no atmosphere, which changes the vertex
+	/// colours and the scatter on every patch of one.
+	constexpr uint32 FormatVersion = 10;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

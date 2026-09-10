@@ -162,6 +162,20 @@ namespace LedgerClimate
 		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat)
 			+ SeasonalOffsetC(UnitSphere, SeasonPhase, Params.AxialTiltRadians);
 
+		// An airless body has no water cycle at all: no ocean to evaporate
+		// from, no wind to carry it, no snow to fall. Answered before the
+		// upwind march rather than after it, because marching forty steps to
+		// arrive at zero is forty steps wasted on every climate sample.
+		if (!Params.bHasAtmosphere)
+		{
+			Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
+			const double AboveDatum = FMath::Max(0.0, Climate.AltitudeMetres);
+			Climate.TemperatureC = Climate.SeaLevelTemperatureC
+				- LapseRateCPerKm * (AboveDatum / 1000.0);
+			Climate.Moisture = 0.0;
+			return Climate;
+		}
+
 		Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
 		const double AboveWater = FMath::Max(0.0, Climate.AltitudeMetres);
 		Climate.TemperatureC = Climate.SeaLevelTemperatureC

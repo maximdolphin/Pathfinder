@@ -36,9 +36,17 @@ namespace
 {
 	/// Which body of the generated system the world is standing on.
 	///
-	/// Index 1: the primary is 0 and the planet is the first thing orbiting it.
-	/// One planet is all this world builds; a moon is T078's.
-	constexpr int32 HomeBodyIndex = 1;
+	/// Index 1 is the planet: the primary is 0 and the planet is the first
+	/// thing orbiting it. `-body=2` builds the moon instead, on the same
+	/// terrain, the same streamer and the same materials -- T078's claim is
+	/// that a moon needs none of its own, so the only thing that changes is
+	/// which row of the system description the world reads.
+	int32 HomeBody()
+	{
+		int32 Body = 1;
+		FParse::Value(FCommandLine::Get(), TEXT("body="), Body);
+		return Body;
+	}
 
 	/// What the star's light is worth here, lux, with nothing in front of it.
 	///
@@ -54,14 +62,14 @@ namespace
 	/// units mean something, and nothing downstream may quietly assume a scale.
 	double SunIlluminanceLux(const FLedgerSystem& System, double SecondsFromEpoch)
 	{
-		if (!System.Bodies.IsValidIndex(HomeBodyIndex))
+		if (!System.Bodies.IsValidIndex(HomeBody()))
 		{
 			return 100000.0;
 		}
 		TArray<FLedgerState> States;
 		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
 		return LedgerSky::IlluminanceLux(
-			System, States[HomeBodyIndex].PositionMetres, SecondsFromEpoch);
+			System, States[HomeBody()].PositionMetres, SecondsFromEpoch);
 	}
 
 	/// Where the sun is, as a direction from the planet's centre. Everything
@@ -81,7 +89,7 @@ namespace
 	FVector3d SunDirectionAt(const FLedgerSystem& System, double SecondsFromEpoch)
 	{
 		const FVector3d Sun =
-			LedgerSky::SunDirectionInBody(System, HomeBodyIndex, SecondsFromEpoch);
+			LedgerSky::SunDirectionInBody(System, HomeBody(), SecondsFromEpoch);
 		return Sun.IsNearlyZero() ? FVector3d::UnitZ() : Sun;
 	}
 
@@ -270,7 +278,7 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 
 int32 ULedgerWorldBuilder::GetHomeBodyIndex() const
 {
-	return HomeBodyIndex;
+	return HomeBody();
 }
 
 void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
@@ -297,7 +305,7 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	// has flown out of it, and a viewer who has flown out of it wants the
 	// sunlight back.
 	const double Covered = LedgerSky::StarCoveredFraction(
-		System, HomeBodyIndex, SiteDirection, WhenSeconds);
+		System, HomeBody(), SiteDirection, WhenSeconds);
 	const double Full = SunIlluminanceLux(System, WhenSeconds);
 	const float Dimmed = static_cast<float>(Full * (1.0 - Covered));
 
@@ -318,7 +326,7 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	{
 		UE_LOG(LogLedger, Log,
 			TEXT("eclipse: body %d covers %.1f%% of the star, sun at %.0f of %.0f lux"),
-			LedgerSky::EclipsingBody(System, HomeBodyIndex, SiteDirection, WhenSeconds),
+			LedgerSky::EclipsingBody(System, HomeBody(), SiteDirection, WhenSeconds),
 			Covered * 100.0, Dimmed, Full);
 	}
 }
@@ -333,9 +341,9 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	WhenSeconds = WhenFromCommandLine();
 	SunFacing = SunDirectionAt(System, WhenSeconds);
 
-	if (System.Bodies.IsValidIndex(HomeBodyIndex))
+	if (System.Bodies.IsValidIndex(HomeBody()))
 	{
-		const FLedgerBody& Home = System.Bodies[HomeBodyIndex];
+		const FLedgerBody& Home = System.Bodies[HomeBody()];
 		UE_LOG(LogLedger, Log,
 			TEXT("sky: t=%.0f s, day %.0f s, tilt %.1f deg, sun facing %.3f %.3f %.3f"),
 			WhenSeconds, Home.RotationPeriodSeconds,
@@ -343,9 +351,9 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 			SunFacing.X, SunFacing.Y, SunFacing.Z);
 		UE_LOG(LogLedger, Log,
 			TEXT("season: phase %.4f of the year, declination %+.2f deg"),
-			LedgerSky::SeasonPhase(System, HomeBodyIndex, WhenSeconds),
+			LedgerSky::SeasonPhase(System, HomeBody(), WhenSeconds),
 			FMath::RadiansToDegrees(
-				LedgerSky::SolarDeclination(System, HomeBodyIndex, WhenSeconds)));
+				LedgerSky::SolarDeclination(System, HomeBody(), WhenSeconds)));
 	}
 
 	FActorSpawnParameters Params;
@@ -459,22 +467,81 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		return;
 	}
 
+	// **The body's own numbers, not the planet actor's defaults.** T078.
+	//
+	// A moon is a body with a different radius and a different mass, and this
+	// is the whole of what makes it one. Everything downstream -- the quadtree,
+	// the streamer, the materials, the scatter -- reads the radius it is given
+	// and does not care which row of the system description it came from.
+	if (System.Bodies.IsValidIndex(HomeBody()))
+	{
+		const FLedgerBody& Home = System.Bodies[HomeBody()];
+		Planet->Radius = Home.RadiusMetres * 100.0;
+
+		// Relief scales with the body, but not in proportion: a small body has
+		// weaker gravity holding its mountains down, so it carries relatively
+		// higher ones. The square root is the usual rough scaling and it keeps
+		// a moon from being either a billiard ball or a sea urchin.
+		const double RadiusRatio = Home.RadiusMetres / 6.371e6;
+		Planet->MaxElevation = 900000.0 * FMath::Sqrt(FMath::Max(RadiusRatio, 0.05));
+
+		// A body with no air has no sea. Sea level below zero means the whole
+		// surface is land, which is what an airless body is.
+		const bool bHasAir = LedgerSky::RetainsAtmosphere(System, HomeBody(), WhenSeconds);
+		Planet->SeaLevel = bHasAir ? 0.14 : -1.0;
+		Planet->bHasAtmosphere = bHasAir;
+	}
+
 	// The season is a consequence of the orbit, not a switch. T073.
 	//
 	// Set before anything streams, because a patch carries the snow it was
 	// generated with: a season that arrived after the first patches would give
 	// a planet with two winters on it.
-	if (System.Bodies.IsValidIndex(HomeBodyIndex))
+	if (System.Bodies.IsValidIndex(HomeBody()))
 	{
-		Planet->AxialTiltRadians = System.Bodies[HomeBodyIndex].AxialTiltRadians;
-		Planet->SeasonFromOrbit = LedgerSky::SeasonPhase(System, HomeBodyIndex, WhenSeconds);
+		Planet->AxialTiltRadians = System.Bodies[HomeBody()].AxialTiltRadians;
+		Planet->SeasonFromOrbit = LedgerSky::SeasonPhase(System, HomeBody(), WhenSeconds);
 	}
 
-	Atmosphere = InWorld.SpawnActor<ALedgerAtmosphere>(
-		ALedgerAtmosphere::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
-	if (Atmosphere != nullptr)
+	// Only where there is air to draw. A sky on an airless moon is the single
+	// most visible way to get this wrong, and it is one `if`.
+	const bool bAtmosphere = LedgerSky::RetainsAtmosphere(System, HomeBody(), WhenSeconds);
+	if (bAtmosphere)
 	{
-		Atmosphere->ConfigureForPlanet(Planet->Radius, Planet->MaxElevation);
+		Atmosphere = InWorld.SpawnActor<ALedgerAtmosphere>(
+			ALedgerAtmosphere::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+		if (Atmosphere != nullptr)
+		{
+			Atmosphere->ConfigureForPlanet(Planet->Radius, Planet->MaxElevation);
+		}
+	}
+
+	if (System.Bodies.IsValidIndex(HomeBody()))
+	{
+		const FLedgerBody& Home = System.Bodies[HomeBody()];
+		const double Surface = LedgerEphemeris::GravitationalConstant * Home.MassKg
+			/ (Home.RadiusMetres * Home.RadiusMetres);
+
+		// The ship weighs what this body makes it weigh. GM/r^2, in the
+		// centimetres the flight model works in -- and no drag at all where
+		// there is no air, which is most of what "landing on a moon" feels
+		// like: nothing slows you down but the engine.
+		if (APlayerController* Controller = InWorld.GetFirstPlayerController())
+		{
+			if (ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn()))
+			{
+				Ship->SurfaceGravity = static_cast<float>(Surface * 100.0);
+				Ship->AtmosphericDrag = bAtmosphere ? Ship->AtmosphericDrag : 0.0f;
+			}
+		}
+
+		UE_LOG(LogLedger, Log,
+			TEXT("body %d (%s): radius %.1f km, surface gravity %.2f m/s^2 (%.2f g), "
+				 "escape %.0f m/s, %.0f K, atmosphere %s"),
+			HomeBody(), LexToString(Home.Kind), Home.RadiusMetres / 1000.0,
+			Surface, Surface / 9.80665, LedgerSky::EscapeVelocity(Home),
+			LedgerSky::EquilibriumTemperatureKelvin(System, HomeBody(), WhenSeconds),
+			bAtmosphere ? TEXT("yes") : TEXT("none"));
 	}
 
 	// A star, angled to light the side of the planet the descent comes down on.

@@ -33,6 +33,7 @@ FLedgerTerrainParams ALedgerPlanet::TerrainParams() const
 	Params.MaxElevation = MaxElevation;
 	Params.SeaLevel = SeaLevel;
 	Params.AxialTiltRadians = AxialTiltRadians;
+	Params.bHasAtmosphere = bHasAtmosphere;
 	Params.Delta = Delta;
 	return Params;
 }

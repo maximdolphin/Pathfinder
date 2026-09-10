@@ -587,6 +587,11 @@ public:
 	UPROPERTY()
 	double AxialTiltRadians = 0.40910518;
 
+	/// Whether this body holds air. Set by the world from the body's own mass,
+	/// radius and temperature; decides the whole moisture side of the climate.
+	UPROPERTY()
+	bool bHasAtmosphere = true;
+
 	/// Where the orbit says the body is in its year, 0 to 1, or negative if
 	/// nobody has said. `-season=` still wins when it is given, because the
 	/// fixtures that photograph a summer and a winter side by side need to ask

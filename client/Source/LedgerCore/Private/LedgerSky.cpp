@@ -631,6 +631,86 @@ namespace LedgerSky
 		return (Luminosity / (4.0 * LedgerPi * Distance * Distance)) * LuminousEfficacy;
 	}
 
+	double EquilibriumTemperatureKelvin(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch)
+	{
+		const int32 Star = PrimaryIndex(System);
+		if (!System.Bodies.IsValidIndex(BodyIndex) || Star == INDEX_NONE)
+		{
+			return 0.0;
+		}
+
+		TArray<FLedgerState> States;
+		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
+		const double Distance =
+			(States[Star].PositionMetres - States[BodyIndex].PositionMetres).Length();
+		if (!(Distance > 0.0))
+		{
+			return 0.0;
+		}
+
+		// A grey ball: it catches sunlight over its cross-section and radiates
+		// from its whole surface, which is the factor of four, and reflects
+		// some of it away, which is the albedo. 0.3 is Earth's and near enough
+		// to a rocky average.
+		constexpr double Albedo = 0.3;
+		const double Luminosity = StarLuminosityWatts(System.Bodies[Star]);
+		const double Flux = Luminosity / (4.0 * LedgerPi * Distance * Distance);
+		return FMath::Pow(
+			Flux * (1.0 - Albedo) / (4.0 * StefanBoltzmann), 0.25);
+	}
+
+	double EscapeVelocity(const FLedgerBody& Body)
+	{
+		if (!(Body.MassKg > 0.0) || !(Body.RadiusMetres > 0.0))
+		{
+			return 0.0;
+		}
+		return FMath::Sqrt(
+			2.0 * LedgerEphemeris::GravitationalConstant * Body.MassKg / Body.RadiusMetres);
+	}
+
+	bool RetainsAtmosphere(
+		const FLedgerSystem& System, int32 BodyIndex, double SecondsFromEpoch)
+	{
+		if (!System.Bodies.IsValidIndex(BodyIndex))
+		{
+			return false;
+		}
+
+		const double Temperature =
+			EquilibriumTemperatureKelvin(System, BodyIndex, SecondsFromEpoch);
+		if (!(Temperature > 0.0))
+		{
+			return false;
+		}
+
+		// Root-mean-square speed of a nitrogen molecule at that temperature.
+		constexpr double Boltzmann = 1.380649e-23;
+		constexpr double NitrogenMassKg = 4.6517e-26;
+		const double Thermal =
+			FMath::Sqrt(3.0 * Boltzmann * Temperature / NitrogenMassKg);
+
+		// **Eight, calibrated against bodies somebody has been to.**
+		//
+		// A gas is a distribution and its fast tail leaves first, so a body
+		// whose escape velocity merely matches the typical speed empties within
+		// a geological eye-blink. Six is the textbook figure and it was tried
+		// first; it gets Mercury wrong, putting it at 6.8 and therefore inside.
+		//
+		// The six real cases sort like this:
+		//
+		//   Earth   23.5      Mercury  6.8
+		//   Mars    11.6      Moon     4.9
+		//   Titan    9.1      Ceres    1.1
+		//
+		// which leaves a clean gap between 6.8 and 9.1 and no threshold in it
+		// that gets any of them wrong. Eight sits in the middle of that gap.
+		// The number was not chosen and then defended -- it was measured out of
+		// the cases and the cases are in Ledger.Body.WhoKeepsAnAtmosphere.
+		return EscapeVelocity(System.Bodies[BodyIndex]) > 8.0 * Thermal;
+	}
+
 	double NextLocalNoon(
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double AfterSeconds)

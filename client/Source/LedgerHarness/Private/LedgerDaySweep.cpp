@@ -22,8 +22,7 @@
 
 namespace
 {
-	/// The body the world stands on; index 1, as LedgerWorld has it.
-	constexpr int32 DaySweepBody = 1;
+
 
 	/// Eight steps across one rotation: enough that dawn and dusk both land
 	/// somewhere in the sequence rather than between two of them.
@@ -86,6 +85,7 @@ void ULedgerDaySweep::OnWorldBeginPlay(UWorld& InWorld)
 	ULedgerWorldBuilder* Builder = InWorld.GetSubsystem<ULedgerWorldBuilder>();
 	if (Builder != nullptr)
 	{
+		DaySweepBody = Builder->GetHomeBodyIndex();
 		// The site the world already chose. Reusing it rather than picking one
 		// is the whole point: this photographs the place the rest of the
 		// project photographs, at eight different times.

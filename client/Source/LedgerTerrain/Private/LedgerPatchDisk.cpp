@@ -93,6 +93,8 @@ namespace LedgerPatchDisk
 		// the same phase on a differently tilted planet is a different climate,
 		// and therefore different vertex colours and different scatter.
 		MixValue(Hash, Job.Params.AxialTiltRadians);
+		// Air or no air, because it decides every moisture value on the body.
+		MixValue(Hash, Job.Params.bHasAtmosphere ? 1u : 0u);
 
 		// Ground somebody has changed. Every edit, because an edit anywhere can
 		// reach this patch and a delta with one more edit in it is a different

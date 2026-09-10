@@ -47,6 +47,11 @@ private:
 
 	FLedgerSystem System;
 
+	/// Which body the world actually built. Was a constant 1, which meant
+	/// `-body=2` swept a moon while the report quoted the planet's rotation
+	/// period and tilt -- correct pictures under a wrong caption.
+	int32 DaySweepBody = 1;
+
 	/// Where this is happening, as a unit direction in the body frame. Fixed
 	/// for the whole sweep.
 	FVector3d Anchor = FVector3d::UnitZ();
