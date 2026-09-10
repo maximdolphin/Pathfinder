@@ -480,6 +480,33 @@ namespace LedgerBodies
 		Moon.ParentIndex = 1;
 		System.Bodies.Add(Moon);
 
+		// A gas giant further out, because T079 needs somewhere with no floor.
+		//
+		// Beyond the frost line, which is where they form: past the distance at
+		// which water is ice rather than vapour, so there is enough solid
+		// material to build a core big enough to hold hydrogen. Roughly five
+		// astronomical units for a star like this one, and putting it inside
+		// that would be generating a planet that could not have got there.
+		// T084 makes this a rule over a whole system rather than one more body.
+		FLedgerBody Giant;
+		Giant.Name = TEXT("Outer");
+		Giant.Kind = ELedgerBodyKind::GasGiant;
+		Giant.Seed = static_cast<uint32>(Mix(Seed ^ 0x85EBCA6Bu) & 0xFFFFFFFFull);
+		Giant.MassKg = 1.898e27 * Between(Seed, 24, 0.4, 1.6);
+		Giant.RadiusMetres = 6.9911e7 * Between(Seed, 25, 0.8, 1.2);
+		// Fast, as they all are: a big body that kept its angular momentum.
+		Giant.RotationPeriodSeconds = Between(Seed, 26, 9.0, 17.0) * 3600.0;
+		Giant.AxialTiltRadians = FMath::DegreesToRadians(Between(Seed, 27, 0.0, 30.0));
+		Giant.RotationAtEpochRadians = Between(Seed, 28, 0.0, LedgerTwoPi);
+		Giant.ParentIndex = 0;
+		Giant.Orbit.SemiMajorAxisMetres = AstronomicalUnit * Between(Seed, 29, 4.5, 7.0);
+		Giant.Orbit.Eccentricity = Between(Seed, 30, 0.0, 0.09);
+		Giant.Orbit.InclinationRadians = FMath::DegreesToRadians(Between(Seed, 31, -3.0, 3.0));
+		Giant.Orbit.AscendingNodeRadians = Between(Seed, 32, 0.0, LedgerTwoPi);
+		Giant.Orbit.PeriapsisArgumentRadians = Between(Seed, 33, 0.0, LedgerTwoPi);
+		Giant.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 34, 0.0, LedgerTwoPi);
+		System.Bodies.Add(Giant);
+
 		return System;
 	}
 }

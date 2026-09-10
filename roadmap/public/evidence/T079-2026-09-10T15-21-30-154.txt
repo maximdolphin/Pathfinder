@@ -1,0 +1,10 @@
+BeginEvents: Ledger.Gas.TheHullFailsWhereThePredictionSaysItWill
+predicted crush depth 135.8 km; the descent failed at 135.8 km
+down the well:
+BeginEvents: Ledger.Gas.TheModelAgreesWithJupiter
+Jupiter: gravity 24.78 m/s^2 (measured 24.79), scale height 24.1 km (measured about 27)
+that is 11% below the measured 27 km, from carrying one mean molecular mass for every giant and an isothermal profile
+BeginEvents: Ledger.Giant.StormsSitOnShearLinesAndDriftWithTheWind
+storms cover 3.64% of the surface
+storms followed across two hemispheres:
+  latitude +0.37 rad: wind -0.532, storm moved -1.4486 rad

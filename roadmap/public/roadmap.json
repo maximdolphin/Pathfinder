@@ -5616,11 +5616,35 @@
    "dependsOn": [
     "T078"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "HALF DELIVERED AND COMMITTED; the other half is named below. The generator now makes a gas giant beyond the frost line (4.5 to 7 au), because that is where they can form -- past the distance at which water is ice rather than vapour, so there is enough solid material to build a core big enough to hold hydrogen. A gas giant has no surface, so altitude needs a datum that is not one: the one-bar level, which is the convention a giant's quoted radius already uses, so RadiusMetres keeps meaning the same thing whether or not anything is solid underneath. PRESSURE: predicted crush depth 135.8 km, and a descent stepping down a metre at a time failed at 135.8 km -- two computations, a logarithm and a loop, agreeing to under a metre. The pressure law is checked against the differential equation it solves: stepping dP = rho g dh in five-metre slices over 150 km with rho recomputed each slice, worst disagreement 3.1e-4, which is the first-order integrator's own error rather than the model's. AGAINST JUPITER, two findings. (1) THE EQUATORIAL RADIUS IS NOT A DETAIL: Jupiter's quoted 24.79 m/s2 is GM over its EQUATORIAL radius of 71492 km; asked with the volumetric mean radius of 69911 km -- which is what the generator uses, reasonably -- it gives 25.92, and the test failed until it was asked with the radius that number was quoted at. Two right answers to two different questions. (2) The scale height comes out 24.1 km against a measured 27, 11% low, because this model carries one mean molecular mass of 2.3 for every giant while Jupiter's is nearer 2.22, and because an isothermal profile is not Jupiter's. Both push the same way. Stated with the reason rather than opened until it passes quietly. The model errs SHALLOW -- it kills the ship sooner than a real atmosphere would -- which is the safe direction. BANDS ARE A FIELD, NOT A TEXTURE: a function of latitude, longitude and time anything can sample, which is what lets them be checked rather than admired. The jets alternate with quiet poles; the field carries more than twice the variance across the bands as along one, which is the difference between a gas giant and a marble; storms cover 3.64% and drift the way their own band blows. THE BUG THE DRIFT TEST FOUND: storms were placed EXACTLY on the jet boundaries, on the reasoning that a shear line is where a storm lives. A jet boundary is where the wind reverses, which is where it is zero -- so all nine sat in perfectly still air for ever and the drift test could not find one moving. They now sit a third of a jet's width off the boundary, embedded in one of the two jets and carried by it, which is also why they are lenses rather than circles. NOT DELIVERED: you cannot fly into it. The giant is five astronomical units away, the world builds one body's terrain at a time, and a body with no surface needs a volumetric renderer rather than a cube-sphere -- the framework T078 showed is body-agnostic is agnostic about SURFACES, and this has none. The acceptance's 'descend into' is unmet. What exists is the model it would descend through, measured, and the bands it would descend past, drawn. 88 tests pass, module layering legal."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The physics and the banding are done and measured; the descent is not. A body with no surface needs a volumetric interior rather than the cube-sphere, which belongs with T226's volumetrics and needs the atmosphere calibration that T074, T075, T077 and T079 are now all waiting on."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T079-2026-09-10T15-21-30-019.png",
+     "caption": "The band field drawn: alternating belts and zones with wobbling boundaries, and storm ovals sitting inside them",
+     "source": "../out/t079-giant-bands.png",
+     "addedAt": "2026-09-10T15:21:30.020Z"
+    },
+    {
+     "file": "evidence/T079-2026-09-10T15-21-30-154.txt",
+     "caption": "Crush depth predicted 135.8 km, reached at 135.8 km; Jupiter's gravity to 0.01 m/s2; storms drifting with their wind",
+     "source": "../out/t079-gas.txt",
+     "addedAt": "2026-09-10T15:21:30.157Z"
+    }
+   ],
    "plannedStartDay": 194.5,
    "plannedEndDay": 197.5,
    "plannedStart": "2027-06-04",
@@ -13682,5 +13706,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:10:27.995Z"
+ "updatedAt": "2026-09-10T15:21:30.160Z"
 }
