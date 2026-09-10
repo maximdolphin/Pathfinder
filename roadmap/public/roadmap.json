@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 1
+   "doneCount": 2
   },
   {
    "id": "M05",
@@ -6140,10 +6140,16 @@
    "dependsOn": [
     "T091"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Weather as a function of time, like the ephemeris: a storm is a birth time, a place, a size and a lifetime, and where it is at any moment is arithmetic. A week of one slot: 3338 km travelled, longest hourly step 25.5 km, never a single equatorward step within a life, bit-identical on re-generation, and day six is day six whether or not day five was asked first. Held and Hou give the band count from the rotation alone -- Venus 1, Earth 3, Jupiter 5 against about six observed. Wind is geostrophic; the check is circulation rather than angle, because a uniform prevailing wind contributes exactly zero to a closed loop and swamps the angle. A low turns with the sign of Coriolis (-1.42e8, 61% of maximum) and a high against it. Not claimed: fronts (T095) and storms born by baroclinic instability rather than on a schedule. docs/comparisons/weather/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 222.5,
    "plannedEndDay": 226,
@@ -13893,5 +13899,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T19:17:23.398Z"
+ "updatedAt": "2026-09-10T19:25:37.804Z"
 }
