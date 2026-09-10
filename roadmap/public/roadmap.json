@@ -6054,11 +6054,36 @@
    "dependsOn": [
     "T089"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "Half delivered, half not expressible. The butterscotch sky is there from composition alone: CO2 scatters blue 2.86x harder than air, so a clean CO2 sky would be DEEPER blue than Earth's, and what turns it is the dust -- iron oxide with a single-scattering albedo of 0.63 blue against 0.94 red. Predicted before rendering (Mars R 1.000 G 0.928 B 0.681; the same air with the dust removed R 0.176 B 1.000) and confirmed by capture. The blue sunset is not: it is a diffraction effect needing a per-channel phase function, because the forward lobe narrows as wavelength over particle size. Unreal's Sky Atmosphere has one MieAnisotropy for all three channels, so the aureole takes the colour of MieScattering, which for dust is red. Needs a custom sky shader or a separate aureole element -- M11. docs/comparisons/sky-colour/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T090-2026-09-10T18-30-31-456.png",
+     "caption": "A carbon-dioxide sky: butterscotch, from composition alone",
+     "source": "out/airshow-2-ground.png",
+     "addedAt": "2026-09-10T18:30:31.461Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-10T18-30-31-610.png",
+     "caption": "The same world at sunset: golden and dusty, not blue -- the missing per-channel phase function",
+     "source": "out/airshow-2-sunset.png",
+     "addedAt": "2026-09-10T18:30:31.615Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-10T18-30-31-754.png",
+     "caption": "The oxygen world's sunset from the same code with different numbers",
+     "source": "out/airshow-1-sunset.png",
+     "addedAt": "2026-09-10T18:30:31.756Z"
+    }
+   ],
    "plannedStartDay": 217.5,
    "plannedEndDay": 219.5,
    "plannedStart": "2027-07-07",
@@ -13855,5 +13880,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T18:16:23.596Z"
+ "updatedAt": "2026-09-10T18:30:31.758Z"
 }

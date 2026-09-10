@@ -81,6 +81,78 @@ namespace LedgerAir
 		}
 	}
 
+	FVector3d AerosolAlbedo(ELedgerAir Composition)
+	{
+		// Single-scattering albedo at 440, 550 and 680 nm: of the light these
+		// particles intercept, how much carries on rather than being absorbed.
+		//
+		// **This is the whole reason a Martian sky is not blue.** A thin
+		// carbon-dioxide atmosphere on its own scatters like any gas and would
+		// give a dark blue sky; what makes it butterscotch is a permanent load
+		// of dust about a tenth iron oxide, which is nearly opaque in the blue
+		// and nearly clear in the red. The numbers are the ones retrieved from
+		// Viking and Pathfinder sky brightness.
+		switch (Composition)
+		{
+		// Water and sulphate droplets are nearly clear at every visible
+		// wavelength, which is why haze on Earth is white rather than coloured.
+		case ELedgerAir::NitrogenOxygen: return FVector3d(0.99, 0.99, 0.98);
+		// Iron oxide.
+		case ELedgerAir::CarbonDioxide:  return FVector3d(0.63, 0.87, 0.94);
+		// Tholins: organic haze, and an even harder blue absorber. Titan's
+		// orange is this rather than its nitrogen.
+		case ELedgerAir::Nitrogen:       return FVector3d(0.50, 0.72, 0.94);
+		// Ammonia ice, bright and close to neutral.
+		case ELedgerAir::HydrogenHelium: return FVector3d(0.97, 0.98, 0.99);
+		default:                         return FVector3d(1.0, 1.0, 1.0);
+		}
+	}
+
+	double AerosolAnisotropy(ELedgerAir Composition)
+	{
+		// Bigger particles throw more of the light onwards. Dust and ice are a
+		// micron or two across and strongly forward-peaked; the finer organic
+		// haze less so.
+		switch (Composition)
+		{
+		case ELedgerAir::NitrogenOxygen: return 0.80;
+		case ELedgerAir::CarbonDioxide:  return 0.75;
+		case ELedgerAir::Nitrogen:       return 0.65;
+		case ELedgerAir::HydrogenHelium: return 0.85;
+		default:                         return 0.80;
+		}
+	}
+
+	FVector3d SkyColour(const FLedgerAirProfile& Air, double AirMasses)
+	{
+		FVector3d Out = FVector3d::ZeroVector;
+		if (!Air.HasAir() || !(AirMasses > 0.0))
+		{
+			return Out;
+		}
+		for (int32 Channel = 0; Channel < 3; ++Channel)
+		{
+			// Each component over its own column: an exponential atmosphere's
+			// vertical column is the surface coefficient times the scale height.
+			const double Gas =
+				Air.RayleighPerMetre[Channel] * Air.ScaleHeightMetres;
+			const double DustScatter =
+				Air.MieScatteringPerMetre[Channel] * Air.MieScaleHeightMetres;
+			const double DustAbsorb =
+				Air.MieAbsorptionPerMetre[Channel] * Air.MieScaleHeightMetres;
+			const double Ozone =
+				Air.OzoneAbsorptionPerMetre * Air.ScaleHeightMetres;
+
+			const double Scatter = (Gas + DustScatter) * AirMasses;
+			const double Total = (Gas + DustScatter + DustAbsorb + Ozone) * AirMasses;
+			Out[Channel] = Total > 1e-12
+				? Scatter * (1.0 - FMath::Exp(-Total)) / Total
+				: Scatter;
+		}
+		const double Largest = FMath::Max3(Out.X, Out.Y, Out.Z);
+		return Largest > 0.0 ? Out / Largest : Out;
+	}
+
 	double GreenhouseDepthPerBar(ELedgerAir Composition)
 	{
 		// Fitted to the three atmospheres that have both numbers published.
@@ -191,10 +263,42 @@ namespace LedgerAir
 		// height is the usual figure for haze -- and how much there is depends
 		// on whether there is anything to lift: dust needs a dry surface and
 		// wind, which a gas giant has no surface for.
-		Out.MieScaleHeightMetres = Out.ScaleHeightMetres * 0.15;
+		// **Haze and dust do not live at the same height, and that matters more
+		// than how much of either there is.**
+		//
+		// Water haze is condensed out of a wet lower atmosphere and stays in the
+		// bottom kilometre or so -- a seventh of the gas's scale height. Dust on
+		// a dry world is lofted by wind and mixed through the whole column,
+		// which is why Mars's dust scale height is its gas scale height and why
+		// a dust storm there darkens the sky from the top down.
+		const bool bDusty = Composition == ELedgerAir::CarbonDioxide
+			|| Composition == ELedgerAir::Nitrogen;
+		Out.MieScaleHeightMetres =
+			Out.ScaleHeightMetres * (bDusty ? 1.0 : 0.15);
+
 		Out.MiePerMetre = Composition == ELedgerAir::HydrogenHelium
 			? 4.0e-6
 			: 2.1e-5 * (Pressure / 101325.0);
+
+		// **A thin atmosphere is not a clean one.** Mars carries a dust optical
+		// depth of about half in six millibars while Earth's haze manages a
+		// tenth in a thousand, because what suspends dust is wind and what
+		// settles it is air resistance, and a thin atmosphere is bad at the
+		// second. Scaling the aerosol with the pressure alone would have made
+		// the dustiest sky in the solar system the clearest, so a dry world gets
+		// a floor: half an optical depth over its own column.
+		if (bDusty)
+		{
+			Out.MiePerMetre = FMath::Max(
+				Out.MiePerMetre, 0.5 / Out.MieScaleHeightMetres);
+		}
+
+		// Extinction split into what carries on and what is gone.
+		const FVector3d Albedo = AerosolAlbedo(Composition);
+		Out.MieScatteringPerMetre = Albedo * Out.MiePerMetre;
+		Out.MieAbsorptionPerMetre =
+			(FVector3d(1.0, 1.0, 1.0) - Albedo) * Out.MiePerMetre;
+		Out.MieAnisotropy = AerosolAnisotropy(Composition);
 
 		// **Ozone exists because oxygen does.** No oxygen, no ozone layer, and
 		// no violet twilight band -- which is a visible difference between a

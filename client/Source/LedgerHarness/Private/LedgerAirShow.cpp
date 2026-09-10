@@ -40,6 +40,11 @@ namespace
 	{
 		{ TEXT("ground"), 0.0,  0.35, 70.0f },
 		{ TEXT("zenith"), 0.0,  4.00, 70.0f },
+		// **Towards the sun with the sun on the horizon.** This is the other
+		// half of T090: the sky away from the sun is one colour and the sky
+		// around it is another, and on a dusty world they are supposed to be
+		// opposite ways round from ours.
+		{ TEXT("sunset"), 0.0,  0.05, 40.0f },
 		{ TEXT("orbit"),  2.0,  0.00, 50.0f },
 	};
 
@@ -76,6 +81,35 @@ void ULedgerAirShow::OnWorldBeginPlay(UWorld& InWorld)
 	Home = Builder->GetHomeBodyIndex();
 	Air = LedgerAir::For(System, Home, Builder->GetWhenSeconds());
 
+	// Find sunset from the ephemeris, the same way the passage fixture finds a
+	// moonrise: scan for the descending crossing and bisect it.
+	NoonSeconds = Builder->GetWhenSeconds();
+	const double Day = LedgerSky::SolarDaySeconds(System, Home, Anchor, NoonSeconds);
+	if (Day > 0.0)
+	{
+		const int32 Samples = 2000;
+		double Previous = LedgerSky::SolarAltitude(System, Home, Anchor, NoonSeconds);
+		for (int32 Sample = 1; Sample <= Samples; ++Sample)
+		{
+			const double At = NoonSeconds + Day * Sample / Samples;
+			const double Now = LedgerSky::SolarAltitude(System, Home, Anchor, At);
+			if (Previous > 0.0 && Now <= 0.0)
+			{
+				double Low = At - Day / Samples;
+				double High = At;
+				for (int32 Step2 = 0; Step2 < 60; ++Step2)
+				{
+					const double Middle = (Low + High) * 0.5;
+					(LedgerSky::SolarAltitude(System, Home, Anchor, Middle) > 0.0
+						? Low : High) = Middle;
+				}
+				SunsetSeconds = (Low + High) * 0.5;
+				break;
+			}
+			Previous = Now;
+		}
+	}
+
 	UE_LOG(LogLedger, Log,
 		TEXT("air show: body %d (%s), %s at %.0f Pa and %.1f K"),
 		Home, *System.Bodies[Home].Name, LexToString(Air.Composition),
@@ -96,6 +130,17 @@ void ULedgerAirShow::Place()
 	const int32 Which = FMath::Clamp(
 		bAimed ? Step - 1 : Step, 0, UE_ARRAY_COUNT(AirShowViews) - 1);
 	const FAirShowView& View = AirShowViews[Which];
+
+	// The sunset frame is a different moment, not just a different aim.
+	const bool bSunset = FString(View.What) == TEXT("sunset");
+	if (bSunset && SunsetSeconds > 0.0)
+	{
+		Builder->SetWhenSeconds(SunsetSeconds);
+	}
+	else if (!bSunset)
+	{
+		Builder->SetWhenSeconds(NoonSeconds);
+	}
 
 	const FVector3d Centre = FVector3d(Planet->GetActorLocation());
 	const double Ground = Planet->SurfaceRadiusAt(Anchor);

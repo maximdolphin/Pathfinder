@@ -82,13 +82,34 @@ void ALedgerAtmosphere::ConfigureForAir(
 				Atmosphere->RayleighScatteringScale = static_cast<float>(Largest);
 			}
 
-			const double MiePerKm = Air.MiePerMetre * 1000.0;
-			Atmosphere->MieScatteringScale = static_cast<float>(MiePerKm);
-			// Aerosols absorb about a ninth of what they scatter. That ratio is
-			// Earth's default and is a property of the particles rather than of
-			// how many there are, so it rides along with the amount.
-			Atmosphere->MieAbsorptionScale = static_cast<float>(MiePerKm * 0.111);
-			Atmosphere->MieAnisotropy = 0.8f;
+			// **The aerosol is coloured, and that is where a carbon-dioxide sky
+			// stops being blue.** T090. Scattering and absorption are separate
+			// per-channel quantities, because the two are what the particles do
+			// with the light and they are not the same shape: Martian dust
+			// scatters two thirds of the blue it intercepts and nineteen
+			// twentieths of the red.
+			const FVector3d ScatterKm = Air.MieScatteringPerMetre * 1000.0;
+			const FVector3d AbsorbKm = Air.MieAbsorptionPerMetre * 1000.0;
+			const double ScatterMax =
+				FMath::Max3(ScatterKm.X, ScatterKm.Y, ScatterKm.Z);
+			const double AbsorbMax = FMath::Max3(AbsorbKm.X, AbsorbKm.Y, AbsorbKm.Z);
+			if (ScatterMax > 0.0)
+			{
+				Atmosphere->MieScattering = FLinearColor(
+					static_cast<float>(ScatterKm.Z / ScatterMax),
+					static_cast<float>(ScatterKm.Y / ScatterMax),
+					static_cast<float>(ScatterKm.X / ScatterMax));
+				Atmosphere->MieScatteringScale = static_cast<float>(ScatterMax);
+			}
+			if (AbsorbMax > 0.0)
+			{
+				Atmosphere->MieAbsorption = FLinearColor(
+					static_cast<float>(AbsorbKm.Z / AbsorbMax),
+					static_cast<float>(AbsorbKm.Y / AbsorbMax),
+					static_cast<float>(AbsorbKm.X / AbsorbMax));
+				Atmosphere->MieAbsorptionScale = static_cast<float>(AbsorbMax);
+			}
+			Atmosphere->MieAnisotropy = static_cast<float>(Air.MieAnisotropy);
 
 			// Ozone, and only where there is oxygen to make it from. It is why
 			// Earth's zenith is deep blue and why the band above the limb at
@@ -158,12 +179,17 @@ void ALedgerAtmosphere::ConfigureForAir(
 
 	UE_LOG(LogLedger, Log,
 		TEXT("atmosphere: %s, %.0f Pa at %.1f K, scale height %.2f km, top %.1f km, "
-			 "Rayleigh %.4f/%.4f/%.4f per km, ozone %.5f, clouds %s"),
+			 "Rayleigh %.4f/%.4f/%.4f per km, dust scatter %.5f/%.5f/%.5f absorb "
+			 "%.5f/%.5f/%.5f g=%.2f, ozone %.5f, clouds %s"),
 		LexToString(Air.Composition), Air.SurfacePressurePascals,
 		Air.SurfaceTemperatureKelvin, Air.ScaleHeightMetres / 1000.0,
 		Air.TopMetres / 1000.0,
 		Air.RayleighPerMetre.X * 1000.0, Air.RayleighPerMetre.Y * 1000.0,
 		Air.RayleighPerMetre.Z * 1000.0,
+		Air.MieScatteringPerMetre.X * 1000.0, Air.MieScatteringPerMetre.Y * 1000.0,
+		Air.MieScatteringPerMetre.Z * 1000.0,
+		Air.MieAbsorptionPerMetre.X * 1000.0, Air.MieAbsorptionPerMetre.Y * 1000.0,
+		Air.MieAbsorptionPerMetre.Z * 1000.0, Air.MieAnisotropy,
 		Air.OzoneAbsorptionPerMetre * 1000.0,
 		Air.bHasClouds ? TEXT("yes") : TEXT("no"));
 }

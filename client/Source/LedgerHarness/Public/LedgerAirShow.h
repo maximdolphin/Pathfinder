@@ -41,6 +41,11 @@ private:
 	FVector3d Anchor = FVector3d::UnitZ();
 	int32 Home = INDEX_NONE;
 
+	/// When the sun is on the horizon here, found from the ephemeris rather
+	/// than by looking for a pretty frame.
+	double SunsetSeconds = -1.0;
+	double NoonSeconds = 0.0;
+
 	int32 Step = 0;
 	bool bAimed = false;
 	bool bRunning = false;

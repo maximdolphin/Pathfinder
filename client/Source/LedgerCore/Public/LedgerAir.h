@@ -70,10 +70,23 @@ struct FLedgerAirProfile
 	/// 680 nm. The blue-sky number: Earth's is about 3.3e-5 at 440 nm.
 	FVector3d RayleighPerMetre = FVector3d::ZeroVector;
 
-	/// Aerosol scattering at the datum, per metre, and the height it falls off
+	/// Aerosol extinction at the datum, per metre, and the height it falls off
 	/// over. Dust and haze, which do not scale with the gas.
 	double MiePerMetre = 0.0;
 	double MieScaleHeightMetres = 0.0;
+
+	/// **What the dust does with the light it intercepts.** T090.
+	///
+	/// Split into the part that carries on in another direction and the part
+	/// that is gone. This is where a carbon-dioxide sky gets its colour: the
+	/// gas would give a dark blue one, and the iron oxide suspended in it eats
+	/// the blue. Per channel, per metre, at 440, 550 and 680 nm.
+	FVector3d MieScatteringPerMetre = FVector3d::ZeroVector;
+	FVector3d MieAbsorptionPerMetre = FVector3d::ZeroVector;
+
+	/// How forward-peaked the aerosol's scattering is, 0 to 1. Bigger particles
+	/// throw more of the light onwards and less of it sideways.
+	double MieAnisotropy = 0.8;
 
 	/// Ozone, or whatever else absorbs where the gas does not. Zero unless
 	/// there is oxygen to make it out of.
@@ -120,6 +133,32 @@ namespace LedgerAir
 	LEDGERCORE_API double RayleighPerMetre(
 		ELedgerAir Composition, double NumberDensityPerCubicMetre,
 		double WavelengthMetres);
+
+	/// The colour of the sky, as relative RGB, looking through a given number of
+	/// air masses. One is straight up; about thirty-eight is the horizon.
+	///
+	/// **Single scattering, and in air masses rather than metres.** The first
+	/// version took a path length and multiplied every coefficient by it, which
+	/// quietly assumed the dust and the gas were mixed to the same height. They
+	/// are not -- haze sits in the bottom kilometre and the gas goes up eight --
+	/// and treating them alike made Earth's zenith a washed-out pale blue by
+	/// giving its haze six times the column it has.
+	///
+	/// So each component is integrated over its own scale height. What is
+	/// scattered into the eye goes as the scattering optical depth; what
+	/// survives to arrive goes as the total. The channel's brightness is
+	/// tau_scatter (1 - e^-tau) / tau, and the colour is what those three do
+	/// relative to each other.
+	LEDGERCORE_API FVector3d SkyColour(
+		const FLedgerAirProfile& Air, double AirMasses);
+
+	/// Single-scattering albedo of the suspended particles: how much of what
+	/// they intercept carries on rather than being absorbed. Per channel.
+	///
+	/// This is the measured optical property that makes Mars butterscotch --
+	/// its dust is about a tenth iron oxide, which is nearly opaque in the blue
+	/// and nearly clear in the red.
+	LEDGERCORE_API FVector3d AerosolAlbedo(ELedgerAir Composition);
 
 	/// How much warmer the ground is than the sunlight alone would make it.
 	///

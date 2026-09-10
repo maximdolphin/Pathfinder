@@ -215,11 +215,113 @@ bool FLedgerAirGenerated::RunTest(const FString&)
 		static_cast<int32>(Home.Composition),
 		static_cast<int32>(ELedgerAir::NitrogenOxygen));
 
+	// **How often does a system contain a carbon-dioxide world?** Worth knowing,
+	// because T090's acceptance is about one and the generator has to actually
+	// produce them. Also worth printing: the fixture that photographs one needs
+	// a seed to be given.
+	int32 Systems = 0;
+	int32 WithCarbon = 0;
+	FString FirstCarbon;
+	for (uint32 Seed = 20260900u; Seed < 20260940u; ++Seed)
+	{
+		const FLedgerSystem Other = LedgerBodies::Generate(Seed);
+		++Systems;
+		for (int32 Index = 0; Index < Other.Bodies.Num(); ++Index)
+		{
+			if (LedgerAir::For(Other, Index, 0.0).Composition
+				== ELedgerAir::CarbonDioxide)
+			{
+				++WithCarbon;
+				if (FirstCarbon.IsEmpty())
+				{
+					FirstCarbon = FString::Printf(
+						TEXT("-systemseed=%u -body=%d"), Seed, Index);
+				}
+				break;
+			}
+		}
+	}
+	AddInfo(FString::Printf(
+		TEXT("%d of %d systems have a carbon-dioxide world; the first is %s"),
+		WithCarbon, Systems, FirstCarbon.IsEmpty() ? TEXT("none") : *FirstCarbon));
+
 	// The same seed, the same sky.
 	const FLedgerSystem Again = LedgerBodies::Generate(20260910u);
 	const FLedgerAirProfile Twice = LedgerAir::For(Again, 1, 0.0);
 	TestEqual(TEXT("the same seed gives the same pressure"),
 		Twice.SurfacePressurePascals, Home.SurfacePressurePascals, 1e-9);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerAirColour,
+	"Ledger.Air.ACarbonDioxideSkyIsTheColourPhysicsSaysItIs",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerAirColour::RunTest(const FString&)
+{
+	// **The colour is predicted before anything is rendered.** Single
+	// scattering along a path: what is scattered into the eye goes as the
+	// scattering coefficient, what survives to arrive goes as the extinction.
+	// Three numbers per sky, and the render either agrees with them or the
+	// render is wrong.
+	const FLedgerAirProfile Earth = LedgerAir::Describe(
+		ELedgerAir::NitrogenOxygen, 101325.0, 288.0, 9.807, 6.371e6);
+	const FLedgerAirProfile Mars = LedgerAir::Describe(
+		ELedgerAir::CarbonDioxide, 610.0, 215.0, 3.711, 3.390e6);
+
+	// One air mass is straight up; thirty-eight is the horizon, which is what
+	// makes a sunset a sunset.
+	const FVector3d EarthUp = LedgerAir::SkyColour(Earth, 1.0);
+	const FVector3d EarthLow = LedgerAir::SkyColour(Earth, 38.0);
+	const FVector3d MarsUp = LedgerAir::SkyColour(Mars, 1.0);
+	const FVector3d MarsLow = LedgerAir::SkyColour(Mars, 38.0);
+
+	AddInfo(FString::Printf(
+		TEXT("Earth overhead  R %.3f  G %.3f  B %.3f"),
+		EarthUp.Z, EarthUp.Y, EarthUp.X));
+	AddInfo(FString::Printf(
+		TEXT("Earth low sun   R %.3f  G %.3f  B %.3f"),
+		EarthLow.Z, EarthLow.Y, EarthLow.X));
+	AddInfo(FString::Printf(
+		TEXT("Mars  overhead  R %.3f  G %.3f  B %.3f"),
+		MarsUp.Z, MarsUp.Y, MarsUp.X));
+	AddInfo(FString::Printf(
+		TEXT("Mars  low sun   R %.3f  G %.3f  B %.3f"),
+		MarsLow.Z, MarsLow.Y, MarsLow.X));
+
+	// Earth's sky is blue overhead. Nothing here was chosen to make it so --
+	// the gas scatters blue five and a half times harder and its haze is
+	// colourless.
+	TestTrue(*FString::Printf(TEXT("Earth's zenith is blue (B %.3f, R %.3f)"),
+		EarthUp.X, EarthUp.Z), EarthUp.X > EarthUp.Z * 2.0);
+
+	// **And a carbon-dioxide sky is not**, despite carbon dioxide scattering
+	// blue harder than air does. The gas would give a dark blue sky; the dust
+	// suspended in it absorbs a third of the blue it touches and a
+	// sixteenth of the red, and that is what turns the balance over.
+	TestTrue(*FString::Printf(TEXT("a dusty CO2 zenith is not blue (B %.3f, R %.3f)"),
+		MarsUp.X, MarsUp.Z), MarsUp.Z > MarsUp.X);
+
+	// The dust is the whole difference: the same atmosphere without it.
+	FLedgerAirProfile Clean = Mars;
+	Clean.MieScatteringPerMetre = FVector3d::ZeroVector;
+	Clean.MieAbsorptionPerMetre = FVector3d::ZeroVector;
+	const FVector3d CleanUp = LedgerAir::SkyColour(Clean, 1.0);
+	AddInfo(FString::Printf(
+		TEXT("the same CO2 with the dust taken out: R %.3f  G %.3f  B %.3f"),
+		CleanUp.Z, CleanUp.Y, CleanUp.X));
+	TestTrue(TEXT("clean carbon dioxide would be blue"), CleanUp.X > CleanUp.Z * 2.0);
+
+	// Both skies redden towards a low sun, because the long path eats the blue
+	// first. That is one mechanism doing two jobs and it should show in both.
+	const double EarthReddens = (EarthLow.Z / EarthLow.X) / (EarthUp.Z / EarthUp.X);
+	const double MarsReddens = (MarsLow.Z / MarsLow.X) / (MarsUp.Z / MarsUp.X);
+	AddInfo(FString::Printf(
+		TEXT("red-to-blue rises %.2f times on Earth and %.2f on Mars between "
+			 "overhead and a low sun"),
+		EarthReddens, MarsReddens));
+	TestTrue(TEXT("Earth's sky reddens towards the horizon"), EarthReddens > 1.2);
+	TestTrue(TEXT("and so does the dusty one"), MarsReddens > 1.0);
 	return true;
 }
 
