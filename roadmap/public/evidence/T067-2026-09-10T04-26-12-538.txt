@@ -1,0 +1,60 @@
+clean run
+  ok       holes_worst                    0.00  <= 40
+  ok       cracks_stitch_rejects          1.00  <= 400
+  ok       pop_morph_enabled              1.00  == 1
+  ok       pop_hidden_quads               1.62  <= 2.5
+  ok       budget_p99_ms                 42.72  <= 90
+  -> PASS, as it must
+
+fault: holes  (-breakthreshold)
+  FAIL     holes_worst                 1790.00  <= 40
+           Sections the tree wanted and the pool could not give it, at the worst
+           frame of the flight. Not zero: this counter is a horizon test rather than
+           a frustum test and overcounts by a margin nobody has pinned down (see
+           docs/comparisons/overload/), so the threshold is set above the noise it
+           reads on a clean run rather than at the number the name implies.
+  FAIL     budget_p99_ms                 90.52  <= 90
+           The 99th percentile frame. M02's gate is 16.7 and the terrain has never
+           met it; this is set where the flight actually sits so that a REGRESSION
+           fails the build, and it is not the gate. The gate is in the roadmap and
+           is failing, which is a different fact and is recorded as one.
+  -> caught
+
+fault: cracks  (-breakstitching)
+  FAIL     cracks_stitch_rejects      37962.00  <= 400
+           Cached patches thrown away because their edge stitching no longer matched
+           their neighbours' depths. Each one was a seam on screen until the rebuild
+           landed. Some are unavoidable -- a moving camera changes neighbour depths --
+           so this catches the rate going wrong, not the event happening.
+  -> caught
+
+fault: popping  (-breakmorph)
+  FAIL     pop_morph_enabled              0.00  == 1
+           Whether the LOD transition is being eased through rather than snapped.
+           Binary, and the only one of these four that is: morphing is either wired
+           up or it is not.
+  -> caught
+
+fault: budget  (-breakthreshold -nopatchdisk)
+  FAIL     holes_worst                 1805.00  <= 40
+           Sections the tree wanted and the pool could not give it, at the worst
+           frame of the flight. Not zero: this counter is a horizon test rather than
+           a frustum test and overcounts by a margin nobody has pinned down (see
+           docs/comparisons/overload/), so the threshold is set above the noise it
+           reads on a clean run rather than at the number the name implies.
+  FAIL     budget_p99_ms                105.91  <= 90
+           The 99th percentile frame. M02's gate is 16.7 and the terrain has never
+           met it; this is set where the flight actually sits so that a REGRESSION
+           fails the build, and it is not the gate. The gate is in the roadmap and
+           is failing, which is a different fact and is recorded as one.
+  -> caught
+
+summary
+  fault      verdict        watched
+  clean      pass           -
+  holes      caught         holes_worst
+  cracks     caught         cracks_stitch_rejects
+  popping    caught         pop_morph_enabled
+  budget     caught         budget_p99_ms
+
+VERDICT: PASS

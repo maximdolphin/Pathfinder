@@ -141,6 +141,8 @@ void ALedgerPlanet::BeginPlay()
 	// from 1,774 to 2,960 and p99 from 84 to 124 ms, because the shortage is
 	// not sections, it is the rate at which patches can be generated, cooked
 	// and uploaded. A bigger pool just puts more work in flight.
+	ApplyRegressionFaults();
+
 	// `-smallpool` is a deliberate fault for T067: four hundred sections cannot
 	// serve any view, so the ground fills with holes. -nolodbrake used to do
 	// this and no longer does, because raising ErrorThresholdPixels to 250 cut
@@ -566,3 +568,16 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		LogStats();
 	}
 }
+
+void ALedgerPlanet::ApplyRegressionFaults()
+{
+	// T067's holes fault, and it reproduces the regression that happened
+	// rather than an invented one. See the header.
+	if (FParse::Param(FCommandLine::Get(), TEXT("breakthreshold")))
+	{
+		ErrorThresholdPixels = 150.0;
+		UE_LOG(LogLedger, Warning,
+			TEXT("regression fault: ErrorThresholdPixels forced to 150"));
+	}
+}
+

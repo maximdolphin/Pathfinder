@@ -472,6 +472,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	double ErrorThresholdPixels = 250.0;
 
+	/// `-breakthreshold` puts it back to 150, which is T067's holes fault.
+	///
+	/// It reproduces the regression that actually happened rather than an
+	/// invented one. -smallpool and -nolodbrake were both tried first and
+	/// neither produces holes: a starved pool makes the streamer stop asking
+	/// rather than ask and be refused, so nothing is recorded as unfilled, and
+	/// the terrain simply goes coarse. High demand is what fills the sky with
+	/// holes, and lowering this is how demand gets high.
+	void ApplyRegressionFaults();
+
 	/// Depth down to which every visible node keeps geometry, always.
 	///
 	/// A shell so that arriving somewhere new finds coarse ground already

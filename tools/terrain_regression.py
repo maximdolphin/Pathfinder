@@ -21,14 +21,16 @@ the deliberate faults below, and reports whether each was caught. A regression
 suite that has never been shown to fail is a regression suite nobody should
 trust.
 
-    holes    -smallpool       four hundred sections instead of 3,600, which no
-                              view can be served from
+    holes    -breakthreshold  ErrorThresholdPixels back to 150, which is the
+                              regression that actually happened: high demand,
+                              7,000 sections wanted against a pool of 3,600
     cracks   -breakstitching  every patch edge declared un-stitched, so a patch
                               beside a coarser neighbour keeps vertices the
                               neighbour does not have
     popping  -breakmorph      MorphScale zero, so a collapsing node snaps the
                               whole transition instead of easing through it
-    budget   -nopatchdisk     the disk cache off, so every patch is generated
+    budget   -breakthreshold  the same demand, with the disk cache off so
+             -nopatchdisk     every one of those patches is generated too
 """
 
 import argparse
@@ -145,10 +147,10 @@ def fly(extra_args, editor):
 
 
 FAULTS = [
-    ("holes", ["-smallpool"], "holes_worst"),
+    ("holes", ["-breakthreshold"], "holes_worst"),
     ("cracks", ["-breakstitching"], "cracks_stitch_rejects"),
     ("popping", ["-breakmorph"], "pop_morph_enabled"),
-    ("budget", ["-smallpool", "-nopatchdisk"], "budget_p99_ms"),
+    ("budget", ["-breakthreshold", "-nopatchdisk"], "budget_p99_ms"),
 ]
 
 
