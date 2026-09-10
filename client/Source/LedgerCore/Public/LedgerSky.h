@@ -54,8 +54,31 @@ namespace LedgerSky
 	/// How much of the visible disc is lit, from the phase angle alone.
 	///
 	/// (1 + cos a) / 2. Exact for a sphere lit by a point source and seen from
-	/// far enough away that the terminator projects to a half-ellipse, which is
-	/// every case in a solar system and none in a close-up.
+	/// far enough away that the terminator projects to a half-ellipse.
+	///
+	/// **"Far enough away" is a real condition and it is not always met.** The
+	/// formula assumes the observer sees a hemisphere. An observer close in
+	/// sees a cap, and the two diverge fast: from a station 556 km above a
+	/// 6320 km planet -- 1.09 body radii out -- this returns 0.381 where the
+	/// truth is 0.053. T082 added a station to the system and this is what it
+	/// found, which is the argument for putting new bodies in front of old
+	/// tests.
+	///
+	/// **It converges slowly, and the numbers are worth having.** Measured
+	/// against sampling the target's surface, the error in the lit fraction is
+	///
+	///   1.05 radii  0.314      3 radii  0.066     10 radii  0.017
+	///    1.5 radii  0.182      5 radii  0.036     40 radii  0.004
+	///
+	/// so a per cent wants about forty radii and four per cent wants five. Five
+	/// was the figure guessed before measuring, and it was out by nearly an
+	/// order of magnitude.
+	///
+	/// Every real pair in a system clears this easily -- the nearest is a
+	/// planet seen from its own moon at sixty-seven radii. What does not is
+	/// anything in low orbit, and closer than a few radii a body is not showing
+	/// a phase at all: it is showing a landscape, and the caller's question has
+	/// changed.
 	LEDGERCORE_API double IlluminatedFraction(double PhaseAngleRadians);
 
 	/// Where an observer standing at an anchor on a body is, in system metres.

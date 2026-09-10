@@ -116,6 +116,27 @@ bool FLedgerSkyPhaseMatchesGeometry::RunTest(const FString&)
 				const FVector3d Eye =
 					LedgerSky::ObserverPosition(System, Observer, Anchor, At);
 
+				// **Far field only, and the boundary is measured rather than
+				// assumed.** The formula assumes the observer sees a
+				// hemisphere; an observer close in sees a cap. Twenty radii is
+				// where the error falls under this test's own bound -- five was
+				// tried first, on no evidence, and the walk-out below shows the
+				// error is still 0.036 there.
+				//
+				// No real pair in a system is anywhere near this: the closest
+				// is a planet seen from its own moon at sixty-seven radii. The
+				// only thing that trips it is something in low orbit, which is
+				// what T082's station is.
+				{
+					TArray<FLedgerState> Where;
+					LedgerEphemeris::StatesAt(System, At, Where);
+					const double Apart = (Where[Target].PositionMetres - Eye).Length();
+					if (Apart < System.Bodies[Target].RadiusMetres * 20.0)
+					{
+						continue;
+					}
+				}
+
 				const double Angle = LedgerSky::PhaseAngle(System, Target, Eye, At);
 				const double Formula = LedgerSky::IlluminatedFraction(Angle);
 				const double Sampled = SampledLitFraction(System, Target, Eye, At);
@@ -293,6 +314,86 @@ bool FLedgerSkyApparentSize::RunTest(const FString&)
 			Moon->AngularRadiusRadians > Star->AngularRadiusRadians
 				? TEXT("possible") : TEXT("not possible from here")));
 	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerSkyPhaseNearField,
+	"Ledger.SkyBody.ThePhaseFormulaBreaksDownCloseIn",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerSkyPhaseNearField::RunTest(const FString&)
+{
+	// **A limit measured rather than a limit assumed.**
+	//
+	// T082 put a station 556 km above a 6320 km planet, and the agreement test
+	// above -- green for two tasks -- failed at once: the formula said 0.381 of
+	// the planet was lit where sampling its surface said 0.053. The formula was
+	// never wrong; it was being asked outside its domain, and nothing in the
+	// system had previously been close enough to anything to notice.
+	//
+	// So this walks an observer in from far away and records where the
+	// approximation stops holding, which is the number a caller needs.
+	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
+	constexpr int32 Target = 1;
+	const double Radius = System.Bodies[Target].RadiusMetres;
+
+	TArray<FLedgerState> States;
+	LedgerEphemeris::StatesAt(System, 0.0, States);
+	const FVector3d Centre = States[Target].PositionMetres;
+
+	// Out along a direction that puts the observer at a useful phase angle
+	// rather than straight down the sun line, where everything agrees trivially.
+	const FVector3d Star = States[0].PositionMetres;
+	FVector3d Away = FVector3d::CrossProduct(
+		(Centre - Star).GetSafeNormal(), FVector3d::UnitZ()).GetSafeNormal();
+	Away = (Away + (Centre - Star).GetSafeNormal() * 0.4).GetSafeNormal();
+
+	FString Table;
+	double FirstGood = 0.0;
+	for (const double Radii : { 1.05, 1.2, 1.5, 2.0, 3.0, 5.0, 10.0, 40.0 })
+	{
+		const FVector3d Eye = Centre + Away * (Radius * Radii);
+		const double Formula = LedgerSky::IlluminatedFraction(
+			LedgerSky::PhaseAngle(System, Target, Eye, 0.0));
+		const double Sampled = SampledLitFraction(System, Target, Eye, 0.0);
+		const double Gap = FMath::Abs(Formula - Sampled);
+
+		Table += FString::Printf(
+			TEXT("  at %5.2f radii: formula %.4f, sampled %.4f, out by %.4f" LINE_TERMINATOR),
+			Radii, Formula, Sampled, Gap);
+		if (FirstGood <= 0.0 && Gap < 0.01)
+		{
+			FirstGood = Radii;
+		}
+	}
+	AddInfo(FString::Printf(TEXT("walking an observer out from the surface:" LINE_TERMINATOR "%s"), *Table));
+	AddInfo(FString::Printf(
+		TEXT("the far-field formula comes within a per cent of the truth from about "
+			 "%.2f body radii out"), FirstGood));
+
+	// The claim is that the domain documented on IlluminatedFraction is the
+	// domain it actually has -- and the documented figure was written AFTER
+	// this table, not before. The first guess was five radii; the measurement
+	// says forty for a per cent, and five is only good to about four.
+	TestTrue(*FString::Printf(
+		TEXT("the formula reaches a per cent by forty radii (holds from %.2f)"),
+		FirstGood),
+		FirstGood > 0.0 && FirstGood <= 40.0);
+	TestTrue(TEXT("and is still several per cent out at five radii, as documented"),
+		FirstGood > 5.0);
+
+	// And that it is genuinely bad close in, so nobody removes the restriction
+	// on the grounds that it seemed to work.
+	const FVector3d Close = Centre + Away * (Radius * 1.05);
+	const double CloseFormula = LedgerSky::IlluminatedFraction(
+		LedgerSky::PhaseAngle(System, Target, Close, 0.0));
+	const double CloseSampled = SampledLitFraction(System, Target, Close, 0.0);
+	AddInfo(FString::Printf(
+		TEXT("just above the surface it is out by %.3f of the disc, which is why "
+			 "the agreement test skips pairs that close"),
+		FMath::Abs(CloseFormula - CloseSampled)));
+	TestTrue(TEXT("close in it is genuinely wrong, not marginally so"),
+		FMath::Abs(CloseFormula - CloseSampled) > 0.05);
 	return true;
 }
 

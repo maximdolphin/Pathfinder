@@ -507,6 +507,36 @@ namespace LedgerBodies
 		Giant.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 34, 0.0, LedgerTwoPi);
 		System.Bodies.Add(Giant);
 
+		// A station in low orbit around the home planet. T082.
+		//
+		// Low enough that its month is measured in hours, which is what makes a
+		// station a station rather than a very small moon: it comes round often
+		// enough to be a place people go to and leave from.
+		FLedgerBody Station;
+		Station.Name = TEXT("Platform");
+		Station.Kind = ELedgerBodyKind::Station;
+		Station.Seed = static_cast<uint32>(Mix(Seed ^ 0xC2B2AE35u) & 0xFFFFFFFFull);
+		// A hundred tonnes and eighty metres across: the mass and radius are
+		// what the ephemeris and the frames want, not a hull description.
+		Station.MassKg = 1.0e5;
+		Station.RadiusMetres = 80.0;
+		Station.ParentIndex = 1;
+		Station.Orbit.SemiMajorAxisMetres =
+			Planet.RadiusMetres + 400000.0 * Between(Seed, 35, 0.8, 1.5);
+		Station.Orbit.Eccentricity = Between(Seed, 36, 0.0, 0.002);
+		Station.Orbit.InclinationRadians =
+			FMath::DegreesToRadians(Between(Seed, 37, 20.0, 60.0));
+		Station.Orbit.AscendingNodeRadians = Between(Seed, 38, 0.0, LedgerTwoPi);
+		Station.Orbit.PeriapsisArgumentRadians = Between(Seed, 39, 0.0, LedgerTwoPi);
+		Station.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 40, 0.0, LedgerTwoPi);
+		// Holding one face to the planet, so its day is its orbit.
+		{
+			const double Mu = 6.67430e-11 * Planet.MassKg;
+			const double Axis = Station.Orbit.SemiMajorAxisMetres;
+			Station.RotationPeriodSeconds = LedgerTwoPi * FMath::Sqrt((Axis * Axis * Axis) / Mu);
+		}
+		System.Bodies.Add(Station);
+
 		return System;
 	}
 }

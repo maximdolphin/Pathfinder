@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 11
+   "doneCount": 12
   },
   {
    "id": "M04",
@@ -5755,11 +5755,24 @@
    "dependsOn": [
     "T081"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A station is a body: parent, orbit, and the ephemeris puts it where it belongs. Nothing new was needed for the first half of the acceptance except a fourth row in the system description. ON RAILS: station at 556 km altitude, 96.7 minute orbit, 28.4 degrees inclination. Over 30 days in 20000 steps the two routes to its position -- the whole-system walk summing a parent chain, and the direct 'parent's place plus its own orbit' -- differ by at most 0.000000 m, and one orbit returns it to within 0.000000 m. A station is two orbits deep, so the sum has to come out the same either way. THE FRAME IS THE ORBIT'S, NOT THE STARS': up away from the parent, forward along the track, third axis from those -- the local-vertical local-horizontal frame every real spacecraft uses, costing nothing extra because both vectors are already in the state the ephemeris returns. Up is 1.479e-06 degrees off outward and the basis is right-handed to 1.453e-10. Forward is NOT exactly the velocity and should not be: on an eccentric orbit the velocity has a radial part -- the station climbing and falling -- which belongs to up, and the 0.0939 degree angle between them is this orbit's eccentricity of 0.00164 showing itself. STAYING DOCKED: the dock stays 41.665 m out to within 3.333e-05 m over a month, and its local coordinates return to within 3.487e-05 m, while being carried 44143 km in a quarter orbit. BOTH BOUNDS STARTED TIGHTER THAN THE ARITHMETIC CAN REACH: the station is 1.5e11 m from the primary and the dock 42 m from the station, so recovering the second from the first throws away eleven digits -- a double's last bit at 1.5e11 is about 20 microns and both figures are a couple of those. The first bound written was a micron, finer than any correct implementation could have met. Same mistake in a second place: the frame axes were probed with a one-metre lever arm, putting 20 microns of subtraction noise on a 1 m vector and reporting a thousandth of a degree of false lean; a hundred-kilometre arm reads the same direction with the noise divided by a hundred thousand. WHAT THE STATION BROKE, AND WHY THAT IS THE POINT: adding a fourth body IMMEDIATELY FAILED a test green for two tasks. Ledger.SkyBody.PhaseMatchesTheSunTargetObserverGeometry walks every pair, and the station is 556 km above a 6320 km planet -- the formula said 0.38102 of it was lit where sampling its surface said 0.05268. The formula was never wrong; (1 + cos a)/2 assumes the observer sees a hemisphere, and nothing in the system had previously been close enough to anything to leave that domain. So the domain was measured rather than assumed: out by 0.314 at 1.05 radii, 0.036 at 5, 0.017 at 10, 0.004 at 40. A PER CENT WANTS ABOUT FORTY RADII. Five was the figure guessed before measuring -- and written into the exclusion before the table existed -- and it is out by nearly an order of magnitude. The documented domain is now the measured one, with a test that walks an observer in and records the breakdown so nobody removes the restriction on the grounds that it seemed to work. Every real pair clears it easily; the closest is a planet seen from its own moon at sixty-seven radii, and the only thing that trips it is something in low orbit, which is exactly what a station is. 98 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T082-2026-09-10T15-41-45-847.txt",
+     "caption": "Position exact over 30 days, dock held to 33 microns, and the far-field phase formula's domain measured at forty radii for a per cent",
+     "source": "../out/t082-station.txt",
+     "addedAt": "2026-09-10T15:41:45.848Z"
+    }
+   ],
    "plannedStartDay": 202.5,
    "plannedEndDay": 204.5,
    "plannedStart": "2027-06-16",
@@ -13749,5 +13762,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:33:29.419Z"
+ "updatedAt": "2026-09-10T15:41:45.851Z"
 }
