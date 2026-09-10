@@ -1,0 +1,37 @@
+BeginEvents: Ledger.SystemGen.TwentySystemsAreAllPhysicallyPlausible
+twenty systems from twenty seeds:
+   0:  8 bodies, star 0.90 solar (0.663 L), 3 rocky 1 giants 2 moons, home at 0.914 au
+   1: 18 bodies, star 0.93 solar (0.763 L), 2 rocky 4 giants 10 moons, home at 0.912 au
+   2: 15 bodies, star 1.44 solar (4.352 L), 3 rocky 3 giants 7 moons, home at 2.490 au
+   3: 16 bodies, star 1.04 solar (1.160 L), 3 rocky 4 giants 7 moons, home at 1.174 au
+   4: 11 bodies, star 1.19 solar (2.010 L), 1 rocky 3 giants 5 moons, home at 1.886 au
+   5: 18 bodies, star 0.82 solar (0.454 L), 2 rocky 5 giants 9 moons, home at 0.806 au
+   6: 10 bodies, star 0.82 solar (0.460 L), 3 rocky 1 giants 4 moons, home at 0.722 au
+   7: 16 bodies, star 1.15 solar (1.721 L), 3 rocky 3 giants 8 moons, home at 1.462 au
+   8: 19 bodies, star 1.45 solar (4.376 L), 2 rocky 4 giants 11 moons, home at 2.926 au
+   9: 17 bodies, star 1.27 solar (2.608 L), 2 rocky 5 giants 8 moons, home at 2.163 au
+  10:  9 bodies, star 1.16 solar (1.826 L), 3 rocky 1 giants 3 moons, home at 1.788 au
+  11:  9 bodies, star 1.01 solar (1.058 L), 3 rocky 1 giants 3 moons, home at 1.102 au
+  12: 17 bodies, star 1.09 solar (1.406 L), 2 rocky 3 giants 10 moons, home at 1.563 au
+  13: 16 bodies, star 0.63 solar (0.153 L), 2 rocky 4 giants 8 moons, home at 0.495 au
+  14: 11 bodies, star 1.23 solar (2.283 L), 2 rocky 2 giants 5 moons, home at 1.739 au
+  15:  8 bodies, star 1.43 solar (4.213 L), 3 rocky 1 giants 2 moons, home at 2.692 au
+  16:  9 bodies, star 1.04 solar (1.183 L), 2 rocky 1 giants 4 moons, home at 1.364 au
+  17: 15 bodies, star 1.07 solar (1.288 L), 3 rocky 3 giants 7 moons, home at 1.568 au
+  18: 17 bodies, star 0.89 solar (0.635 L), 3 rocky 4 giants 8 moons, home at 0.832 au
+  19:  9 bodies, star 1.03 solar (1.119 L), 3 rocky 1 giants 3 moons, home at 1.184 au
+
+EndEvents: Ledger.SystemGen.TwentySystemsAreAllPhysicallyPlausible
+BeginEvents: Ledger.SystemGen.NoneIsARearrangementOfAnother
+across 190 pairs: 0 identical, 0 rearrangements, 16 sharing only a body count
+body counts run 8 to 19; star masses 0.63 to 1.45 solar, a luminosity range of 0.66 to 0.66
+EndEvents: Ledger.SystemGen.NoneIsARearrangementOfAnother
+BeginEvents: Ledger.SystemGen.ThePlausibilityRulesActuallyRefuseThings
+what the rules refuse, and why:
+  gas giant inside the frost line    Giant 2 is a gas giant at 0.60 au, inside the frost line at 2.20
+  home world too close to the star   the home world is at 0.120 au, outside the habitable zone of 0.773 to 1.221 for a star of 0.663 solar luminosities
+  moon inside the Roche limit        Companion orbits Home inside its Roche limit and would be a ring
+  moon the star would steal          Companion orbits Home beyond half its Hill sphere and the star would take it
+  a rocky planet denser than iron    Home has a density of 2198768 kg/m3, outside 2500 to 8000 for its kind
+  a home world on a comet's orbit    Home has an eccentricity of 0.700
+

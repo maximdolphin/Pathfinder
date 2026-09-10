@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 13
+   "doneCount": 14
   },
   {
    "id": "M04",
@@ -5829,11 +5829,24 @@
    "dependsOn": [
     "T083"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Twenty systems, all plausible, none a rearrangement of another. PLAUSIBLE IS NOT AN OPINION: every rule was built and measured by an earlier task in this milestone -- frost line from T079, Roche limit from T080, Hill sphere from T083, mass-luminosity from T076. This is where they stop describing one system and become constraints on all of them. THE TWENTY: 8 to 19 bodies, stars 0.63 to 1.45 solar which is a luminosity range of 0.153 to 4.376, 1 to 5 giants, 2 to 11 moons. THE HABITABLE ZONE FOLLOWS THE STAR AND NOTHING SAYS SO ANYWHERE: the dim star's world sits at 0.495 au and the bright one's at 2.926, because the zone goes as the square root of the luminosity and the luminosity as a power of the mass. Across all 190 pairs: 0 identical, 0 rearrangements (compared on the sorted multiset, since the acceptance says rearrangement and not merely difference). THE CHECKER EARNS ITS KEEP BY REFUSING, and by refusing for the RIGHT reason -- checking only that a broken system is rejected lets a case pass on somebody else's rule, and two did: moving the home world out to four au was meant to test the habitable zone and was refused for landing next to a gas giant; moving it in to a tenth of an au was refused because a Hill sphere scales with the orbit, so its companion ended up outside a sphere that had shrunk by seven. Breaking one thing means breaking exactly one thing, and each case now asserts the reason it names. WHAT THE CHECKER FOUND IN THE GENERATOR: the first run rejected SIXTEEN OF TWENTY and every rejection was real. (1) 'The planets are not in order of distance' was the CHECKER's fault -- a rule about the array rather than the system, refusing any description that listed the home world before an inner planet. Where a body sits in the description is nobody's business but the description's; planets are sorted by distance before spacing is checked. (2) MOONS HAD MOONS: the giant's index was computed inside the moon loop as Num()-1, which is the giant only until the first moon is added, so eighteen systems had a moon orbiting a moon. (3) Pairs seven or eight mutual Hill radii apart, because a geometric walk outwards does not know how heavy the next planet is -- the mass is chosen first now and the orbit pushed out until there is room. (4) SMALL GAS GIANTS LIGHTER THAN BALSA: radius-as-mass-to-the-0.08 says a small giant is nearly as wide as a large one and therefore far less dense, and a 0.12-Jupiter body came out at 265 kg/m3. Real small giants are DENSER -- Neptune is a sixteenth of Jupiter's mass, a third of its radius and half again its density. Two segments fitted through Neptune, Saturn and Jupiter: 0.52 below a third of a Jupiter mass, 0.14 above where degeneracy holds the radius flat. TWO INDICES, NOT FIVE: Generate used to produce exactly five bodies and seven test files had learned that body 3 was the gas giant and body 4 the station. A system with four planets and one with seven cannot both put a giant at index 3. Only body 0 (star) and body 1 (home world) are fixed now; everything else is asked for by role, and two of the seven converted files were then found to be looking at the wrong body entirely -- an eclipse test measuring something nowhere near the sun, and a noon test whose 'moon' had become an inner planet with a months-long day. The mass-luminosity relation moved to LedgerBodies in the same pass, because the generator needs it before anything has a sky. 104 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T084-2026-09-10T16-04-08-551.txt",
+     "caption": "Twenty systems: 8 to 19 bodies, luminosity 0.153 to 4.376, home worlds from 0.495 to 2.926 au, no identical pairs and no rearrangements",
+     "source": "../out/t084-systems.txt",
+     "addedAt": "2026-09-10T16:04:08.552Z"
+    }
+   ],
    "plannedStartDay": 206.5,
    "plannedEndDay": 209.5,
    "plannedStart": "2027-06-22",
@@ -13775,5 +13788,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:48:23.371Z"
+ "updatedAt": "2026-09-10T16:04:08.555Z"
 }

@@ -5,15 +5,19 @@
 
 namespace
 {
-	constexpr double Boltzmann = 1.380649e-23;
-	constexpr double AtomicMassUnit = 1.66053907e-27;
+	// Prefixed, because Unreal compiles this module as one translation unit and
+	// a bare `GasBoltzmann` at file scope collides with every function-local one in
+	// the blob. That has bitten this project before; the convention is that a
+	// file-scope constant carries its file's name.
+	constexpr double GasBoltzmann = 1.380649e-23;
+	constexpr double GasAtomicMassUnit = 1.66053907e-27;
 
 	/// Hydrogen and helium in the proportions a giant forms with: about 86%
 	/// H2 and 14% He by number, which averages a shade over two.
-	constexpr double HydrogenHeliumMassKg = 2.3 * AtomicMassUnit;
+	constexpr double GasHydrogenHeliumMassKg = 2.3 * GasAtomicMassUnit;
 
 	/// Nitrogen, for anything rocky enough to have lost the light gases.
-	constexpr double NitrogenMassKg = 28.0 * AtomicMassUnit;
+	constexpr double GasNitrogenMassKg = 28.0 * GasAtomicMassUnit;
 }
 
 namespace LedgerGas
@@ -21,7 +25,7 @@ namespace LedgerGas
 	double MolecularMassKg(const FLedgerBody& Body)
 	{
 		return Body.Kind == ELedgerBodyKind::GasGiant
-			? HydrogenHeliumMassKg : NitrogenMassKg;
+			? GasHydrogenHeliumMassKg : GasNitrogenMassKg;
 	}
 
 	double GravityAt(const FLedgerBody& Body, double DepthMetres)
@@ -48,7 +52,7 @@ namespace LedgerGas
 		{
 			return 0.0;
 		}
-		return Boltzmann * TemperatureKelvin / (Mass * Gravity);
+		return GasBoltzmann * TemperatureKelvin / (Mass * Gravity);
 	}
 
 	double PressurePascals(

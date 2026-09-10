@@ -82,7 +82,13 @@ bool FLedgerSkyNoon::RunTest(const FString&)
 	// The planet and its moon. The moon is here because its sun direction is
 	// the star minus the MOON, not the star minus the planet, and a version
 	// that took the parent's would still pass at the planet.
-	const int32 Bodies[] = { 1, 2 };
+	//
+	// **Asked for by role.** This was `{ 1, 2 }`, and T084 made body 2 whatever
+	// the seed produced -- which for one seed was an inner planet whose day is
+	// months long, where the declination drifts through half a rotation while
+	// the body turns once and "noon" stops meaning what this test measures.
+	const int32 Bodies[] = { 1, LedgerBodies::FirstChildOfKind(
+		System, 1, ELedgerBodyKind::Moon) };
 
 	// Off the exact poles, where the hour angle is undefined -- the anchor has
 	// no azimuth there and the altitude barely moves all day. That is a

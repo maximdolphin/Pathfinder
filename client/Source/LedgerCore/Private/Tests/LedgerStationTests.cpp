@@ -8,9 +8,15 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+// T084 made the number of bodies depend on the seed, so only the star (0) and
+// the home world (1) are at fixed indices. Everything else is asked for by role.
+
 namespace
 {
-	constexpr int32 StationIndex = 4;
+	int32 StationOf(const FLedgerSystem& System)
+	{
+		return LedgerBodies::FirstOfKind(System, ELedgerBodyKind::Station);
+	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerStationOrbit,
@@ -20,6 +26,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerStationOrbit,
 bool FLedgerStationOrbit::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
+	const int32 StationIndex = StationOf(System);
 	TestTrue(TEXT("the system has a station"), System.Bodies.IsValidIndex(StationIndex));
 
 	const FLedgerBody& Station = System.Bodies[StationIndex];
@@ -101,6 +108,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerStationDocked,
 bool FLedgerStationDocked::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
+	const int32 StationIndex = StationOf(System);
 	const FLedgerBody& Station = System.Bodies[StationIndex];
 	const double Period = LedgerEphemeris::PeriodSeconds(
 		System.Bodies[Station.ParentIndex].MassKg, Station.Orbit.SemiMajorAxisMetres);
@@ -189,6 +197,7 @@ bool FLedgerStationFrame::RunTest(const FString&)
 	// The frame has to mean what it says, or "up" on a station is whichever way
 	// the maths happened to point and every handrail is somewhere different.
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
+	const int32 StationIndex = StationOf(System);
 	const FLedgerBody& Station = System.Bodies[StationIndex];
 	const double Period = LedgerEphemeris::PeriodSeconds(
 		System.Bodies[Station.ParentIndex].MassKg, Station.Orbit.SemiMajorAxisMetres);

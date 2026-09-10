@@ -224,7 +224,7 @@ bool FLedgerGravitySwitch::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
 	constexpr int32 Planet = 1;
-	constexpr int32 Moon = 2;
+	const int32 Moon = LedgerBodies::FirstChildOfKind(System, 1, ELedgerBodyKind::Moon);
 
 	FString Table;
 	for (int32 Index = 1; Index < System.Bodies.Num(); ++Index)

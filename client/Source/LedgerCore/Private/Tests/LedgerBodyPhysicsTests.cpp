@@ -42,9 +42,11 @@ bool FLedgerBodyGravity::RunTest(const FString&)
 	}
 	AddInfo(FString::Printf(TEXT("the bodies of this system:\n%s"), *Table));
 
-	TestTrue(TEXT("there is a moon to land on"), System.Bodies.IsValidIndex(2));
+	const int32 MoonIndex = LedgerBodies::FirstChildOfKind(
+		System, 1, ELedgerBodyKind::Moon);
+	TestTrue(TEXT("there is a moon to land on"), System.Bodies.IsValidIndex(MoonIndex));
 	const FLedgerBody& Planet = System.Bodies[1];
-	const FLedgerBody& Moon = System.Bodies[2];
+	const FLedgerBody& Moon = System.Bodies[MoonIndex];
 
 	TestTrue(*FString::Printf(
 		TEXT("the moon is smaller (%.0f km against %.0f km)"),
@@ -70,7 +72,8 @@ bool FLedgerBodyAtmosphere::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
 	TestTrue(TEXT("the planet has air"), LedgerSky::RetainsAtmosphere(System, 1, 0.0));
-	TestFalse(TEXT("the moon has none"), LedgerSky::RetainsAtmosphere(System, 2, 0.0));
+	TestFalse(TEXT("the moon has none"), LedgerSky::RetainsAtmosphere(System,
+		LedgerBodies::FirstChildOfKind(System, 1, ELedgerBodyKind::Moon), 0.0));
 
 	// **The rule against the real cases, which is the only reason to trust it
 	// on invented ones.** Escape velocity against the thermal speed of
@@ -144,7 +147,8 @@ bool FLedgerBodyEquilibrium::RunTest(const FString&)
 	// so they must come out at very nearly the same temperature -- which is the
 	// check that this is about distance and not about size.
 	const double PlanetK = LedgerSky::EquilibriumTemperatureKelvin(System, 1, 0.0);
-	const double MoonK = LedgerSky::EquilibriumTemperatureKelvin(System, 2, 0.0);
+	const double MoonK = LedgerSky::EquilibriumTemperatureKelvin(System,
+		LedgerBodies::FirstChildOfKind(System, 1, ELedgerBodyKind::Moon), 0.0);
 	AddInfo(FString::Printf(TEXT("planet %.1f K, moon %.1f K"), PlanetK, MoonK));
 	TestEqual(TEXT("a moon is as warm as the planet it orbits"), MoonK, PlanetK, 2.0);
 

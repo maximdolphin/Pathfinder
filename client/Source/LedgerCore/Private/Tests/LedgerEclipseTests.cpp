@@ -184,8 +184,13 @@ bool FLedgerEclipsePredicted::RunTest(const FString&)
 		LedgerSky::VisibleBodies(System, Planet, Anchor, DeepestAt, Seen);
 		const FLedgerSkyBody* Star = Seen.FindByPredicate(
 			[](const FLedgerSkyBody& B) { return B.BodyIndex == 0; });
+		// The body that actually did the eclipsing, not "body 2". With T084's
+		// systems the occulter varies, and asking for a fixed index measured
+		// something else entirely: it reported a subtended ratio of 0.006 for a
+		// body that was nowhere near the sun.
+		const int32 Occulter = LedgerSky::EclipsingBody(System, Planet, Anchor, DeepestAt);
 		const FLedgerSkyBody* Moon = Seen.FindByPredicate(
-			[](const FLedgerSkyBody& B) { return B.BodyIndex == 2; });
+			[Occulter](const FLedgerSkyBody& B) { return B.BodyIndex == Occulter; });
 		if (Star != nullptr && Moon != nullptr)
 		{
 			const double Ratio = Moon->AngularRadiusRadians / Star->AngularRadiusRadians;
@@ -278,7 +283,9 @@ bool FLedgerEclipseNotAtNight::RunTest(const FString&)
 	constexpr int32 Planet = 1;
 	const FVector3d Anchor = EclipseAnchor(12.0, 40.0);
 
-	const double Month = FMath::Abs(System.Bodies[2].RotationPeriodSeconds);
+	const double Month = FMath::Abs(System.Bodies[
+		LedgerBodies::FirstChildOfKind(System, 1, ELedgerBodyKind::Moon)]
+			.RotationPeriodSeconds);
 	int32 Night = 0;
 	int32 Eclipsed = 0;
 	for (int32 Step = 0; Step < 20000; ++Step)

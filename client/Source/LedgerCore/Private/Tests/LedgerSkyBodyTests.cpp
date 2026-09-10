@@ -90,8 +90,10 @@ bool FLedgerSkyPhaseMatchesGeometry::RunTest(const FString&)
 
 	// A month's worth of moments, and one much later, so this is not a claim
 	// about a convenient configuration.
-	const double Month = System.Bodies.IsValidIndex(2)
-		? FMath::Abs(System.Bodies[2].RotationPeriodSeconds) : 2.4e6;
+	const int32 MoonIndex = LedgerBodies::FirstChildOfKind(
+		System, 1, ELedgerBodyKind::Moon);
+	const double Month = System.Bodies.IsValidIndex(MoonIndex)
+		? FMath::Abs(System.Bodies[MoonIndex].RotationPeriodSeconds) : 2.4e6;
 	const double Times[] = {
 		0.0, Month * 0.125, Month * 0.25, Month * 0.375, Month * 0.5,
 		Month * 0.625, Month * 0.75, Month * 0.875, Month * 11.3, 4.7e8 };
@@ -204,14 +206,16 @@ bool FLedgerSkyPhaseEnds::RunTest(const FString&)
 	// through both a nearly-full and a nearly-new phase, or the geometry is not
 	// producing a cycle at all.
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	if (!System.Bodies.IsValidIndex(2))
+	const int32 MoonIndex = LedgerBodies::FirstChildOfKind(
+		System, 1, ELedgerBodyKind::Moon);
+	if (!System.Bodies.IsValidIndex(MoonIndex))
 	{
 		AddInfo(TEXT("no moon in this system; the cycle check is skipped"));
 		return true;
 	}
 
 	const FVector3d Anchor = SkyBodyAnchor(0.0, 0.0);
-	const double Month = FMath::Abs(System.Bodies[2].RotationPeriodSeconds);
+	const double Month = FMath::Abs(System.Bodies[MoonIndex].RotationPeriodSeconds);
 	double Brightest = 0.0;
 	double Darkest = 1.0;
 	for (int32 Step = 0; Step < 400; ++Step)
@@ -219,7 +223,8 @@ bool FLedgerSkyPhaseEnds::RunTest(const FString&)
 		const double At = Month * Step / 400.0;
 		const FVector3d Eye = LedgerSky::ObserverPosition(System, 1, Anchor, At);
 		const double Fraction =
-			LedgerSky::IlluminatedFraction(LedgerSky::PhaseAngle(System, 2, Eye, At));
+			LedgerSky::IlluminatedFraction(
+				LedgerSky::PhaseAngle(System, MoonIndex, Eye, At));
 		Brightest = FMath::Max(Brightest, Fraction);
 		Darkest = FMath::Min(Darkest, Fraction);
 	}
@@ -304,8 +309,10 @@ bool FLedgerSkyApparentSize::RunTest(const FString&)
 	// T075 is where that stops being a coincidence and starts being a date.
 	const FLedgerSkyBody* Star = Seen.FindByPredicate(
 		[](const FLedgerSkyBody& B) { return B.BodyIndex == 0; });
+	const int32 MoonIndex = LedgerBodies::FirstChildOfKind(
+		System, 1, ELedgerBodyKind::Moon);
 	const FLedgerSkyBody* Moon = Seen.FindByPredicate(
-		[](const FLedgerSkyBody& B) { return B.BodyIndex == 2; });
+		[MoonIndex](const FLedgerSkyBody& B) { return B.BodyIndex == MoonIndex; });
 	if (Star != nullptr && Moon != nullptr)
 	{
 		AddInfo(FString::Printf(

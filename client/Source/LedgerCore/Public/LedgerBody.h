@@ -146,5 +146,47 @@ namespace LedgerBodies
 
 	/// A system from a seed. Deterministic: the same seed is the same system,
 	/// on any machine, forever.
+	///
+	/// **Two indices are guaranteed and the rest are not.** Body 0 is the star
+	/// and body 1 is the world the game is about; everything after depends on
+	/// what the seed produced, because a system with four planets and one with
+	/// seven cannot both put a gas giant at index 3. Ask for the others by role.
 	LEDGERCORE_API FLedgerSystem Generate(uint32 Seed);
+
+	/// How bright a star is, relative to the Sun, from its mass alone.
+	///
+	/// The main-sequence mass-luminosity relation, piecewise because one
+	/// exponent does not cover the sequence. It lives here rather than in
+	/// LedgerSky because the GENERATOR needs it -- the frost line and the
+	/// habitable zone are both set by it, and a system has to be laid out
+	/// before anything can look at its sky. LedgerSky's watts are this times
+	/// the Sun's output.
+	LEDGERCORE_API double StarLuminosityRelative(const FLedgerBody& Star);
+
+	/// The body that orbits nothing. Index 0 by convention and by check.
+	LEDGERCORE_API int32 PrimaryIndex(const FLedgerSystem& System);
+
+	/// The world the game is about: index 1, the one in the habitable zone.
+	LEDGERCORE_API int32 HomeIndex(const FLedgerSystem& System);
+
+	/// The first body of a kind, or INDEX_NONE.
+	LEDGERCORE_API int32 FirstOfKind(
+		const FLedgerSystem& System, ELedgerBodyKind Kind);
+
+	/// The first body orbiting a given one, or INDEX_NONE.
+	LEDGERCORE_API int32 FirstChildOf(const FLedgerSystem& System, int32 ParentIndex);
+
+	/// The first body of a kind orbiting a given one, or INDEX_NONE.
+	LEDGERCORE_API int32 FirstChildOfKind(
+		const FLedgerSystem& System, int32 ParentIndex, ELedgerBodyKind Kind);
+
+	/// Whether a system could exist: one star, planets that will not scatter
+	/// each other, giants only where giants form, moons outside the Roche limit
+	/// and inside the Hill sphere, and a habitable world somewhere it could be
+	/// habitable.
+	///
+	/// Separate from Validate, which asks whether a description is
+	/// self-consistent. A system can be perfectly well-formed and still be one
+	/// that would have torn itself apart in its first million years.
+	LEDGERCORE_API bool Plausible(const FLedgerSystem& System, FString& OutWhy);
 }

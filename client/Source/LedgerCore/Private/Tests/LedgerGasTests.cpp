@@ -36,7 +36,7 @@ bool FLedgerGasHydrostatic::RunTest(const FString&)
 	// rho recomputed from the pressure at each slice. They share the physics
 	// and nothing else.
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	constexpr int32 Giant = 3;
+	const int32 Giant = LedgerBodies::FirstOfKind(System, ELedgerBodyKind::GasGiant);
 	TestTrue(TEXT("the system has a gas giant"), System.Bodies.IsValidIndex(Giant));
 
 	const FLedgerBody& Body = System.Bodies[Giant];
@@ -92,7 +92,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerGasCrushDepth,
 bool FLedgerGasCrushDepth::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	constexpr int32 Giant = 3;
+	const int32 Giant = LedgerBodies::FirstOfKind(System, ELedgerBodyKind::GasGiant);
 	const FLedgerBody& Body = System.Bodies[Giant];
 	const double Temperature = LedgerSky::EquilibriumTemperatureKelvin(System, Giant, 0.0);
 

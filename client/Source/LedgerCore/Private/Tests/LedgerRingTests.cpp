@@ -30,7 +30,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerRingsRoche,
 bool FLedgerRingsRoche::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	constexpr int32 Giant = 3;
+	const int32 Giant = LedgerBodies::FirstOfKind(System, ELedgerBodyKind::GasGiant);
 
 	const FLedgerRings Rings = LedgerRings::For(System, Giant);
 	const FLedgerBody& Body = System.Bodies[Giant];
@@ -107,7 +107,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerRingsShadow,
 bool FLedgerRingsShadow::RunTest(const FString&)
 {
 	const FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	constexpr int32 Giant = 3;
+	const int32 Giant = LedgerBodies::FirstOfKind(System, ELedgerBodyKind::GasGiant);
 	const FLedgerRings Rings = LedgerRings::For(System, Giant);
 
 	const double Year = LedgerEphemeris::PeriodSeconds(
@@ -208,7 +208,7 @@ bool FLedgerRingsGaps::RunTest(const FString&)
 	// The generated giant has no moon of its own, so this builds one: a body
 	// orbiting the giant close enough that its resonances fall inside the ring.
 	FLedgerSystem System = LedgerBodies::Generate(20260908u);
-	constexpr int32 Giant = 3;
+	const int32 Giant = LedgerBodies::FirstOfKind(System, ELedgerBodyKind::GasGiant);
 	const FLedgerRings Rings = LedgerRings::For(System, Giant);
 
 	FLedgerBody Shepherd;

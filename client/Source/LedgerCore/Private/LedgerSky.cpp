@@ -574,15 +574,11 @@ namespace LedgerSky
 		{
 			return 0.0;
 		}
-		const double Mass = Star.MassKg / SolarMassKg;
-
-		// Piecewise, because one exponent does not cover the main sequence. The
-		// low-mass branch is shallower: a star half the Sun's mass is about a
-		// twelfth as bright under 3.5 and about a fifth under 2.3, and the
-		// second is the one that matches observation down there.
-		const double Exponent = Mass < 0.43 ? 2.3 : (Mass < 2.0 ? 4.0 : 3.5);
-		const double Scale = Mass < 0.43 ? 0.23 : 1.0;
-		return SolarLuminosityWatts * Scale * FMath::Pow(Mass, Exponent);
+		// The relation itself lives on the body, because T084's generator needs
+		// it before anything has a sky: the frost line and the habitable zone
+		// are both set by it. Two copies of a piecewise power law is two chances
+		// for a system to be laid out against one and lit by the other.
+		return SolarLuminosityWatts * LedgerBodies::StarLuminosityRelative(Star);
 	}
 
 	double StarTemperatureKelvin(const FLedgerBody& Star)
