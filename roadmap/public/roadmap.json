@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 1
+   "doneCount": 2
   },
   {
    "id": "M04",
@@ -5231,10 +5231,16 @@
    "dependsOn": [
     "T069"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Analytic Kepler ephemeris in LedgerCore: mean motion, eccentric anomaly, state relative to a parent, and states for a whole system in the primary's frame by walking the parent chain. Four green tests. The acceptance -- stepped from zero against asked-for directly, sub-metre over a century -- reads 0.000000 m worst over 36,525 accumulated day-steps, which for a function of time is close to a tautology and is exactly the point: an integrator would fail it, and this test is what stops one quietly replacing this. THE SOLVER SHIPPED A DIVERGENCE AND A TEST CAUGHT IT. The first starting guess was the third-order seed M + e sin M / (1 - sin(M+e) + sin M), whose denominator passes through zero; at e=0.95 and M=-18002 it did, Newton launched off the root, and Kepler's equation came back with a residual of 6.5 MILLION radians. Danby's seed cannot blow up -- M displaced towards periapsis by at most 0.85e, always inside the interval containing the root -- and the worst residual is now 4.4e-16. A table of expected values would not have caught it, because the answer was not wrong in a way anybody would have thought to tabulate; checking by substitution into the equation being solved would catch any solver that returns a plausible-looking number. Three other properties are pinned: a body returns to where it started after one period and after a hundred, and the analytically-written velocity agrees with a central difference of the position it claims to describe to 1.5e-10 relative."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 177,
    "plannedEndDay": 180,
@@ -13513,5 +13519,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T07:30:02.209Z"
+ "updatedAt": "2026-09-10T07:34:02.892Z"
 }
