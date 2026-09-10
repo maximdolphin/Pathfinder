@@ -1,0 +1,26 @@
+One place, one camera, one day (T072).
+
+rotation period       77719 s (21.59 hours)
+local noon at         72471 s from epoch
+axial tilt             17.2 degrees
+eye height               40 m above the queried ground
+
+queried ground       2370.5 m above sea level
+height field         2370.5 m above sea level
+the query is           -0.0 m low
+
+step   fraction of day   solar altitude   image
+   0           -0.500         -63.43    day-sweep-0.png
+   1           -0.375         -38.18    day-sweep-1.png
+   2           -0.250           2.26    day-sweep-2.png
+   3           -0.125          44.04    day-sweep-3.png
+   4            0.000          75.09    day-sweep-4.png
+   5            0.125          44.01    day-sweep-5.png
+   6            0.250           2.22    day-sweep-6.png
+   7            0.375         -38.29    day-sweep-7.png
+
+5 of 8 steps are in daylight, and the highest sun is step 4, which is the step at noon.
+
+Nothing moved between these frames except the time. The site, the camera
+and the ground are the same in all eight; the sun's direction is
+LedgerSky::SunDirectionInBody at eight instants, and the light follows it.

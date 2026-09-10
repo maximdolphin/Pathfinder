@@ -10,6 +10,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LedgerBody.h"
 #include "GameFramework/GameModeBase.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "LedgerWorld.generated.h"
@@ -80,9 +81,17 @@ private:
 	UPROPERTY()
 	TObjectPtr<ALedgerSettlement> Settlement;
 
+	/// The bodies this world is one of, and when it is. Generated from a seed
+	/// at BeginPlay; the sun's direction is a consequence of both.
+	FLedgerSystem System;
+	double WhenSeconds = 0.0;
+
 	/// Direction from the planet's centre toward the sun. Half the planet is in
 	/// darkness at any moment — a site chosen on relief alone lands on whichever
 	/// half, and the first time it did, the shot came back black.
+	///
+	/// No longer a constant: T072 derives it from the orbit and the rotation at
+	/// WhenSeconds, so `-when=` moves the sun and nothing else has to.
 	FVector3d SunFacing = FVector3d::UnitZ();
 	FVector3d SiteDirection = FVector3d::UnitZ();
 

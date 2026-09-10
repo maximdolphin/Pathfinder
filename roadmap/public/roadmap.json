@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 3
+   "doneCount": 4
   },
   {
    "id": "M04",
@@ -5298,11 +5298,36 @@
    "dependsOn": [
     "T071"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Sun position from the body's rotation and orbit. LedgerSky in LedgerCore: sun direction in the body frame, in east-north-up at an anchor, solar altitude, hour angle, and NextLocalNoon solved rather than sampled. Two green tests. ACCEPTANCE: at 9 latitudes from -85 to +85, 3 longitudes, 5 dates across a year and on both the planet and its moon, the altitude at the solved noon is within 1.054e-05 rad of the highest the sun gets all day -- 0.0006 degrees, about one per cent of the width of the sun -- and the hour angle there is 1.256e-12 rad. THE MOON FORCED TWO THINGS. First, the solver: the hour angle does not advance at the rotation rate but at the rotation rate minus the rate the star's own direction moves, which on the planet is a third of a per cent and on a tidally locked moon is several, so eight Newton steps with an assumed slope left the hour angle at 2.283e-9 against a 1e-9 bound. Secant instead: one extra evaluation, and it does not care what orbits what. Second, the bound: the altitude peak is genuinely NOT at the meridian crossing, because the star keeps moving in declination while the body turns, and the displacement goes as the declination rate over the SQUARE of the rotation rate. At latitude 85 on the moon that is 7054 s -- two hours -- and it is physics, not error. So the assertion is on whether the sun is at its highest, which is what the acceptance says, plus a scale-free bound that noon is within one per cent of the body's own day of the peak; the drift uses 0.3% of it. THE WORLD NO LONGER HAS A HARDCODED SUN. LedgerWorld's (0.55, 0.35, 0.78) is gone; the sun is LedgerSky::SunDirectionInBody at a time set by -when=, with the system generated from -systemseed=. A hand-picked vector was a fourth independent variable next to the orbit, the rotation and the season, and a sky that can disagree with the ephemeris is not evidence of anything. New -daysweep fixture: one site, one camera, eight frames across one rotation, nothing changing but the time. Solar altitude runs -63.43, -38.18, 2.26, 44.04, 75.09, 44.01, 2.22, -38.29 -- symmetric about noon, peak at the step the ephemeris named before anything rendered. Sky brightness tracks it: 8.7, 0.0, 145.0, 200.9, 152.7, 127.0, 69.0, 4.3 out of 255, with step 1 fully black. FOUND A SEPARATE AND LARGER BUG WHILE PHOTOGRAPHING THIS: the terrain takes no direct light at all. At noon with the sun 75 degrees up, the unlit base colour reads 128.90 and the lit frame with fog and atmosphere off reads 0.00. Every normal frame is in-scattered air in front of a black surface. Shadows off changes 6.96 to 6.95; re-baking materials changes nothing; the terrain query and the height field agree on the ground to 0.0 m; standing the flight harness down changed no measurement. Fixed a real defect on the way -- the triplanar normal swizzle put the out-of-surface channel on +x, +y, +z unconditionally, so half a sphere had normals pointing into the ground -- and the frames came back bit-identical, which is the finding: if changing the surface normal changes no pixel, the surface is not being shaded. Written up in docs/comparisons/day-sweep with the numbers. 62 tests pass, 54 of them Ledger.*."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T072-2026-09-10T08-26-16-460.txt",
+     "caption": "Eight frames across one rotation: solar altitude peaks at step 4, the step the ephemeris named as noon before anything rendered",
+     "source": "../out/day-sweep.txt",
+     "addedAt": "2026-09-10T08:26:16.462Z"
+    },
+    {
+     "file": "evidence/T072-2026-09-10T08-26-21-140.png",
+     "caption": "Noon: the sun 75 degrees up. The site, camera and ground are identical in all eight frames",
+     "source": "../out/day-sweep-4.png",
+     "addedAt": "2026-09-10T08:26:21.144Z"
+    },
+    {
+     "file": "evidence/T072-2026-09-10T08-26-21-274.png",
+     "caption": "Sunset, the same camera: the sun 2.22 degrees up, a quarter of a rotation later",
+     "source": "../out/day-sweep-6.png",
+     "addedAt": "2026-09-10T08:26:21.275Z"
+    }
+   ],
    "plannedStartDay": 182,
    "plannedEndDay": 183.5,
    "plannedStart": "2027-05-19",
@@ -13532,5 +13557,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T07:50:01.652Z"
+ "updatedAt": "2026-09-10T08:26:21.276Z"
 }

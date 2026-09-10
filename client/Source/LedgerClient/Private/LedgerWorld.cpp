@@ -29,13 +29,70 @@
 #include "LedgerTerrainMath.h"
 #include "UnrealClient.h"
 #include "LedgerMath.h"
+#include "LedgerSky.h"
 
 namespace
 {
+	/// Which body of the generated system the world is standing on.
+	///
+	/// Index 1: the primary is 0 and the planet is the first thing orbiting it.
+	/// One planet is all this world builds; a moon is T078's.
+	constexpr int32 HomeBodyIndex = 1;
+
 	/// Where the sun is, as a direction from the planet's centre. Everything
 	/// about daylight — the site choice, the light's rotation, the framing of
 	/// the first shot — derives from this one vector.
-	const FVector3d SunDirection = FVector3d(0.55, 0.35, 0.78).GetSafeNormal();
+	///
+	/// **It used to be a constant, `(0.55, 0.35, 0.78)` normalised, and T072 is
+	/// about it not being one.** A hand-picked vector is a fourth independent
+	/// variable next to the orbit, the rotation and the season: nothing stops
+	/// it disagreeing with all three, and a sky that can disagree with the
+	/// ephemeris is not evidence of anything. This asks the ephemeris.
+	///
+	/// The body frame is the right frame to ask in because the planet actor
+	/// does not turn -- the ground is fixed in world space and always has been.
+	/// Advancing the clock therefore moves the sun rather than the terrain,
+	/// which is the same picture and a great deal less to rebuild.
+	FVector3d SunDirectionAt(const FLedgerSystem& System, double SecondsFromEpoch)
+	{
+		const FVector3d Sun =
+			LedgerSky::SunDirectionInBody(System, HomeBodyIndex, SecondsFromEpoch);
+		return Sun.IsNearlyZero() ? FVector3d::UnitZ() : Sun;
+	}
+
+	/// Seconds from the system's epoch, from `-when=`. Zero unless asked.
+	///
+	/// A number of seconds rather than an hour of the day: the day is however
+	/// long this planet's rotation makes it, and a clock face would be
+	/// borrowing Earth's.
+	double WhenFromCommandLine()
+	{
+		double When = 0.0;
+		FParse::Value(FCommandLine::Get(), TEXT("when="), When);
+		return When;
+	}
+
+	/// The seed the system is generated from, from `-systemseed=`.
+	uint32 SystemSeedFromCommandLine()
+	{
+		int32 Seed = 20260908;
+		FParse::Value(FCommandLine::Get(), TEXT("systemseed="), Seed);
+		return static_cast<uint32>(Seed);
+	}
+
+	/// The sun's direction for this run, from the command line alone.
+	///
+	/// The game mode needs this to put the player start over the lit side, and
+	/// it runs before the world subsystem has built anything -- so rather than
+	/// reach for a half-initialised subsystem, both ask this. It generates the
+	/// system each time, which costs microseconds and cannot disagree with
+	/// itself: a seed and a time are all either caller has, and the answer is a
+	/// pure function of them.
+	FVector3d SunFacingForThisRun()
+	{
+		return SunDirectionAt(
+			LedgerBodies::Generate(SystemSeedFromCommandLine()), WhenFromCommandLine());
+	}
 }
 
 // ---------------------------------------------------------------- game mode
@@ -59,7 +116,7 @@ AActor* ALedgerGameMode::ChoosePlayerStart_Implementation(AController* Player)
 	const double PlanetRadius = PlanetDefaults != nullptr ? PlanetDefaults->Radius : 637100000.0;
 
 	// Over the lit hemisphere, so the first frame is a planet and not an eclipse.
-	const FVector Start = FVector(SunDirection * (PlanetRadius * 2.0));
+	const FVector Start = FVector(SunFacingForThisRun() * (PlanetRadius * 2.0));
 	const FRotator LookDown = (FVector::ZeroVector - Start).Rotation();
 
 	// APlayerStart, not a bare AActor: an actor with no root component cannot
@@ -190,7 +247,21 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	SunFacing = SunDirection;
+	// The system, and when it is. Generated rather than loaded: T069 made a
+	// description a pure function of a seed, so a world is a seed and a time.
+	System = LedgerBodies::Generate(SystemSeedFromCommandLine());
+	WhenSeconds = WhenFromCommandLine();
+	SunFacing = SunDirectionAt(System, WhenSeconds);
+
+	if (System.Bodies.IsValidIndex(HomeBodyIndex))
+	{
+		const FLedgerBody& Home = System.Bodies[HomeBodyIndex];
+		UE_LOG(LogLedger, Log,
+			TEXT("sky: t=%.0f s, day %.0f s, tilt %.1f deg, sun facing %.3f %.3f %.3f"),
+			WhenSeconds, Home.RotationPeriodSeconds,
+			FMath::RadiansToDegrees(Home.AxialTiltRadians),
+			SunFacing.X, SunFacing.Y, SunFacing.Z);
+	}
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;

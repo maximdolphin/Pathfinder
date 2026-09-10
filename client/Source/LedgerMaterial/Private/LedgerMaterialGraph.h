@@ -37,6 +37,8 @@
 #include "Materials/MaterialExpressionTextureSampleParameter2D.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
+#include "Materials/MaterialExpressionSign.h"
+#include "Materials/MaterialExpressionVertexNormalWS.h"
 
 namespace LedgerSurface
 {
@@ -312,16 +314,49 @@ namespace LedgerSurface
 			UMaterialExpression* TangentZ =
 				SampleParameter(ParameterName, Default, PlaneXY, SAMPLERTYPE_Normal);
 
+			// **Which way is out.**
+			//
+			// A normal map's blue channel is the component out of the surface,
+			// and it is always positive -- a tangent-space normal never points
+			// into its own surface. Swizzling it straight onto +x, +y or +z
+			// therefore assumes every projection faces the positive axis, which
+			// on a sphere is true for exactly half of it.
+			//
+			// The other half got normals pointing INTO the ground, and where
+			// the blend mixed one of those with a correct one they cancelled.
+			// The result was terrain with a perfectly good albedo that took no
+			// light at all: with the atmosphere switched off, the ground at
+			// noon under a sun 75 degrees up measured 0.00 out of 255, while
+			// the same frame unlit measured 128.9. Every normal render was
+			// in-scattered air in front of a black surface, which is what made
+			// it read as haze and silhouette rather than as ground.
+			//
+			// The sign of the vertex normal is what says which way each
+			// projection is actually facing, so the out-of-surface channel
+			// carries it.
+			UMaterialExpressionVertexNormalWS* Facing = Make<UMaterialExpressionVertexNormalWS>();
+			UMaterialExpressionSign* Which = Make<UMaterialExpressionSign>();
+			Which->Input.Expression = Facing;
+
+			UMaterialExpression* OutOfX =
+				Multiply(Mask(TangentX, false, false, true), Mask(Which, true, false, false));
+			UMaterialExpression* OutOfY =
+				Multiply(Mask(TangentY, false, false, true), Mask(Which, false, true, false));
+			UMaterialExpression* OutOfZ =
+				Multiply(Mask(TangentZ, false, false, true), Mask(Which, false, false, true));
+
 			// X reads (y, z), so its (r, g, b) is world (y, z, x) -> (b, r, g).
 			UMaterialExpression* WorldX = Append(
-				Append(Mask(TangentX, false, false, true), Mask(TangentX, true, false, false)),
+				Append(OutOfX, Mask(TangentX, true, false, false)),
 				Mask(TangentX, false, true, false));
 			// Y reads (x, z), so its (r, g, b) is world (x, z, y) -> (r, b, g).
 			UMaterialExpression* WorldY = Append(
-				Append(Mask(TangentY, true, false, false), Mask(TangentY, false, false, true)),
+				Append(Mask(TangentY, true, false, false), OutOfY),
 				Mask(TangentY, false, true, false));
 			// Z reads (x, y), which is already world order.
-			UMaterialExpression* WorldZ = TangentZ;
+			UMaterialExpression* WorldZ = Append(
+				Append(Mask(TangentZ, true, false, false), Mask(TangentZ, false, true, false)),
+				OutOfZ);
 
 			UMaterialExpression* Blended = Add(Add(
 				Multiply(WorldX, WeightX),
