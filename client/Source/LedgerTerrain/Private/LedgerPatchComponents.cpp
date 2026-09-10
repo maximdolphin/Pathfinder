@@ -1,5 +1,7 @@
 #include "LedgerPatchComponents.h"
 
+#include "Engine/CollisionProfile.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
@@ -153,6 +155,16 @@ namespace LedgerTerrain
 			Mesh = Component;
 		}
 
+		// An explicit profile, because SetCollisionEnabled does not set one.
+		//
+		// SetCollisionEnabled moves an enum; what a component RESPONDS to is
+		// the profile, and a component that has never been given one carries
+		// whatever its class default is. The 200 km transect cooks collision on
+		// 1,513 of 2,748 visible nodes and a downward trace still misses on 94%
+		// of frames, which is not a patch that failed to cook -- it is a patch
+		// that cooked and does not answer the channel being asked.
+		Mesh->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+		Mesh->SetCollisionObjectType(ECC_WorldStatic);
 		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 		// `-terrainnoshadow` stops the terrain casting at all.

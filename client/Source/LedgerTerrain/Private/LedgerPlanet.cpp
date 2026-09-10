@@ -453,6 +453,26 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		}
 
 		const uint64 Key = NodeKey(*Leaf);
+
+		// **An active section never gains collision, and that is a real defect
+		// this does not fix.**
+		//
+		// A patch built without collision is skipped here forever after. At
+		// 900 m/s the geometry lead builds ground several seconds before the
+		// ship is within the three kilometre collision radius, so nearly every
+		// patch the ship passes over was built while it was still far away --
+		// with collision correctly declined -- and is then never reconsidered.
+		// The 200 km transect measures the consequence: 1,569 of 2,804 visible
+		// nodes want collision and a downward trace misses on 89% of frames.
+		//
+		// Re-requesting those patches was tried and made it worse, 89% to
+		// 99.8%: every frame re-asks for more than the budget can serve, so
+		// sections churn instead of settling and the ground under the ship is
+		// rebuilt rather than kept. The fix is not to ask again -- it is either
+		// to cook collision for what the lead builds (paying for it on ground
+		// that may never be flown over) or to upgrade a section in place
+		// without a rebuild, which the procedural mesh path cannot do today.
+		// Written down rather than half-done. See docs/comparisons/transect/.
 		if (ActiveSections.Contains(Key) || InFlight.Contains(Key))
 		{
 			continue;

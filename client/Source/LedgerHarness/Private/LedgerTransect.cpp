@@ -163,6 +163,22 @@ void ULedgerTransect::Finish()
 	Body += TEXT("Collision transect.\n\n");
 	Body += FString::Printf(TEXT("  distance      %.0f km\n"), TransectDistance / 100000.0);
 	Body += FString::Printf(TEXT("  speed         %.0f m/s\n"), TransectSpeed / 100.0);
+	// What the terrain thought it was doing while the traces were missing.
+	// A trace that finds nothing is either a patch that never asked for
+	// collision or one that asked and had not cooked, and those are
+	// different bugs.
+	const ULedgerWorldBuilder* ReportBuilder = GetWorld() != nullptr
+		? GetWorld()->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	if (const ALedgerPlanet* Planet =
+		ReportBuilder != nullptr ? ReportBuilder->GetPlanet() : nullptr)
+	{
+		const FLedgerTerrainStats& Terrain = Planet->GetStats();
+		Body += FString::Printf(
+			TEXT("  nodes visible %d, of which with collision %d\n"),
+			Terrain.VisibleNodes, Terrain.NodesWithCollision);
+		Body += FString::Printf(
+			TEXT("  worst cook    %.2f ms\n"), Terrain.WorstFrameCollisionMs);
+	}
 	Body += FString::Printf(TEXT("  altitude      %.0f m\n"), TransectAltitude / 100.0);
 	Body += FString::Printf(TEXT("  frames        %d\n"), Frames);
 	Body += FString::Printf(TEXT("  traces missed %d  (%.3f%%)\n"), Misses, MissFraction);

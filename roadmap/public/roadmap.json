@@ -4694,11 +4694,29 @@
    "dependsOn": [
     "T067"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "RUN, AND THE COLLISION HALF FAILS. 20,454 of 20,632 downward traces find nothing beneath the ship. Not a regression from tonight -- with -breakthreshold, which restores the pre-T429 error threshold, it fails identically, and the ground draws correctly throughout. Ruled out: collision not being requested (1,476 of 2,695 visible nodes want it), collision not cooking (worst cook 5.02 ms), the trace being too short (400 m against 50 m of clearance), and the trace channel (an explicit BlockAll profile and WorldStatic object type were added and did not move it). What is wrong, read out of the code: ALedgerPlanet skips any leaf whose section is already active, so a patch built WITHOUT collision can never gain it -- and at 900 m/s the geometry lead builds ground several seconds ahead, far outside the 3 km collision radius, so nearly every patch the ship passes over was built while it was still distant and is never reconsidered. Re-requesting those patches was tried and took the miss rate from 89% to 99.8% because the budget cannot serve them and sections churn; reverted. Two candidates remain: cook collision for what the lead builds, or upgrade a section in place, which the procedural mesh path cannot do today. AND A WARNING: the same unchanged build read 93.7%, 88.9%, 99.8% and 99.1% across four consecutive runs, so nothing here can be argued from a single run. The fixture needs a fixed time step before this is worked on -- the same conclusion m2s-cost reached about p99, from the same cause."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The gate's collision criterion fails and the cause is identified but not fixable without one of two design choices; and the fixture is too noisy to argue from. Both in docs/comparisons/transect/."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T068-2026-09-10T07-25-03-146.txt",
+     "caption": "The M02 gate's collision half: 99.1% of downward traces find nothing beneath the ship over 200 km at 900 m/s.",
+     "source": "../out/transect-t068.txt",
+     "addedAt": "2026-09-10T07:25:03.148Z"
+    }
+   ],
    "plannedStartDay": 139.5,
    "plannedEndDay": 141,
    "plannedStart": "2027-03-19",
@@ -13489,5 +13507,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T06:53:05.556Z"
+ "updatedAt": "2026-09-10T07:25:03.463Z"
 }
