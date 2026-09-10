@@ -251,3 +251,84 @@ bool FLedgerFlightSurvivesAHitch::RunTest(const FString&)
 }
 
 #endif
+
+#if WITH_DEV_AUTOMATION_TESTS
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerFlightWind,
+	"Ledger.Flight.DragActsOnTheSpeedThroughTheAirAndNotOverTheGround",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerFlightWind::RunTest(const FString&)
+{
+	// **A headwind and a tailwind cost different amounts, and that is the whole
+	// point.** Without a wind term drag drags towards zero ground speed, which
+	// is the same as asserting the atmosphere is nailed to the planet.
+	constexpr double Radius = 6.371e8;   // centimetres
+	FLedgerGravityField Field;
+	Field.Centre = FVector3d::ZeroVector;
+	Field.Radius = Radius;
+	Field.SurfaceGravity = 0.0;          // gravity off: this is about drag alone
+	Field.DragScaleHeight = 800000.0;
+	Field.AtmosphericDrag = 0.55;
+	Field.SurfaceRadiusAt = [](const FVector3d&) { return Radius; };
+
+	// A ten-metre-a-second wind, in centimetres, along +X at the top of the
+	// sphere where +X is horizontal.
+	const FVector3d Wind = FVector3d(1000.0, 0.0, 0.0);
+
+	// Left alone in still air, a ship coasts to a stop.
+	FLedgerFlightState Still;
+	Still.Position = FVector3d(0.0, 0.0, Radius + 100000.0);
+	Still.Velocity = FVector3d(5000.0, 0.0, 0.0);
+	double StillRemainder = 0.0;
+	for (int32 Step = 0; Step < 600; ++Step)
+	{
+		LedgerFlight::Advance(Still, Field, 1.0 / 60.0, StillRemainder);
+	}
+
+	// Left alone in a wind, it ends up going with the air.
+	Field.WindCmPerSecond = Wind;
+	FLedgerFlightState Blown;
+	Blown.Position = FVector3d(0.0, 0.0, Radius + 100000.0);
+	Blown.Velocity = FVector3d(5000.0, 0.0, 0.0);
+	double BlownRemainder = 0.0;
+	for (int32 Step = 0; Step < 600; ++Step)
+	{
+		LedgerFlight::Advance(Blown, Field, 1.0 / 60.0, BlownRemainder);
+	}
+
+	AddInfo(FString::Printf(
+		TEXT("after ten seconds from 50 m/s: still air leaves %.2f m/s, "
+			 "a 10 m/s wind leaves %.2f m/s"),
+		Still.Velocity.Length() / 100.0, Blown.Velocity.Length() / 100.0));
+
+	TestTrue(*FString::Printf(TEXT("in still air it coasts nearly to a stop (%.2f m/s)"),
+		Still.Velocity.Length() / 100.0), Still.Velocity.Length() < 500.0);
+
+	// **It asymptotes to the wind, not to zero.** Drag drags a body towards the
+	// speed of the medium, and the medium is moving.
+	const double ToWind = (Blown.Velocity - Wind).Length() / 100.0;
+	AddInfo(FString::Printf(
+		TEXT("and in the wind it ends up within %.3f m/s of the air itself"),
+		ToWind));
+	TestTrue(*FString::Printf(TEXT("it drifts with the air (%.3f m/s out)"), ToWind),
+		ToWind < 1.0);
+
+	// And with no wind the answer is bit-for-bit what it was before the term
+	// existed, which is the check that this did not quietly change every
+	// trajectory in the project.
+	Field.WindCmPerSecond = FVector3d::ZeroVector;
+	FLedgerFlightState Again;
+	Again.Position = FVector3d(0.0, 0.0, Radius + 100000.0);
+	Again.Velocity = FVector3d(5000.0, 0.0, 0.0);
+	double AgainRemainder = 0.0;
+	for (int32 Step = 0; Step < 600; ++Step)
+	{
+		LedgerFlight::Advance(Again, Field, 1.0 / 60.0, AgainRemainder);
+	}
+	TestEqual(TEXT("with no wind nothing changed at all"),
+		(Again.Velocity - Still.Velocity).Length(), 0.0, 0.0);
+	return true;
+}
+
+#endif // WITH_DEV_AUTOMATION_TESTS

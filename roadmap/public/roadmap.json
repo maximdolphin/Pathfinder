@@ -6170,10 +6170,16 @@
    "dependsOn": [
     "T092"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The field is done and three of the five consumers do not exist yet, which is a roadmap ordering note rather than a shortfall. Delivered: wind at any point and any altitude, with the log profile (17.2 m/s free becomes 8.6 at ten metres and 6.0 at two) and the friction backing (16.3 degrees at the surface, zero above the layer, opposite signs in the two hemispheres), behind one subsystem so there is only one wind. Wired: the flight model, whose drag now acts on the speed through the AIR -- a ship left alone in a 10 m/s wind ends up within 0.309 m/s of the air itself, and with no wind the trajectory is bit-for-bit what it was; and vegetation, via a material parameter collection published each tick. Not wired because they do not exist: particles (T095), audio (T102, SpeedAt is there for it) and the settlement layer, which has nothing wind-driven on it yet. Unblocks when T095 and T102 land. docs/comparisons/wind-field/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 226,
    "plannedEndDay": 227.5,
@@ -13899,5 +13905,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T19:25:37.804Z"
+ "updatedAt": "2026-09-10T19:31:50.722Z"
 }

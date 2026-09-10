@@ -118,4 +118,37 @@ namespace LedgerWeather
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FLedgerAirProfile& Air, double LatitudeRadians,
 		double LongitudeRadians, double SecondsFromEpoch);
+
+	/// How deep the friction layer is, metres. T093.
+	///
+	/// Above it the wind is the geostrophic one and the ground might as well
+	/// not be there; inside it, drag slows the air and Coriolis turns what is
+	/// left. The depth goes as the friction velocity over the Coriolis
+	/// parameter, which is why the boundary layer is a kilometre thick in the
+	/// mid latitudes and unbounded at the equator.
+	LEDGERCORE_API double BoundaryLayerMetres(
+		const FLedgerBody& Body, double LatitudeRadians);
+
+	/// Wind at a height above the ground, metres per second, as (east, north).
+	///
+	/// **Two things happen on the way down and they are not the same thing.**
+	/// The speed falls, logarithmically rather than linearly, because a
+	/// turbulent boundary layer over a rough surface has a log profile -- that
+	/// is why a ten-metre mast reads two thirds of what a hundred-metre one
+	/// does and not a tenth. And the direction *backs*, turning across the
+	/// isobars towards the low, because friction breaks the balance between
+	/// pressure and Coriolis and the leftover points down the gradient. Twenty
+	/// to thirty degrees over land is the textbook figure and it is what makes
+	/// surface weather converge into a low rather than circle it forever.
+	///
+	/// Above the boundary layer this is exactly WindAt.
+	LEDGERCORE_API FVector2D WindAtAltitude(
+		const FLedgerSystem& System, int32 BodyIndex,
+		const FLedgerAirProfile& Air, double LatitudeRadians,
+		double LongitudeRadians, double AltitudeMetres, double SecondsFromEpoch);
+
+	/// The roughness length of the ground, metres: the height at which the log
+	/// profile says the wind is zero. Open country is a few centimetres, a
+	/// forest is a metre, open water is a fraction of a millimetre.
+	LEDGERCORE_API double RoughnessMetres();
 }

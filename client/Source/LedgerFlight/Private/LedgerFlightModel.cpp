@@ -62,7 +62,14 @@ namespace LedgerFlight
 			const double Density = FMath::Exp(-FMath::Max(Altitude, 0.0) / Field.DragScaleHeight);
 			const double Damping = FMath::Clamp(
 				1.0 - Field.AtmosphericDrag * Density * DeltaSeconds, 0.0, 1.0);
-			State.Velocity *= Damping;
+
+			// **Damp the velocity relative to the air, and add the air back.**
+			// The drag term is what drags the ship towards the speed of the
+			// medium, and the medium is moving. With no wind this is exactly
+			// what it was; with a wind, a ship left alone ends up drifting
+			// downwind at the speed of the air, which is what happens.
+			const FVector3d Through = State.Velocity - Field.WindCmPerSecond;
+			State.Velocity = Field.WindCmPerSecond + Through * Damping;
 		}
 
 		FVector3d NewPosition = State.Position + State.Velocity * DeltaSeconds;

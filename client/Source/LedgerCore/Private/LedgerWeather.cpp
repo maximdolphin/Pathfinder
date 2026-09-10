@@ -338,4 +338,73 @@ namespace LedgerWeather
 		}
 		return Wind;
 	}
+
+	double RoughnessMetres()
+	{
+		// Open country with scattered obstacles. The terrain this runs on is
+		// mountain and scrub rather than city or ocean, and the log profile is
+		// insensitive to it -- a factor of ten in roughness moves the
+		// ten-metre wind by about a fifth.
+		return 0.05;
+	}
+
+	double BoundaryLayerMetres(const FLedgerBody& Body, double LatitudeRadians)
+	{
+		const double F = FMath::Abs(CoriolisAt(Body, LatitudeRadians));
+		if (!(F > 1e-6))
+		{
+			// At the equator the formula is unbounded, and physically the
+			// tropical boundary layer really is deep. Capped at two kilometres,
+			// which is about where the trade inversion sits.
+			return 2000.0;
+		}
+		// The Ekman depth, with a friction velocity of about a twentieth of the
+		// free wind: h ~ 0.3 u* / f.
+		constexpr double FrictionVelocity = 0.5;
+		return FMath::Clamp(0.3 * FrictionVelocity / F, 150.0, 2000.0);
+	}
+
+	FVector2D WindAtAltitude(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double AltitudeMetres,
+		double SecondsFromEpoch)
+	{
+		const FVector2D Free = WindAt(
+			System, BodyIndex, Air, LatitudeRadians, LongitudeRadians,
+			SecondsFromEpoch);
+		if (!System.Bodies.IsValidIndex(BodyIndex) || Free.IsNearlyZero())
+		{
+			return Free;
+		}
+
+		const FLedgerBody& Body = System.Bodies[BodyIndex];
+		const double Depth = BoundaryLayerMetres(Body, LatitudeRadians);
+		const double Height = FMath::Max(AltitudeMetres, RoughnessMetres() * 1.01);
+		if (Height >= Depth)
+		{
+			return Free;
+		}
+
+		// **The log profile.** u(z) / u(h) = ln(z / z0) / ln(h / z0). Two thirds
+		// at ten metres of what the free wind is at a kilometre, which is what a
+		// met mast reads.
+		const double Roughness = RoughnessMetres();
+		const double Fraction = FMath::Clamp(
+			FMath::Loge(Height / Roughness) / FMath::Loge(Depth / Roughness),
+			0.0, 1.0);
+
+		// **And the backing.** Friction breaks the geostrophic balance, so the
+		// surface wind crosses the isobars towards the low. The angle is largest
+		// at the ground and zero at the top of the layer, and its sign is the
+		// hemisphere's -- in the north the wind backs anticlockwise.
+		const double Turn = FMath::DegreesToRadians(25.0) * (1.0 - Fraction);
+		const double Sign = LatitudeRadians >= 0.0 ? 1.0 : -1.0;
+		const double Angle = -Sign * Turn;
+
+		const double Cos = FMath::Cos(Angle);
+		const double Sin = FMath::Sin(Angle);
+		return FVector2D(
+			static_cast<float>((Free.X * Cos - Free.Y * Sin) * Fraction),
+			static_cast<float>((Free.X * Sin + Free.Y * Cos) * Fraction));
+	}
 }

@@ -42,6 +42,15 @@ struct LEDGERFLIGHT_API FLedgerGravityField
 	/// Fraction of velocity bled off per second at sea-level density.
 	double AtmosphericDrag = 0.55;
 
+	/// What the air itself is doing, centimetres per second, world frame. T093.
+	///
+	/// **Drag acts on the speed through the AIR, not over the ground**, and
+	/// those differ by exactly this. Leaving it out is the same as asserting
+	/// that the atmosphere is nailed to the planet, which is the assumption
+	/// that makes a headwind and a tailwind cost the same -- and any pilot can
+	/// tell you they do not. It costs one subtraction.
+	FVector3d WindCmPerSecond = FVector3d::ZeroVector;
+
 	/// Ground radius under a unit direction. Defaults to the reference sphere;
 	/// the game replaces it with the terrain's height function.
 	TFunction<double(const FVector3d&)> SurfaceRadiusAt;

@@ -9,6 +9,7 @@
 #include "LedgerPlanet.h"
 #include "LedgerLog.h"
 #include "LedgerSurface.h"
+#include "LedgerWind.h"
 #include "LedgerWorld.h"
 #include "ProceduralMeshComponent.h"
 
@@ -293,6 +294,17 @@ void ALedgerShip::Integrate(float DeltaSeconds)
 	{
 		return Body->SurfaceRadiusAt(Direction);
 	};
+
+	// **The one wind, asked for once.** T093. The flight model does not know
+	// where weather comes from and does not need to; it is handed what the air
+	// is doing here, from the same subsystem the grass reads.
+	if (const UWorld* World = GetWorld())
+	{
+		if (const ULedgerWind* Wind = World->GetSubsystem<ULedgerWind>())
+		{
+			Field.WindCmPerSecond = FVector3d(Wind->WindAt(GetActorLocation()));
+		}
+	}
 
 	FLedgerFlightState State;
 	State.Position = FVector3d(GetActorLocation());
