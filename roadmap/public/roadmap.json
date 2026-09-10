@@ -6257,6 +6257,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Three more faults found and fixed in the volume material, and it draws now. It was not declared bUsedWithVolumetricCloud, so the default was silently substituted -- the same trap as M02's black cut-out trees. Volume materials must use an additive blend mode and one that does not fails to compile outright; the engine had been saying so in LogMaterial under a warning about the map rather than the material, which is why two rounds went on explaining an empty sky as a density of zero. And the noise had no precision: at 6.3e8 cm from the origin a shader float's ULP is sixty centimetres, so a coordinate built from absolute world position cannot vary across a cloud -- driving density from the raw noise proved it. It is camera-relative now with an anchor computed in doubles on the client. What remains is shaping: the decks read as a dense fog gradient because the coverage threshold is not cutting holes."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Sharpening the coverage cut did not do it either. The ramp was made a sixteenth of the noise range wide rather than proportional to coverage, on the reasoning that a band at full density is twenty optical depths thick so anything above a twentieth of the ramp is already opaque -- correct arithmetic, no visible change. Nor did flattening the noise into columns by removing 92 per cent of the local vertical. Four faults found in this material, three fixed and it draws; the shaping is not converging at roughly two minutes an iteration with no way to inspect an intermediate shader value except by rewiring the output. Parking it there rather than grinding: the state is recorded, the default path is unaffected, and the next person to pick it up starts from a material that compiles, draws, and has its precision problem solved."
     }
    ],
    "evidence": [],
@@ -13960,5 +13965,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T20:45:29.419Z"
+ "updatedAt": "2026-09-10T21:08:14.307Z"
 }

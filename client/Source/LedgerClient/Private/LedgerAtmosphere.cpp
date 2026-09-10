@@ -329,6 +329,20 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 						static_cast<float>(Anchor.X),
 						static_cast<float>(Anchor.Y),
 						static_cast<float>(Anchor.Z), 0.0f));
+
+				// Which way is up, so the noise can be flattened into columns.
+				// The actor sits at the planet's centre, so the viewer's own
+				// position is the local vertical -- and over the few tens of
+				// kilometres a cloud deck is visible across, one vertical is
+				// close enough to all of them.
+				const FVector3d Vertical =
+					(FVector3d(Eye) - FVector3d(GetActorLocation()))
+					.GetSafeNormal();
+				CloudMaterial->SetVectorParameterValue(TEXT("NoiseUp"),
+					FLinearColor(
+						static_cast<float>(Vertical.X),
+						static_cast<float>(Vertical.Y),
+						static_cast<float>(Vertical.Z), 0.0f));
 			}
 		}
 

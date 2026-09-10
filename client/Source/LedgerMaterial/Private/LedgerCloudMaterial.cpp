@@ -21,6 +21,7 @@
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionCloudLayer.h"
 #include "Materials/MaterialExpressionCollectionParameter.h"
+#include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
@@ -74,8 +75,8 @@ namespace LedgerSurface
 		/// the sky it covers, times how solid it is.
 		FBand MakeBand(
 			FGraph& Graph, UMaterialExpression* Altitude, UMaterialExpression* Noise,
-			const TCHAR* Prefix, float Centre, float Width, float Coverage,
-			float Density)
+			UMaterialExpression* Softness, const TCHAR* Prefix, float Centre,
+			float Width, float Coverage, float Density)
 		{
 			FBand Band;
 			Band.Centre = Parameter(Graph,
@@ -97,17 +98,27 @@ namespace LedgerSurface
 				Graph.Subtract(Graph.Constant(1.0f),
 					Graph.Divide(Distance, Band.Width)));
 
-			// **Coverage is a threshold on the noise, not a multiplier on it.**
-			// Multiplying thins the whole deck uniformly, which reads as haze;
-			// thresholding removes some of it and leaves the rest solid, which
-			// reads as broken cloud with sky between. The difference is the
-			// whole look of a fair-weather day.
+			// **Coverage is a threshold on the noise, and the cut has to be
+			// sharp.**
+			//
+			// Multiplying thins the whole deck uniformly, which reads as haze.
+			// Thresholding removes some of it and leaves the rest solid, which
+			// reads as broken cloud with sky between -- but only if the ramp
+			// between the two is narrow. Dividing by the coverage made a ramp
+			// nearly half the noise range wide, so almost the whole volume sat
+			// somewhere in the middle; and since a band at full density is
+			// twenty optical depths thick, anything above about a twentieth of
+			// the way up that ramp is already opaque. The result was a sky that
+			// was solid everywhere the threshold had not zeroed outright, which
+            // is a fog and not a cloud field.
+			//
+			// A sixteenth of the range is a cloud edge. Above it, solid; below,
+			// sky.
 			UMaterialExpression* Threshold =
 				Graph.Subtract(Graph.Constant(1.0f), Band.Coverage);
 			UMaterialExpression* Shaped = Saturate(Graph,
 				Graph.Divide(
-					Graph.Subtract(Noise, Threshold),
-					Graph.Max(Band.Coverage, Graph.Constant(0.02f))));
+					Graph.Subtract(Noise, Threshold), Softness));
 
 			Band.Mask = Graph.Multiply(
 				Graph.Multiply(Inside, Shaped), Band.Density);
@@ -241,10 +252,36 @@ namespace LedgerSurface
 					 "drift; every other consumer of the wind is unaffected"));
 		}
 
+		// **Flattened, or a horizontal ray averages the sky away.**
+		//
+		// Noise that varies in all three axes puts an independent value every
+		// few hundred metres *vertically* as well as horizontally, so a line of
+		// sight along a five-hundred-metre deck crosses dozens of uncorrelated
+		// cells and integrates to the mean -- which is a uniform fog however
+		// hard the coverage threshold bites. A cloud is a column: the shape is
+		// horizontal and the vertical profile is the deck's own.
+		//
+		// So most of the component along the local vertical is taken out before
+		// the lookup. Eight per cent is left, because a deck with no vertical
+		// variation at all has a machined top.
+		UMaterialExpressionVectorParameter* Up =
+			Graph.Make<UMaterialExpressionVectorParameter>();
+		Up->ParameterName = TEXT("NoiseUp");
+		Up->DefaultValue = FLinearColor(0.0f, 0.0f, 1.0f, 0.0f);
+
+		UMaterialExpressionDotProduct* Along =
+			Graph.Make<UMaterialExpressionDotProduct>();
+		Along->A.Expression = Drift;
+		Along->B.Expression = Up;
+		UMaterialExpression* Flattened = Graph.Subtract(Drift,
+			Graph.Multiply(Up, Graph.Scale(Along, 0.92f)));
+
+		// **Cloud-sized, not gravel-sized.** A quarter-kilometre feature reads
+		// as noise; a cumulus field is spaced in kilometres.
 		UMaterialExpressionScalarParameter* Scale =
-			Parameter(Graph, TEXT("NoiseScale"), 0.00004f);
+			Parameter(Graph, TEXT("NoiseScale"), 0.000012f);
 		UMaterialExpressionNoise* Noise = Graph.Make<UMaterialExpressionNoise>();
-		Noise->Position.Expression = Graph.Multiply(Drift, Scale);
+		Noise->Position.Expression = Graph.Multiply(Flattened, Scale);
 		Noise->NoiseFunction = NOISEFUNCTION_GradientTex;
 		Noise->Scale = 1.0f;
 		Noise->Levels = 4;
@@ -262,11 +299,14 @@ namespace LedgerSurface
 		// Centres are fractions of the layer: a layer from the cumulus base to
 		// the tropopause puts cumulus low, the middle deck in the middle and
 		// cirrus near the top.
-		const FBand Cumulus = MakeBand(Graph, Altitude, Noise,
+		UMaterialExpressionScalarParameter* Softness =
+			Parameter(Graph, TEXT("EdgeSoftness"), 0.06f);
+
+		const FBand Cumulus = MakeBand(Graph, Altitude, Noise, Softness,
 			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
-		const FBand Middle = MakeBand(Graph, Altitude, Noise,
+		const FBand Middle = MakeBand(Graph, Altitude, Noise, Softness,
 			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f);
-		const FBand Cirrus = MakeBand(Graph, Altitude, Noise,
+		const FBand Cirrus = MakeBand(Graph, Altitude, Noise, Softness,
 			TEXT("Cirrus"), 0.86f, 0.12f, 0.35f, 0.18f);
 
 		UMaterialExpression* Total =
