@@ -358,10 +358,10 @@
    "estimateDays": 40,
    "plannedStart": "2027-05-10",
    "plannedEnd": "2027-07-05",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 1
   },
   {
    "id": "M04",
@@ -5201,10 +5201,16 @@
    "dependsOn": [
     "T437"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "FLedgerBody, FLedgerOrbit and FLedgerSystem in LedgerCore, with JSON serialisation, validation and seeded generation. Three green tests. Round-trips EXACTLY -- bit equality, not a tolerance, because at one astronomical unit the fifteenth significant digit of a double is about a hundred metres and a tolerance would let a planet drift every time the file was written. That is why doubles are written at %.17g and read back with FDefaultValueHelper rather than through FJsonSerializer, whose number path does not promise the last bit. Re-serialising the parsed system is byte-identical too, which is what makes a system description diffable in version control. Validate is separate from parsing on purpose: a file can be valid JSON describing an impossible system, and saying which of those went wrong is the difference between a five-minute fix and an afternoon. It rejects no bodies, zero mass or radius, eccentricity outside [0,1), a body orbiting itself, a parent that does not exist, more or fewer than one primary, and cycles -- the last by walking to the root with a step limit, because a cycle would otherwise hang whatever computes positions rather than reporting anything. SI throughout: kilogrammes, metres, seconds, radians. Centimetres are a rendering unit and belong at the boundary."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 175.5,
    "plannedEndDay": 177,
@@ -13507,5 +13513,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T07:25:03.463Z"
+ "updatedAt": "2026-09-10T07:30:02.209Z"
 }
