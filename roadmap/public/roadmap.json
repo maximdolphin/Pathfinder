@@ -3936,6 +3936,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "NOT accepted on 'no visible blend band', and the cause is measured rather than suspected. Three control arms, all command lines: -onepalette (no seams), -patchpalette (a seam per patch edge), default. A patch keeps its own three heaviest biomes and two neighbours that rank differently drop different ones, so the ground changes composition along their shared edge. Truncating the weight field to three continuously is right, is kept, and did NOT move the seams -- the problem is not which weights are dropped but that neighbours drop different biomes. The palette is now chosen per fixed 600 km cell of a cube face, which removes every patch seam (twelve palettes cover the planet) and relocates the problem: one hard line on the cell boundary. Counted over every cell with land in it, three slots cover 89% of the land and a fourth would reach 96.9%. Neither is 100%. The only thing that is would be a texture array indexed per vertex, so a vertex names any three of the whole biome set rather than three of its cell's -- a change to how the terrain material is built and to what the bake produces. That is a decision about the material architecture and belongs to the user, not to me. Evidence and all three arms in docs/comparisons/biome-surfaces/, commit 70c9c08."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "A fourth slot is ruled out on two independent grounds, which narrows the decision the note above leaves open. (1) It does not address the failing criterion. The cell palette already removed every patch seam and relocated the problem to one hard line per 600 km cell boundary; a fourth slot raises coverage from 89% to 96.9% of land, which is about showing the RIGHT biome, not about the line. Any per-region discrete choice produces a boundary, so no slot count removes it -- only a per-vertex index into a texture array does, which is what the note already concluded. (2) There is nowhere to put the weight. Vertex colour RGB carries the three slot weights and A carries snow cover (T060), so a fourth would need a new UV channel plumbed through the job, the cache payload and the material -- for 33% more ground sampling on the most-shaded surface in the game, to fix something it does not fix. Also recorded: T051's drying-rate change shifted the biome table under this task. Desert 50.6 -> 32.9%, temperate grassland 3.5 -> 15.3%, ice cap 23.6 -> 22.5%. The three-biome site the fixture now finds is a pale one and the wide capture does not read as three biomes meeting, so the site search may need revisiting before the blend band can be judged at all."
     }
    ],
    "evidence": [
@@ -3962,6 +3967,12 @@
      "caption": "Where three biomes meet, what the climate is there, and how many biomes a palette cell needs.",
      "source": "../docs/comparisons/biome-surfaces/biome-site.txt",
      "addedAt": "2026-09-09T16:57:36.343Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-10T06-53-05-551.png",
+     "caption": "The three-biome site after T051 shifted the biome table: pale, and not legibly three biomes.",
+     "source": "../out/biomes-wide.png",
+     "addedAt": "2026-09-10T06:53:05.553Z"
     }
    ],
    "plannedStartDay": 100,
@@ -13478,5 +13489,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T06:44:02.518Z"
+ "updatedAt": "2026-09-10T06:53:05.556Z"
 }
