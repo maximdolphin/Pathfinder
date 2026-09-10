@@ -5969,6 +5969,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Re-run after T089. Half the blocker is gone: the atmosphere is no longer washing the sky out -- the home world's sky is blue and the deck is broken cumulus at 1.2-5.2 km rather than solid overcast at 2-8. What remains is purely cloud placement: the transit frame is now a broken deck with black gaps in it, and the moon is behind a patch. That is a weather problem (where the clouds are), not a sky problem, so the block moves from T089 to T092 and T094."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Blocker moved again. The passage frames are no longer behind a solid overcast -- after T094 the moon transits at 79 degrees through 43 per cent cirrus. They are black because it is night and nothing renders a night sky at this exposure yet, which is the star field and exposure rather than the clouds."
     }
    ],
    "evidence": [
@@ -6200,10 +6205,16 @@
    "dependsOn": [
     "T093"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "All three decks are computed and one of the three renders. Delivered: deck altitudes as temperatures converted to heights -- Earth gives cumulus 1230-3853 m, middle to 6164, cirrus 8476-10941, tropopause 10941, all from the air's own lapse rate; the distinction between the dry adiabat that sets a cumulus base and the environmental rate that sets everything above it, which is worth three kilometres on the cirrus; and coverage as a query on the pressure field, 40 to 61 per cent along one line of latitude instead of solid. That last is the line T088 needed. Not delivered: Unreal renders one volumetric cloud per scene, so three decks need one volume-domain material with three density bands against CloudSampleAttribute's altitude. This project builds its materials procedurally in C++ already, so the road is clear and the graph has not been built. docs/comparisons/cloud-decks/"
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 227.5,
    "plannedEndDay": 230.5,
@@ -13905,5 +13916,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T19:31:50.722Z"
+ "updatedAt": "2026-09-10T19:40:51.591Z"
 }

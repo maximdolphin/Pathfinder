@@ -17,6 +17,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "LedgerAir.h"
+#include "LedgerCloud.h"
 
 #include "LedgerAtmosphere.generated.h"
 
@@ -50,6 +51,14 @@ public:
 	void ConfigureForAir(double PlanetRadiusCm, double MaxElevationCm,
 		const FLedgerAirProfile& Air);
 
+	/// Put the deck where the thermometer says and cover as much of the sky as
+	/// the weather does. T094.
+	///
+	/// Called every time the clock moves rather than once: coverage is a
+	/// function of the pressure overhead, and the pressure overhead is a
+	/// function of time.
+	void SetDecks(const FLedgerCloudDecks& Decks);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;
@@ -59,4 +68,11 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UExponentialHeightFogComponent> Fog;
+
+	/// An instance of whatever material the cloud component came with, so its
+	/// coverage can be driven without owning a material asset.
+	UPROPERTY()
+	TObjectPtr<class UMaterialInstanceDynamic> CloudMaterial;
+
+	double LastCoverage = -1.0;
 };

@@ -4,6 +4,8 @@
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
 #include "LedgerLog.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 
 namespace
 {
@@ -132,15 +134,10 @@ void ALedgerAtmosphere::ConfigureForAir(
 		Clouds->SetVisibility(bHasAir && Air.bHasClouds);
 		if (bHasAir && Air.bHasClouds)
 		{
-			// Altitudes are above the *ground*, so they must clear the tallest
-			// terrain or the clouds render inside mountains.
-			const float TerrainTopKm =
-				static_cast<float>(MaxElevationCm / CentimetresPerKilometre);
-			const float BaseKm = static_cast<float>(Air.CloudBaseMetres / 1000.0);
-			Clouds->LayerBottomAltitude = FMath::Max(BaseKm, TerrainTopKm * 1.1f);
-			Clouds->LayerHeight = FMath::Max(
-				static_cast<float>((Air.CloudTopMetres - Air.CloudBaseMetres) / 1000.0),
-				0.5f);
+			// **Altitudes are SetDecks's business now.** T094. What is left
+			// here is everything that does not change with the weather: how far
+			// the tracing reaches, how many samples it takes, and which planet
+			// it is wrapped around.
 
 			// **A cautionary tale about measurement, kept because these numbers
 			// are the evidence for it.**
@@ -192,4 +189,72 @@ void ALedgerAtmosphere::ConfigureForAir(
 		Air.MieAbsorptionPerMetre.Z * 1000.0, Air.MieAnisotropy,
 		Air.OzoneAbsorptionPerMetre * 1000.0,
 		Air.bHasClouds ? TEXT("yes") : TEXT("no"));
+}
+
+void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
+{
+	if (Clouds == nullptr)
+	{
+		return;
+	}
+
+	const FLedgerCloudDeck& Deck = Decks.Cumulus;
+	Clouds->SetVisibility(Deck.bPresent);
+	if (!Deck.bPresent)
+	{
+		return;
+	}
+
+	// **The base is the lifting condensation level and nothing else.** It used
+	// to be a two-kilometre default with a comment about cumulus; it is now
+	// whatever height the air's own dew point depression and lapse rate put it
+	// at, which moves when the weather does.
+	Clouds->LayerBottomAltitude =
+		static_cast<float>(Deck.BaseMetres / 1000.0);
+	Clouds->LayerHeight = FMath::Max(
+		static_cast<float>((Deck.TopMetres - Deck.BaseMetres) / 1000.0), 0.5f);
+
+	if (CloudMaterial == nullptr)
+	{
+		if (UMaterialInterface* Source = Clouds->GetMaterial())
+		{
+			CloudMaterial = UMaterialInstanceDynamic::Create(Source, this);
+			if (CloudMaterial != nullptr)
+			{
+				Clouds->SetMaterial(CloudMaterial);
+			}
+		}
+	}
+
+	if (CloudMaterial != nullptr
+		&& FMath::Abs(Deck.Coverage - LastCoverage) > 0.001)
+	{
+		// **This is the line T088 needed.** The deck used to cover the whole
+		// sky at whatever the material shipped with, so a moon the ephemeris
+		// had placed correctly was behind cloud in every frame of a night. It
+		// now covers as much as the pressure overhead says, which on a ridge
+		// day is under half.
+		CloudMaterial->SetScalarParameterValue(
+			TEXT("Cloud_GlobalCoverage"), static_cast<float>(Deck.Coverage));
+		CloudMaterial->SetScalarParameterValue(
+			TEXT("Cloud_GlobalDensity"), static_cast<float>(Deck.Opacity));
+		LastCoverage = Deck.Coverage;
+
+		UE_LOG(LogLedger, Log,
+			TEXT("clouds: cumulus %.0f to %.0f m, %.0f%% cover; middle %s; "
+				 "cirrus %s; tropopause %.0f m"),
+			Deck.BaseMetres, Deck.TopMetres, Deck.Coverage * 100.0,
+			Decks.Middle.bPresent
+				? *FString::Printf(TEXT("%.0f to %.0f m at %.0f%%"),
+					Decks.Middle.BaseMetres, Decks.Middle.TopMetres,
+					Decks.Middle.Coverage * 100.0)
+				: TEXT("none"),
+			Decks.Cirrus.bPresent
+				? *FString::Printf(TEXT("%.0f to %.0f m at %.0f%%"),
+					Decks.Cirrus.BaseMetres, Decks.Cirrus.TopMetres,
+					Decks.Cirrus.Coverage * 100.0)
+				: TEXT("none"),
+			Decks.TropopauseMetres);
+	}
+	Clouds->MarkRenderStateDirty();
 }

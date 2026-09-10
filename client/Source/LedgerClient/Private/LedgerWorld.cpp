@@ -17,6 +17,7 @@
 #include "Misc/Paths.h"
 #include "GameFramework/PlayerStart.h"
 #include "LedgerAir.h"
+#include "LedgerCloud.h"
 #include "LedgerAtmosphere.h"
 #include "LedgerMeshBake.h"
 #include "LedgerMeshBuilder.h"
@@ -287,6 +288,20 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	WhenSeconds = Seconds;
 	SunFacing = SunDirectionAt(System, WhenSeconds);
 
+	// **The clouds move with the clock too.** T094. Coverage is a function of
+	// the pressure overhead and the pressure is a function of time, so a deck
+	// that was set once at begin play would be the weather of one instant
+	// hanging over every other.
+	if (Atmosphere != nullptr && System.Bodies.IsValidIndex(HomeBody()))
+	{
+		const FLedgerAirProfile Air = LedgerAir::For(System, HomeBody(), WhenSeconds);
+		const double Latitude = FMath::Asin(
+			FMath::Clamp(SiteDirection.GetSafeNormal().Z, -1.0, 1.0));
+		const double Longitude = FMath::Atan2(SiteDirection.Y, SiteDirection.X);
+		Atmosphere->SetDecks(LedgerCloud::DecksAt(
+			System, HomeBody(), Air, Latitude, Longitude, WhenSeconds));
+	}
+
 	UWorld* World = GetWorld();
 	if (World == nullptr)
 	{
@@ -516,6 +531,14 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		if (Atmosphere != nullptr)
 		{
 			Atmosphere->ConfigureForAir(Planet->Radius, Planet->MaxElevation, Air);
+
+			// And put the decks where the thermometer says, before anything is
+			// drawn rather than on the first clock move.
+			const double Latitude = FMath::Asin(
+				FMath::Clamp(SiteDirection.GetSafeNormal().Z, -1.0, 1.0));
+			const double Longitude = FMath::Atan2(SiteDirection.Y, SiteDirection.X);
+			Atmosphere->SetDecks(LedgerCloud::DecksAt(
+				System, HomeBody(), Air, Latitude, Longitude, WhenSeconds));
 		}
 	}
 
