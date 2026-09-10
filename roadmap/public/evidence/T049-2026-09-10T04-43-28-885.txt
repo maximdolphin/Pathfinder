@@ -1,0 +1,39 @@
+The ground at walking distance (T429).
+
+Standing at 1.7 m, looking along a 2600 m profile sampled every 434 cm.
+600 of 600 samples found a loaded patch.
+
+---- how coarse the triangles are ----
+
+finest patch drawn here      610.8 m across
+its quads                     9.54 m
+on a 1920 px viewport at 90 degrees:
+  one quad at 20.0 m             458 px  OVER -- acceptance is 40
+  one quad at  1.7 m            5390 px  (at one's feet, not the criterion)
+
+---- how far the ground departs from a plane ----
+
+RMS deviation from the best-fit line through the profile. A fitted
+line rather than a mean, so a hillside is not scored as detail.
+
+field, near-field band off     48.639 m   (what this was before T429)
+field, band on at this LOD     48.634 m
+the drawn mesh                 48.636 m   (acceptance: >= 0.15)
+
+---- cracks along the profile ----
+
+A crack is a step in the drawn surface at a patch boundary. This is
+the largest single-sample jump above the median one, so a hillside
+does not read as a gap.
+
+worst jump                      2.073 m at 2317.9 m along  CRACK
+
+---- the near-field band on its own ----
+
+The two columns above are both dominated by the landform under them.
+This is their difference: what T429 put on the ground, and nothing else.
+
+RMS                             0.176 m
+range over the profile          1.018 m  (-0.481 to 0.537)
+
+VERDICT: FAIL

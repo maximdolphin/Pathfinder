@@ -24,8 +24,21 @@ namespace
 	constexpr double NearFieldSettleSeconds = 20.0;
 
 	/// The profile: fifty metres in front of the camera, sampled every 25 cm.
-	constexpr double ProfileMetres = 50.0;
-	constexpr int32 ProfileSamples = 200;
+	/// Fifty metres by default, which is what T429 is measured over.
+	///
+	/// `-profilemetres=N` lengthens it, and T049 needs that: broken stitching
+	/// only cracks where two patches meet at DIFFERENT depths, and a fifty
+	/// metre profile taken standing still never crosses one. `-forcedepth`
+	/// puts a depth boundary two kilometres out, so the profile has to reach
+	/// it to measure the thing the fault produces.
+	double ProfileLength()
+	{
+		double Metres = 50.0;
+		FParse::Value(FCommandLine::Get(), TEXT("profilemetres="), Metres);
+		return FMath::Clamp(Metres, 10.0, 5000.0);
+	}
+
+	constexpr int32 ProfileSamples = 600;
 
 	/// Eye height, and the framing the acceptance is written against.
 	constexpr double EyeMetres = 1.7;
@@ -335,7 +348,7 @@ bool ULedgerNearField::Measure()
 
 	for (int32 Index = 0; Index < ProfileSamples; ++Index)
 	{
-		const double Metres = ProfileMetres * Index / (ProfileSamples - 1);
+		const double Metres = ProfileLength() * Index / (ProfileSamples - 1);
 		const FVector3d Direction =
 			(Up + Along * (Metres * 100.0 / Planet->Radius)).GetSafeNormal();
 
@@ -375,6 +388,53 @@ bool ULedgerNearField::Measure()
 		return false;
 	}
 
+	// ---- the worst step at a LOD boundary. T049 ---------------------------
+	//
+	// "No crack from any angle" cannot be settled by photographs: a crack is a
+	// few centimetres of gap along one edge and a camera either happens to be
+	// pointing at it or does not. So this walks a dense profile and looks for a
+	// discontinuity instead.
+	//
+	// **It is not a crack test, and saying so is the point.** Sampling either
+	// side of a patch boundary cannot distinguish a gap at the shared edge from
+	// two patches at different depths describing the same ground differently --
+	// both appear as a step. A real crack test samples AT the shared edge from
+	// both sides, which needs the two sections vertices and not SampleTerrain.
+	// What this does establish is that a boundary two kilometres out steps by
+	// two metres on a clean build, which is worth knowing either way.
+	//
+	// The measure is the largest single-sample jump against the median one. On
+	// continuous ground consecutive samples differ by whatever the slope is;
+	// at a crack one of them differs by the size of the gap. Comparing to the
+	// median rather than to zero is what stops a steep hillside reading as a
+	// crack.
+	double WorstJump = 0.0;
+	double WorstJumpAt = 0.0;
+	TArray<double> Steps;
+	Steps.Reserve(Drawn.Num());
+	for (int32 Index = 1; Index < Drawn.Num(); ++Index)
+	{
+		Steps.Add(FMath::Abs(Drawn[Index] - Drawn[Index - 1]));
+	}
+	TArray<double> Sorted = Steps;
+	Sorted.Sort();
+	const double MedianStep = Sorted.Num() > 0 ? Sorted[Sorted.Num() / 2] : 0.0;
+	// Endpoints excluded. The first reading of this reported a 0.153 m "crack"
+	// on a clean build, at exactly 50.0 m -- the last sample of a fifty metre
+	// profile. A check that is red on a clean build is a check that gets
+	// ignored, which is the failure this repository already wrote down once in
+	// docs/comparisons/terrain-regression/.
+	constexpr int32 Margin = 4;
+	for (int32 Index = Margin; Index < Steps.Num() - Margin; ++Index)
+	{
+		const double Excess = Steps[Index] - MedianStep;
+		if (Excess > WorstJump)
+		{
+			WorstJump = Excess;
+			WorstJumpAt = Distance[Index + 1];
+		}
+	}
+
 	const double DrawnRms = RmsFromFittedLine(Distance, Drawn);
 	const double FineRms = RmsFromFittedLine(Distance, FieldFine);
 	const double CoarseRms = RmsFromFittedLine(Distance, FieldCoarse);
@@ -400,7 +460,7 @@ bool ULedgerNearField::Measure()
 	Body += TEXT("The ground at walking distance (T429).\n\n");
 	Body += FString::Printf(
 		TEXT("Standing at %.1f m, looking along a %.0f m profile sampled every %.0f cm.\n"),
-		EyeMetres, ProfileMetres, ProfileMetres * 100.0 / (ProfileSamples - 1));
+		EyeMetres, ProfileLength(), ProfileLength() * 100.0 / (ProfileSamples - 1));
 	Body += FString::Printf(TEXT("%d of %d samples found a loaded patch.\n\n"),
 		Distance.Num(), ProfileSamples);
 
@@ -423,6 +483,15 @@ bool ULedgerNearField::Measure()
 	Body += FString::Printf(TEXT("field, band on at this LOD   %8.3f m\n"), FineRms);
 	Body += FString::Printf(TEXT("the drawn mesh               %8.3f m   %s\n\n"),
 		DrawnRms, DrawnRms >= 0.15 ? TEXT("(acceptance: >= 0.15)") : TEXT("UNDER -- acceptance is 0.15"));
+
+	Body += TEXT("---- cracks along the profile ----\n\n");
+	Body += TEXT("A crack is a step in the drawn surface at a patch boundary. This is\n");
+	Body += TEXT("the largest single-sample jump above the median one, so a hillside\n");
+	Body += TEXT("does not read as a gap.\n\n");
+	Body += FString::Printf(
+		TEXT("worst jump                   %8.3f m at %.1f m along  %s\n\n"),
+		WorstJump, WorstJumpAt,
+		WorstJump <= 0.15 ? TEXT("(smooth)") : TEXT("<- a LOD boundary"));
 
 	Body += TEXT("---- the near-field band on its own ----\n\n");
 	Body += TEXT("The two columns above are both dominated by the landform under them.\n");

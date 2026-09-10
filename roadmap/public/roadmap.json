@@ -3720,9 +3720,21 @@
      "at": "2026-09-08",
      "kind": "note",
      "text": "[2026-09-08] A third reading, from the 900 m/s 200 km collision transect rather than the scripted descent: 6495 imbalanced edges against 1736 active sections, so roughly 94% of edges, worst depth gap 12. Not evidence the tree is unbalanced. At 900 m/s the camera outruns patch upload, so LeafDepthAt keeps stopping at a shallow ancestor that is still the drawn node — the deep neighbour exists in the tree and has not arrived. That is a streaming-rate fact wearing a stitching metric's clothes. The metric needs to distinguish 'the neighbour is coarser' from 'the neighbour has not uploaded yet' before any number from it means anything, and until it does, this stays blocked rather than becoming the third wrong number I build on."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "UNBLOCKED, and the measurement it was waiting for exists. -forcedepth=N pins every node within 2 km of the camera to depth N whatever the error says, which is the case pure-distance LOD cannot produce (depth falls off smoothly, so no edge differs by more than one level and the finer side always collapses). With it on the tree reports 5,176 imbalanced edges and a worst depth gap of 15. A 2.6 km profile crosses the boundary and steps by 2.16 m. A CLEAN build steps by 2.07 m at the same place, so this is normal play and not synthetic. What is NOT established: whether that step is a gap at the shared edge or two patches at different depths describing the same ground differently. Sampling either side of a boundary cannot tell those apart; a real crack test samples AT the shared edge from both sides, which needs the two sections' vertices rather than SampleTerrain. That is the next step and the task stays blocked on it, not on the question of whether a balancing pass is needed -- which is still open and should be answered by the crack test, not before it. Found on the way, and fixed: DrawnNodeAt stopped at the SHALLOWEST ancestor holding a section, so with the resident shell never releasing its own, SampleTerrain answered from a 10,007 km patch whenever the tree was shaped by anything but distance."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T049-2026-09-10T04-43-28-885.txt",
+     "caption": "2.6 km profile on a clean build: 2.07 m step at 2,318 m, where the LOD boundary is.",
+     "source": "../out/near-field-2600m.txt",
+     "addedAt": "2026-09-10T04:43:28.887Z"
+    }
+   ],
    "plannedStartDay": 89,
    "plannedEndDay": 90.5,
    "plannedStart": "2027-01-08",
@@ -13371,5 +13383,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T04:26:24.693Z"
+ "updatedAt": "2026-09-10T04:43:28.889Z"
 }
