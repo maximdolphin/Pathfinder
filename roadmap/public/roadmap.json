@@ -5964,6 +5964,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "The schedule is right and the photographs do not show it. Rise, transit and set are computed from the ephemeris and the renderer places the moon at the predicted altitude to 0.000 arcminutes; the frames are night sky with nothing above the horizon, cloud edge to edge at transit, and a washed-out white sky at set. A 0.72 degree moon is 69 pixels in a 20 degree frame at 1080p, so this is not a size problem -- it is the over-dense atmosphere and the cloud layer, the same blocker as T074, T075 and T077. Unblocks with M04 T089 and T094. docs/comparisons/moon-passage/"
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Re-run after T089. Half the blocker is gone: the atmosphere is no longer washing the sky out -- the home world's sky is blue and the deck is broken cumulus at 1.2-5.2 km rather than solid overcast at 2-8. What remains is purely cloud placement: the transit frame is now a broken deck with black gaps in it, and the moon is behind a patch. That is a weather problem (where the clouds are), not a sky problem, so the block moves from T089 to T092 and T094."
     }
    ],
    "evidence": [
@@ -13850,5 +13855,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T18:14:36.568Z"
+ "updatedAt": "2026-09-10T18:16:23.596Z"
 }

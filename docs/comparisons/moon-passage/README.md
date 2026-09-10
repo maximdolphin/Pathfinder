@@ -73,6 +73,18 @@ field** — four tasks whose arithmetic is checked and whose pictures are of a
 white sky. It is calibration work, and it belongs to M04: T089 (atmosphere
 profile per body) and T094 (cloud layers at real altitudes).
 
+## Re-run after T089: half the blocker is gone
+
+With the atmosphere computed from the body's own air rather than from four
+hardcoded floats, the sky is no longer washed out — the home world's daylight
+sky is blue and the deck is broken cumulus at 1.2 to 5.2 km rather than solid
+overcast at 2 to 8.
+
+The transit frame is now a broken deck with black gaps in it, and the moon is
+behind a patch. That is a weather problem — *where* the clouds are — rather than
+a sky problem, so the remaining block moves from T089 to **T092** (the
+pressure-cell weather model) and **T094** (cloud layers at real altitudes).
+
 ## So the gate does not pass yet
 
 Of the eight M03 gate checks, the six that are arithmetic are green and have
