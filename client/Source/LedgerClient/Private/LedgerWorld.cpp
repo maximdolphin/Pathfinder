@@ -33,6 +33,12 @@
 
 namespace
 {
+	/// What the star's light is worth with nothing in front of it.
+	///
+	/// Named because T075 scales it: an eclipse is this times whatever fraction
+	/// of the disc is still showing, and a bare 11.0f in two places would drift.
+	constexpr float SunIntensity = 11.0f;
+
 	/// Which body of the generated system the world is standing on.
 	///
 	/// Index 1: the primary is 0 and the planet is the first thing orbiting it.
@@ -259,12 +265,41 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 		return;
 	}
 
+	// How much of the star is behind something, from the site. T075.
+	//
+	// The illuminance a surface receives is proportional to how much of the
+	// disc is still showing, so the light is simply scaled by what is left.
+	// Nothing else is needed for the ground to go dark -- no separate eclipse
+	// effect that could disagree with the ephemeris about when.
+	//
+	// Asked at the site rather than at the camera because that is where the
+	// world is built and where the fixtures stand. A shadow track is a few
+	// hundred kilometres wide, so the difference matters only to a viewer who
+	// has flown out of it, and a viewer who has flown out of it wants the
+	// sunlight back.
+	const double Covered = LedgerSky::StarCoveredFraction(
+		System, HomeBodyIndex, SiteDirection, WhenSeconds);
+	const float Dimmed = SunIntensity * static_cast<float>(1.0 - Covered);
+
 	// The world's own light, found rather than remembered: the builder does not
 	// keep a handle on it, and one directional light is what this world has.
 	const FRotator Rotation = (-FVector(SunFacing)).Rotation();
 	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
 	{
 		It->SetActorRotation(Rotation);
+		if (UDirectionalLightComponent* Component =
+			Cast<UDirectionalLightComponent>(It->GetLightComponent()))
+		{
+			Component->SetIntensity(Dimmed);
+		}
+	}
+
+	if (Covered > 0.001)
+	{
+		UE_LOG(LogLedger, Log,
+			TEXT("eclipse: body %d covers %.1f%% of the star, sun at %.2f of %.2f"),
+			LedgerSky::EclipsingBody(System, HomeBodyIndex, SiteDirection, WhenSeconds),
+			Covered * 100.0, Dimmed, SunIntensity);
 	}
 }
 
@@ -431,7 +466,7 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		Sun->SetActorRotation(SunRotation);
 		if (UDirectionalLightComponent* Component = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			Component->SetIntensity(11.0f);
+			Component->SetIntensity(SunIntensity);
 			Component->SetAtmosphereSunLight(true);
 			Component->SetDynamicShadowDistanceMovableLight(600000.0f);
 		}

@@ -159,6 +159,34 @@ namespace LedgerSky
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double SecondsFromEpoch);
 
+	/// How much of the star's disc is hidden by another body, 0 to 1. T075.
+	///
+	/// An eclipse is two circles on the sky overlapping, so this is the area
+	/// they share over the star's own area. It counts only bodies actually
+	/// between the observer and the star -- a moon on the far side lines up
+	/// just as often and hides nothing.
+	///
+	/// Zero when the star is below the horizon: a thing nobody can see is not
+	/// darkening anybody's ground.
+	LEDGERCORE_API double StarCoveredFraction(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch);
+
+	/// What is covering it, or INDEX_NONE.
+	LEDGERCORE_API int32 EclipsingBody(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch);
+
+	/// When the next eclipse is, searching forward. T075.
+	///
+	/// Returns the moment of greatest coverage, or a negative number if nothing
+	/// is found inside the span. The prediction is the acceptance: a time comes
+	/// out of the ephemeris, and then somebody stands there and looks.
+	LEDGERCORE_API double NextEclipse(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double AfterSeconds, double SpanSeconds,
+		double& OutPeakCoverage);
+
 	/// The first local noon at or after a time: the next moment the hour angle
 	/// is zero.
 	///

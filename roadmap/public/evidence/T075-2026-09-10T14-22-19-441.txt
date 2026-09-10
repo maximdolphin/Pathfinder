@@ -1,0 +1,18 @@
+An eclipse the ephemeris predicted (T075).
+
+occulting body   2
+greatest cover   100.0%
+predicted at     40887932 s from epoch
+
+offset      covered   image
+ -180 min       0.0%   eclipse-0.png
+  -45 min      35.4%   eclipse-1.png
+  -15 min      84.1%   eclipse-2.png
+   +0 min     100.0%   eclipse-3.png
+  +15 min     100.0%   eclipse-4.png
+  +45 min      71.6%   eclipse-5.png
+ +180 min       0.0%   eclipse-6.png
+
+The light is not dimmed by an eclipse effect. It is the star's intensity
+times however much of its disc is still showing, so the ground darkens for
+the same reason and at the same moment the sky says it should.

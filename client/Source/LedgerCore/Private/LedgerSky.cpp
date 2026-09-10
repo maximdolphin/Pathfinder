@@ -361,6 +361,196 @@ namespace LedgerSky
 		});
 	}
 
+	/// The area two circles on the sky share, over the first one's area.
+	///
+	/// Radii and separation in radians, which is close enough to a plane at
+	/// half a degree that the flat lens formula is exact to a part in a million
+	/// -- and a spherical version would be a different way of being wrong,
+	/// since neither disc is a great circle.
+	double DiscOverlapFraction(double FirstRadius, double SecondRadius, double Separation)
+	{
+		if (!(FirstRadius > 0.0))
+		{
+			return 0.0;
+		}
+		if (Separation >= FirstRadius + SecondRadius)
+		{
+			return 0.0;
+		}
+		if (Separation <= FMath::Abs(FirstRadius - SecondRadius))
+		{
+			// One is entirely inside the other: either totality, or a ring.
+			const double Smaller = FMath::Min(FirstRadius, SecondRadius);
+			return (Smaller * Smaller) / (FirstRadius * FirstRadius);
+		}
+
+		const double R1 = FirstRadius;
+		const double R2 = SecondRadius;
+		const double D = Separation;
+		const double A1 = FMath::Acos(
+			FMath::Clamp((D * D + R1 * R1 - R2 * R2) / (2.0 * D * R1), -1.0, 1.0));
+		const double A2 = FMath::Acos(
+			FMath::Clamp((D * D + R2 * R2 - R1 * R1) / (2.0 * D * R2), -1.0, 1.0));
+		const double Area = R1 * R1 * (A1 - FMath::Sin(2.0 * A1) * 0.5)
+			+ R2 * R2 * (A2 - FMath::Sin(2.0 * A2) * 0.5);
+		return FMath::Clamp(Area / (LedgerPi * R1 * R1), 0.0, 1.0);
+	}
+
+	/// Shared by the coverage and the "what is it" query, so the two cannot
+	/// disagree about which body is in the way.
+	double CoverageAndBody(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch, int32& OutBody)
+	{
+		OutBody = INDEX_NONE;
+
+		TArray<FLedgerSkyBody> Seen;
+		VisibleBodies(System, ObserverBodyIndex, AnchorDirection, SecondsFromEpoch, Seen);
+
+		const FLedgerSkyBody* Star = Seen.FindByPredicate(
+			[](const FLedgerSkyBody& B) { return B.BodyIndex == 0; });
+		if (Star == nullptr || Star->DirectionInSurface.Z <= 0.0)
+		{
+			return 0.0;
+		}
+
+		double Best = 0.0;
+		for (const FLedgerSkyBody& Body : Seen)
+		{
+			if (Body.BodyIndex == 0)
+			{
+				continue;
+			}
+			// In front, not behind. A body further away than the star is on the
+			// other side of it and lines up just as often.
+			if (Body.DistanceMetres >= Star->DistanceMetres)
+			{
+				continue;
+			}
+
+			const double Separation = FMath::Acos(FMath::Clamp(
+				FVector3d::DotProduct(Body.DirectionInSurface, Star->DirectionInSurface),
+				-1.0, 1.0));
+			const double Covered = DiscOverlapFraction(
+				Star->AngularRadiusRadians, Body.AngularRadiusRadians, Separation);
+			if (Covered > Best)
+			{
+				Best = Covered;
+				OutBody = Body.BodyIndex;
+			}
+		}
+		return Best;
+	}
+
+	double StarCoveredFraction(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		int32 Ignored = INDEX_NONE;
+		return CoverageAndBody(
+			System, ObserverBodyIndex, AnchorDirection, SecondsFromEpoch, Ignored);
+	}
+
+	int32 EclipsingBody(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double SecondsFromEpoch)
+	{
+		int32 Which = INDEX_NONE;
+		CoverageAndBody(
+			System, ObserverBodyIndex, AnchorDirection, SecondsFromEpoch, Which);
+		return Which;
+	}
+
+	double NextEclipse(
+		const FLedgerSystem& System, int32 ObserverBodyIndex,
+		const FVector3d& AnchorDirection, double AfterSeconds, double SpanSeconds,
+		double& OutPeakCoverage)
+	{
+		OutPeakCoverage = 0.0;
+		if (!(SpanSeconds > 0.0))
+		{
+			return -1.0;
+		}
+
+		// **The step has to be shorter than an eclipse, or the search steps
+		// over them.** The occulter moves across the star at roughly its own
+		// diameter per hour at these distances, so first contact to last is a
+		// couple of hours and a ten-minute step lands inside it a dozen times.
+		// A step chosen for speed instead would report that this system has no
+		// eclipses, which is a very convincing wrong answer.
+		constexpr double CoarseStep = 600.0;
+
+		const int32 Steps = static_cast<int32>(SpanSeconds / CoarseStep);
+		for (int32 Index = 0; Index <= Steps; ++Index)
+		{
+			const double At = AfterSeconds + Index * CoarseStep;
+			const double Covered = StarCoveredFraction(
+				System, ObserverBodyIndex, AnchorDirection, At);
+			if (Covered <= 0.0)
+			{
+				continue;
+			}
+
+			// Something is in the way -- but this is FIRST CONTACT, not the
+			// peak, and a predicted time means greatest coverage.
+			//
+			// **The first version bracketed the peak at plus or minus one
+			// coarse step and refined inside that.** It reported 3.5% coverage
+			// at a moment when ten minutes later the star was 8.5% covered and
+			// half an hour later 19.4%: a converged, precise answer to the
+			// wrong question. An eclipse runs for hours and the search found
+			// the edge of one.
+			//
+			// So: walk forward at a minute a step for as long as anything is
+			// still in front of the star, keep the deepest, and refine there.
+			constexpr double FineStep = 60.0;
+			double BestAt = At;
+			double Best = Covered;
+			for (double Walk = At; ; Walk += FineStep)
+			{
+				const double Here = StarCoveredFraction(
+					System, ObserverBodyIndex, AnchorDirection, Walk);
+				if (Here <= 0.0 && Walk > At)
+				{
+					break;
+				}
+				if (Here > Best)
+				{
+					Best = Here;
+					BestAt = Walk;
+				}
+				// A guard, not a limit anybody should reach: the longest
+				// possible transit here is a few hours.
+				if (Walk - At > 86400.0)
+				{
+					break;
+				}
+			}
+
+			double Low = BestAt - FineStep;
+			double High = BestAt + FineStep;
+			for (int32 Refine = 0; Refine < 120; ++Refine)
+			{
+				const double A = Low + (High - Low) / 3.0;
+				const double B = High - (High - Low) / 3.0;
+				if (StarCoveredFraction(System, ObserverBodyIndex, AnchorDirection, A)
+					< StarCoveredFraction(System, ObserverBodyIndex, AnchorDirection, B))
+				{
+					Low = A;
+				}
+				else
+				{
+					High = B;
+				}
+			}
+			const double Peak = (Low + High) * 0.5;
+			OutPeakCoverage = StarCoveredFraction(
+				System, ObserverBodyIndex, AnchorDirection, Peak);
+			return Peak;
+		}
+		return -1.0;
+	}
+
 	double NextLocalNoon(
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double AfterSeconds)

@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 6
+   "doneCount": 7
   },
   {
    "id": "M04",
@@ -5444,11 +5444,30 @@
    "dependsOn": [
     "T074"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "An eclipse predicted by the ephemeris, observed from the surface at the predicted time, with the ground going dark. New -eclipse fixture: the ephemeris is asked when BEFORE anything is drawn, then a camera stands at the site and looks. At the world's own site it found a TOTAL eclipse. Solar altitude, coverage and measured ground brightness (mean of the lower half of frame, out of 255): -180 min, sun -22.9 deg, 0.0%, 0.00 (before sunrise); -45 min, 10.6 deg, 35.4%, 28.50; -15 min, 17.6 deg, 84.1%, 24.89; +0 min, 21.0 deg, 100.0%, 0.00; +15 min, 24.4 deg, 100.0%, 0.00; +45 min, 30.8 deg, 71.6%, 38.87; +180 min, 50.9 deg, 0.0%, 74.10. The eclipse happens shortly after dawn, which is why one end of the sequence is night. THE LIGHT IS NOT DIMMED BY AN ECLIPSE EFFECT -- it is the star's intensity times however much of its disc is still showing, so no separate system exists that could disagree with the ephemeris about when an eclipse is. Notice the middle: at -15 min the sun is HIGHER than at -45 min and the ground is DARKER, because 84% of the disc has gone. Nothing was written to produce that. THE GEOMETRY: coverage is the lens area two discs share over the star's own area, checked against sampling 80,000 points across the star's disc in equal-area rings with no overlap formula in it, right through an eclipse rather than only at its peak -- a formula can be right at totality and wrong on the way in. Worst disagreement 0.00034 of the disc. A second test covers the other easy mistake: a moon passes between a site and the star once a month whatever the site is doing, and half the time it faces away, so counting those would darken ground that is already dark. THE BUG THIS TASK FOUND: NextEclipse returned FIRST CONTACT, not greatest coverage. It bracketed the peak at plus or minus one coarse step and refined inside that -- converging precisely on the wrong question, reporting 3.5% coverage at a moment when the star was 8.5% covered ten minutes later and 19.4% half an hour later. An eclipse runs for hours and the search found the edge of one. It now walks forward a minute at a step while anything is in front of the star, keeps the deepest, and refines there. AN ASSERTION DELIBERATELY NOT MADE: from one fixed site in two years there are 2 eclipses and the deepest covers 28.2%. That is not total and should not be -- the shadow's dark core is a track a few hundred kilometres wide crossing a globe forty thousand around, so most of the planet is beside it every time, and Earth's figure for one spot is centuries. An early version of the test asserted some eclipse in two years would be total, which is a false claim about orbital mechanics whose natural fix would have been to break the search until it agreed. What is asserted instead is cheap and true: at greatest coverage the moon subtends 1.324 of the star, so the shadow has a dark core and totality exists somewhere along its track. WHAT IS MISSING: at totality the ground reads exactly 0.00, and real totality is not black -- the corona is still there and light scatters in from the daylight outside the shadow track, which is why photographs of totality look like deep twilight. This model has one number for the star and multiplies it. Belongs with T076's photometry and M04's atmosphere. 72 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T075-2026-09-10T14-22-19-441.txt",
+     "caption": "Predicted total eclipse: ground 74.10 in daylight, 0.00 at the predicted moment, with the sun 21 degrees up",
+     "source": "../out/eclipse-watch.txt",
+     "addedAt": "2026-09-10T14:22:19.442Z"
+    },
+    {
+     "file": "evidence/T075-2026-09-10T14-22-19-592.png",
+     "caption": "45 minutes after totality, 71.6% still covered: the same site in low sun",
+     "source": "../out/eclipse-5.png",
+     "addedAt": "2026-09-10T14:22:19.593Z"
+    }
+   ],
    "plannedStartDay": 187,
    "plannedEndDay": 189,
    "plannedStart": "2027-05-26",
@@ -13606,5 +13625,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T14:12:46.918Z"
+ "updatedAt": "2026-09-10T14:22:19.596Z"
 }
