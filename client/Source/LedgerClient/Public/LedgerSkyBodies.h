@@ -32,6 +32,14 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual TStatId GetStatId() const override;
 
+	/// Where the sphere standing for a body actually sits in the world.
+	///
+	/// A fixture that photographs a moon rising needs to be able to say that
+	/// the thing in the frame is where the ephemeris put it, and nothing else
+	/// in the client can answer that -- every other check compares one
+	/// calculation with another.
+	bool WorldPositionOf(int32 BodyIndex, FVector& Out) const;
+
 private:
 	UPROPERTY()
 	TObjectPtr<AActor> Holder;

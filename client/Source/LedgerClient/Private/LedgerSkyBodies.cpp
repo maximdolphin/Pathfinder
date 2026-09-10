@@ -42,6 +42,18 @@ void ULedgerSkyBodies::OnWorldBeginPlay(UWorld& InWorld)
 	Super::OnWorldBeginPlay(InWorld);
 }
 
+bool ULedgerSkyBodies::WorldPositionOf(int32 BodyIndex, FVector& Out) const
+{
+	const int32 Which = Bodies.IndexOfByKey(BodyIndex);
+	if (Which == INDEX_NONE || !Spheres.IsValidIndex(Which)
+		|| Spheres[Which] == nullptr)
+	{
+		return false;
+	}
+	Out = Spheres[Which]->GetComponentLocation();
+	return true;
+}
+
 void ULedgerSkyBodies::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

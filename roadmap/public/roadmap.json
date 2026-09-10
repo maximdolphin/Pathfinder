@@ -5956,11 +5956,30 @@
    "dependsOn": [
     "T087"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The schedule is right and the photographs do not show it. Rise, transit and set are computed from the ephemeris and the renderer places the moon at the predicted altitude to 0.000 arcminutes; the frames are night sky with nothing above the horizon, cloud edge to edge at transit, and a washed-out white sky at set. A 0.72 degree moon is 69 pixels in a 20 degree frame at 1080p, so this is not a size problem -- it is the over-dense atmosphere and the cloud layer, the same blocker as T074, T075 and T077. Unblocks with M04 T089 and T094. docs/comparisons/moon-passage/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T088-2026-09-10T17-55-28-827.png",
+     "caption": "Set: the horizon in frame, the sky washed white, and no moon on it",
+     "source": "out/passage-5.png",
+     "addedAt": "2026-09-10T17:55:28.829Z"
+    },
+    {
+     "file": "evidence/T088-2026-09-10T17-55-28-966.png",
+     "caption": "Transit at 79.19 degrees: cloud edge to edge",
+     "source": "out/passage-3.png",
+     "addedAt": "2026-09-10T17:55:28.968Z"
+    }
+   ],
    "plannedStartDay": 214,
    "plannedEndDay": 215.5,
    "plannedStart": "2027-07-02",
@@ -13806,5 +13825,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T16:43:56.909Z"
+ "updatedAt": "2026-09-10T17:55:28.971Z"
 }
