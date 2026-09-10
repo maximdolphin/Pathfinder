@@ -6103,11 +6103,24 @@
    "dependsOn": [
     "T090"
    ],
-   "status": "todo",
-   "startedAt": null,
+   "status": "blocked",
+   "startedAt": "2026-09-10",
    "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "block",
+     "text": "The model is right and the renderer only shows it close up. Delivered: a nocturnal cooling model from surface thermal inertia (2 F sqrt(t) / (I sqrt(pi))) calibrated against Earth 18.0 K, Venus 0.00 K and Mars 73.5 K against a measured ~70; a cold pool depth from turbulent diffusion, 86 m by dawn; a dew-point threshold that makes fog appear in the second half of the night; and a grid of local fog volumes filled to a LEVEL, so 21 of 36 cells fill and the ridge stands 3096 m clear by arithmetic. Invisible from orbit. Not delivered: from a ridge 12 km away the frame is indistinguishable from the -fogoff control -- the pale field filling the valleys there is T089's aerial perspective, not this fog, and only running the control revealed that. Ruled out: a per-view volume budget (144 one-km cells vs 36 two-km ones changed nothing) and density (the component's extinction is per unit sphere, so it wants tau = k*d; corrected, it is visible from inside and still not at 12 km). A bank that reads across a landscape wants the volumetric cloud system with a low layer -- T094. docs/comparisons/ground-fog/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T091-2026-09-10T19-17-23-394.png",
+     "caption": "Dawn in the valley: the cold pool, 86 m deep, visibility 363 m",
+     "source": "out/fogwatch-valley.png",
+     "addedAt": "2026-09-10T19:17:23.396Z"
+    }
+   ],
    "plannedStartDay": 219.5,
    "plannedEndDay": 222.5,
    "plannedStart": "2027-07-09",
@@ -13880,5 +13893,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T18:30:31.758Z"
+ "updatedAt": "2026-09-10T19:17:23.398Z"
 }
