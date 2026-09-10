@@ -35,6 +35,16 @@ namespace
 		double BackDrops;
 		double UpDrops;
 
+		/// How far ahead of the camera to aim, metres, when bAtFoot is set.
+		///
+		/// Small on purpose. The camera stands a few metres above ground that a
+		/// seventy-degree wall rises out of, so the look-down angle is
+		/// atan(height / this): eight metres ahead of a six metre eye is
+		/// thirty-seven degrees down, which frames ground. Twenty-nine metres
+		/// ahead of an eight metre eye is fifteen degrees, which frames wall,
+		/// and was the second failed attempt at this shot.
+		double AimMetres;
+
 		/// Whether to aim at the foot of the face rather than at the face.
 		///
 		/// Every shot aimed at the face, including the one named for the foot,
@@ -54,9 +64,9 @@ namespace
 		// (LedgerTerrainMaterial.cpp), so a shot framed 530 m off a 295 m face
 		// photographs the fade rather than the rock -- which is what the first
 		// framing did, and the reason the face came back smooth and white.
-		{ TEXT("cliff-foot.png"),   0.30,  0.02, true },
-		{ TEXT("cliff-face.png"),   0.60,  0.18, false },
-		{ TEXT("cliff-wide.png"),   1.60,  0.55, false },
+		{ TEXT("cliff-foot.png"),   0.06,  0.016,  8.0, true },
+		{ TEXT("cliff-face.png"),   0.60,  0.18,   0.0, false },
+		{ TEXT("cliff-wide.png"),   1.60,  0.55,   0.0, false },
 	};
 
 	FVector3d CliffOnSphere(double LatitudeDegrees, double LongitudeDegrees)
@@ -367,9 +377,12 @@ void ULedgerCliffSite::Place()
 	// look ahead rather than up: a quarter of the way back towards the face,
 	// which is about thirty metres of ground and the base of the wall behind
 	// it.
+	// A fixed few metres ahead of the camera, not a fraction of the setback.
+	// Fractions of the setback were tried twice and both framed wall; see
+	// AimMetres.
+	const double AimArc = (Current.AimMetres * 100.0) / Planet->Radius;
 	const FVector3d Aim = Current.bAtFoot
-		? (Eye3d * FMath::Cos(BackArc * 0.25) - Downhill * FMath::Sin(BackArc * 0.25))
-			.GetSafeNormal()
+		? (Eye3d * FMath::Cos(AimArc) - Downhill * FMath::Sin(AimArc)).GetSafeNormal()
 		: Face;
 	const FVector Target = FVector(FVector3d(Planet->GetActorLocation())
 		+ Aim * Planet->SurfaceRadiusAt(Aim));

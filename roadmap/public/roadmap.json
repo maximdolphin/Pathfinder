@@ -4016,6 +4016,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Foot framing: two attempts, neither works, and the reason is geometric rather than a tuning problem. The camera stands 115 m back and 8 m above the ground at the base of a 385 m face at 70 degrees. Aiming at the summit fills the frame with rock; aiming 55% of the way down still aims 322 m up it; aiming 30 m ahead of the camera is still below the face's own horizon. Any FORWARD aim from that position fills the frame, because the wall subtends more than the field of view. Debris at the foot needs a DOWNWARD-pitched shot of the ground at the base -- the shape of the overhead capture in -nearfield, not of a landscape view. That is the remaining work and it is one shot definition, not a search or a material problem."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Third framing attempt. 23 m back, 6.2 m up, aiming 8 m ahead: the shot is now a close-up of the rock surface with layering and mineral detail legible, which serves 'reads as rock with bedding' better than the wide face shot did. It still does not show ground with debris on it, because at 23 m a seventy-degree face fills the frame from any forward aim. Two of three criteria are now evidenced -- a 60-degree face (70.3), and that it reads as rock with bedding. The third needs the camera out on the flat away from the base looking back and down, which is a different position rather than a different aim, and it is the remaining work. Stopping here rather than spending a fourth iteration on one camera."
     }
    ],
    "evidence": [
@@ -4048,6 +4053,12 @@
      "caption": "70.3 degrees, 385 m drop, at 1,014 m: grey rock with relief and shadow, not a blown-out slope.",
      "source": "../out/cliff-face.png",
      "addedAt": "2026-09-10T05:23:06.016Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-10T05-47-25-603.png",
+     "caption": "Close on the face at 23 m: layering and mineral speckle legible, which is the 'reads as rock with bedding' half.",
+     "source": "../out/cliff-foot.png",
+     "addedAt": "2026-09-10T05:47:25.605Z"
     }
    ],
    "plannedStartDay": 103,
@@ -13439,5 +13450,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T05:39:08.444Z"
+ "updatedAt": "2026-09-10T05:47:25.760Z"
 }
