@@ -85,6 +85,27 @@ behind a patch. That is a weather problem — *where* the clouds are — rather 
 a sky problem, so the remaining block moves from T089 to **T092** (the
 pressure-cell weather model) and **T094** (cloud layers at real altitudes).
 
+## And then it was photographed
+
+The frames exist now. The night was black for three reasons and none of them was
+the orbital model — see `docs/comparisons/night-sky/`:
+
+- an auto-exposure floor at −4 EV100, which is a moonlit landscape and clamped
+  every starlit one to black;
+- a star field computed in T077 and never drawn by anything;
+- and a 1.5-second settle photographing the middle of a twenty-seven-stop
+  exposure adaptation.
+
+With those fixed, the rise frame shows the moon on the horizon under a field of
+stars, the transit frame shows it at 79° with a gibbous limb, and the set frame
+shows it pale and low in a brightening sky over snow. Every one at a time the
+ephemeris chose before anything was drawn.
+
+**What is left of T088 is its second clause**, not its first: "flown to and
+landed on, in one session". The world builds one body's terrain at startup and
+the sky renderer places bodies for an observer on the home surface, so the
+crossing between them is still two processes.
+
 ## So the gate does not pass yet
 
 Of the eight M03 gate checks, the six that are arithmetic are green and have

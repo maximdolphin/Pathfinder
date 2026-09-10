@@ -101,6 +101,22 @@ namespace LedgerSurface
 #endif
 	}
 
+	UMaterialInterface* CreateStarMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Star")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning,
+			TEXT("star material built in memory: no baked asset. It will not "
+			     "exist in a packaged build until the bake is run."));
+		return BuildStarMaterial(Outer);
+#else
+		return Fallback(TEXT("M_Star"));
+#endif
+	}
+
 	UMaterialInterface* CreateCloudMaterial(UObject* Outer)
 	{
 		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Clouds")))

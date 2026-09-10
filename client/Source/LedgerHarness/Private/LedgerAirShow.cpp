@@ -20,7 +20,9 @@
 namespace
 {
 	constexpr double AirShowFirstSettle = 25.0;
-	constexpr double AirShowStepSettle = 6.0;
+	/// Fourteen, not six: the sunset frame is twenty stops from the zenith one
+	/// and auto-exposure travels at about one and a fifth a second.
+	constexpr double AirShowStepSettle = 14.0;
 
 	/// Two views, and they answer different questions.
 	///

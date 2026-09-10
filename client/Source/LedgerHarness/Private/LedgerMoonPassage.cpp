@@ -21,8 +21,17 @@
 
 namespace
 {
-	constexpr double PassageFirstSettle = 20.0;
-	constexpr double PassageStepSettle = 1.5;
+	/// **Long enough for the eye to finish opening.**
+	///
+	/// Auto-exposure is an adaptation, and this sequence walks from a starlit
+	/// night to full daylight. Widening the range to -8..+19 EV100 -- which is
+	/// what made the night frames stop being black -- also made it twenty-seven
+	/// stops to travel, and at 1.2 stops a second a step settle of 1.5 seconds
+	/// photographs the middle of that journey. The descending frame came back
+	/// pure white for exactly that reason, which is the third time this project
+	/// has photographed an adaptation and called it something else.
+	constexpr double PassageFirstSettle = 25.0;
+	constexpr double PassageStepSettle = 14.0;
 
 	/// Narrow, because a moon is half a degree across and a 55 degree frame
 	/// spends nine pixels on it. Twenty degrees still holds the horizon and the

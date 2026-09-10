@@ -16,6 +16,7 @@
 
 #include "LedgerMaterialGraph.h"
 #include "LedgerLog.h"
+#include "Misc/CommandLine.h"
 #include "MaterialDomain.h"
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionCloudLayer.h"
@@ -123,6 +124,26 @@ namespace LedgerSurface
 
 		Material->MaterialDomain = MD_Volume;
 
+		// **Declared usable on a volumetric cloud, and this is not optional.**
+		//
+		// Unreal validates material usage per consumer and silently swaps in the
+		// default material for anything that has not declared itself. This is
+		// the same trap that rendered three hundred and forty-two instanced
+		// trees as black cut-outs in M02 with the material assigned and the
+		// slot present -- the thing being drawn was not this material at all.
+		// Here it presents as a sky with no cloud in it, which reads as a
+		// density bug and is not one.
+		Material->bUsedWithVolumetricCloud = true;
+
+		// **Additive, because the compiler says so.** A volume material in any
+		// other blend mode fails to compile outright and the default material
+		// is substituted, which draws nothing -- and a sky with no cloud in it
+		// looks exactly like a density that came out zero. Two rounds of this
+		// task went on the second explanation. The engine had been saying
+		// "Volume materials must use an Additive blend mode" in LogMaterial the
+		// whole time, under a warning about the map rather than the material.
+		Material->BlendMode = BLEND_Additive;
+
 		FGraph Graph;
 		Graph.Material = Material;
 
@@ -226,8 +247,16 @@ namespace LedgerSurface
 		UMaterialExpression* Total =
 			Graph.Add(Graph.Add(Cumulus.Mask, Middle.Mask), Cirrus.Mask);
 
+		// **Per centimetre, and that is a factor of a hundred.**
+		//
+		// A cumulus you can see fifty metres into has an extinction of about
+		// 3/50 per metre, which is 0.0006 per centimetre -- and centimetres are
+		// what a volume material's opacity output is in. Handing it 0.05
+		// per-metre-thinking made every band a hundred times too dense and
+		// turned the zenith into a flat purple wall, which reads as a broken
+		// shader rather than as an arithmetic slip.
 		UMaterialExpressionScalarParameter* Extinction =
-			Parameter(Graph, TEXT("Extinction"), 0.05f);
+			Parameter(Graph, TEXT("Extinction"), 0.0006f);
 
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
 		if (EditorData == nullptr)
@@ -243,10 +272,41 @@ namespace LedgerSurface
 		EditorData->BaseColor.Expression = Graph.Constant3(
 			FLinearColor(0.98f, 0.98f, 0.99f));
 		EditorData->Opacity.Expression = Graph.Multiply(Total, Extinction);
-		EditorData->EmissiveColor.Expression =
-			Graph.Constant3(FLinearColor::Black);
+		// **`-cloudprobe` makes the material show its own coordinate.**
+		//
+		// A uniform sky can mean the bands are everywhere or that the altitude
+		// they are drawn against is constant, and those two look identical from
+		// outside. With the probe on, the cloud is coloured by its normalised
+		// altitude in the layer and given a flat thin density: a vertical
+		// gradient means the coordinate is good and the bands are at fault, and
+		// a flat colour means the coordinate is.
+		const bool bProbe =
+			FParse::Param(FCommandLine::Get(), TEXT("cloudprobe"));
+		if (bProbe)
+		{
+			EditorData->EmissiveColor.Expression = Altitude;
+			EditorData->Opacity.Expression =
+				Graph.Multiply(Graph.Constant(1.0f), Extinction);
+			UE_LOG(LogLedger, Log,
+				TEXT("cloud material: probe on, drawing the altitude coordinate"));
+		}
+		else
+		{
+			EditorData->EmissiveColor.Expression =
+				Graph.Constant3(FLinearColor::Black);
+		}
 
 		Material->PostEditChange();
+
+		// **Whether it compiled is already in the log**, under LogMaterial, and
+		// a second copy here would only be a second thing to keep true. What is
+		// worth saying is how big the graph is, so a silent sky can be told
+		// from an empty one.
+		UE_LOG(LogLedger, Log,
+			TEXT("cloud material: %d expressions, volumetric cloud usage %s"),
+			Material->GetExpressionCollection().Expressions.Num(),
+			Material->bUsedWithVolumetricCloud ? TEXT("declared") : TEXT("MISSING"));
+
 		return Material;
 	}
 }

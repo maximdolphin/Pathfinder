@@ -1,4 +1,7 @@
 #include "LedgerSkyBodies.h"
+#include "Components/InstancedStaticMeshComponent.h"
+#include "LedgerSurface.h"
+#include "LedgerStarField.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -144,9 +147,16 @@ void ULedgerSkyBodies::Tick(float DeltaSeconds)
 			Component->bReceivesDecals = false;
 			Component->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+			// A moon lights the ground it hangs over -- that is real, and T075
+			// computes it -- but not by being fed to a cubemap capture as a
+			// lump of geometry a hundred kilometres away.
+			Component->bVisibleInRealTimeSkyCaptures = false;
+
 			Spheres.Add(Component);
 			Bodies.Add(Body.BodyIndex);
 		}
+
+		BuildStars(System, Home);
 
 		UE_LOG(LogLedger, Log, TEXT("sky bodies: %d spheres for %d visible bodies"),
 			Spheres.Num(), Seen.Num());
@@ -211,4 +221,122 @@ void ULedgerSkyBodies::Tick(float DeltaSeconds)
 		Component->SetWorldLocation(Place);
 		Component->SetWorldScale3D(FVector(Scale));
 	}
+
+	// **The star field turns because the ground does.**
+	//
+	// The catalogue is in an inertial frame and the terrain is the body frame
+	// laid onto world space, so the sky's rotation is the body's orientation
+	// applied to the whole field. Rotating the holder does it for eight hundred
+	// stars at the cost of one transform; rotating the instances would do it
+	// eight hundred times a frame for the same picture.
+	if (StarHolder != nullptr && System.Bodies.IsValidIndex(Home))
+	{
+		const FQuat4d Orientation = LedgerFrames::BodyOrientation(
+			System.Bodies[Home], Builder->GetWhenSeconds());
+		StarHolder->SetWorldLocationAndRotation(
+			Eye, FQuat(Orientation.Inverse()));
+	}
+}
+
+void ULedgerSkyBodies::BuildStars(const FLedgerSystem& System, int32 Home)
+{
+	if (bStarsBuilt || Holder == nullptr)
+	{
+		return;
+	}
+	bStarsBuilt = true;
+
+	UStaticMesh* Sphere = LoadObject<UStaticMesh>(
+		nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	UMaterialInterface* Material = LedgerSurface::CreateStarMaterial(Holder);
+	if (Sphere == nullptr || Material == nullptr)
+	{
+		UE_LOG(LogLedger, Warning,
+			TEXT("stars: no mesh or no material, so the night sky is empty"));
+		return;
+	}
+
+	TArray<FLedgerCatalogueStar> Catalogue;
+	LedgerStarField::Generate(System.Seed, StarCount, StarRadiusParsecs, Catalogue);
+
+	TArray<FLedgerSkyStar> Seen;
+	LedgerStarField::Visible(Catalogue, FVector3d::ZeroVector,
+		LedgerStarField::NakedEyeMagnitude, Seen);
+	if (Seen.Num() == 0)
+	{
+		return;
+	}
+
+	StarHolder = NewObject<USceneComponent>(Holder, TEXT("StarHolder"));
+	StarHolder->SetupAttachment(Holder->GetRootComponent());
+	StarHolder->RegisterComponent();
+
+	Stars = NewObject<UInstancedStaticMeshComponent>(Holder);
+	Stars->SetStaticMesh(Sphere);
+	Stars->SetMaterial(0, Material);
+	Stars->SetupAttachment(StarHolder);
+	Stars->RegisterComponent();
+	Stars->SetCastShadow(false);
+	Stars->bReceivesDecals = false;
+	Stars->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// **And it must not light anything.**
+	//
+	// The sky light captures the scene in real time from the viewer, and five
+	// and a half thousand emissive spheres at six thousand nits is an enormous
+	// amount of light to hand it -- the first night sky with a full catalogue
+	// in it came back pure white, because the ambient had been computed from
+	// the stars. Starlight is real and it is about a millilux; it is not
+	// something a cubemap capture should be inferring.
+	Stars->bVisibleInRealTimeSkyCaptures = false;
+	Stars->bAffectDynamicIndirectLighting = false;
+	Stars->bAffectDistanceFieldLighting = false;
+	// Brightness and colour, four floats an instance.
+	Stars->NumCustomDataFloats = 4;
+
+	// A star is a point source and would be sub-pixel at any honest size, so
+	// every star renderer ever written draws it bigger than it is. What stays
+	// honest is the *ordering*: a brighter star is drawn brighter and bigger on
+	// the same magnitude scale the eye uses, so the constellations keep the
+	// shape the catalogue gave them.
+	for (const FLedgerSkyStar& Star : Seen)
+	{
+		const double Brightness = FMath::Clamp(
+			(LedgerStarField::NakedEyeMagnitude - Star.ApparentMagnitude) / 6.0,
+			0.03, 1.0);
+		const double RadiusCm = SkyShellCm
+			* FMath::Tan(FMath::DegreesToRadians(0.010 + 0.045 * Brightness));
+
+		FTransform Where;
+		Where.SetLocation(FVector(Star.Direction.GetSafeNormal() * SkyShellCm));
+		Where.SetScale3D(FVector(RadiusCm / EngineSphereRadiusCm));
+		const int32 Instance = Stars->AddInstance(Where, false);
+
+		// **Colour is temperature, roughly.** A blackbody's visible colour runs
+		// from orange at three thousand kelvin through white near six to blue
+		// past nine; this is a two-segment lerp through those, which is an
+		// approximation and is enough to tell a red giant from a hot young star
+		// in a sky. T077 already computed the temperatures.
+		const double Kelvin = FMath::Clamp(Star.TemperatureKelvin, 2500.0, 12000.0);
+		const FLinearColor Cool(1.00f, 0.72f, 0.45f);
+		const FLinearColor Middle(1.00f, 0.97f, 0.93f);
+		const FLinearColor Hot(0.72f, 0.80f, 1.00f);
+		const FLinearColor Colour = Kelvin < 5800.0
+			? FMath::Lerp(Cool, Middle,
+				static_cast<float>((Kelvin - 2500.0) / 3300.0))
+			: FMath::Lerp(Middle, Hot,
+				static_cast<float>((Kelvin - 5800.0) / 6200.0));
+
+		Stars->SetCustomDataValue(Instance, 0, static_cast<float>(Brightness), false);
+		Stars->SetCustomDataValue(Instance, 1, Colour.R, false);
+		Stars->SetCustomDataValue(Instance, 2, Colour.G, false);
+		Stars->SetCustomDataValue(Instance, 3, Colour.B, false);
+	}
+	Stars->MarkRenderStateDirty();
+
+	UE_LOG(LogLedger, Log,
+		TEXT("stars: %d of %d catalogue entries are naked-eye, brightest "
+			 "magnitude %.2f"),
+		Seen.Num(), Catalogue.Num(),
+		Seen.Num() > 0 ? Seen[0].ApparentMagnitude : 99.0);
 }

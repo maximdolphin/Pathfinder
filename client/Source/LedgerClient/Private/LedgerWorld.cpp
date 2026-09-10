@@ -653,8 +653,20 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		// pixel, which is how the real cause of the blown daylight frames was
 		// found. The exposure was never clamped -- it was still adapting.
 		// A bound that is not being hit cannot be the thing that is wrong.
+		// **-8 rather than -4, and this one IS being hit.**
+		//
+		// -4 is a landscape under a bright moon, and a floor there is a floor
+		// below which nothing gets any brighter -- so every frame taken between
+		// dusk and dawn came back black, and was chased as a lighting bug, a
+		// clock bug and a subsystem-ordering bug in turn. A starlit landscape
+		// is nearer -8 and the Milky Way is -9; the span this world contains
+		// runs from that to sunlit snow.
+		//
+		// The distinction from the ceiling above matters: 19 was headroom that
+		// changed no pixel, and this is a bound that was clamping every night
+		// in the project.
 		Settings.bOverride_AutoExposureMinBrightness = true;
-		Settings.AutoExposureMinBrightness = -4.0f;
+		Settings.AutoExposureMinBrightness = -8.0f;
 		Settings.bOverride_AutoExposureMaxBrightness = true;
 		Settings.AutoExposureMaxBrightness = 19.0f;
 		Settings.bOverride_AutoExposureBias = true;

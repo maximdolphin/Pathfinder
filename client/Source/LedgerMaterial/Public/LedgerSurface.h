@@ -81,4 +81,8 @@ namespace LedgerSurface
 	/// centres, widths, coverages and densities are all parameters, because a
 	/// deck's height is a temperature and temperatures move.
 	LEDGERMATERIAL_API UMaterialInterface* CreateCloudMaterial(UObject* Outer);
+
+	/// Unlit emissive, for the star field. T077 computed eight hundred stars
+	/// and nothing drew them; this is what draws them.
+	LEDGERMATERIAL_API UMaterialInterface* CreateStarMaterial(UObject* Outer);
 }
