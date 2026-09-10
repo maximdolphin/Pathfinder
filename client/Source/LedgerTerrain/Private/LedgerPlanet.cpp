@@ -141,7 +141,13 @@ void ALedgerPlanet::BeginPlay()
 	// from 1,774 to 2,960 and p99 from 84 to 124 ms, because the shortage is
 	// not sections, it is the rate at which patches can be generated, cooked
 	// and uploaded. A bigger pool just puts more work in flight.
-	constexpr int32 PoolSize = 3600;
+	// `-smallpool` is a deliberate fault for T067: four hundred sections cannot
+	// serve any view, so the ground fills with holes. -nolodbrake used to do
+	// this and no longer does, because raising ErrorThresholdPixels to 250 cut
+	// demand enough that the brake is not what stands between the tree and the
+	// pool any more. A fault that has stopped faulting is worse than none.
+	const int32 PoolSize =
+		FParse::Param(FCommandLine::Get(), TEXT("smallpool")) ? 400 : 3600;
 	ComponentKind = LedgerTerrain::PatchComponentKind();
 	UE_LOG(LogLedger, Log, TEXT("terrain component type: %s (pool %d)"),
 		LedgerTerrain::PatchComponentName(ComponentKind), PoolSize);

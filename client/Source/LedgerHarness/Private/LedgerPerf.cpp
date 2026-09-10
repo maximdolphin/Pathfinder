@@ -4,6 +4,7 @@
 #include "LedgerPatchDisk.h"
 
 #include "DynamicRHI.h"
+#include "Engine/GameViewportClient.h"
 #include "Engine/World.h"
 #include "LedgerLog.h"
 #include "Misc/CommandLine.h"
@@ -318,6 +319,23 @@ bool ULedgerPerfSubsystem::WriteReport(const FString& Path) const
 	Body += FString::Printf(TEXT("budget_p99_ms %.2f\n"), P99);
 	Body += FString::Printf(TEXT("budget_max_ms %.2f\n"), Max);
 	Body += FString::Printf(TEXT("budget_mean_ms %.2f\n"), Mean);
+	// The resolution, in the block, forever.
+	//
+	// Screen-space error scales with viewport width, so every number above is
+	// a function of it. T429 shipped holes at 1080p and was signed off on a
+	// 720p run of the same build that reported zero. A performance number
+	// without its resolution is not a number.
+	int32 ViewportWidth = 0;
+	int32 ViewportHeight = 0;
+	if (GEngine != nullptr && GEngine->GameViewport != nullptr)
+	{
+		FVector2D Size;
+		GEngine->GameViewport->GetViewportSize(Size);
+		ViewportWidth = FMath::RoundToInt(Size.X);
+		ViewportHeight = FMath::RoundToInt(Size.Y);
+	}
+	Body += FString::Printf(TEXT("viewport_width %d\n"), ViewportWidth);
+	Body += FString::Printf(TEXT("viewport_height %d\n"), ViewportHeight);
 	Body += FString::Printf(TEXT("frames %d\n"), All.Num());
 
 	FFileHelper::SaveStringToFile(Body, *Path);

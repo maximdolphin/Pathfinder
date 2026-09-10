@@ -87,7 +87,6 @@ MILESTONES = [
         refs=["SS6.8"],
     ),
     dict(
-    dict(
         # Inserted 2026-09-09 and everything after it moved seven weeks. The
         # ground was measured -- 4.77 m triangles, a height field with nothing
         # under 33 m, height maps sampled and thrown away -- and the terrain
@@ -106,6 +105,7 @@ MILESTONES = [
              "transect still holds its frame budget.",
         refs=["SS6.8", "QB", "ADR-0005"],
     ),
+    dict(
         id="M03", title="Planetary bodies and orbital mechanics", week_start=29, week_end=36,
         goal="A solar system that moves. Planets, moons, rings and stations on real "
              "orbits, axial tilt, rotation, day and night, seasons, eclipses — all "

@@ -78,6 +78,69 @@ knee-height undulation, which is what was missing. The drawn mesh tracks the
 field it is built from to within 3 mm of RMS, which is the geomorph and the
 stitching agreeing.
 
+## It shipped two bugs, and flying it found both
+
+Neither showed up in any of the measurements above. Both were reported by a
+person who flew the build: missing ground and black spots, and terrain that
+moved like waves and slid under the ship.
+
+### Holes, at 1080p only
+
+`MaxDepth` went 15 to 18 and nothing else moved. Screen-space error scales with
+viewport width, so at 1920x1080 the tree wanted about seven thousand sections
+against a pool of 3,600 -- `holes_worst 3363`. **The same build at 1280x720
+reports zero**, which is the resolution the first measurement ran at. A
+performance number without its resolution is not a number.
+
+Worse than the holes: a starved pool made the LOD brake collapse patches hard
+and unevenly, so neighbours ended up several depths apart. That is the flat
+wedge cut into the mountain in `out/terrain-sweep.png`.
+
+The brake could not see it. Occupancy was `ActiveSections / Target`, and
+`ActiveSections` is capped by the pool, so however badly the tree out-ran it the
+number could not read much above 1.0 and the correction could not exceed five
+per cent. In the starved state it saw 1.05 and moved the threshold from 150 to
+157. Counting unfilled nodes -- the rest of the demand -- makes it read 2.0,
+which is what it was.
+
+A bigger pool was the obvious next move and was wrong: 8,000 sections took holes
+from 1,774 to 2,960 and p99 from 84 to 124 ms. The shortage is the rate at which
+patches can be generated, cooked and uploaded, not the number of slots to put
+them in. Reverted, with the numbers kept.
+
+`ErrorThresholdPixels` 150 to 250 is what fixed it. Depth 18 now stops at 147 m
+instead of 244 -- a third of the area, a third of the finest-ring nodes -- and
+twenty metres is well inside 147, so the quad this task is measured on does not
+move.
+
+```
+holes_worst        2960 -> 0
+imbalanced_edges   2988 -> 1276
+budget_p99_ms      124.4 -> 70.2
+budget_mean_ms      27.0 -> 24.1
+```
+
+### The sliding, which was the band
+
+The fade was applied to all five octaves at once, so depth 16 carried 56% of the
+band and depth 17 carried 99%: the surface between two adjacent rings differed by
+43% of the whole band. Flying sweeps those rings across the ground continuously,
+and the terrain re-formed under the camera as they passed.
+
+**Morphing could not hide it**, and this is the part worth remembering. A morph
+target is the bilinear average of a patch's own samples -- what the parent would
+be *if the parent were a smoothed copy of this patch*. Under whole-band fading
+it is not, because the parent samples a materially different field. The morph
+eased the surface towards a shape the parent never drew.
+
+Per octave, each fades around its own Nyquist limit, so adjacent depths differ by
+at most one octave's amplitude. `Ledger.NearField.AdjacentDepthsAgree` measures
+it in milliseconds without a world: worst single-depth step **9.4 cm**, and the
+band still worth 23 cm across the whole range.
+
+Per-octave was named as the correct version in the original comment and the
+shortcut was taken anyway. The shortcut is what shipped.
+
 ## The third criterion, which fails
 
 T429's acceptance also said *the transect frame time does not regress by more

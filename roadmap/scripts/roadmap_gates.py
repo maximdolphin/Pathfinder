@@ -36,6 +36,20 @@ GATE_CHECKS = {
     ("The flight model's tests pass with no world, actor or frame involved.", "auto"),
 ],
 
+"M2S": [
+    ("Twelve side-by-side pairs against real photographs at 2 m, 20 m and 200 m, each with a written verdict.", "capture"),
+    ("At least three of those verdicts name a specific remaining deficiency.", "observed"),
+    ("Standing on flat ground, no terrain quad exceeds 40 px at 1920x1080 measured at 20 m.", "measured"),
+    ("A 50 m profile of the drawn mesh deviates from a fitted line by at least 15 cm RMS.", "measured"),
+    ("Adjacent LOD depths agree to within 25 cm, so the ground does not re-form as the rings sweep.", "auto"),
+    ("An overhead capture shows no autocorrelation peak at the tiling period above the noise floor.", "auto"),
+    ("Each of albedo, normal, roughness, AO and height is shown, isolated and at pinned exposure, to be the map the manifest names.", "capture"),
+    ("A capture at 3 m shows stones whose silhouettes break the horizon line behind them.", "capture"),
+    ("Four biomes at eye height look like four different places, and the closest pair differs by more than 15 of 255.", "measured"),
+    ("The frame time cost of the whole milestone is attributed to geometry, material and scatter separately.", "measured"),
+    ("The scripted flight reports zero unfilled patches at the resolution recorded in its own report.", "measured"),
+],
+
 "M02": [
     ("A 200 km transect at 300 m altitude reports zero unfilled patches.", "measured"),
     ("The same transect at 900 m/s reports zero unfilled patches.", "measured"),

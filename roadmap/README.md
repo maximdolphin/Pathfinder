@@ -78,21 +78,40 @@ never more than a guess at velocity.
 
 ## Shape of the plan
 
-| | | |
-|---|---|---|
-| M0 | Foundations | done — sim, planet, town, ship |
-| M1 | Terrain to production standard | water, stable LOD, cooked assets |
-| M2 | Surface fidelity | biomes, texture sets, day/night |
-| M3 | Ship systems and flight | cockpit, HUD, gear, fuel, damage |
-| M4 | Sim to client bridge | protobuf over TCP, live world state |
-| M5 | The bounty loop, end to end | **Phase 1 gate** |
-| M6 | Narration | local model, constrained decoding |
-| M7 | Economy and the news feed | markets that move because of events |
-| M8 | Crew | the losable thing |
-| M9 | All six mission archetypes | one algorithm, six verbs |
-| M10 | Simulation LOD and reification | a world that ticks without you |
-| M11 | Multiplayer foundation | 16–32 players, IP counsel |
-| M12 | MVP gate | **the four pillar tests** |
+**Generated from `public/roadmap.json`, not maintained by hand.** The
+version of this table before 2026-09-10 described a thirteen-milestone plan
+that had not existed for some time. A summary that drifts from the thing it
+summarises is worse than no summary.
+
+| | | done | |
+|---|---|---|---|
+| M00 | Prototype spike (delivered) | 26/27 | wk -6-0 |
+| M01 | Architecture and the split | 16/16 | wk 1-4 |
+| M2W | The world as an Unreal project | 11/11 | wk 5-9 |
+| M02 | Terrain to production standard | 15/27 | wk 10-21 |
+| M2S | Close-range surface fidelity | 6/9 | wk 22-28 |
+| M03 | Planetary bodies and orbital mechanics | 0/20 | wk 29-36 |
+| M04 | Atmosphere, weather and environment | 0/19 | wk 37-44 |
+| M05 | Ship framework: hulls, components, subsystems | 0/24 | wk 45-54 |
+| M06 | Flight model in vacuum and in air | 0/21 | wk 55-63 |
+| M07 | Seamless travel across a system | 0/15 | wk 64-72 |
+| M08 | Physics at scale and local grids | 0/16 | wk 73-81 |
+| M09 | Embodiment and animation | 0/20 | wk 82-92 |
+| M10 | Interiors and modular architecture | 0/14 | wk 93-101 |
+| M11 | Rendering fidelity | 0/17 | wk 102-112 |
+| M12 | Asset pipeline and world content | 0/19 | wk 113-121 |
+| M13 | Performance and optimisation | 0/11 | wk 122-129 |
+| M14 | Technical vertical slice | 0/11 | wk 130-137 |
+| M15 | Simulation core and determinism | 0/17 | wk 138-145 |
+| M16 | Agent framework | 0/17 | wk 146-157 |
+| M17 | Organisation framework | 0/14 | wk 158-165 |
+| M18 | Economy and logistics | 0/13 | wk 166-173 |
+| M19 | Sites, construction and city life | 0/17 | wk 174-183 |
+| M20 | Power, threat and coalitions | 0/13 | wk 184-191 |
+| M21 | Missions and directives | 0/13 | wk 192-200 |
+| M22 | Presence and Command | 0/10 | wk 201-207 |
+| M23 | The living world, integrated | 0/11 | wk 208-216 |
+| M24 | Vertical slice: nothing to coalition | 0/14 | wk 217-227 |
 
 Every milestone's gate is a question that can be answered yes or no by looking at
 a build. That is deliberate: the design document (§2, §13) insists on falsifiable

@@ -126,7 +126,38 @@ document.
 - **The sea rendered as grey default material for a whole task** because a
   material that fails to compile produces one warning line and a silent
   substitution, and every subsequent edit appeared to do nothing.
+- **The terrain shipped holes at 1080p and was measured at 720p.** Raising the
+  LOD depth tripled the visible set; screen-space error scales with viewport
+  width, so the build that reported zero unfilled nodes at 1280x720 reported
+  3,363 of them at 1920x1080. It was found by someone flying it, not by the
+  harness that had just passed it. A performance number without its resolution
+  is not a number, and the harness now records the one it ran at.
+- **The ground slid under the camera for a few hours** because a detail band was
+  faded across all five of its octaves at once, so two adjacent LOD rings
+  described materially different surfaces and flying swept those rings across
+  the ground. The correct version -- fading each octave at its own limit -- was
+  named in the comment at the time and not done, which is the whole failure in
+  one sentence.
+- **A fix that "moved nothing" was reported as a fix four times in one night**
+  before the habit stuck of printing the measurement beside it. The sky light
+  really was at the centre of the planet; correcting it changed the picture by
+  0.63 of one 8-bit level, and the commit says so in its title.
+- **Three fixture measurements in a row were confounded by the tone mapper.**
+  Channel debug views were read as numbers while going through auto exposure and
+  a film curve; the first said the terrain's normals had a mean length of 0.4,
+  which was a fact about the exposure. The second pinned exposure with the
+  manual method, which is exposure from a physical camera's aperture and shutter
+  rather than none, and every check passed on five black images.
 
 Every one of these is now something the tooling catches. That is the actual
 standard: not that mistakes do not happen, but that each one leaves behind the
 check that would have caught it.
+
+Concretely, from the list above: `tools/terrain_regression.py` turns holes,
+cracks, popping and budget overruns into build failures and proves it by
+introducing each of them deliberately; `Ledger.NearField.AdjacentDepthsAgree`
+measures how far the ground moves when the LOD does, without needing a world;
+`-terrainvis=` colours the terrain by LOD, patch, collision, biome, climate or
+cache state so the next one of these is a picture rather than a new counter; and
+the channel views pin their own exposure, because a debug view that lies is
+worse than no debug view.

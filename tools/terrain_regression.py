@@ -21,8 +21,8 @@ the deliberate faults below, and reports whether each was caught. A regression
 suite that has never been shown to fail is a regression suite nobody should
 trust.
 
-    holes    -nolodbrake      the LOD brake off, so the tree out-subdivides the
-                              section pool and the visible set starves
+    holes    -smallpool       four hundred sections instead of 3,600, which no
+                              view can be served from
     cracks   -breakstitching  every patch edge declared un-stitched, so a patch
                               beside a coarser neighbour keeps vertices the
                               neighbour does not have
@@ -73,7 +73,7 @@ CHECKS = [
      "size the number is scale-free and comparable between depths, which is\n"
      "what a threshold needs."),
 
-    ("budget_p99_ms", "<=", 110.0,
+    ("budget_p99_ms", "<=", 90.0,
      "The 99th percentile frame. M02's gate is 16.7 and the terrain has never\n"
      "met it; this is set where the flight actually sits so that a REGRESSION\n"
      "fails the build, and it is not the gate. The gate is in the roadmap and\n"
@@ -127,7 +127,7 @@ def fly(extra_args, editor):
     if os.path.exists(REPORT):
         os.remove(REPORT)
 
-    command = [editor, PROJECT, "-game", "-windowed", "-resx=1280", "-resy=720",
+    command = [editor, PROJECT, "-game", "-windowed", "-resx=1920", "-resy=1080",
                "-unattended", "-nosplash"] + extra_args
     process = subprocess.Popen(command, stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL)
@@ -145,10 +145,10 @@ def fly(extra_args, editor):
 
 
 FAULTS = [
-    ("holes", ["-nolodbrake"], "holes_worst"),
+    ("holes", ["-smallpool"], "holes_worst"),
     ("cracks", ["-breakstitching"], "cracks_stitch_rejects"),
     ("popping", ["-breakmorph"], "pop_morph_enabled"),
-    ("budget", ["-nopatchdisk"], "budget_p99_ms"),
+    ("budget", ["-smallpool", "-nopatchdisk"], "budget_p99_ms"),
 ]
 
 
