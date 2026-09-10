@@ -1,4 +1,5 @@
 #include "LedgerClimate.h"
+#include "LedgerMath.h"
 
 namespace
 {
@@ -75,7 +76,7 @@ namespace LedgerClimate
 		// without a rule anybody has to remember, and zero at the equator
 		// because a tropical year is not a sequence of seasons.
 		return SeasonalSwingC * SinLatitude(UnitSphere)
-			* FMath::Sin(2.0 * PI * SeasonPhase);
+			* FMath::Sin(LedgerTwoPi * SeasonPhase);
 	}
 
 	double SnowCover(const FLedgerClimate& Climate)

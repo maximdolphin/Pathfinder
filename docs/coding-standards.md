@@ -56,6 +56,37 @@ order over a hash map. This is testable and it is tested; see ARCH Rule 5.
 Fixed-point `i64` in all authoritative simulation state. Floats are fine in the
 client, which is presentation.
 
+## Precision
+
+**Never write Unreal's `PI` in a double expression.** It is a `float` constant,
+so `2.0 * PI` promotes the float value rather than producing the double one:
+6.2831854820251465 against a true 6.283185307179586, wrong by 1.7e-7. Use
+`LedgerPi` and `LedgerTwoPi` from `LedgerBody.h`. Same for `KINDA_SMALL_NUMBER`,
+`SMALL_NUMBER` and anything else in `UnrealMathUtility.h` that is not
+`UE_DOUBLE_`-prefixed.
+
+It cost 1.1 metres. `LedgerFrames::BodyOrientation` turned this system's planet
+through one full rotation and landed it 1105 mm from where it started, against a
+millimetre acceptance -- and the same constant is in every mean motion and every
+orbital period in M03, whose acceptance is a century.
+
+Two things about how it was found are worth keeping:
+
+- **The compiler said nothing.** `float` to `double` is a widening conversion,
+  which is exactly the promotion that is normally safe. There is no warning to
+  turn on, so a rule and a named constant are the only defence.
+- **The first diagnosis was wrong, and cheap to disprove.** The failing test
+  differenced two vectors of order 1.5e11 m to recover one of 6.4e6, so the
+  obvious suspect was the test measuring its own cancellation. Rewriting it to
+  compare the rotations directly -- no large magnitudes anywhere -- still read
+  1105 mm, which ruled the test out in one build. When a number looks like it
+  might be the measurement's fault, the fastest move is to take the measurement
+  a different way, not to argue about it.
+
+The size of the error is what named it: 1.1 m over a 6.4e6 m radius is 1.7e-7
+relative, and 1e-7 is single precision. **A double-precision system with a
+single-precision error in it has a float in it somewhere.**
+
 ## Tests
 
 Non-trivial logic leaves one runnable check behind — the smallest thing that

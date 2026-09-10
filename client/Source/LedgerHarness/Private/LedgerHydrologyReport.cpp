@@ -9,6 +9,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "LedgerMath.h"
 
 bool ULedgerHydrologyReport::DoesSupportWorldType(const EWorldType::Type WorldType) const
 {
@@ -52,7 +53,7 @@ bool ULedgerHydrologyReport::WriteReport()
 	// the resolution. Everything below is reported in kilometres because a
 	// drainage basin in centimetres is not a number anybody can read.
 	const double RadiusKm = Params.Radius / 100000.0;
-	const double CellKm = (2.0 * PI * RadiusKm / 4.0) / Resolution;
+	const double CellKm = (LedgerTwoPi * RadiusKm / 4.0) / Resolution;
 	const double CellAreaKm2 = CellKm * CellKm;
 
 	FString Body;

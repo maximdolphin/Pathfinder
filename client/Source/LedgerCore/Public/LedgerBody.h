@@ -18,6 +18,8 @@
 
 #include "CoreMinimal.h"
 
+#include "LedgerMath.h"
+
 /// What kind of thing this is. Decides what is built for it, not how it moves --
 /// an asteroid and a planet obey the same ephemeris.
 enum class ELedgerBodyKind : uint8

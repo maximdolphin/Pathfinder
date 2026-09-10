@@ -18,6 +18,7 @@
 #include "LedgerPlanet.h"
 #include "LedgerTerrainMath.h"
 #include "Misc/AutomationTest.h"
+#include "LedgerMath.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -27,7 +28,7 @@ namespace
 	/// 6,371 km planet: (R * pi/2) / 2^depth / 64.
 	double SpacingAt(int32 Depth)
 	{
-		return (6371000.0 * PI * 0.5) / FMath::Pow(2.0, static_cast<double>(Depth)) / 64.0;
+		return (6371000.0 * LedgerPi * 0.5) / FMath::Pow(2.0, static_cast<double>(Depth)) / 64.0;
 	}
 }
 

@@ -17,7 +17,7 @@ namespace LedgerEphemeris
 	double PeriodSeconds(double ParentMassKg, double SemiMajorAxisMetres)
 	{
 		const double N = MeanMotion(ParentMassKg, SemiMajorAxisMetres);
-		return N > 0.0 ? (2.0 * PI) / N : 0.0;
+		return N > 0.0 ? LedgerTwoPi / N : 0.0;
 	}
 
 	double EccentricAnomaly(double MeanAnomalyRadians, double Eccentricity)
@@ -27,9 +27,9 @@ namespace LedgerEphemeris
 		// century's worth of revolutions from zero -- which is exactly what the
 		// acceptance asks for -- would start the iteration thousands of radians
 		// from the answer.
-		double M = FMath::Fmod(MeanAnomalyRadians, 2.0 * PI);
-		if (M > PI) { M -= 2.0 * PI; }
-		if (M < -PI) { M += 2.0 * PI; }
+		double M = FMath::Fmod(MeanAnomalyRadians, LedgerTwoPi);
+		if (M > LedgerPi) { M -= LedgerTwoPi; }
+		if (M < -LedgerPi) { M += LedgerTwoPi; }
 
 		const double E0 = FMath::Clamp(Eccentricity, 0.0, 0.999999);
 
@@ -185,6 +185,6 @@ namespace LedgerEphemeris
 		// Signed: a negative period is retrograde, which two planets in this
 		// solar system actually do.
 		return Body.RotationAtEpochRadians
-			+ (2.0 * PI) * (SecondsFromEpoch / Body.RotationPeriodSeconds);
+			+ LedgerTwoPi * (SecondsFromEpoch / Body.RotationPeriodSeconds);
 	}
 }

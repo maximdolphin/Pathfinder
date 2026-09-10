@@ -11,6 +11,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
+#include "LedgerMath.h"
 
 namespace
 {
@@ -36,7 +37,7 @@ namespace
 		// Deterministic and spread out: a golden-angle spiral, so twelve jumps
 		// are twelve genuinely different places rather than twelve points in
 		// the same hemisphere.
-		const double Golden = PI * (3.0 - FMath::Sqrt(5.0));
+		const double Golden = LedgerPi * (3.0 - FMath::Sqrt(5.0));
 		const double Z = 1.0 - 2.0 * (Which + 0.5) / Jumps;
 		const double Radius = FMath::Sqrt(FMath::Max(0.0, 1.0 - Z * Z));
 		const double Angle = Golden * Which;

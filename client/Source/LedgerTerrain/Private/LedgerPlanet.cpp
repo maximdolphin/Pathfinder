@@ -12,6 +12,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "ProceduralMeshComponent.h"
+#include "LedgerMath.h"
 
 // ---------------------------------------------------------------- actor
 
@@ -188,7 +189,7 @@ void ALedgerPlanet::BeginPlay()
 		MaxElevation / 100000.0,
 		SeaLevel,
 		MaxDepth,
-		(Radius * PI * 0.5) / FMath::Pow(2.0, static_cast<double>(MaxDepth)) / (GridResolution - 1) / 100.0);
+		(Radius * LedgerPi * 0.5) / FMath::Pow(2.0, static_cast<double>(MaxDepth)) / (GridResolution - 1) / 100.0);
 }
 
 void ALedgerPlanet::EndPlay(const EEndPlayReason::Type Reason)

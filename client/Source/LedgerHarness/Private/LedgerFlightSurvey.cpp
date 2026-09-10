@@ -19,6 +19,7 @@
 #include "LedgerWorld.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "LedgerMath.h"
 
 // ------------------------------------------------------------ ridge sweep
 
@@ -152,7 +153,7 @@ void ULedgerFlightHarness::FrameCoast()
 	double BestScore = -MAX_dbl;
 
 	constexpr int32 SurveySamples = 8192;
-	const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
+	const double GoldenAngle = LedgerPi * (3.0 - FMath::Sqrt(5.0));
 
 	for (int32 Index = 0; Index < SurveySamples; ++Index)
 	{
@@ -182,7 +183,7 @@ void ULedgerFlightHarness::FrameCoast()
 		FVector3d Seaward = Tangent;
 		for (int32 Probe = 0; Probe < 8; ++Probe)
 		{
-			const double Angle = (Probe / 8.0) * 2.0 * PI;
+			const double Angle = (Probe / 8.0) * LedgerTwoPi;
 			const FVector3d Direction = (Tangent * FMath::Cos(Angle) + Bitangent * FMath::Sin(Angle));
 			const FVector3d Sample = (Candidate + Direction * 0.00095).GetSafeNormal();
 			const double SampleHeight = LedgerTerrain::Elevation(Sample, Params);
@@ -272,7 +273,7 @@ void ULedgerFlightHarness::DumpBathymetry()
 	double BestFar = MAX_dbl;
 	for (int32 Probe = 0; Probe < 32; ++Probe)
 	{
-		const double Angle = (Probe / 32.0) * 2.0 * PI;
+		const double Angle = (Probe / 32.0) * LedgerTwoPi;
 		const FVector3d Direction = Tangent * FMath::Cos(Angle) + Bitangent * FMath::Sin(Angle);
 
 		// Score on the mean over the outer half, not the single far point, so a

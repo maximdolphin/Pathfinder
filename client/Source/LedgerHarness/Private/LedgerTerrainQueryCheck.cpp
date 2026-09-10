@@ -11,6 +11,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "LedgerMath.h"
 
 namespace
 {
@@ -144,7 +145,7 @@ bool ULedgerTerrainQueryCheck::Compare()
 	{
 		// Uniformly over a disc two kilometres across, which is inside the
 		// collision ring and outside the patch the ship is standing on.
-		const double Angle = Uniform(Query * 3 + 1) * 2.0 * PI;
+		const double Angle = Uniform(Query * 3 + 1) * LedgerTwoPi;
 		const double Reach = FMath::Sqrt(Uniform(Query * 3 + 2)) * 100000.0;
 		const FVector3d Direction = (Centre
 			+ East * (Reach * FMath::Cos(Angle) / Planet->Radius)

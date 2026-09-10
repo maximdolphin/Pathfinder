@@ -5,6 +5,7 @@
 #include "LedgerBiome.h"
 #include "LedgerClimate.h"
 #include "LedgerPlanet.h"
+#include "LedgerMath.h"
 
 namespace
 {
@@ -208,7 +209,7 @@ namespace LedgerScatter
 					- East * (RiseEast / (CellMetres * 100.0))
 					- North * (RiseNorth / (CellMetres * 100.0))).GetSafeNormal();
 
-				const double Yaw = Uniform(CellHash(Job.Key, Cell, 4u)) * 2.0 * PI;
+				const double Yaw = Uniform(CellHash(Job.Key, Cell, 4u)) * LedgerTwoPi;
 				const FVector3d Facing =
 					(East * FMath::Cos(Yaw) + North * FMath::Sin(Yaw)).GetSafeNormal();
 

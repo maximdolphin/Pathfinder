@@ -28,6 +28,7 @@
 #include "LedgerSimSubsystem.h"
 #include "LedgerTerrainMath.h"
 #include "UnrealClient.h"
+#include "LedgerMath.h"
 
 namespace
 {
@@ -541,7 +542,7 @@ void ULedgerWorldBuilder::ChooseSite()
 	SiteDirection = SunFacing;
 
 	constexpr int32 Samples = 4096;
-	const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
+	const double GoldenAngle = LedgerPi * (3.0 - FMath::Sqrt(5.0));
 
 	for (int32 Index = 0; Index < Samples; ++Index)
 	{
@@ -650,7 +651,7 @@ void ULedgerWorldBuilder::PlaceRegionMarkers(UWorld& InWorld)
 	{
 		// Fibonacci sphere: deterministic, and it avoids the clustering at the
 		// poles that naive lat/long spacing gives.
-		const double GoldenAngle = PI * (3.0 - FMath::Sqrt(5.0));
+		const double GoldenAngle = LedgerPi * (3.0 - FMath::Sqrt(5.0));
 		const double Y = 1.0 - (static_cast<double>(Index) / FMath::Max(1.0, static_cast<double>(RegionCount - 1))) * 2.0;
 		const double RadiusAtY = FMath::Sqrt(FMath::Max(0.0, 1.0 - Y * Y));
 		const double Theta = GoldenAngle * static_cast<double>(Index);

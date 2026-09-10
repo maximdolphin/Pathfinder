@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 2
+   "doneCount": 3
   },
   {
    "id": "M04",
@@ -5261,11 +5261,24 @@
    "dependsOn": [
     "T070"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Four frames -- system, body, surface, vehicle -- as separate types in LedgerCore with no implicit conversion between them, because a position that forgets which frame it is in is wrong by up to a planet's circumference and by a different amount every second. Three green tests. ACCEPTANCE: worst round trip 0.015052 mm at a system-frame distance of order 1.5e11 m, against a 1 mm bound. That scale is the difficulty: a millimetre out of 1.5e11 is 7e-15 relative, about a hundred times the double floor, which is enough room to be right and none to be sloppy. Surface frames are anchored by a unit DIRECTION rather than a latitude and longitude, so there is no pole singularity to special-case at the call site; the one place it is unavoidable -- north is undefined on the axis -- falls back to a fixed reference, and EastNorthUpIsRightHandedEverywhere checks orthonormality and east x north = up at 200 anchors including both poles. Tilt is applied before spin, which is what makes axial tilt mean what it says and is what T073's seasons come out of. THIS TASK FOUND THAT UNREAL'S PI IS A FLOAT. TheBodyFrameActuallyRotates turned the planet through one full rotation and it landed 1105.057985 mm from where it started. 1.1 m over a 6.4e6 m radius is 1.7e-7 relative -- single precision, in code that is double everywhere else. '2.0 * PI' evaluates to 6.2831854820251465 against a true 6.283185307179586, because PI is a float constant and float-to-double is the widening conversion that is normally safe, so no compiler warns. It now reads 0.000001 mm. My first diagnosis was wrong and worth recording: the failing test differenced two vectors of order 1.5e11 m to recover one of 6.4e6, so the obvious suspect was the test measuring its own cancellation. Rewriting it to compare the rotations directly -- no large magnitudes anywhere -- still read 1105 mm, which ruled the test out in one build. Taking the measurement a different way beat arguing about it. Swept every double-precision use of PI in the project into LedgerPi/LedgerTwoPi in a new LedgerMath.h: 13 files, of which three are generation inputs (the seasonal term in LedgerClimate, the scatter yaw, the shelf shaping in LedgerTerrainMath), so patch-disk FormatVersion is now 8 -- the correction moves the terrain by an amount nobody can see and by an amount every cached patch disagrees about. Rule written into docs/coding-standards.md under Precision. 60 tests pass, 52 of them Ledger.*, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T071-2026-09-10T07-50-01-648.txt",
+     "caption": "Frames, ephemeris and body, all green: worst round trip 0.015052 mm against a 1 mm bound; one rotation returns to 0.000001 mm, was 1105.057985 mm before the float pi was found",
+     "source": "../out/t071-tests.txt",
+     "addedAt": "2026-09-10T07:50:01.650Z"
+    }
+   ],
    "plannedStartDay": 180,
    "plannedEndDay": 182,
    "plannedStart": "2027-05-17",
@@ -13519,5 +13532,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T07:34:02.892Z"
+ "updatedAt": "2026-09-10T07:50:01.652Z"
 }

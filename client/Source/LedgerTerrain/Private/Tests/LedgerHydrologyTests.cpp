@@ -10,6 +10,7 @@
 #include "LedgerHydrology.h"
 
 #include "Misc/AutomationTest.h"
+#include "LedgerMath.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -186,7 +187,7 @@ bool FLedgerHydrologyCellRoundTrips::RunTest(const FString&)
 
 	// And a neighbour is next door: the great-circle distance between a cell
 	// and each of its eight neighbours is at most two cell widths.
-	const double CellArc = (PI * 0.5) / TestResolution;
+	const double CellArc = (LedgerPi * 0.5) / TestResolution;
 	for (int32 Face = 0; Face < 6; ++Face)
 	{
 		for (int32 CellV = 0; CellV < TestResolution; CellV += 5)

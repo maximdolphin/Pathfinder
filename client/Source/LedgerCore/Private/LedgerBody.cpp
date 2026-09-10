@@ -447,14 +447,14 @@ namespace LedgerBodies
 		Planet.RadiusMetres = EarthRadius * Between(Seed, 5, 0.95, 1.05);
 		Planet.RotationPeriodSeconds = Between(Seed, 6, 20.0, 30.0) * 3600.0;
 		Planet.AxialTiltRadians = FMath::DegreesToRadians(Between(Seed, 7, 15.0, 28.0));
-		Planet.RotationAtEpochRadians = Between(Seed, 8, 0.0, 2.0 * PI);
+		Planet.RotationAtEpochRadians = Between(Seed, 8, 0.0, LedgerTwoPi);
 		Planet.ParentIndex = 0;
 		Planet.Orbit.SemiMajorAxisMetres = AstronomicalUnit * Between(Seed, 9, 0.9, 1.1);
 		Planet.Orbit.Eccentricity = Between(Seed, 10, 0.0, 0.06);
 		Planet.Orbit.InclinationRadians = FMath::DegreesToRadians(Between(Seed, 11, -2.0, 2.0));
-		Planet.Orbit.AscendingNodeRadians = Between(Seed, 12, 0.0, 2.0 * PI);
-		Planet.Orbit.PeriapsisArgumentRadians = Between(Seed, 13, 0.0, 2.0 * PI);
-		Planet.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 14, 0.0, 2.0 * PI);
+		Planet.Orbit.AscendingNodeRadians = Between(Seed, 12, 0.0, LedgerTwoPi);
+		Planet.Orbit.PeriapsisArgumentRadians = Between(Seed, 13, 0.0, LedgerTwoPi);
+		Planet.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 14, 0.0, LedgerTwoPi);
 		System.Bodies.Add(Planet);
 
 		FLedgerBody Moon;
@@ -468,15 +468,15 @@ namespace LedgerBodies
 		Moon.Orbit.SemiMajorAxisMetres = 3.844e8 * Between(Seed, 17, 0.7, 1.4);
 		Moon.Orbit.Eccentricity = Between(Seed, 18, 0.0, 0.08);
 		Moon.Orbit.InclinationRadians = FMath::DegreesToRadians(Between(Seed, 19, -6.0, 6.0));
-		Moon.Orbit.AscendingNodeRadians = Between(Seed, 20, 0.0, 2.0 * PI);
-		Moon.Orbit.PeriapsisArgumentRadians = Between(Seed, 21, 0.0, 2.0 * PI);
-		Moon.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 22, 0.0, 2.0 * PI);
+		Moon.Orbit.AscendingNodeRadians = Between(Seed, 20, 0.0, LedgerTwoPi);
+		Moon.Orbit.PeriapsisArgumentRadians = Between(Seed, 21, 0.0, LedgerTwoPi);
+		Moon.Orbit.MeanAnomalyAtEpochRadians = Between(Seed, 22, 0.0, LedgerTwoPi);
 		{
 			const double Mu = 6.67430e-11 * Planet.MassKg;
 			const double Axis = Moon.Orbit.SemiMajorAxisMetres;
-			Moon.RotationPeriodSeconds = 2.0 * PI * FMath::Sqrt((Axis * Axis * Axis) / Mu);
+			Moon.RotationPeriodSeconds = LedgerTwoPi * FMath::Sqrt((Axis * Axis * Axis) / Mu);
 		}
-		Moon.RotationAtEpochRadians = Between(Seed, 23, 0.0, 2.0 * PI);
+		Moon.RotationAtEpochRadians = Between(Seed, 23, 0.0, LedgerTwoPi);
 		Moon.ParentIndex = 1;
 		System.Bodies.Add(Moon);
 

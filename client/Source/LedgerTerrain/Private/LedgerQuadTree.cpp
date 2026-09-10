@@ -19,6 +19,7 @@
 #include "Engine/World.h"
 #include "LedgerLog.h"
 #include "LedgerTerrainMath.h"
+#include "LedgerMath.h"
 
 void ALedgerPlanet::BuildRoots()
 {
@@ -36,7 +37,7 @@ void ALedgerPlanet::BuildRoots()
 		const FVector3d RootDirection = Node->Centre.GetSafeNormal();
 		Node->SurfacePoint = RootDirection * SurfaceRadiusAt(RootDirection);
 		// A face spans a quarter of the circumference.
-		Node->WorldSize = Radius * PI * 0.5;
+		Node->WorldSize = Radius * LedgerPi * 0.5;
 		Roots.Add(MoveTemp(Node));
 	}
 }

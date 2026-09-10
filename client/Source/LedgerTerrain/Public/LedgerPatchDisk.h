@@ -53,7 +53,13 @@ namespace LedgerPatchDisk
 	/// Anything that changes what generation produces changes this number.
 	/// 7: the fallback colour path's alpha, which is snow cover. It is in the key, not a header check:
 	/// a stale entry then simply never matches and is evicted in its turn.
-	constexpr uint32 FormatVersion = 7;
+	/// 8: pi. Unreal's `PI` is a float, so `2.0 * PI` was carrying float
+	/// precision into three double-precision generation inputs -- the seasonal
+	/// term in LedgerClimate, the scatter yaw, and the shelf shaping in
+	/// LedgerTerrainMath. Correcting them moves the terrain by an amount nobody
+	/// can see and by an amount every cached patch disagrees about, and the
+	/// second is the one that matters here.
+	constexpr uint32 FormatVersion = 8;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

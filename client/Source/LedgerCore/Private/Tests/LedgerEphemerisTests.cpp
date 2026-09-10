@@ -139,9 +139,9 @@ bool FLedgerEphemerisSolvesKepler::RunTest(const FString&)
 			const double M = -20000.0 + Step * 55.5;
 			const double E = LedgerEphemeris::EccentricAnomaly(M, Eccentricity);
 
-			double Wrapped = FMath::Fmod(M, 2.0 * PI);
-			if (Wrapped > PI) { Wrapped -= 2.0 * PI; }
-			if (Wrapped < -PI) { Wrapped += 2.0 * PI; }
+			double Wrapped = FMath::Fmod(M, LedgerTwoPi);
+			if (Wrapped > LedgerPi) { Wrapped -= LedgerTwoPi; }
+			if (Wrapped < -LedgerPi) { Wrapped += LedgerTwoPi; }
 
 			const double Residual = FMath::Abs((E - Eccentricity * FMath::Sin(E)) - Wrapped);
 			if (Residual > Worst)

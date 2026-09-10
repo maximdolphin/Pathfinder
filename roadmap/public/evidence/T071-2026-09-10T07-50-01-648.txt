@@ -1,0 +1,27 @@
+Display: Test Completed. Result={Success} Name={FromJsonRefusesMalformedText} Path={Ledger.Body.FromJsonRefusesMalformedText}
+BeginEvents: Ledger.Body.FromJsonRefusesMalformedText
+Display: Test Completed. Result={Success} Name={SystemRoundTripsExactly} Path={Ledger.Body.SystemRoundTripsExactly}
+BeginEvents: Ledger.Body.SystemRoundTripsExactly
+Display: Test Completed. Result={Success} Name={ValidateRejectsImpossibleSystems} Path={Ledger.Body.ValidateRejectsImpossibleSystems}
+BeginEvents: Ledger.Body.ValidateRejectsImpossibleSystems
+Display: Test Completed. Result={Success} Name={ABodyReturnsAfterOnePeriod} Path={Ledger.Ephemeris.ABodyReturnsAfterOnePeriod}
+BeginEvents: Ledger.Ephemeris.ABodyReturnsAfterOnePeriod
+Display: Test Completed. Result={Success} Name={KeplerSolutionSatisfiesItsOwnEquation} Path={Ledger.Ephemeris.KeplerSolutionSatisfiesItsOwnEquation}
+BeginEvents: Ledger.Ephemeris.KeplerSolutionSatisfiesItsOwnEquation
+worst residual 4.441e-16 at e=0.01, M=7084.0
+Display: Test Completed. Result={Success} Name={SteppedAndDirectAgreeOverACentury} Path={Ledger.Ephemeris.SteppedAndDirectAgreeOverACentury}
+BeginEvents: Ledger.Ephemeris.SteppedAndDirectAgreeOverACentury
+worst disagreement 0.000000 m, body 0 (Primary), at 0.0 years
+Display: Test Completed. Result={Success} Name={VelocityIsTheDerivativeOfPosition} Path={Ledger.Ephemeris.VelocityIsTheDerivativeOfPosition}
+BeginEvents: Ledger.Ephemeris.VelocityIsTheDerivativeOfPosition
+worst relative disagreement 1.547e-10
+Display: Test Completed. Result={Success} Name={EastNorthUpIsRightHandedEverywhere} Path={Ledger.Frames.EastNorthUpIsRightHandedEverywhere}
+BeginEvents: Ledger.Frames.EastNorthUpIsRightHandedEverywhere
+Display: Test Completed. Result={Success} Name={SurfacePointSurvivesTheRoundTrip} Path={Ledger.Frames.SurfacePointSurvivesTheRoundTrip}
+BeginEvents: Ledger.Frames.SurfacePointSurvivesTheRoundTrip
+worst round trip 0.015052 mm, at a system-frame distance of order 1.5e11 m
+Display: Test Completed. Result={Success} Name={TheBodyFrameActuallyRotates} Path={Ledger.Frames.TheBodyFrameActuallyRotates}
+BeginEvents: Ledger.Frames.TheBodyFrameActuallyRotates
+after one rotation, 0.000001 mm from where it started
+worst single-depth step 0.094 m (between depth 15 and 16); whole band 14 -> 18 is 0.231 m
+worst round-trip error: 6.487e-13 of a face

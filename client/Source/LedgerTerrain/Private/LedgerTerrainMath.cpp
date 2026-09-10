@@ -3,6 +3,7 @@
 #include "LedgerTerrainDelta.h"
 
 #include "LedgerLog.h"
+#include "LedgerMath.h"
 
 namespace LedgerTerrain
 {
@@ -301,7 +302,7 @@ namespace LedgerTerrain
 			// is the one part of an ocean floor with any gradient worth the
 			// name, and the abyssal plain is the flattest surface on the planet.
 			const double Relief = 0.004 + 0.030 * FMath::Sin(
-				PI * FMath::Clamp((Offshore - 0.06) / 0.22, 0.0, 1.0));
+				LedgerPi * FMath::Clamp((Offshore - 0.06) / 0.22, 0.0, 1.0));
 
 			const double Seabed = LedgerNoise::Fractal(Warped * 60.0, Seed ^ 0x2B2Bu, 3);
 			return (-Profile * AbyssalFraction + Seabed * Relief) * Params.MaxElevation;

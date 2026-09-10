@@ -12,6 +12,7 @@
 
 #include "Engine/Texture2D.h"
 #include "LedgerNoise.h"
+#include "LedgerMath.h"
 
 #if WITH_EDITOR
 
@@ -25,18 +26,17 @@ namespace
 		// axes by construction rather than by mirroring or blending.
 		const double U = static_cast<double>(X) / static_cast<double>(Size);
 		const double V = static_cast<double>(Y) / static_cast<double>(Size);
-		const double TwoPi = 2.0 * PI;
 		constexpr double R1 = 1.0;
 		constexpr double R2 = 2.4;
 
 		const FVector3d OnTorus(
-			R1 * FMath::Cos(U * TwoPi),
-			R1 * FMath::Sin(U * TwoPi),
-			R2 * FMath::Cos(V * TwoPi));
+			R1 * FMath::Cos(U * LedgerTwoPi),
+			R1 * FMath::Sin(U * LedgerTwoPi),
+			R2 * FMath::Cos(V * LedgerTwoPi));
 		const FVector3d Second(
 			0.0,
 			0.0,
-			R2 * FMath::Sin(V * TwoPi));
+			R2 * FMath::Sin(V * LedgerTwoPi));
 
 		const FVector3d Position = OnTorus + Second;
 		return LedgerNoise::Fractal(Position * 1.7, Seed, 5) * 0.5 + 0.5;
