@@ -104,9 +104,9 @@ component does not add a second deck. Three decks in one component means one
 *material* with three density bands against the sample's own altitude.
 
 That material now exists — `BuildCloudMaterial`, in the same procedural style as
-the terrain, water and flat materials this project already builds. It compiles,
-it is assigned, and **it renders nothing yet**. Two things were found and fixed on
-the way and a third is still open:
+the terrain, water and flat materials this project already builds. **Four faults
+have been found in it, three of them fixed, and it now draws.** What it does not
+yet draw is cloud *shapes*:
 
 - **The altitude output was the wrong one.** The node offers `Altitude`,
   `AltitudeInLayer`, `NormAltitudeInLayer` and `ShadowSampleDistance` in that
@@ -116,9 +116,32 @@ the way and a third is still open:
 - **Turbulent noise is biased towards zero**, so a coverage threshold at
   `1 - 0.38` passed almost none of it. Plain gradient noise is centred on a half,
   which is what makes a coverage number mean coverage.
-- **And it is still invisible**, for a reason not yet found.
+- **It was not declared usable on a volumetric cloud.** Unreal validates
+  material usage per consumer and silently substitutes the default for anything
+  that has not declared itself — the same trap that rendered three hundred and
+  forty-two trees as black cut-outs in M02, presenting here as a sky with no
+  cloud in it. `bUsedWithVolumetricCloud`.
+- **Volume materials must use an additive blend mode**, and one that does not
+  fails to compile outright. The engine had been saying so in `LogMaterial` the
+  whole time, under a warning about the *map* rather than the material — which
+  is why two rounds went on explaining an empty sky as a density that came out
+  zero. Reading the log beat four rounds of reasoning about the graph.
+- **And the noise had no precision left.** This planet's surface is 6.3e8 cm
+  from the origin, where a shader float's ULP is about sixty centimetres, so a
+  noise coordinate built from absolute world position cannot vary smoothly
+  across a cloud — it came back as one value with a dither on it. Driving the
+  density from the raw noise proved it: the whole sky was flat. The coordinate
+  is now camera-relative, with an origin parameter carrying the camera's own
+  position modulo a hundred kilometres, computed on the client where doubles
+  still exist. **This is the large-world precision problem the terrain solved
+  with doubles, arriving somewhere doubles are not available.**
 
-So it sits behind `-threedecks`, and the default is the engine's own cloud
+With those three fixed the noise varies and the layer draws. What is left is
+that the decks read as a dense fog gradient rather than as cloud with sky
+between: the coverage threshold is not cutting holes. That is the remaining
+fault and it is a shaping problem rather than a plumbing one.
+
+So it still sits behind `-threedecks`, and the default is the engine's own cloud
 material driven at the altitude and coverage this project computes. One deck of
 three, in the right place, at the right density. Left on by default a material
 that draws nothing is a sky with the clouds computed, placed and invisible —

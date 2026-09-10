@@ -25,6 +25,7 @@
 #include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionTime.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
 
 namespace LedgerSurface
@@ -182,11 +183,35 @@ namespace LedgerSurface
 		// to a collection every tick; the material offsets its noise by that
 		// times elapsed time, so the deck moves downwind at the speed the air
 		// is actually doing rather than at a scroll rate somebody picked.
+		// **Camera-relative, plus an anchor, because absolute world position has
+		// no precision left to give.**
+		//
+		// This planet's surface is at 6.3e8 centimetres from the origin. A
+		// shader float there has an ULP of about sixty-four centimetres, so
+		// multiplying by a noise scale and asking for variation across a cloud
+		// asks for detail that is not in the number any more -- and what comes
+		// back is a flat sheet with a dither on it. Feeding the noise the raw
+		// density confirmed it: the whole sky was one value.
+		//
+		// This is the same large-world precision problem the terrain solved with
+		// doubles, arriving in a place where doubles are not available. The way
+		// out is to keep the coordinate small and anchor it: camera-relative
+		// position is a small float, and an origin parameter carrying the
+		// camera's own position modulo a hundred kilometres puts it back in the
+		// world. The seam where that modulo wraps is a hundred kilometres away
+		// and moves with the viewer, which is a better place for it than
+		// everywhere.
 		UMaterialExpressionWorldPosition* Position =
 			Graph.Make<UMaterialExpressionWorldPosition>();
+		Position->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
+
+		UMaterialExpressionVectorParameter* Anchor =
+			Graph.Make<UMaterialExpressionVectorParameter>();
+		Anchor->ParameterName = TEXT("NoiseOrigin");
+		Anchor->DefaultValue = FLinearColor::Black;
 		UMaterialExpressionTime* Time = Graph.Make<UMaterialExpressionTime>();
 
-		UMaterialExpression* Drift = Position;
+		UMaterialExpression* Drift = Graph.Add(Position, Anchor);
 		if (UMaterialParameterCollection* Collection =
 			LoadObject<UMaterialParameterCollection>(
 				nullptr, TEXT("/Game/Materials/MPC_LedgerWind")))
@@ -207,7 +232,7 @@ namespace LedgerSurface
 				Graph.Multiply(WindDirection,
 					Graph.Multiply(WindSpeed, Graph.Constant(100.0f))),
 				Time);
-			Drift = Graph.Subtract(Position, Offset);
+			Drift = Graph.Subtract(Drift, Offset);
 		}
 		else
 		{
@@ -255,8 +280,20 @@ namespace LedgerSurface
 		// per-metre-thinking made every band a hundred times too dense and
 		// turned the zenith into a flat purple wall, which reads as a broken
 		// shader rather than as an arithmetic slip.
+		// **Per centimetre, and a cloud is opaque.**
+		//
+		// A cumulus you can see fifty metres into is 0.06 per metre, which is
+		// 6e-4 per centimetre -- and across a five-hundred-metre deck that is
+		// thirty optical depths. That is correct: real clouds are opaque. It
+		// also means the difference between 0.05 and 0.0006 here is the
+		// difference between utterly opaque and utterly opaque, which is why
+		// changing it by a factor of a hundred changed no pixel and ruled
+		// nothing out.
+		//
+		// What makes a sky rather than a lid is the gaps, and the gaps are the
+		// coverage threshold on the noise -- not the density.
 		UMaterialExpressionScalarParameter* Extinction =
-			Parameter(Graph, TEXT("Extinction"), 0.0006f);
+			Parameter(Graph, TEXT("Extinction"), 0.0004f);
 
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
 		if (EditorData == nullptr)
@@ -284,11 +321,22 @@ namespace LedgerSurface
 			FParse::Param(FCommandLine::Get(), TEXT("cloudprobe"));
 		if (bProbe)
 		{
-			EditorData->EmissiveColor.Expression = Altitude;
-			EditorData->Opacity.Expression =
-				Graph.Multiply(Graph.Constant(1.0f), Extinction);
+			// **The probe drives density from the noise alone**, with the bands
+			// and the altitude taken out of the circuit entirely. If the sky
+			// comes back with cloud-shaped holes in it the noise works and the
+			// bands are at fault; if it comes back a flat sheet the noise is
+			// constant and nothing downstream of it could have helped.
+			//
+			// An earlier probe put the altitude into the emissive instead and
+			// changed nothing visible, which ruled out less than it looked
+			// like: an additive volume's emissive is not a reliable readout.
+			// Density is, because density is the only thing this material is
+			// really for.
+			EditorData->EmissiveColor.Expression =
+				Graph.Constant3(FLinearColor::Black);
+			EditorData->Opacity.Expression = Graph.Multiply(Noise, Extinction);
 			UE_LOG(LogLedger, Log,
-				TEXT("cloud material: probe on, drawing the altitude coordinate"));
+				TEXT("cloud material: probe on, density is the raw noise"));
 		}
 		else
 		{

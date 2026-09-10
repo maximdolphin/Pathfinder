@@ -5557,6 +5557,12 @@
      "caption": "1.4334 arcseconds across a solar system against 20.91 degrees across 12 parsecs, and 128 of 128 sky cells occupied",
      "source": "../out/t077-starfield.txt",
      "addedAt": "2026-09-10T14:51:24.985Z"
+    },
+    {
+     "file": "evidence/T077-2026-09-10T20-45-29-414.png",
+     "caption": "5544 naked-eye stars behind the planet's limb, coloured by temperature",
+     "source": "out/airshow-1-orbit.png",
+     "addedAt": "2026-09-10T20:45:29.416Z"
     }
    ],
    "plannedStartDay": 190.5,
@@ -6246,6 +6252,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "The three-band volume material is built (BuildCloudMaterial, same procedural style as the terrain and water materials) and sits behind -threedecks. Two faults found and fixed: the CloudSampleAttribute output index (NormAltitudeInLayer is 2, not 1 -- found by logging the node's outputs rather than guessing), and turbulent noise being biased towards zero so a coverage threshold passed almost nothing. It still renders nothing, for a reason not yet found. The default remains the engine material driven at this project's altitude and coverage: one deck of three, in the right place. Also found: the home world's LCL is 1237 m and T072 put the landing site on a 2.4 km peak, so the town is a kilometre above the cloud tops -- a climb capture has to start below one."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Three more faults found and fixed in the volume material, and it draws now. It was not declared bUsedWithVolumetricCloud, so the default was silently substituted -- the same trap as M02's black cut-out trees. Volume materials must use an additive blend mode and one that does not fails to compile outright; the engine had been saying so in LogMaterial under a warning about the map rather than the material, which is why two rounds went on explaining an empty sky as a density of zero. And the noise had no precision: at 6.3e8 cm from the origin a shader float's ULP is sixty centimetres, so a coordinate built from absolute world position cannot vary across a cloud -- driving density from the raw noise proved it. It is camera-relative now with an anchor computed in doubles on the client. What remains is shaping: the decks read as a dense fog gradient because the coverage threshold is not cutting holes."
     }
    ],
    "evidence": [],
@@ -13949,5 +13960,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T20:30:42.058Z"
+ "updatedAt": "2026-09-10T20:45:29.419Z"
 }

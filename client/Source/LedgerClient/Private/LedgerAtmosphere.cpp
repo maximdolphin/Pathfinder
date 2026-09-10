@@ -3,6 +3,8 @@
 #include "Components/ExponentialHeightFogComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 #include "LedgerLog.h"
 #include "LedgerSurface.h"
 #include "Misc/CommandLine.h"
@@ -301,6 +303,35 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 
 	if (bThreeDecks)
 	{
+		// **The anchor that gives the noise its precision back.**
+		//
+		// The material works in camera-relative coordinates, which are small
+		// enough for a float to resolve a cloud in. This puts them back in the
+		// world: the camera's own position reduced modulo a hundred kilometres,
+		// computed here in doubles where the precision still exists. Position
+		// minus camera plus (camera mod T) is world-anchored and small.
+		if (const UWorld* World = GetWorld())
+		{
+			if (const APlayerController* Controller =
+				World->GetFirstPlayerController())
+			{
+				FVector Eye = FVector::ZeroVector;
+				FRotator Ignored = FRotator::ZeroRotator;
+				Controller->GetPlayerViewPoint(Eye, Ignored);
+
+				constexpr double Tile = 1.0e7;   // a hundred kilometres
+				const FVector3d Anchor(
+					FMath::Fmod(static_cast<double>(Eye.X), Tile),
+					FMath::Fmod(static_cast<double>(Eye.Y), Tile),
+					FMath::Fmod(static_cast<double>(Eye.Z), Tile));
+				CloudMaterial->SetVectorParameterValue(TEXT("NoiseOrigin"),
+					FLinearColor(
+						static_cast<float>(Anchor.X),
+						static_cast<float>(Anchor.Y),
+						static_cast<float>(Anchor.Z), 0.0f));
+			}
+		}
+
 		Band(TEXT("Cumulus"), Decks.Cumulus);
 		Band(TEXT("Middle"), Decks.Middle);
 		Band(TEXT("Cirrus"), Decks.Cirrus);
