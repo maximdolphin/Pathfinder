@@ -361,6 +361,23 @@ namespace LedgerSky
 		});
 	}
 
+	/// The Sun, as the yardstick everything else is quoted against.
+	constexpr double SolarMassKg = 1.98892e30;
+	constexpr double SolarLuminosityWatts = 3.828e26;
+	constexpr double StefanBoltzmann = 5.670374419e-8;
+
+	/// Lumens per watt of a sun-like star's output, averaged over its spectrum.
+	///
+	/// **A simplification, and a known one.** Efficacy depends on the spectrum:
+	/// a cool red star puts most of its output where an eye sees nothing, and a
+	/// hot blue one loses it the other side. Treating it as constant makes a
+	/// red dwarf's planets brighter than they should be. It is right for the
+	/// star this system has, it is the difference between a lux and a watt
+	/// rather than the difference between bright and dim, and correcting it
+	/// means integrating a Planck curve against the photopic response -- which
+	/// is a task, not a line.
+	constexpr double LuminousEfficacy = 93.0;
+
 	/// The area two circles on the sky share, over the first one's area.
 	///
 	/// Radii and separation in radians, which is close enough to a plane at
@@ -549,6 +566,69 @@ namespace LedgerSky
 			return Peak;
 		}
 		return -1.0;
+	}
+
+	double StarLuminosityWatts(const FLedgerBody& Star)
+	{
+		if (!(Star.MassKg > 0.0))
+		{
+			return 0.0;
+		}
+		const double Mass = Star.MassKg / SolarMassKg;
+
+		// Piecewise, because one exponent does not cover the main sequence. The
+		// low-mass branch is shallower: a star half the Sun's mass is about a
+		// twelfth as bright under 3.5 and about a fifth under 2.3, and the
+		// second is the one that matches observation down there.
+		const double Exponent = Mass < 0.43 ? 2.3 : (Mass < 2.0 ? 4.0 : 3.5);
+		const double Scale = Mass < 0.43 ? 0.23 : 1.0;
+		return SolarLuminosityWatts * Scale * FMath::Pow(Mass, Exponent);
+	}
+
+	double StarTemperatureKelvin(const FLedgerBody& Star)
+	{
+		const double Luminosity = StarLuminosityWatts(Star);
+		if (!(Luminosity > 0.0) || !(Star.RadiusMetres > 0.0))
+		{
+			return 0.0;
+		}
+		const double Area = 4.0 * LedgerPi * Star.RadiusMetres * Star.RadiusMetres;
+		return FMath::Pow(Luminosity / (Area * StefanBoltzmann), 0.25);
+	}
+
+	double IlluminanceFromDisc(double TemperatureKelvin, double AngularRadiusRadians)
+	{
+		if (!(TemperatureKelvin > 0.0) || !(AngularRadiusRadians > 0.0))
+		{
+			return 0.0;
+		}
+		const double SinAlpha = FMath::Sin(AngularRadiusRadians);
+		const double T2 = TemperatureKelvin * TemperatureKelvin;
+		return StefanBoltzmann * T2 * T2 * SinAlpha * SinAlpha * LuminousEfficacy;
+	}
+
+	double IlluminanceLux(
+		const FLedgerSystem& System, const FVector3d& ObserverPositionMetres,
+		double SecondsFromEpoch)
+	{
+		const int32 Star = PrimaryIndex(System);
+		if (Star == INDEX_NONE)
+		{
+			return 0.0;
+		}
+
+		TArray<FLedgerState> States;
+		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
+
+		const double Distance =
+			(States[Star].PositionMetres - ObserverPositionMetres).Length();
+		if (!(Distance > 0.0))
+		{
+			return 0.0;
+		}
+
+		const double Luminosity = StarLuminosityWatts(System.Bodies[Star]);
+		return (Luminosity / (4.0 * LedgerPi * Distance * Distance)) * LuminousEfficacy;
 	}
 
 	double NextLocalNoon(

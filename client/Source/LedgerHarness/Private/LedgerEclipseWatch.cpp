@@ -25,7 +25,14 @@ namespace
 	constexpr int32 EclipseSteps = 7;
 
 	constexpr double EclipseFirstSettle = 22.0;
-	constexpr double EclipseStepSettle = 1.5;
+	/// **Long enough for the eye to adjust, and this sequence needs it most.**
+	///
+	/// T076 made the sun a physical 101,367 lux, and this fixture walks from a
+	/// total eclipse to full daylight -- the widest swing anywhere in the
+	/// project. At 1.5 s a step the auto-exposure was still climbing out of
+	/// totality when the shutter went, and the daylight frames came back washed
+	/// to white: a photograph of the adaptation, not of the ground.
+	constexpr double EclipseStepSettle = 12.0;
 	constexpr double EclipseEyeMetres = 40.0;
 }
 

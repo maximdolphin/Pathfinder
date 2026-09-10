@@ -1,0 +1,19 @@
+one solar mass and one solar radius gives 5772 K; the Sun is 5772 K
+illuminance at one astronomical unit: 126588 lux; the real figure is about 127000 above the atmosphere
+star: 1.861e+30 kg (0.936 solar), 2.936e+26 W (0.767 solar), 5781 K, radius 6.073e+08 m
+BeginEvents: Ledger.Star.IlluminanceFollowsTheInverseSquare
+star: 1.861e+30 kg (0.936 solar), 2.936e+26 W (0.767 solar), 5781 K, radius 6.073e+08 m
+illuminance against distance:
+     1e+10 m ->    2.173e+07 lux, E*d^2 = 2.17263e+27
+     3e+10 m ->    2.414e+06 lux, E*d^2 = 2.17263e+27
+     1e+11 m ->    2.173e+05 lux, E*d^2 = 2.17263e+27
+   1.4e+11 m ->    1.108e+05 lux, E*d^2 = 2.17263e+27
+     5e+11 m ->         8691 lux, E*d^2 = 2.17263e+27
+     4e+12 m ->        135.8 lux, E*d^2 = 2.17263e+27
+     1e+13 m ->        21.73 lux, E*d^2 = 2.17263e+27
+
+worst drift in E*d^2: 0.000e+00
+twice as far: 5.432e+04 lux against 2.173e+05 lux, ratio 0.250000
+EndEvents: Ledger.Star.IlluminanceFollowsTheInverseSquare
+Sending RunTest TheDiscAndTheDistanceAgree to 224F3DD74F532B245D538FBC981A6A0F
+Display: Test Started. Name={TheDiscAndTheDistanceAgree} Path={Ledger.Star.TheDiscAndTheDistanceAgree}

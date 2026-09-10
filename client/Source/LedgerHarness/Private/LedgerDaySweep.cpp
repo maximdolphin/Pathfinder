@@ -48,7 +48,16 @@ namespace
 	/// The first step waits for ground to stream; the rest only wait for the
 	/// light and the sky capture to catch up, which is a frame or two.
 	constexpr double DaySweepFirstSettle = 22.0;
-	constexpr double DaySweepStepSettle = 1.5;
+
+	/// **Long enough for the eye to adjust.** T076 made the sun a physical
+	/// 108,000 lux, and this fixture jumps the clock by three hours a step --
+	/// roughly thirteen stops between midnight and noon. At 1.5 s a step the
+	/// auto-exposure was still chasing when the shutter went, and the frames
+	/// came back 48 to 62 per cent pure white with one at 87 per cent black:
+	/// a measurement of the adaptation rate, captioned as a measurement of the
+	/// sky. Nobody moves through a day in eight jumps, so the wait is the
+	/// fixture paying for its own discontinuity.
+	constexpr double DaySweepStepSettle = 12.0;
 }
 
 bool ULedgerDaySweep::DoesSupportWorldType(const EWorldType::Type WorldType) const

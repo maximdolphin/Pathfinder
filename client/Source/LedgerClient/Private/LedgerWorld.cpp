@@ -29,21 +29,40 @@
 #include "LedgerTerrainMath.h"
 #include "UnrealClient.h"
 #include "LedgerMath.h"
+#include "LedgerEphemeris.h"
 #include "LedgerSky.h"
 
 namespace
 {
-	/// What the star's light is worth with nothing in front of it.
-	///
-	/// Named because T075 scales it: an eclipse is this times whatever fraction
-	/// of the disc is still showing, and a bare 11.0f in two places would drift.
-	constexpr float SunIntensity = 11.0f;
-
 	/// Which body of the generated system the world is standing on.
 	///
 	/// Index 1: the primary is 0 and the planet is the first thing orbiting it.
 	/// One planet is all this world builds; a moon is T078's.
 	constexpr int32 HomeBodyIndex = 1;
+
+	/// What the star's light is worth here, lux, with nothing in front of it.
+	///
+	/// **It used to be the number 11.** T076 replaced it with the illuminance
+	/// the star actually delivers at this distance: luminosity from the star's
+	/// mass, over the area of a sphere the size of its orbit. For this system
+	/// that is about 108,000 lux against Earth's 127,000, because the star is
+	/// 0.94 solar masses and correspondingly dimmer.
+	///
+	/// The consequence anybody will notice is that the number went up by four
+	/// orders of magnitude, so the exposure range had to as well -- see the
+	/// post-process volume below. That is the trade a physical light makes: the
+	/// units mean something, and nothing downstream may quietly assume a scale.
+	double SunIlluminanceLux(const FLedgerSystem& System, double SecondsFromEpoch)
+	{
+		if (!System.Bodies.IsValidIndex(HomeBodyIndex))
+		{
+			return 100000.0;
+		}
+		TArray<FLedgerState> States;
+		LedgerEphemeris::StatesAt(System, SecondsFromEpoch, States);
+		return LedgerSky::IlluminanceLux(
+			System, States[HomeBodyIndex].PositionMetres, SecondsFromEpoch);
+	}
 
 	/// Where the sun is, as a direction from the planet's centre. Everything
 	/// about daylight — the site choice, the light's rotation, the framing of
@@ -279,7 +298,8 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	// sunlight back.
 	const double Covered = LedgerSky::StarCoveredFraction(
 		System, HomeBodyIndex, SiteDirection, WhenSeconds);
-	const float Dimmed = SunIntensity * static_cast<float>(1.0 - Covered);
+	const double Full = SunIlluminanceLux(System, WhenSeconds);
+	const float Dimmed = static_cast<float>(Full * (1.0 - Covered));
 
 	// The world's own light, found rather than remembered: the builder does not
 	// keep a handle on it, and one directional light is what this world has.
@@ -297,9 +317,9 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	if (Covered > 0.001)
 	{
 		UE_LOG(LogLedger, Log,
-			TEXT("eclipse: body %d covers %.1f%% of the star, sun at %.2f of %.2f"),
+			TEXT("eclipse: body %d covers %.1f%% of the star, sun at %.0f of %.0f lux"),
 			LedgerSky::EclipsingBody(System, HomeBodyIndex, SiteDirection, WhenSeconds),
-			Covered * 100.0, Dimmed, SunIntensity);
+			Covered * 100.0, Dimmed, Full);
 	}
 }
 
@@ -466,7 +486,18 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 		Sun->SetActorRotation(SunRotation);
 		if (UDirectionalLightComponent* Component = Cast<UDirectionalLightComponent>(Sun->GetLightComponent()))
 		{
-			Component->SetIntensity(SunIntensity);
+			Component->SetIntensity(
+				static_cast<float>(SunIlluminanceLux(System, WhenSeconds)));
+
+			// The colour is the star's surface temperature, so a cooler star
+			// lights its planets redder without anybody picking a tint.
+			Component->SetUseTemperature(true);
+			if (System.Bodies.Num() > 0)
+			{
+				Component->SetTemperature(static_cast<float>(
+					LedgerSky::StarTemperatureKelvin(System.Bodies[0])));
+			}
+
 			Component->SetAtmosphereSunLight(true);
 			Component->SetDynamicShadowDistanceMovableLight(600000.0f);
 		}
@@ -511,10 +542,28 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 
 		Settings.bOverride_AutoExposureMethod = true;
 		Settings.AutoExposureMethod = EAutoExposureMethod::AEM_Histogram;
+		// **The range moved with the light.** T076 made the sun about 108,000
+		// lux instead of 11, which is four orders of magnitude, and an exposure
+		// floor of 0.03 against that is a white frame at noon. These are scaled
+		// by the same factor and then opened wider still at the dark end,
+		// because the range this world spans is not daylight to shade: it is a
+		// total eclipse and a starlit night at one end and full noon at the
+		// other, which is more than a camera has and about what an eye has.
+		// EV100, not luminance: see DefaultEngine.ini. -4 is a landscape under a
+		// bright moon and 19 is sunlit snow, which is the span this world
+		// actually contains. Quoting the bounds in stops means they survive the
+		// next change to what the light is worth -- which is the whole reason
+		// the earlier 0.03-to-8 luminance pair had to be rewritten when T076
+		// moved the sun from 11 to 101,367.
+		//
+		// 19 rather than 17 as headroom, not as a fix: raising it changed no
+		// pixel, which is how the real cause of the blown daylight frames was
+		// found. The exposure was never clamped -- it was still adapting.
+		// A bound that is not being hit cannot be the thing that is wrong.
 		Settings.bOverride_AutoExposureMinBrightness = true;
-		Settings.AutoExposureMinBrightness = 0.03f;
+		Settings.AutoExposureMinBrightness = -4.0f;
 		Settings.bOverride_AutoExposureMaxBrightness = true;
-		Settings.AutoExposureMaxBrightness = 8.0f;
+		Settings.AutoExposureMaxBrightness = 19.0f;
 		Settings.bOverride_AutoExposureBias = true;
 		Settings.AutoExposureBias = 0.1f;
 		Settings.bOverride_AutoExposureSpeedUp = true;

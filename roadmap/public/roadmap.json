@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 7
+   "doneCount": 8
   },
   {
    "id": "M04",
@@ -5487,11 +5487,30 @@
    "dependsOn": [
     "T075"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "The star's light is now its own physics. NOTHING NEW IS STORED: the star already had a mass and a radius, so luminosity comes from the mass by the main-sequence relation (piecewise, because one exponent does not cover the sequence -- a star half the Sun's mass is a twelfth as bright under 3.5 and a fifth under 2.3, and the second matches observation down there), temperature from luminosity and radius by Stefan-Boltzmann solved backwards, and illuminance from luminosity and distance. A system read from disk cannot carry a luminosity that disagrees with the body it belongs to, because it does not carry one. This system's star: 1.861e30 kg (0.936 solar), 2.936e26 W (0.767 solar), 5781 K. INVERSE SQUARE, three decades of distance: E*d^2 drift EXACTLY ZERO, and twice as far is 0.250000 as bright. That alone is a weak test because the product is constant by construction, so the illuminance is computed a second way -- surface flux times the solid angle the disc subtends, sigma T^4 sin^2(alpha) -- which goes through the star's APPARENT SIZE, the quantity T074 draws with, and never mentions distance. Worst relative difference between the two roads: 3.5e-16. Checked against a number somebody else measured: one solar mass and one solar radius gives 5772 K, which is the Sun's, and 126588 lux at one astronomical unit against a real ~127000. THE SUN USED TO BE THE NUMBER 11; IT IS NOW 101367 LUX. Four orders of magnitude, and everything downstream that had quietly assumed a scale had to be found. Exposure bounds were 0.03 to 8.0 raw luminance multipliers and are now -4 to +19 EV100, which needed r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange turned on -- stops rather than multipliers, so they survive the next change to what the light is worth. TWO WRONG DIAGNOSES ON THE WAY, both worth recording. (1) 'The bright bound is too low': daylight frames were 48-62% pure white so the ceiling went 17 EV to 19, and IT CHANGED NOT ONE PIXEL -- which is how the real cause was found, because a bound that is not being hit cannot be the thing that is wrong. (2) 'It just needs longer': partly, but the first attempt lengthened the wrong fixture. The day sweep got twelve seconds a step and barely improved because it was nearly settled already; the eclipse watch, which walks from a total eclipse to full daylight in 1.5-second steps, was the one still climbing when the shutter went. The fault was neither the range nor the light: it was photographing an adaptation. A fixture that jumps the clock by hours between frames pays for its own discontinuity, because nobody moves through a day in seven jumps. RESULT: across the eclipse sequence at the world's own site, from 101367 lux to nothing at all, NOTHING CLIPS WHITE ANYWHERE -- 0.00% in all seven frames. The daylight ground sits at 65-72 out of 255 with about a quarter in shadow, which is a landscape rather than a wash. The frames that are entirely black are night and totality, which are meant to be. KNOWN SIMPLIFICATION: luminous efficacy is a constant 93 lm/W, and it is not -- a cool red star puts most of its output where an eye sees nothing. Right for this system's star, and it is the difference between a lux and a watt rather than between bright and dim. Correcting it means integrating a Planck curve against the photopic response, which is a task and not a line. 75 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T076-2026-09-10T14-42-34-359.txt",
+     "caption": "E*d^2 constant to zero drift across three decades; 5772 K and 126588 lux at 1 au for a Sun-equivalent",
+     "source": "../out/t076-star.txt",
+     "addedAt": "2026-09-10T14:42:34.360Z"
+    },
+    {
+     "file": "evidence/T076-2026-09-10T14-42-34-489.png",
+     "caption": "Full daylight under a physical 101,367 lux sun, exposure settled: no white clipping anywhere in the frame",
+     "source": "../out/eclipse-6.png",
+     "addedAt": "2026-09-10T14:42:34.491Z"
+    }
+   ],
    "plannedStartDay": 189,
    "plannedEndDay": 190.5,
    "plannedStart": "2027-05-28",
@@ -13625,5 +13644,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T14:22:19.596Z"
+ "updatedAt": "2026-09-10T14:42:34.494Z"
 }

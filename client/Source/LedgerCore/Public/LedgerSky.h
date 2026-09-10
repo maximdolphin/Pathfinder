@@ -159,6 +159,43 @@ namespace LedgerSky
 		const FLedgerSystem& System, int32 BodyIndex,
 		const FVector3d& AnchorDirection, double SecondsFromEpoch);
 
+	/// What the star puts out, watts. T076.
+	///
+	/// From its mass, by the main-sequence mass-luminosity relation. A star's
+	/// mass is the one thing that decides nearly everything else about it, and
+	/// it is already in the description -- so nothing new is stored and a
+	/// system read from disk cannot carry a luminosity that disagrees with the
+	/// body it belongs to.
+	LEDGERCORE_API double StarLuminosityWatts(const FLedgerBody& Star);
+
+	/// Its surface temperature, kelvin, from the luminosity and the radius.
+	///
+	/// Stefan-Boltzmann backwards: L = 4 pi R^2 sigma T^4, solved for T. This
+	/// is what the light's colour comes from, so a small red star and a large
+	/// blue one light their planets differently without anybody choosing a
+	/// colour.
+	LEDGERCORE_API double StarTemperatureKelvin(const FLedgerBody& Star);
+
+	/// Illuminance on a surface facing the star, lux. T076.
+	///
+	/// **Falls off as one over distance squared, because it is computed that
+	/// way and not because it was tuned to.** An inner planet is brighter and
+	/// an outer one dimmer by the same arithmetic that makes a lamp dimmer
+	/// across a room.
+	LEDGERCORE_API double IlluminanceLux(
+		const FLedgerSystem& System, const FVector3d& ObserverPositionMetres,
+		double SecondsFromEpoch);
+
+	/// The same number by a different road: surface flux times the solid angle
+	/// the disc subtends.
+	///
+	/// sigma T^4 sin^2(angular radius). It goes through the star's APPARENT
+	/// SIZE rather than its distance, which is the quantity the renderer draws,
+	/// so agreement between the two is a check that the picture and the
+	/// photometry are describing one star.
+	LEDGERCORE_API double IlluminanceFromDisc(
+		double TemperatureKelvin, double AngularRadiusRadians);
+
 	/// How much of the star's disc is hidden by another body, 0 to 1. T075.
 	///
 	/// An eclipse is two circles on the sky overlapping, so this is the area
