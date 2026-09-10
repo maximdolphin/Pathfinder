@@ -50,9 +50,10 @@ namespace LedgerPatchDisk
 	/// the drying rate moved, the second computed live. A test comparing two
 	/// things it believed were the same computation.
 	///
-	/// Anything that changes what generation produces changes this number. It is in the key, not a header check:
+	/// Anything that changes what generation produces changes this number.
+	/// 7: the fallback colour path's alpha, which is snow cover. It is in the key, not a header check:
 	/// a stale entry then simply never matches and is evicted in its turn.
-	constexpr uint32 FormatVersion = 6;
+	constexpr uint32 FormatVersion = 7;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

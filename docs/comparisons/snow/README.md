@@ -52,11 +52,17 @@ it was recorded as being; it was never separated from the field it was reading.
 
 ## What has to happen next, in order
 
-1. **Check the channel end to end.** The vertex colour's alpha is supposed to
-   carry `SnowCover`. On the biome path it does. On the fallback path
-   `SurfaceColour` returns alpha 255 through `Blend`, which is full snow, and
-   the fallback runs whenever a patch has no biomes.
-2. **Check whether T051 raised it.** The drying rate over land went 0.97 to 0.99
+1. ~~**Check the channel end to end.**~~ **Done, and it was not the cause.** The
+   fallback path returned alpha 255 through `Blend` — full snow — which is
+   plainly wrong and is fixed to zero: with no biomes there is no climate to
+   ask, and unknown cover is better rendered as none than as a metre of it.
+   Nothing read the channel until the overlay existed, which is how a wrong
+   constant sat there for two milestones.
+
+   It changed the measurement by one tenth of one level: 131.0 to 131.1. The
+   biome path is running at this site and the alpha it writes really does say
+   half cover.
+2. **Check whether T051 raised it.** Now the only candidate left. The drying rate over land went 0.97 to 0.99
    per step in the same session, which moved desert from 50.6% to 32.9% of land.
    More moisture where it is cold is more snow, and nobody has looked at what
    that did to cover.

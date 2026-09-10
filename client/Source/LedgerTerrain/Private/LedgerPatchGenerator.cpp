@@ -14,6 +14,16 @@
 
 namespace
 {
+	/// Alpha is SNOW COVER, not opacity, and this returns none of it.
+	///
+	/// It returned 255. Alpha carries snow cover for the material to read
+	/// (T060), so a patch coloured by this path -- the fallback, used whenever
+	/// there are no biomes loaded -- claimed full snow everywhere, and the snow
+	/// overlay believed it. Nothing read the channel until the overlay existed,
+	/// which is why a wrong constant sat here harmlessly for two milestones.
+	///
+	/// Zero is the honest answer: with no biomes there is no climate to ask,
+	/// and unknown cover is better rendered as none than as a metre of it.
 	FColor Blend(const FColor& A, const FColor& B, double T)
 	{
 		const double Alpha = FMath::Clamp(T, 0.0, 1.0);
@@ -21,7 +31,7 @@ namespace
 			static_cast<uint8>(FMath::Lerp<double>(A.R, B.R, Alpha)),
 			static_cast<uint8>(FMath::Lerp<double>(A.G, B.G, Alpha)),
 			static_cast<uint8>(FMath::Lerp<double>(A.B, B.B, Alpha)),
-			255);
+			0);
 	}
 
 	/// Surface colour from height and steepness.
