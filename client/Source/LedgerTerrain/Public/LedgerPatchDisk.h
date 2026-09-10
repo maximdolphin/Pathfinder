@@ -32,9 +32,27 @@ namespace LedgerPatchDisk
 	/// sizes, which are stored in the payload and would otherwise have been
 	/// served from disk at the old tree-sized distribution forever. 4: the
 	/// scatter fill cap, for the same reason. 5: per-octave near-field
-	/// fading, which changes every elevation in every fine patch. It is in the key, not a header check:
+	/// fading, which changes every elevation in every fine patch. 6: the
+	/// climate model's drying rate.
+	///
+	/// **The key covers inputs, not code, and 6 is what that costs.**
+	///
+	/// ContentKey mixes the terrain parameters, the biome definitions, the
+	/// season, the delta and the patch's own geometry -- everything that is
+	/// *data*. It cannot mix the behaviour of LedgerClimate or LedgerScatter,
+	/// so a change to either produces different patches at the same address.
+	/// That is what this counter is for and it has to be turned by hand.
+	///
+	/// It was not turned for the climate change, and the failure was not
+	/// subtle: Ledger.Scatter.NothingFloatsOrIsHalfBuried compares a patch
+	/// scattered with its mesh against the same patch scattered without one,
+	/// and got 141 against 60 -- the first served from a cache written before
+	/// the drying rate moved, the second computed live. A test comparing two
+	/// things it believed were the same computation.
+	///
+	/// Anything that changes what generation produces changes this number. It is in the key, not a header check:
 	/// a stale entry then simply never matches and is evicted in its turn.
-	constexpr uint32 FormatVersion = 5;
+	constexpr uint32 FormatVersion = 6;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

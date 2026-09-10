@@ -222,7 +222,10 @@ bool FLedgerScatterNothingFloats::RunTest(const FString&)
 
 	if (OnFunction.Scatter.Num() != Job.Scatter.Num())
 	{
-		AddError(TEXT("the mesh changed which cells were accepted, not just their height"));
+		AddError(FString::Printf(
+			TEXT("the mesh changed which cells were accepted, not just their "
+			     "height: %d with a mesh, %d without"),
+			Job.Scatter.Num(), OnFunction.Scatter.Num()));
 		return false;
 	}
 
