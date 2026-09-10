@@ -43,11 +43,30 @@ namespace
 	/// terrain, the same streamer and the same materials -- T078's claim is
 	/// that a moon needs none of its own, so the only thing that changes is
 	/// which row of the system description the world reads.
+	/// Which body the world is currently built for.
+	///
+	/// **A file-static rather than a command-line read, because it changes.**
+	/// It used to parse `-body=` at every call site, which is fine for a world
+	/// that is built once and wrong for one that can cross to a moon -- and
+	/// there are twenty-six call sites, several of them in free functions with
+	/// no access to the subsystem. One value, set once at begin play and again
+	/// on a switch, is smaller than threading the subsystem through all of them.
+	int32 GActiveBody = INDEX_NONE;
+
 	int32 HomeBody()
 	{
+		if (GActiveBody != INDEX_NONE)
+		{
+			return GActiveBody;
+		}
 		int32 Body = 1;
 		FParse::Value(FCommandLine::Get(), TEXT("body="), Body);
 		return Body;
+	}
+
+	void SetActiveBody(int32 Body)
+	{
+		GActiveBody = Body;
 	}
 
 	/// What the star's light is worth here, lux, with nothing in front of it.
@@ -208,6 +227,21 @@ TStatId ULedgerWorldBuilder::GetStatId() const
 
 void ULedgerWorldBuilder::Tick(float DeltaSeconds)
 {
+	// The second half of a switch: last frame's world is gone and its render
+	// resources have been released, so this frame can build the next one.
+	if (PendingBody != INDEX_NONE)
+	{
+		const int32 Body = PendingBody;
+		PendingBody = INDEX_NONE;
+		SetActiveBody(Body);
+		ChooseSite();
+		if (UWorld* World = GetWorld())
+		{
+			BuildWorldFor(*World);
+		}
+		return;
+	}
+
 	Super::Tick(DeltaSeconds);
 	KeepSkyWithViewer();
 }
@@ -354,6 +388,7 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	// The system, and when it is. Generated rather than loaded: T069 made a
 	// description a pure function of a seed, so a world is a seed and a time.
 	System = LedgerBodies::Generate(SystemSeedFromCommandLine());
+	SetActiveBody(HomeBody());
 	WhenSeconds = WhenFromCommandLine();
 	SunFacing = SunDirectionAt(System, WhenSeconds);
 
@@ -372,11 +407,68 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 				LedgerSky::SolarDeclination(System, HomeBody(), WhenSeconds)));
 	}
 
+	// **The world for the body that is current, built here so it can be built
+	// again.** T088 needs the ship to cross to a moon and land on it in one
+	// session, and a world that can only be built during BeginPlay is a world
+	// that needs a new process to change bodies. Everything below this line was
+	// the tail of OnWorldBeginPlay and is unchanged; what is new is that it has
+	// a name and can be called twice.
+	BuildWorldFor(InWorld);
+}
+
+void ULedgerWorldBuilder::SwitchToBody(int32 BodyIndex)
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || !System.Bodies.IsValidIndex(BodyIndex)
+		|| BodyIndex == HomeBody())
+	{
+		return;
+	}
+
+	UE_LOG(LogLedger, Log, TEXT("switching from body %d (%s) to %d (%s)"),
+		HomeBody(), *System.Bodies[HomeBody()].Name,
+		BodyIndex, *System.Bodies[BodyIndex].Name);
+
+	// **Everything the old body owned goes.** The terrain, its sky and its town
+	// are all functions of which body this is; keeping any of them would be
+	// keeping one world's ground under another world's sky.
+	for (AActor* Actor : { static_cast<AActor*>(Planet),
+		static_cast<AActor*>(Atmosphere), static_cast<AActor*>(Settlement) })
+	{
+		if (Actor != nullptr)
+		{
+			Actor->Destroy();
+		}
+	}
+	Planet = nullptr;
+	Atmosphere = nullptr;
+	Settlement = nullptr;
+
+	// Built on the next tick, not this one. See PendingBody.
+	PendingBody = BodyIndex;
+}
+
+void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
+{
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	Planet = InWorld.SpawnActor<ALedgerPlanet>(
-		ALedgerPlanet::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+	// **Deferred, because everything below configures it before it may run.**
+	//
+	// SpawnActor dispatches BeginPlay immediately once the world is already
+	// running, and only defers it during the world's own begin play. So the
+	// first build worked -- the material was assigned before the planet woke --
+	// and a rebuild after a body switch did not: the planet woke first, found
+	// no surface material, fell back to an engine debug material meant for
+	// visualising vertex colours, and the render thread dereferenced null a few
+	// seconds later with a breadcrumb saying nothing more specific than
+	// "SceneRender".
+	//
+	// Deferred spawning is the idiom for exactly this. FinishSpawning is below,
+	// after the last thing that has to be true before the planet starts.
+	Planet = InWorld.SpawnActorDeferred<ALedgerPlanet>(
+		ALedgerPlanet::StaticClass(), FTransform::Identity, nullptr, nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
 	if (Planet != nullptr)
 	{
@@ -517,6 +609,12 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	{
 		Planet->AxialTiltRadians = System.Bodies[HomeBody()].AxialTiltRadians;
 		Planet->SeasonFromOrbit = LedgerSky::SeasonPhase(System, HomeBody(), WhenSeconds);
+	}
+
+	// Everything the planet needs to know is known. It may start.
+	if (Planet != nullptr)
+	{
+		Planet->FinishSpawning(FTransform::Identity);
 	}
 
 	// Only where there is air to draw. A sky on an airless moon is the single

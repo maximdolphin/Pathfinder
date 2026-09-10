@@ -328,8 +328,14 @@ void ALedgerShip::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (Planet == nullptr)
+	// **Not valid, rather than not null.** T088 lets the world change bodies
+	// mid-session, which destroys one planet and builds another -- and a
+	// UPROPERTY to a destroyed actor is not cleared until the collector runs,
+	// so a null check keeps handing the ship a planet that has already torn
+	// down its job table.
+	if (!IsValid(Planet))
 	{
+		Planet = nullptr;
 		if (const UWorld* World = GetWorld())
 		{
 			if (const ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>())

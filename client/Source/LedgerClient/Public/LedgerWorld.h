@@ -88,6 +88,16 @@ public:
 	void SetWhenSeconds(double Seconds);
 	int32 GetHomeBodyIndex() const;
 
+	/// Tear the world down and build it again around a different body. T088.
+	///
+	/// **This is the first piece of M07 arriving early**, and it arrives
+	/// because T088 asks for a moon to be flown to and landed on *in one
+	/// session* -- which a world that can only be built during BeginPlay cannot
+	/// do. The terrain, the sky and the settlement are all functions of which
+	/// body this is, so all three go and are made again; the ship and the clock
+	/// are not, because neither is.
+	void SwitchToBody(int32 BodyIndex);
+
 private:
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;
@@ -114,6 +124,17 @@ private:
 
 	/// Picks somewhere worth landing: high relief, in daylight. Earth is mostly
 	/// flat, so an arbitrary descent vector proves nothing about the terrain.
+	void BuildWorldFor(UWorld& InWorld);
+
+	/// The body a switch is on its way to, or INDEX_NONE.
+	///
+	/// **A world is torn down on one frame and built on the next.** Doing both
+	/// inside one tick had the old world's render resources being released
+	/// while the new world's were being created, and it ended in a null
+	/// dereference on the render thread with a breadcrumb no more specific than
+	/// "SceneRender". A frame between them costs nothing and removes the whole
+	/// class of overlap.
+	int32 PendingBody = INDEX_NONE;
 	void ChooseSite();
 
 	void PlaceRegionMarkers(UWorld& InWorld);

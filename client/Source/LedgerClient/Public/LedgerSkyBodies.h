@@ -86,4 +86,10 @@ private:
 	void BuildStars(const FLedgerSystem& System, int32 Home);
 
 	bool bBuilt = false;
+
+	/// Which body the spheres were built for. **A moon's sky is not a planet's**
+	/// -- different bodies are visible, at different sizes -- so crossing to
+	/// one has to rebuild the set rather than keep pointing the old spheres at
+	/// new indices.
+	int32 BuiltForBody = INDEX_NONE;
 };

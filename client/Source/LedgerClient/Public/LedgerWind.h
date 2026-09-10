@@ -60,4 +60,11 @@ private:
 
 	FVector3d LastViewerWind = FVector3d::ZeroVector;
 	double LastPublishedSpeed = -1.0;
+
+	/// Whether the collection has been looked for. **Looked for, not found.**
+	/// A failed LoadObject is not cached by the engine, so retrying one every
+	/// tick is a synchronous load and an async-loading flush every frame --
+	/// which showed up as 147 ms stalls and a log line per frame, and was found
+	/// only because it was in the way of something else.
+	bool bLookedForCollection = false;
 };

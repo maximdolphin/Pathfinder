@@ -113,8 +113,9 @@ void ULedgerWind::Publish()
 		return;
 	}
 
-	if (Collection == nullptr)
+	if (Collection == nullptr && !bLookedForCollection)
 	{
+		bLookedForCollection = true;
 		Collection = LoadObject<UMaterialParameterCollection>(
 			nullptr, WindCollectionPath);
 		if (Collection == nullptr)
@@ -124,17 +125,15 @@ void ULedgerWind::Publish()
 			// everything else that asks this subsystem directly still gets the
 			// right answer, and only the materials go still. Saying so once is
 			// better than a warning every frame or a mystery.
-			static bool bSaid = false;
-			if (!bSaid)
-			{
-				UE_LOG(LogLedger, Log,
-					TEXT("wind: no %s, so materials will not read the wind; "
-						 "every other consumer is unaffected"),
-					WindCollectionPath);
-				bSaid = true;
-			}
-			return;
+			UE_LOG(LogLedger, Log,
+				TEXT("wind: no %s, so materials will not read the wind; "
+					 "every other consumer is unaffected"),
+				WindCollectionPath);
 		}
+	}
+	if (Collection == nullptr)
+	{
+		return;
 	}
 
 	UMaterialParameterCollectionInstance* Instance =

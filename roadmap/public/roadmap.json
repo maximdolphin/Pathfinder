@@ -5990,6 +5990,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Half unblocked: the moon rises, transits and sets and all three are now photographed. The night was black for three reasons and none was the ephemeris -- an exposure floor at -4 EV100 that clamped every night, a star field that was computed in T077 and never drawn, and a 1.5 s settle photographing the middle of a twenty-seven-stop adaptation. What remains is the second clause: flown to and landed on IN ONE SESSION. The world builds one body's terrain at startup and the sky places bodies for an observer on the home surface, so the crossing is still two processes. docs/comparisons/night-sky/"
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "The machinery for the second clause exists: SwitchToBody tears the world down and BuildWorldFor builds it again around another body, one frame apart. The crossing runs -- watch, departure, cruise, arrival, with the world genuinely changing bodies mid-session -- and then the process takes an access violation on the render thread about fourteen seconds later, during the landed step. Four real defects were found and fixed on the way there and none of them was the cause: a failed asset load retried every frame (147 ms stalls, in T093's wind subsystem, affecting every run); the ship caching a planet pointer and re-fetching only when null rather than when invalid; the sky renderer keeping the old body's sphere set; and the planet being spawned non-deferred, so on a rebuild it woke before its surface material was assigned and fell back to an engine vertex-colour debug material. Ruled out as the cause: the destination being airless (same crash to a body with air), the teardown and rebuild sharing a frame (split, no change), the view target being destroyed (kept alive, no change), and a level-of-detail jump from orbit to the ground (graded descent, no change). The same body is completely stable when built at startup with -body=."
     }
    ],
    "evidence": [
@@ -6022,6 +6027,12 @@
      "caption": "Set: a pale moon low in a brightening sky, the last stars still out",
      "source": "out/passage-5.png",
      "addedAt": "2026-09-10T20:30:30.959Z"
+    },
+    {
+     "file": "evidence/T088-2026-09-10T21-48-49-999.png",
+     "caption": "Departure: leaving the home world on the route the map quoted",
+     "source": "out/crossing-1-departure.png",
+     "addedAt": "2026-09-10T21:48:50.002Z"
     }
    ],
    "plannedStartDay": 214,
@@ -13965,5 +13976,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T21:08:14.307Z"
+ "updatedAt": "2026-09-10T21:48:50.005Z"
 }

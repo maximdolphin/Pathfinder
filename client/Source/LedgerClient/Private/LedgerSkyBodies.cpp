@@ -102,6 +102,22 @@ void ULedgerSkyBodies::Tick(float DeltaSeconds)
 	TArray<FLedgerSkyBody> Seen;
 	LedgerSky::VisibleBodies(System, Home, Anchor, Builder->GetWhenSeconds(), Seen);
 
+	if (bBuilt && BuiltForBody != Home)
+	{
+		// The world crossed to another body. Everything hanging in the old sky
+		// goes; the stars stay, because a catalogue is not a local fact.
+		for (UStaticMeshComponent* Component : Spheres)
+		{
+			if (Component != nullptr)
+			{
+				Component->DestroyComponent();
+			}
+		}
+		Spheres.Reset();
+		Bodies.Reset();
+		bBuilt = false;
+	}
+
 	if (!bBuilt)
 	{
 		UStaticMesh* Sphere = LoadObject<UStaticMesh>(
@@ -178,6 +194,7 @@ void ULedgerSkyBodies::Tick(float DeltaSeconds)
 				FMath::Abs(System.Bodies[2].RotationPeriodSeconds));
 		}
 		bBuilt = true;
+		BuiltForBody = Home;
 	}
 
 	for (int32 Slot = 0; Slot < Spheres.Num(); ++Slot)
