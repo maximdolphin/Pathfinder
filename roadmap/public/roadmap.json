@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 17
+   "doneCount": 18
   },
   {
    "id": "M2S",
@@ -4465,14 +4465,19 @@
    "dependsOn": [
     "T063"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-10",
    "notes": [
     {
      "at": "2026-09-09",
      "kind": "block",
      "text": "Measured before building, and the measurement says do not build it. -terrainnoshadow stops every patch casting; a planet that casts nothing is the floor any cheaper scheme competes against. Over the same fixed-step flight on an idle machine, with the relief T428 gave it so there is something to cast, the terrain's entire shadow contribution is at most 0.9 ms anywhere and 0.5 and 0.6 ms in the surface and town phases where terrain fills the screen. The ridge sweep comes out at -1.6 ms, which is run-to-run variance and a reminder of the size of the thing being measured. A shadow-specific LOD means a second geometry path -- separate proxies, or a second component per patch, or a second draw -- more streaming, more memory, and another thing to keep in step with the first path, to recover part of six tenths of a millisecond. The premise was not unreasonable; it was written about a planet nobody had timed. What the number is not: whole-frame GPU with and without casters is not an isolated shadow pass, because removing casters also changes how the ground is lit, and this harness has no pass breakdown. It bounds the answer rather than isolating it, and the bound is what decides the task. Same shape as T047. Commit 2c6f77b, write-up in docs/comparisons/terrain-shadow/."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "MEASURED, AND DELIBERATELY NOT BUILT. Re-measured on the current build because the original decision predated T429 tripling the geometry. A fair pair with comparable cache state (100% and 79% served from disk): 20.4 ms mean with terrain casting shadows, 20.5 ms without, p99 44.6 against 45.2. The shadowed run is marginally FASTER, which is noise, and the honest statement is that terrain shadow cost is below what this fixture can measure. A shadow-specific LOD means a second geometry path -- separate proxies or a second component per patch, more streaming, more memory, and another thing to keep in step with the first -- to recover a fraction of something that does not register. The acceptance is 'shadow cost drops measurably with no visible change in shadow quality'; there is no measurable cost to drop. Two earlier attempts at this pair were unfair and are worth recording: one compared a cold cache against a warm one (15% against 79% served from disk) and made shadows look like they cost 1.2 ms, which was generation cost wearing a shadow's clothes."
     }
    ],
    "evidence": [
@@ -4481,6 +4486,18 @@
      "caption": "The control arm: the same flight with the terrain casting no shadow at all.",
      "source": "../docs/comparisons/terrain-shadow/shadow-off.txt",
      "addedAt": "2026-09-09T21:09:38.143Z"
+    },
+    {
+     "file": "evidence/T064-2026-09-10T06-29-58-341.txt",
+     "caption": "Terrain casting shadows, warm cache: mean 20.4 ms, p99 44.6.",
+     "source": "../out/perf-withshadow.txt",
+     "addedAt": "2026-09-10T06:29:58.343Z"
+    },
+    {
+     "file": "evidence/T064-2026-09-10T06-29-58-484.txt",
+     "caption": "-terrainnoshadow, comparable cache: mean 20.5 ms, p99 45.2. The shadowed run is marginally faster.",
+     "source": "../out/perf-noshadow.txt",
+     "addedAt": "2026-09-10T06:29:58.485Z"
     }
    ],
    "plannedStartDay": 132.5,
@@ -13450,5 +13467,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T05:47:25.760Z"
+ "updatedAt": "2026-09-10T06:29:58.644Z"
 }

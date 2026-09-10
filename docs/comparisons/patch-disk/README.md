@@ -88,12 +88,23 @@ proves the exact claim.
 
 ## What this does not do
 
-**The cache is unbounded.** 804 MB after one flight over a small part of one
-planet. Nothing evicts, nothing caps it, and a few hours of flying in different
-places will fill a disk. The format version is in the key rather than in a
-header, so a layout change orphans old entries instead of misreading them — but
-orphaned entries are not deleted either, they simply stop matching. An LRU cap
-is the obvious fix and it is not in this task.
+**The cache was unbounded, and it filled the disk.** This section used to say
+"an LRU cap is the obvious fix and it is not in this task", and twelve hours
+later the cache was **185,558 files and 8.86 GB**, the drive had 480 MB left,
+and a flight died mid-run with *"there is not enough space on the disk"* while
+writing a screenshot. Six format-version bumps in one night each orphaned an
+entire generation of entries and nothing ever deleted them.
+
+There is a cap now: 4 GB, evicted oldest-first by last access, checked every
+four thousand writes — about 200 MB of growth between checks, which is often
+enough that it cannot run away and rare enough that walking the tree is not on
+the hot path. Four gigabytes is comfortably more than the ground anybody
+actually flies over (a whole scripted flight is about 800 MB) and small enough
+that a machine can afford to lose the bet.
+
+The lesson is not that the cap was hard. It is that "known flaw, follow-up not
+raised" is how a known flaw becomes an outage, and this one had its own
+paragraph in this file the entire time.
 
 **It is per machine.** Nothing here ships or is shared. That is deliberate:
 it is derived data, and derived data that travels is derived data that can

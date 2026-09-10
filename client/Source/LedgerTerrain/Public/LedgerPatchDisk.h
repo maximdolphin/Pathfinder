@@ -76,6 +76,28 @@ namespace LedgerPatchDisk
 	/// -- a machine with a read-only Saved should be slow, not broken.
 	LEDGERTERRAIN_API void Store(const FLedgerPatchJob& Job);
 
+	/// What the cache is allowed to grow to, bytes.
+	///
+	/// **It had no cap and it filled a disk.** T065 shipped with "the cache is
+	/// unbounded" written down as a known flaw and a follow-up nobody had
+	/// raised; twelve hours later it was 185,558 files and 8.86 GB, the drive
+	/// had 480 MB left, and a flight died mid-run with "there is not enough
+	/// space on the disk" while writing a screenshot. Six format-version bumps
+	/// in one night each orphan an entire generation of entries and nothing
+	/// ever deleted them.
+	///
+	/// Four gigabytes: comfortably more than one planet's worth of the ground
+	/// anybody actually flies over -- a whole scripted flight is about 800 MB --
+	/// and small enough that a machine can afford to lose the bet.
+	constexpr uint64 BudgetBytes = 4ull * 1024 * 1024 * 1024;
+
+	/// Deletes the oldest entries until the cache is under BudgetBytes.
+	///
+	/// By last-access time, which on this cache is what a hit updates, so what
+	/// survives is the ground that is being flown over rather than the ground
+	/// that was generated most recently.
+	LEDGERTERRAIN_API void Evict();
+
 	/// How many entries have been read and written this run, for the report.
 	LEDGERTERRAIN_API void Stats(int32& OutHits, int32& OutMisses, int32& OutWrites);
 }

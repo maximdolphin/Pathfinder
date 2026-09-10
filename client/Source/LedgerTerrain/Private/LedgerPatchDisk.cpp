@@ -215,8 +215,93 @@ namespace LedgerPatchDisk
 		// where a log line per patch would be its own problem.
 		if (FFileHelper::SaveArrayToFile(Bytes, *PathFor(ContentKey(Job))))
 		{
-			++GWrites;
+			// Every four thousand writes, which at ~50 KB an entry is about
+			// 200 MB of growth between checks -- often enough that the cache
+			// cannot run away, rare enough that walking a hundred thousand
+			// files is not on the hot path. Store runs on a worker thread and
+			// so does this.
+			if ((++GWrites % 4000) == 0)
+			{
+				Evict();
+			}
 		}
+	}
+
+	void Evict()
+	{
+		if (!IsEnabled())
+		{
+			return;
+		}
+
+		// Every file, with its size and when it was last touched. On a full
+		// cache this is a hundred thousand stat calls, which is why it runs on
+		// a schedule rather than per write -- see the counter in Store.
+		struct FEntry
+		{
+			FString Path;
+			int64 Bytes = 0;
+			FDateTime Touched;
+		};
+
+		TArray<FEntry> Entries;
+		uint64 Total = 0;
+
+		class FVisitor : public IPlatformFile::FDirectoryStatVisitor
+		{
+		public:
+			FVisitor(TArray<FEntry>& InEntries, uint64& InTotal)
+				: Entries(InEntries), Total(InTotal) {}
+
+			virtual bool Visit(const TCHAR* Path, const FFileStatData& Stat) override
+			{
+				if (!Stat.bIsDirectory && Stat.FileSize > 0)
+				{
+					Entries.Add({ Path, Stat.FileSize,
+						Stat.AccessTime > FDateTime::MinValue()
+							? Stat.AccessTime : Stat.ModificationTime });
+					Total += static_cast<uint64>(Stat.FileSize);
+				}
+				return true;
+			}
+
+			TArray<FEntry>& Entries;
+			uint64& Total;
+		};
+
+		FVisitor Visitor(Entries, Total);
+		FPlatformFileManager::Get().GetPlatformFile()
+			.IterateDirectoryStatRecursively(*Directory(), Visitor);
+
+		if (Total <= BudgetBytes)
+		{
+			return;
+		}
+
+		// Oldest first, and stop as soon as the total is under budget rather
+		// than clearing to some low-water mark: this runs often enough that
+		// trimming the excess is enough, and deleting more than necessary
+		// throws away ground somebody is about to fly over again.
+		Entries.Sort([](const FEntry& A, const FEntry& B)
+			{ return A.Touched < B.Touched; });
+
+		int32 Removed = 0;
+		for (const FEntry& Entry : Entries)
+		{
+			if (Total <= BudgetBytes)
+			{
+				break;
+			}
+			if (IFileManager::Get().Delete(*Entry.Path, false, false, true))
+			{
+				Total -= static_cast<uint64>(Entry.Bytes);
+				++Removed;
+			}
+		}
+
+		UE_LOG(LogLedger, Log,
+			TEXT("patch cache: evicted %d entries, now %.2f GB of a %.2f GB budget"),
+			Removed, Total / 1073741824.0, BudgetBytes / 1073741824.0);
 	}
 
 	void Stats(int32& OutHits, int32& OutMisses, int32& OutWrites)
