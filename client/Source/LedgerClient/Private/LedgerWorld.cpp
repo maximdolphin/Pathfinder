@@ -16,6 +16,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "GameFramework/PlayerStart.h"
+#include "LedgerAir.h"
 #include "LedgerAtmosphere.h"
 #include "LedgerMeshBake.h"
 #include "LedgerMeshBuilder.h"
@@ -504,15 +505,17 @@ void ULedgerWorldBuilder::OnWorldBeginPlay(UWorld& InWorld)
 	}
 
 	// Only where there is air to draw. A sky on an airless moon is the single
-	// most visible way to get this wrong, and it is one `if`.
-	const bool bAtmosphere = LedgerSky::RetainsAtmosphere(System, HomeBody(), WhenSeconds);
+	// most visible way to get this wrong, and it is one `if` -- and now the
+	// `if` is the profile's own answer rather than a second opinion about it.
+	const FLedgerAirProfile Air = LedgerAir::For(System, HomeBody(), WhenSeconds);
+	const bool bAtmosphere = Air.HasAir();
 	if (bAtmosphere)
 	{
 		Atmosphere = InWorld.SpawnActor<ALedgerAtmosphere>(
 			ALedgerAtmosphere::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
 		if (Atmosphere != nullptr)
 		{
-			Atmosphere->ConfigureForPlanet(Planet->Radius, Planet->MaxElevation);
+			Atmosphere->ConfigureForAir(Planet->Radius, Planet->MaxElevation, Air);
 		}
 	}
 

@@ -416,10 +416,10 @@
    "estimateDays": 40,
    "plannedStart": "2027-07-05",
    "plannedEnd": "2027-08-30",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 1
   },
   {
    "id": "M05",
@@ -6000,11 +6000,36 @@
    "dependsOn": [
     "T088"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "Composition, pressure, scale height, lapse rate, Rayleigh coefficients, ozone and cloud deck now computed per body. Five real atmospheres through the same function: Earth 8428 m against 8500, Mars 10856 against 11100, Venus 15940 against 15900, Titan 20638 against 21000, Jupiter 24061 against 27000. Rayleigh from refractivity and number density, not a slider; blue/red ratio exact at 5.70. Grey greenhouse turns 255 K into 288.1 on Earth and 232 into 721.6 on Venus from the same two lines. Surface pressure and free oxygen are stated as generated/assumed rather than derived. Three bodies captured from ground and orbit. docs/comparisons/atmosphere-profile/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T089-2026-09-10T18-14-36-235.png",
+     "caption": "Home: nitrogen-oxygen at 96898 Pa, blue sky and broken cumulus at 1.2-5.2 km",
+     "source": "out/airshow-1-ground.png",
+     "addedAt": "2026-09-10T18:14:36.241Z"
+    },
+    {
+     "file": "evidence/T089-2026-09-10T18-14-36-401.png",
+     "caption": "Outer 1: nitrogen at 907 Pa -- a hundred times less gas, a nearly black zenith",
+     "source": "out/airshow-4-ground.png",
+     "addedAt": "2026-09-10T18:14:36.404Z"
+    },
+    {
+     "file": "evidence/T089-2026-09-10T18-14-36-561.png",
+     "caption": "Giant 2: hydrogen-helium, 43 km scale height, a soft 519 km limb",
+     "source": "out/airshow-5-orbit.png",
+     "addedAt": "2026-09-10T18:14:36.565Z"
+    }
+   ],
    "plannedStartDay": 215.5,
    "plannedEndDay": 217.5,
    "plannedStart": "2027-07-05",
@@ -13825,5 +13850,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T17:55:28.971Z"
+ "updatedAt": "2026-09-10T18:14:36.568Z"
 }

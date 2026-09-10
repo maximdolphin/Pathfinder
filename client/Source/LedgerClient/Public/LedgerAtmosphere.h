@@ -16,6 +16,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "LedgerAir.h"
+
 #include "LedgerAtmosphere.generated.h"
 
 class UExponentialHeightFogComponent;
@@ -37,27 +39,16 @@ public:
 
 	virtual void BeginPlay() override;
 
-	/// Configures every component against the planet's actual radius. Called by
-	/// the world builder once the planet exists, because every altitude below is
-	/// meaningful only relative to it.
-	void ConfigureForPlanet(double PlanetRadiusCm, double MaxElevationCm);
-
-	/// Atmosphere thickness in kilometres. Earth's is 60 km on a 6,371 km
-	/// radius — about 1%.
+	/// Configures every component from the body's own air. T089.
 	///
-	/// Every earlier round of fighting the scattering parameters came from a
-	/// 60 km planet carrying a proportionally impossible 5 km atmosphere. There
-	/// was no self-consistent setting to find, because the thing being modelled
-	/// did not exist. At real scale the numbers are just Earth's.
-	UPROPERTY(EditAnywhere, Category = "Ledger|Atmosphere")
-	float AtmosphereHeightKm = 60.0f;
-
-	/// Cumulus base and depth, in kilometres above the ground.
-	UPROPERTY(EditAnywhere, Category = "Ledger|Clouds")
-	float CloudBaseAltitudeKm = 2.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Ledger|Clouds")
-	float CloudLayerHeightKm = 6.0f;
+	/// **Nothing in here is a setting any more.** The scale height, the
+	/// scattering coefficients, the ozone layer and whether there is a cloud
+	/// deck at all arrive in the profile, computed from what the gas is and how
+	/// much of it there is. What used to be four tuned floats with a paragraph
+	/// each defending them is now one row of a table, and the row for a
+	/// carbon-dioxide world is not the row for this one.
+	void ConfigureForAir(double PlanetRadiusCm, double MaxElevationCm,
+		const FLedgerAirProfile& Air);
 
 private:
 	UPROPERTY()
