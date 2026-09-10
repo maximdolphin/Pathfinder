@@ -34,6 +34,15 @@ namespace
 		const TCHAR* Name;
 		double BackDrops;
 		double UpDrops;
+
+		/// Whether to aim at the foot of the face rather than at the face.
+		///
+		/// Every shot aimed at the face, including the one named for the foot,
+		/// so the camera stood a hundred metres back and eight metres up and
+		/// then pitched past the base to look at a summit three hundred metres
+		/// higher. The debris the acceptance asks for was under the bottom edge
+		/// of the frame in every run.
+		bool bAtFoot;
 	};
 
 	const FCliffShot CliffShots[] =
@@ -45,9 +54,9 @@ namespace
 		// (LedgerTerrainMaterial.cpp), so a shot framed 530 m off a 295 m face
 		// photographs the fade rather than the rock -- which is what the first
 		// framing did, and the reason the face came back smooth and white.
-		{ TEXT("cliff-foot.png"),   0.30,  0.02 },
-		{ TEXT("cliff-face.png"),   0.60,  0.18 },
-		{ TEXT("cliff-wide.png"),   1.60,  0.55 },
+		{ TEXT("cliff-foot.png"),   0.30,  0.02, true },
+		{ TEXT("cliff-face.png"),   0.60,  0.18, false },
+		{ TEXT("cliff-wide.png"),   1.60,  0.55, false },
 	};
 
 	FVector3d CliffOnSphere(double LatitudeDegrees, double LongitudeDegrees)
@@ -347,8 +356,23 @@ void ULedgerCliffSite::Place()
 
 	const FVector Eye = FVector(FVector3d(Planet->GetActorLocation())
 		+ Eye3d * (Ground + Current.UpDrops * Scale * 100.0));
+	// The foot shot aims downhill of the face, at the ground the debris lands
+	// on; the others aim at the face itself.
+	// Measured from the CAMERA, not from the face.
+	//
+	// The first attempt aimed 55% of the way down from the summit, which on a
+	// 385 m face is still 322 m up it, and the frame was face from edge to
+	// edge again. The camera already stands at the foot -- that is what
+	// BackDrops and UpDrops put it there for -- so the foot shot only has to
+	// look ahead rather than up: a quarter of the way back towards the face,
+	// which is about thirty metres of ground and the base of the wall behind
+	// it.
+	const FVector3d Aim = Current.bAtFoot
+		? (Eye3d * FMath::Cos(BackArc * 0.25) - Downhill * FMath::Sin(BackArc * 0.25))
+			.GetSafeNormal()
+		: Face;
 	const FVector Target = FVector(FVector3d(Planet->GetActorLocation())
-		+ Face * Planet->SurfaceRadiusAt(Face));
+		+ Aim * Planet->SurfaceRadiusAt(Aim));
 
 	if (ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn()))
 	{

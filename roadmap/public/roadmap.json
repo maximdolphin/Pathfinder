@@ -4011,6 +4011,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "The 60-degree face is found and photographed: 70.3 degrees with a 385 m drop, reading as rock. Two things were wrong and both were the search rather than the terrain. (1) The coarse grid stepped 0.2 degrees -- about 22 km -- while slope is measured over a few metres, and only 0.010% of this planet's land stands above 60. A grid that wide lands on none of it. A second pass now walks a hundred metres around each candidate at eight-metre steps, and finds 70.3 where the planetary maximum had been measured at 62.7. (2) The angle gate was 50 while the score maximises the DROP, so the search returned the tallest face above fifty rather than the steepest above sixty -- it reported 53.9 degrees with a 429 m drop and called it a cliff. A gate looser than the acceptance lets the search answer a different question. Still not met: 'debris at its foot'. cliff-foot.png is framed up the face rather than at its base, so the scree that T057 places is not in shot. That is framing, and it is the remaining work."
+    },
+    {
+     "at": "2026-09-10",
+     "kind": "note",
+     "text": "Foot framing: two attempts, neither works, and the reason is geometric rather than a tuning problem. The camera stands 115 m back and 8 m above the ground at the base of a 385 m face at 70 degrees. Aiming at the summit fills the frame with rock; aiming 55% of the way down still aims 322 m up it; aiming 30 m ahead of the camera is still below the face's own horizon. Any FORWARD aim from that position fills the frame, because the wall subtends more than the field of view. Debris at the foot needs a DOWNWARD-pitched shot of the ground at the base -- the shape of the overhead capture in -nearfield, not of a landscape view. That is the remaining work and it is one shot definition, not a search or a material problem."
     }
    ],
    "evidence": [
@@ -13434,5 +13439,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T05:23:06.169Z"
+ "updatedAt": "2026-09-10T05:39:08.444Z"
 }
