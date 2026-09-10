@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 12
+   "doneCount": 13
   },
   {
    "id": "M04",
@@ -5792,11 +5792,24 @@
    "dependsOn": [
     "T082"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-10",
+   "completedAt": "2026-09-10",
+   "notes": [
+    {
+     "at": "2026-09-10",
+     "kind": "done",
+     "text": "A coast under the pull of every body, checked against the two-body prediction. THE COAST: a circular orbit 2000 km up (6770 m/s, 128.7 minutes) integrated with RK4 under every body and compared against a rotation -- with no perturbation the ship traces a circle at a constant rate, so the prediction at time t is the starting offset turned by 2*pi*t/T, computed from nothing the integrator touches. Worst departure 1273.0 m in 52277 km of arc, which is 2.44e-05 of the orbit. THREE NUMBERS, BECAUSE ONE WOULD NOT HAVE MEANT ANYTHING. A non-zero drift proves nothing by itself: an integrator accumulates error too, and a field that had quietly dropped every body but the planet would still wander. (1) Halving the step gives 1273.0 m against 1273.0 m, a change of 0.00% -- the integration has converged and the residue is physics. (2) Taking the other bodies out of the FIELD drifts 166 km against 185 km predicted from half-a-t-squared on the planet's own 6.20e-03 m/s2 fall around the star. THAT CAME OUT THE OPPOSITE WAY ROUND FROM WHAT I EXPECTED AND IS THE BETTER RESULT: the planet-only field is not slightly worse, it is a hundred and thirty times worse, because the frame is not inertial -- the planet is falling around the star, so a ship that does not feel the star does not accelerate with it and falls out of the frame. The star is not a small correction to a coast near a planet; it is what keeps the ship WITH the planet at all. A MISTAKE ON THE WAY THERE: the first attempt to isolate the field zeroed the other bodies' MASSES, which also stops the planet's own orbit since its mean motion is computed from its parent's mass. The planet stood still while the ship kept the velocity it had been given, and the test reported a drift of 1.4e11 m and blamed the integrator. Only the field may be cut down; where the bodies ARE is not the variable. THE SWITCH: spheres of influence are 893795 km for the planet, 69022 for the moon, 41998298 for the gas giant and 0 for the station -- correct, since a hundred tonnes has no gravitational reach. Walking the 388515 km from planet to moon in 200000 steps gives EXACTLY ONE change, at 69020 km against a 69022 km boundary, which is one step of the walk. A boundary that chattered would make a trajectory planner switch reference frames dozens of times in a row and every switch is a chance to lose a digit. INSIDE A BODY the field falls linearly to zero at the centre rather than dividing by nothing: nothing should ever be down there, but a trajectory that ends up inside a planet should produce a wrong answer rather than an infinity that poisons every step after it. At the surface the summed field is 9.549345 m/s2 against the planet's own 9.545979 -- everything else in the system is three parts in ten thousand. 101 tests pass, module layering legal."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T083-2026-09-10T15-48-23-367.txt",
+     "caption": "1273 m from the two-body circle over one orbit, converged; 166 km without the star; the dominant body switching once at the sphere of influence",
+     "source": "../out/t083-gravity.txt",
+     "addedAt": "2026-09-10T15:48:23.369Z"
+    }
+   ],
    "plannedStartDay": 204.5,
    "plannedEndDay": 206.5,
    "plannedStart": "2027-06-18",
@@ -13762,5 +13775,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T15:41:45.851Z"
+ "updatedAt": "2026-09-10T15:48:23.371Z"
 }

@@ -1,0 +1,31 @@
+BeginEvents: Ledger.Gravity.ACoastFollowsTheTwoBodyPrediction
+a circular orbit at 2000 km altitude: 6770 m/s, period 128.7 minutes
+one orbit, integrated under every body:
+   0.25 of an orbit:     69.3 m from the prediction, radius off by    40.1 m
+   0.50 of an orbit:    196.3 m from the prediction, radius off by   -52.4 m
+   0.75 of an orbit:    476.2 m from the prediction, radius off by  -331.8 m
+   1.00 of an orbit:   1272.6 m from the prediction, radius off by  -163.6 m
+
+worst departure from the two-body circle: 1273.0 m in 52277 km of arc, which is 2.44e-05 of the orbit
+with only the planet in the field the coast drifts 166 km, against 185 km predicted from half a-t-squared on the planet's own 6.20e-03 m/s^2 fall around the star
+halving the step gives 1273.0 m against 1273.0 m, a change of 0.00% -- so the integration has converged and the residue is the tide, not the arithmetic
+BeginEvents: Ledger.Gravity.TheDominantBodySwitchesOnceAndCleanly
+the spheres of this system:
+  body 1 (planet): sphere of influence 893795 km
+  body 2 (moon): sphere of influence 69022 km
+  body 3 (gas-giant): sphere of influence 41998298 km
+  body 4 (station): sphere of influence 0 km
+
+walking the 388515 km from planet to moon in 200000 steps: 1 change(s), from body 1 to body 2
+the change happened 69020 km from the moon; its sphere of influence is 69022 km
+BeginEvents: Ledger.Gravity.TheSummedFieldIsTheOneEachBodyMakes
+at the surface: 9.549345 m/s^2 summed, 9.545979 from the planet alone, 3.526e-04 of a difference
+down through the planet:
+  1.00 of the way out: 9.549345 m/s^2
+  0.75 of the way out: 7.162851 m/s^2
+  0.50 of the way out: 4.776357 m/s^2
+  0.25 of the way out: 2.389865 m/s^2
+  0.05 of the way out: 0.480691 m/s^2
+  0.00 of the way out: 0.006189 m/s^2
+
+BeginEvents: Ledger.Hydrology.CellRoundTripsThroughItsCentre
