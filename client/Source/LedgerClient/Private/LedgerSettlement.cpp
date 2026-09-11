@@ -620,3 +620,22 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 
 	return PadLocation;
 }
+
+FTransform ALedgerSettlement::TreeNearestPad() const
+{
+	FTransform Nearest = FTransform::Identity;
+	double Best = TNumericLimits<double>::Max();
+	for (const TArray<FTransform>& Variant : TreeTransforms)
+	{
+		for (const FTransform& Tree : Variant)
+		{
+			const double Distance = FVector::DistSquared(Tree.GetLocation(), PadLocation);
+			if (Distance < Best)
+			{
+				Best = Distance;
+				Nearest = Tree;
+			}
+		}
+	}
+	return Nearest;
+}

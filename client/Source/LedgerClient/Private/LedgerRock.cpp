@@ -131,8 +131,20 @@ namespace LedgerRock
 			const FVector3d A = Positions[Face * 3 + 0];
 			const FVector3d B = Positions[Face * 3 + 1];
 			const FVector3d C = Positions[Face * 3 + 2];
-			const FVector3d Normal =
+			const FVector3d FaceNormal =
 				FVector3d::CrossProduct(B - A, C - A).GetSafeNormal();
+
+			// **Faceted, but not low-poly.** A face normal alone was right from
+			// across a field and wrong from three metres, where T437's frames
+			// showed every stone as a polygon count. The outward direction of the
+			// face's own centre is the smooth normal a blob would have; leaning
+			// the face normal part of the way towards it keeps the planes and the
+			// breaks between them and loses the cut-card edges. Not all the way:
+			// all the way is the potato the flat shading was chosen to avoid.
+			// ponytail: the radial direction stands in for an averaged vertex
+			// normal -- close enough on a near-sphere, and one line.
+			const FVector3d Outward = ((A + B + C) / 3.0).GetSafeNormal();
+			const FVector3d Normal = (FaceNormal * 0.45 + Outward * 0.55).GetSafeNormal();
 
 			// Vertex colour varies a little face to face. The material
 			// multiplies by it, so this is what stops a field of stones being

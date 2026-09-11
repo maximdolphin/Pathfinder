@@ -4,6 +4,7 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "HAL/IConsoleManager.h"
 #include "HAL/PlatformMisc.h"
 #include "HAL/PlatformTime.h"
 #include "LedgerAudio.h"
@@ -22,6 +23,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "UnrealClient.h"
 
 namespace
 {
@@ -42,6 +44,18 @@ namespace
 	/// change entirely would still be sitting on its old reading, and this is
 	/// what stops that from passing.
 	constexpr double ProbeDistinctTolerances = 3.0;
+
+	/// The canopy photograph for T058: how many frames after the change, and
+	/// where the camera stands relative to the tree.
+	constexpr int32 ProbeTreePhotoFrames = 30;
+	constexpr double ProbeTreeCanopyCm = 1300.0;
+	constexpr double ProbeTreeStandOffCm = 2200.0;
+
+	FString ProbeOut(const TCHAR* Name)
+	{
+		return FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), Name));
+	}
 }
 
 bool ULedgerWindProbe::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -68,6 +82,7 @@ void ULedgerWindProbe::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 	bRunning = FParse::Param(FCommandLine::Get(), TEXT("windprobe"));
+	bTreePhoto = FParse::Param(FCommandLine::Get(), TEXT("treephoto"));
 	if (!bRunning)
 	{
 		return;
@@ -213,20 +228,36 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 	ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>();
 	ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
 	APlayerController* Controller = World->GetFirstPlayerController();
+	const ALedgerSettlement* Town = Builder != nullptr ? Builder->GetSettlement() : nullptr;
 	if (Planet == nullptr || Controller == nullptr)
 	{
 		return;
 	}
 
-	// The view: at the pad, above the town, level.
+	// The view: at the pad, above the town, level -- or, for T058's photograph,
+	// standing off the canopy of the tree nearest the pad, between it and the
+	// town so the pad's streamed detail is behind the camera.
 	const FVector3d Centre = FVector3d(Planet->GetActorLocation());
 	const double Ground = Planet->SurfaceRadiusAt(Anchor);
-	const FVector Eye = FVector(
+	FVector Eye = FVector(
 		Centre + Anchor * (Ground + ProbeEyeMetres * ProbeCentimetresPerMetre));
-	const FVector3d Toward = LedgerFrames::ToBody(
+	FVector3d Toward = LedgerFrames::ToBody(
 		{ Home, Anchor, FVector3d(1.0, 0.0, -0.1) }).Metres.GetSafeNormal();
+	FVector3d Up = Anchor;
+	if (bTreePhoto && Town != nullptr)
+	{
+		const FTransform Tree = Town->TreeNearestPad();
+		const FVector3d TreeUp = FVector3d(Tree.GetRotation().GetUpVector());
+		const FVector3d Canopy = FVector3d(Tree.GetLocation())
+			+ TreeUp * (ProbeTreeCanopyCm * Tree.GetScale3D().Z);
+		FVector3d Away = FVector3d(Tree.GetLocation()) - FVector3d(Town->GetPadLocation());
+		Away = (Away - TreeUp * FVector3d::DotProduct(Away, TreeUp)).GetSafeNormal();
+		Eye = FVector(Canopy - Away * ProbeTreeStandOffCm + TreeUp * 200.0);
+		Toward = (Canopy - FVector3d(Eye)).GetSafeNormal();
+		Up = TreeUp;
+	}
 	const FRotator Look =
-		FRotationMatrix::MakeFromXZ(FVector(Toward), FVector(Anchor)).Rotator();
+		FRotationMatrix::MakeFromXZ(FVector(Toward), FVector(Up)).Rotator();
 	if (Camera == nullptr)
 	{
 		FActorSpawnParameters SpawnParams;
@@ -246,7 +277,7 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 		// same air as everything else, and its own physics keeps reading it.
 		if (ALedgerShip* Ship = Cast<ALedgerShip>(Controller->GetPawn()))
 		{
-			if (const ALedgerSettlement* Town = Builder->GetSettlement())
+			if (Town != nullptr)
 			{
 				Ship->SetVelocity(FVector::ZeroVector);
 				Ship->SetActorLocation(Town->GetPadLocation());
@@ -256,6 +287,10 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 	if (Camera != nullptr)
 	{
 		Camera->SetActorLocationAndRotation(Eye, Look);
+		if (bTreePhoto)
+		{
+			Camera->GetCameraComponent()->SetFieldOfView(40.0f);
+		}
 	}
 
 	if (Phase == 0)
@@ -266,10 +301,34 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 		{
 			return;
 		}
+
+		// The photograph of the old wind is requested a tick *before* the
+		// change: a screenshot captures the frame drawn at the end of the tick
+		// it was asked for in, and asking in the same tick as the switch would
+		// photograph the new wind twice.
+		if (bTreePhoto && !bBeforePhotoTaken)
+		{
+			FScreenshotRequest::RequestScreenshot(ProbeOut(TEXT("wind-tree-before.png")), false, false);
+			bBeforePhotoTaken = true;
+			return;
+		}
 		Read(Before);
 
-		// **The change.** One call, the same one a player's clock would make.
-		Builder->SetWhenSeconds(AfterSeconds);
+		// **The change.** One call, the same one a player's clock would make --
+		// or, for the canopy photographs, the wind scaled from calm to a gale at
+		// a fixed clock, so the sun is where it was and only the leaves move.
+		if (bTreePhoto)
+		{
+			if (IConsoleVariable* Scale =
+				IConsoleManager::Get().FindConsoleVariable(TEXT("Ledger.Wind.Scale")))
+			{
+				Scale->Set(3.0f);
+			}
+		}
+		else
+		{
+			Builder->SetWhenSeconds(AfterSeconds);
+		}
 		SwitchedAt = FPlatformTime::Seconds();
 		FramesSinceSwitch = 0;
 		Phase = 1;
@@ -303,7 +362,17 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 			}
 		}
 
-		if (bAll || Elapsed > ProbeGiveUpSeconds)
+		if (bTreePhoto && !bAfterPhotoTaken && FramesSinceSwitch >= ProbeTreePhotoFrames)
+		{
+			FScreenshotRequest::RequestScreenshot(ProbeOut(TEXT("wind-tree-after.png")), false, false);
+			bAfterPhotoTaken = true;
+			UE_LOG(LogLedger, Log, TEXT("wind probe: canopy photographed %d frames after the change"),
+				FramesSinceSwitch);
+		}
+
+		const bool bPhotosDone = !bTreePhoto
+			|| (bAfterPhotoTaken && FramesSinceSwitch > ProbeTreePhotoFrames + 2);
+		if ((bAll && bPhotosDone) || Elapsed > ProbeGiveUpSeconds)
 		{
 			bRunning = false;
 			Report();
@@ -370,10 +439,12 @@ void ULedgerWindProbe::Report()
 			 "(a '!' marks one that was not)"), ProbeDistinctTolerances));
 	Lines.Add(FString::Printf(TEXT("all five followed the change within a second: %s"),
 		bPass ? TEXT("yes") : TEXT("NO")));
+	if (bTreePhoto)
+	{
+		Lines.Add(TEXT("canopy photographed before and 30 frames after: wind-tree-before.png, wind-tree-after.png"));
+	}
 
-	const FString Path = FPaths::ConvertRelativePathToFull(
-		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("wind-probe.txt")));
-	FFileHelper::SaveStringArrayToFile(Lines, *Path);
+	FFileHelper::SaveStringArrayToFile(Lines, *ProbeOut(TEXT("wind-probe.txt")));
 	for (const FString& Line : Lines)
 	{
 		UE_LOG(LogLedger, Log, TEXT("%s"), *Line);

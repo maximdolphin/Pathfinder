@@ -59,6 +59,11 @@ public:
 	FVector3d VaneWindMetres() const { return LastVaneWind; }
 	FVector VaneLocation() const;
 
+	/// The tree nearest the landing pad, as the world transform it was placed
+	/// with (base of the trunk, up along the ground normal). T058 photographs
+	/// its canopy either side of a wind change.
+	FTransform TreeNearestPad() const;
+
 public:
 	/// One tree at the origin, unit scale, +Z up. Static, because the mesh bake
 	/// runs before any settlement exists. `bAltCanopy` picks the lower cone's

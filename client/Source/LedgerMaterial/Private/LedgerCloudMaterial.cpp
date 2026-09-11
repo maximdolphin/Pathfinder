@@ -145,7 +145,7 @@ namespace LedgerSurface
 		// slot present -- the thing being drawn was not this material at all.
 		// Here it presents as a sky with no cloud in it, which reads as a
 		// density bug and is not one.
-		Material->bUsedWithVolumetricCloud = true;
+		Material->SetUsageByFlag(MATUSAGE_VolumetricCloud, true);
 
 		// **Additive, because the compiler says so.** A volume material in any
 		// other blend mode fails to compile outright and the default material
@@ -309,28 +309,24 @@ namespace LedgerSurface
 		UMaterialExpression* Total =
 			Graph.Add(Graph.Add(Cumulus.Mask, Middle.Mask), Cirrus.Mask);
 
-		// **Per centimetre, and that is a factor of a hundred.**
+		// **Per metre, and wired to Extinction -- not Opacity.**
 		//
-		// A cumulus you can see fifty metres into has an extinction of about
-		// 3/50 per metre, which is 0.0006 per centimetre -- and centimetres are
-		// what a volume material's opacity output is in. Handing it 0.05
-		// per-metre-thinking made every band a hundred times too dense and
-		// turned the zenith into a flat purple wall, which reads as a broken
-		// shader rather than as an arithmetic slip.
-		// **Per centimetre, and a cloud is opaque.**
+		// A volume material's density is its Extinction pin, which is the
+		// SubsurfaceColor property under another name (MP_SubsurfaceColor reads
+		// "Extinction" in MD_Volume; see MaterialAttributeDefinitionMap.cpp).
+		// Opacity is not read at all. For as long as this material existed the
+		// noise, the bands and every coverage threshold went into a pin the
+		// renderer ignores, and the extinction was that pin's default of one per
+		// metre: seven thousand optical depths across the layer, everywhere.
+		// Every uniform sky this task produced was that, and so was every change
+		// that "changed no pixel".
 		//
-		// A cumulus you can see fifty metres into is 0.06 per metre, which is
-		// 6e-4 per centimetre -- and across a five-hundred-metre deck that is
-		// thirty optical depths. That is correct: real clouds are opaque. It
-		// also means the difference between 0.05 and 0.0006 here is the
-		// difference between utterly opaque and utterly opaque, which is why
-		// changing it by a factor of a hundred changed no pixel and ruled
-		// nothing out.
-		//
-		// What makes a sky rather than a lid is the gaps, and the gaps are the
-		// coverage threshold on the noise -- not the density.
+		// A cumulus you can see fifty metres into is about 0.06 per metre; 0.04
+		// leaves a five-hundred-metre deck twenty optical depths thick, which is
+		// opaque, as a cloud is. What makes a sky rather than a lid is the gaps,
+		// and the gaps are the coverage threshold on the noise.
 		UMaterialExpressionScalarParameter* Extinction =
-			Parameter(Graph, TEXT("Extinction"), 0.0004f);
+			Parameter(Graph, TEXT("Extinction"), 0.04f);
 
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
 		if (EditorData == nullptr)
@@ -345,7 +341,7 @@ namespace LedgerSurface
 		// it. So this stays high and the renderer does the greying.
 		EditorData->BaseColor.Expression = Graph.Constant3(
 			FLinearColor(0.98f, 0.98f, 0.99f));
-		EditorData->Opacity.Expression = Graph.Multiply(Total, Extinction);
+		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Total, Extinction);
 		// **`-cloudprobe` makes the material show its own coordinate.**
 		//
 		// A uniform sky can mean the bands are everywhere or that the altitude
@@ -371,7 +367,10 @@ namespace LedgerSurface
 			// really for.
 			EditorData->EmissiveColor.Expression =
 				Graph.Constant3(FLinearColor::Black);
-			EditorData->Opacity.Expression = Graph.Multiply(Noise, Extinction);
+			// **Thin enough to see through.** At 3e-4 per metre a full column of
+			// the seven-kilometre layer is about two optical depths, so the frame
+			// shows the noise itself -- structure if it varies, flat if it does not.
+			EditorData->SubsurfaceColor.Expression = Graph.Scale(Noise, 3.0e-4f);
 			UE_LOG(LogLedger, Log,
 				TEXT("cloud material: probe on, density is the raw noise"));
 		}
@@ -390,7 +389,7 @@ namespace LedgerSurface
 		UE_LOG(LogLedger, Log,
 			TEXT("cloud material: %d expressions, volumetric cloud usage %s"),
 			Material->GetExpressionCollection().Expressions.Num(),
-			Material->bUsedWithVolumetricCloud ? TEXT("declared") : TEXT("MISSING"));
+			Material->GetUsageByFlag(MATUSAGE_VolumetricCloud) ? TEXT("declared") : TEXT("MISSING"));
 
 		return Material;
 	}

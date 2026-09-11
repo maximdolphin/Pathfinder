@@ -72,6 +72,13 @@ private:
 	double Latency[Consumers] = { -1.0, -1.0, -1.0, -1.0, -1.0 };
 	int32 LatencyFrames[Consumers] = { -1, -1, -1, -1, -1 };
 
+	/// `-treephoto`: aim at the tree nearest the pad and photograph its canopy
+	/// just before the change and thirty frames after. T058's evidence that the
+	/// leaves, not only the parameter they read, respond.
+	bool bTreePhoto = false;
+	bool bBeforePhotoTaken = false;
+	bool bAfterPhotoTaken = false;
+
 	int32 Phase = 0;
 	double Settle = 0.0;
 	double SwitchedAt = 0.0;

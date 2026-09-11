@@ -39,5 +39,6 @@ private:
 	bool bRunning = false;
 	bool bCaptured = false;
 	bool bLookedDown = false;
+	bool bLoggedGiveUp = false;
 	double Waited = 0.0;
 };

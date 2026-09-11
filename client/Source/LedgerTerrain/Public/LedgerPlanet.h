@@ -654,6 +654,16 @@ public:
 	/// hundred components are not re-created, only emptied.
 	void Rebuild();
 
+	/// The widest gap between two drawn patches that share an edge, in
+	/// centimetres, measured from the sections' own vertices. T049: every
+	/// vertex on an edge must lie on the facing edge of the patch drawn across
+	/// it, or there is a crack. OutReport says how much was measured.
+	double MeasureEdgeGaps(FString& OutReport) const;
+
+	/// How far each scatter instance within a range of a point sits from the
+	/// ground a trace hits under it. Returns how many are more than 1.5 m off.
+	int32 MeasureScatterFootings(const FVector& Near, double WithinMetres, FString& OutReport) const;
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;

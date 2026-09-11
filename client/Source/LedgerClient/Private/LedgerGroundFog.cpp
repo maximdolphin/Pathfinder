@@ -117,12 +117,27 @@ int32 ALedgerGroundFog::Configure(
 
 		Volume->SetWorldLocation(FVector(
 			Centre + Directions[Index] * (MiddleMetres * GroundFogCentimetresPerMetre)));
+		// **Turned so its flat axis is this place's up.** The scale below is in
+		// the component's own axes, and without this those are the world's --
+		// so every "flat lens" was flattened along world Z, which at twenty
+		// degrees south is nowhere near vertical. Each cell was a slab tipped
+		// on its side: from the ridge the tops read as a row of domes, and
+		// widening them to close the gaps tilted one straight up through a
+		// lookout three kilometres above the pool.
+		Volume->SetWorldRotation(FRotationMatrix::MakeFromZ(FVector(Directions[Index])).Rotator());
 		// The sphere is squashed to the shape of the pool in this cell: a
 		// kilometre across and a hundred metres tall is a flat lens, which is
 		// what a fog bank is.
+		//
+		// **Overlapping, so the cells merge into one layer.** At 0.8 of the
+		// spacing each cell was its own lens with a gap around it, and a lens
+		// only reaches the fill level at its centre -- so the valley, seen from
+		// the ridge once it could be seen at all, was filled with a row of
+		// domes. 1.6 puts every cell's shoulder under its neighbour's, and the
+		// top reads as the level surface a cold pool actually has.
 		Volume->SetWorldScale3D(FVector(
-			Step * 0.8 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
-			Step * 0.8 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
+			Step * 1.6 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
+			Step * 1.6 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
 			Deep * 0.5 * GroundFogCentimetresPerMetre / GroundFogBaseSize));
 
 		// **The component's density is per unit sphere, not per metre.** A local

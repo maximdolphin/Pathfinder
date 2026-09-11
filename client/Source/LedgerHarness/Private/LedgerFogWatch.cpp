@@ -279,23 +279,68 @@ void ULedgerFogWatch::Place()
 	else if (Which == 1)
 	{
 		Up = RidgeDirection;
-		Eye = FVector(Centre + RidgeDirection
-			* ((RidgeMetres + FogWatchRidgeEyeMetres) * 100.0));
-		UE_LOG(LogLedger, Log,
-			TEXT("fog watch: ridge eye at %.0f m, ground under it %.0f m"),
-			RidgeMetres + FogWatchRidgeEyeMetres,
-			Planet->SurfaceRadiusAt(RidgeDirection) / 100.0);
-		// Down across the valley: the ridge frame has to contain the fog it is
-		// above, or it proves nothing except that a camera can point at the sky.
-		const FVector3d Across =
-			(ValleyDirection - RidgeDirection).GetSafeNormal();
-		const FLedgerSurfacePoint Local =
-			LedgerFrames::ToSurface({ Home, Across * 1000.0 }, RidgeDirection);
-		const FVector3d Flat =
-			FVector3d(Local.Metres.X, Local.Metres.Y, 0.0).GetSafeNormal();
-		Toward = LedgerFrames::ToBody(
-			{ Home, RidgeDirection, FVector3d(Flat.X, Flat.Y, -0.20) }).Metres
-			.GetSafeNormal();
+
+		// **Can the ridge see the valley at all?** Measured, not assumed.
+		//
+		// This view was recorded as proving that fog volumes do not render at
+		// twelve kilometres: the frame was "indistinguishable from the no-fog
+		// control". It was also a shot from the top of a rounded ridge down at a
+		// valley three kilometres lower, and a rounded ridge hides whatever is
+		// below its own shoulder. So the line from the eye to the fog's top over
+		// the valley is traced against the terrain, and the eye is raised until
+		// nothing stands in it -- the ridge is still where the eye is, only
+		// higher above it, which is what a lookout is.
+		const FVector3d Target = Centre + ValleyDirection
+			* ((Fog != nullptr ? Fog->TopMetres() : ValleyMetres + 50.0) * 100.0);
+		static double LookoutMetres = -1.0;   // ponytail: one world per process
+		if (LookoutMetres < 0.0)
+		{
+			for (int32 Raise = 0; Raise <= 16; ++Raise)
+			{
+				const double Height = FogWatchRidgeEyeMetres + Raise * 250.0;
+				const FVector3d From = Centre + RidgeDirection
+					* ((RidgeMetres + Height) * 100.0);
+				double WorstAbove = -TNumericLimits<double>::Max();
+				double WorstAt = 0.0;
+				constexpr int32 Samples = 400;
+				// The last few per cent are the valley floor itself, which the
+				// line is meant to reach, so they are not an obstruction.
+				for (int32 Index = 1; Index < Samples * 97 / 100; ++Index)
+				{
+					const double T = static_cast<double>(Index) / Samples;
+					const FVector3d Point = From + (Target - From) * T;
+					const FVector3d Offset = Point - Centre;
+					const double Above = Planet->SurfaceRadiusAt(Offset.GetSafeNormal())
+						- Offset.Length();
+					if (Above > WorstAbove)
+					{
+						WorstAbove = Above;
+						WorstAt = T * (Target - From).Length();
+					}
+				}
+				UE_LOG(LogLedger, Log,
+					TEXT("fog watch: from %.0f m above the ridge the line to the "
+						 "valley %s -- terrain peaks %.0f m %s it, %.1f km out"),
+					Height, WorstAbove > 0.0 ? TEXT("is BLOCKED") : TEXT("is clear"),
+					FMath::Abs(WorstAbove) / 100.0,
+					WorstAbove > 0.0 ? TEXT("above") : TEXT("below"),
+					WorstAt / 100000.0);
+				if (WorstAbove <= 0.0 || Raise == 16)
+				{
+					LookoutMetres = Height;
+					UE_LOG(LogLedger, Log,
+						TEXT("fog watch: ridge eye at %.0f m, %.0f m above the ridge's ground"),
+						RidgeMetres + LookoutMetres, LookoutMetres);
+					break;
+				}
+			}
+		}
+
+		Eye = FVector(Centre + RidgeDirection * ((RidgeMetres + LookoutMetres) * 100.0));
+
+		// Straight at the fog's top over the valley, so the frame is about the
+		// fog and not about how far down a fixed slope happens to land.
+		Toward = (Target - FVector3d(Eye)).GetSafeNormal();
 	}
 	else
 	{
@@ -423,7 +468,7 @@ void ULedgerFogWatch::Report()
 		RidgeMetres - Datum,
 		RidgeMetres - (Fog != nullptr ? Fog->TopMetres() : RidgeMetres),
 		LINE_TERMINATOR);
-	Body += FString::Printf(TEXT("cells filled     %d of 144%s"),
+	Body += FString::Printf(TEXT("cells filled     %d%s"),
 		CellsFilled, LINE_TERMINATOR);
 
 	const FString Path = FPaths::ConvertRelativePathToFull(

@@ -18,7 +18,7 @@ namespace
 {
 	constexpr int32 TestResolution = 48;
 
-	FLedgerTerrainParams ThisPlanet(int32 Seed = 1337)
+	FLedgerTerrainParams HydrologyThisPlanet(int32 Seed = 1337)
 	{
 		FLedgerTerrainParams Params;
 		Params.Seed = Seed;
@@ -36,7 +36,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerHydrologyNeverFlowsUphill,
 bool FLedgerHydrologyNeverFlowsUphill::RunTest(const FString&)
 {
 	const FLedgerFlowField Field =
-		LedgerHydrology::BuildFlowField(ThisPlanet(), TestResolution);
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(), TestResolution);
 
 	// Strictly lower, not "no higher". Equal heights would admit a two-cell
 	// cycle that passes a <= check and hangs every trace through it.
@@ -65,7 +65,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerHydrologyReachesTheSeaOrABasin,
 bool FLedgerHydrologyReachesTheSeaOrABasin::RunTest(const FString&)
 {
 	const FLedgerFlowField Field =
-		LedgerHydrology::BuildFlowField(ThisPlanet(), TestResolution);
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(), TestResolution);
 
 	// A cap well above any possible path length, so a failure here is a cycle
 	// rather than a long river. The lattice is 6 x 48² = 13,824 cells and no
@@ -112,9 +112,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerHydrologyIsDeterministic,
 bool FLedgerHydrologyIsDeterministic::RunTest(const FString&)
 {
 	const uint64 First = LedgerHydrology::NetworkHash(
-		LedgerHydrology::BuildFlowField(ThisPlanet(), TestResolution));
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(), TestResolution));
 	const uint64 Second = LedgerHydrology::NetworkHash(
-		LedgerHydrology::BuildFlowField(ThisPlanet(), TestResolution));
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(), TestResolution));
 
 	// The build runs on the task graph, so this is also a test that the
 	// parallel decomposition has no ordering in it: a race in the neighbour
@@ -122,7 +122,7 @@ bool FLedgerHydrologyIsDeterministic::RunTest(const FString&)
 	TestEqual(TEXT("the same planet twice"), First, Second);
 
 	const uint64 Other = LedgerHydrology::NetworkHash(
-		LedgerHydrology::BuildFlowField(ThisPlanet(9001), TestResolution));
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(9001), TestResolution));
 	TestNotEqual(TEXT("a different seed"), First, Other);
 	return true;
 }
@@ -134,7 +134,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerHydrologyFlowIsConserved,
 bool FLedgerHydrologyFlowIsConserved::RunTest(const FString&)
 {
 	const FLedgerFlowField Field =
-		LedgerHydrology::BuildFlowField(ThisPlanet(), TestResolution);
+		LedgerHydrology::BuildFlowField(HydrologyThisPlanet(), TestResolution);
 
 	// Every cell contributes itself and passes on what it received, so the flow
 	// arriving at the terminals is exactly the number of cells. An accumulation

@@ -289,6 +289,22 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 	const FVector Now = Pawn->GetActorLocation();
 	Sky->SetActorLocation(Now);
 
+	// The sun's elevation where the viewer actually is, handed to the
+	// atmosphere as the floor on the elevation the engine uses for its one
+	// global transmittance. See ALedgerAtmosphere::SetSunElevationFloorDegrees:
+	// without it the fog, translucency and Lumen are lit by the sun as seen
+	// from the north pole, which this season is below the horizon all day.
+	if (Atmosphere != nullptr && Planet != nullptr)
+	{
+		FVector ViewPoint = Now;
+		FRotator ViewRotation = FRotator::ZeroRotator;
+		Controller->GetPlayerViewPoint(ViewPoint, ViewRotation);
+		const FVector3d ViewerUp =
+			(FVector3d(ViewPoint) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
+		Atmosphere->SetSunElevationFloorDegrees(FMath::RadiansToDegrees(FMath::Asin(
+			FMath::Clamp(FVector3d::DotProduct(SunFacing.GetSafeNormal(), ViewerUp), -1.0, 1.0))));
+	}
+
 	// **Moving it is not enough: the capture has to be asked for again.**
 	//
 	// bRealTimeCapture re-captures when the sky itself changes -- the sun

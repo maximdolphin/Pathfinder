@@ -59,6 +59,19 @@ public:
 	/// function of time.
 	void SetDecks(const FLedgerCloudDecks& Decks);
 
+	/// **The sun as the viewer sees it, for everything the engine lights with
+	/// one number.** Unreal evaluates an atmosphere sun light's global
+	/// transmittance as if the camera stood at the planet's north pole --
+	/// GetTransmittanceAtGroundLevel, with a TODO to make it work anywhere else
+	/// -- and fog, translucency, Lumen's direct lighting and forward shading
+	/// all use that number. Its elevation is floored at
+	/// TransmittanceMinLightElevationAngle, so setting that to the sun's true
+	/// elevation at the viewer makes the pole's answer the viewer's whenever
+	/// the pole sees a lower sun. ponytail: a floor, not a fix -- when the pole
+	/// sees the sun HIGHER than the viewer the global number stays the pole's;
+	/// the complete answer is a world frame whose +Z is the viewer's up.
+	void SetSunElevationFloorDegrees(double Degrees);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;

@@ -20,6 +20,17 @@ namespace
 	/// numbers, and the grass and the dust cannot disagree because there is
 	/// nothing for them to disagree about.
 	const TCHAR* WindCollectionPath = TEXT("/Game/Materials/MPC_LedgerWind");
+
+	/// **A test control, not a setting.** Multiplies the wind everywhere, for
+	/// every consumer at once, because it is applied at the one place the wind
+	/// comes from. It exists so a fixture can change the wind *without* moving
+	/// the clock: T058's canopy photographs first changed the wind by jumping
+	/// seventy-two hours, and the sun moved so far between the two frames that
+	/// the lighting, not the leaves, was what differed.
+	TAutoConsoleVariable<float> CVarLedgerWindScale(
+		TEXT("Ledger.Wind.Scale"), 1.0f,
+		TEXT("Multiplies the wind everywhere. 1 is the weather; 0 is calm. A test control."),
+		ECVF_Default);
 }
 
 bool ULedgerWind::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -91,8 +102,9 @@ FVector3d ULedgerWind::WindAtMetres(const FVector& WorldPosition) const
 		LedgerFrames::ToBody({ Home, Up, FVector3d(1.0, 0.0, 0.0) });
 	const FLedgerBodyPoint North =
 		LedgerFrames::ToBody({ Home, Up, FVector3d(0.0, 1.0, 0.0) });
-	return East.Metres.GetSafeNormal() * Flat.X
-		+ North.Metres.GetSafeNormal() * Flat.Y;
+	return (East.Metres.GetSafeNormal() * Flat.X
+		+ North.Metres.GetSafeNormal() * Flat.Y)
+		* static_cast<double>(CVarLedgerWindScale.GetValueOnGameThread());
 }
 
 FVector ULedgerWind::WindAt(const FVector& WorldPosition) const

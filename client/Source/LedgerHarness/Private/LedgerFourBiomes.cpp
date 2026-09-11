@@ -94,6 +94,22 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// **Whether the stones in this frame are on the ground.** The savanna
+	// capture had two lines of boulders climbing a hillside into the sky, and
+	// a photograph cannot say which surface they were placed on.
+	if (const ULedgerWorldBuilder* Builder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>())
+	{
+		if (const ALedgerPlanet* Planet = Builder->GetPlanet())
+		{
+			FString Lines;
+			const int32 Off = Planet->MeasureScatterFootings(
+				Camera != nullptr ? Camera->GetActorLocation() : FVector::ZeroVector, 400.0, Lines);
+			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
+			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
+				*Names[Shot], Off) + Lines;
+		}
+	}
+
 	++Shot;
 	Settle = 0.0;
 	bCaptured = false;
@@ -271,6 +287,7 @@ void ULedgerFourBiomes::Report()
 		Body += FString::Printf(TEXT("  %d  %-28s  four-biomes-%d-%s.png\n"),
 			Index + 1, *Names[Index], Index + 1, *Names[Index]);
 	}
+	Body += Footings;
 	Body += TEXT("\nCompare them with tools/compare_captures.py.\n");
 
 	const FString Path = FPaths::ConvertRelativePathToFull(

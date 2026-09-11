@@ -23,6 +23,9 @@ namespace
 	/// it; asking at five seconds measures the streamer, not the terrain.
 	constexpr double NearFieldSettleSeconds = 20.0;
 
+	/// How long to wait for the streaming queue to drain before measuring anyway.
+	constexpr double NearFieldGiveUpSeconds = 240.0;
+
 	/// The profile: fifty metres in front of the camera, sampled every 25 cm.
 	/// Fifty metres by default, which is what T429 is measured over.
 	///
@@ -161,9 +164,26 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 	Park();
 
 	Waited += DeltaSeconds;
-	if (Waited < NearFieldSettleSeconds)
+	// **Settled, not merely late.** Twenty seconds was enough at the default
+	// depth; at -forcedepth=18 the same twenty seconds measured a ground that
+	// was a third built -- 193 of 600 samples found a patch. So the clock is a
+	// floor and the streaming queue is the gate, with a ceiling so a queue that
+	// never drains is a failure with a reason rather than a hang.
+	const ULedgerWorldBuilder* Builder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>();
+	const ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
+	const bool bStreaming = Planet != nullptr
+		&& (Planet->GetStats().JobsInFlight > 0 || Planet->GetStats().PendingBuilds > 0);
+	if (Waited < NearFieldSettleSeconds
+		|| (bStreaming && Waited < NearFieldGiveUpSeconds))
 	{
 		return;
+	}
+	if (bStreaming && !bLoggedGiveUp)
+	{
+		bLoggedGiveUp = true;
+		UE_LOG(LogLedger, Warning,
+			TEXT("near field: still streaming after %.0f s (%d jobs, %d builds) -- measuring anyway"),
+			Waited, Planet->GetStats().JobsInFlight, Planet->GetStats().PendingBuilds);
 	}
 
 	// Straight down from eight metres, once the standing shot is taken.
@@ -382,9 +402,31 @@ bool ULedgerNearField::Measure()
 
 	if (Distance.Num() < ProfileSamples / 2)
 	{
+		// **Why, and the edges anyway.** This said "asked too early" for a run
+		// at -forcedepth=18 that had waited four minutes: 8431 nodes wanted
+		// drawing and the pool holds 3600, so a third of the ground was a hole
+		// for as long as anyone cared to wait. And the edge check does not need
+		// the profile at all -- it walks what is drawn -- so a short profile is
+		// no reason to throw away the one measurement T049 is about.
+		const FLedgerTerrainStats& Stats = Planet->GetStats();
+		const FString Why = Stats.SectionsFree == 0 && Stats.VisibleNodes > Stats.SectionsActive
+			? FString::Printf(TEXT("the section pool is full: %d nodes want drawing, %d sections exist"),
+				Stats.VisibleNodes, Stats.SectionsActive)
+			: FString(TEXT("asked before the ground arrived"));
 		UE_LOG(LogLedger, Error,
-			TEXT("near field: only %d of %d samples found a patch -- asked too early"),
-			Distance.Num(), ProfileSamples);
+			TEXT("near field: only %d of %d samples found a patch -- %s"),
+			Distance.Num(), ProfileSamples, *Why);
+
+		FString Gaps;
+		const double WorstGapCm = Planet->MeasureEdgeGaps(Gaps);
+		UE_LOG(LogLedger, Log, TEXT("%s"), *Gaps);
+		FFileHelper::SaveStringToFile(FString::Printf(
+			TEXT("PROFILE INCOMPLETE: %d of %d samples -- %s\n\n---- cracks at the shared edges ----\n\n%s")
+			TEXT("the drawn patches meet: %s\n\nVERDICT: FAIL\n"),
+			Distance.Num(), ProfileSamples, *Why, *Gaps,
+			WorstGapCm <= 1.0 ? TEXT("yes, to within a centimetre") : TEXT("NO -- there is a crack")),
+			*FPaths::ConvertRelativePathToFull(FPaths::Combine(
+				FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("near-field.txt"))));
 		return false;
 	}
 
@@ -499,6 +541,18 @@ bool ULedgerNearField::Measure()
 	Body += FString::Printf(TEXT("RMS                          %8.3f m\n"), BandRms);
 	Body += FString::Printf(TEXT("range over the profile       %8.3f m  (%.3f to %.3f)\n\n"),
 		BandHigh - BandLow, BandLow, BandHigh);
+
+	// **At the shared edges, with the mesh's own vertices.** The profile above
+	// cannot tell a crack from two depths describing the same ground
+	// differently; this can. T049 runs it with `-forcedepth`, which makes the
+	// boundaries several levels deep that pure-distance LOD never produces.
+	Body += TEXT("---- cracks at the shared edges ----\n\n");
+	FString Gaps;
+	const double WorstGapCm = Planet->MeasureEdgeGaps(Gaps);
+	Body += Gaps;
+	Body += FString::Printf(TEXT("the drawn patches meet: %s\n\n"),
+		WorstGapCm <= 1.0 ? TEXT("yes, to within a centimetre") : TEXT("NO -- there is a crack"));
+	UE_LOG(LogLedger, Log, TEXT("%s"), *Gaps);
 
 	const bool bHolds = QuadPixels <= 40.0 && DrawnRms >= 0.15;
 	Body += FString::Printf(TEXT("VERDICT: %s\n"), bHolds ? TEXT("PASS") : TEXT("FAIL"));

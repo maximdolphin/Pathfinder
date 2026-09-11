@@ -68,7 +68,7 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate"),
 		  TEXT("daysweep"), TEXT("moonshot"), TEXT("eclipse"), TEXT("passage"), TEXT("airshow"), TEXT("fogwatch"), TEXT("crossing"),
 		  TEXT("windheard"), TEXT("front"),
-		  TEXT("windprobe") })
+		  TEXT("windprobe"), TEXT("nearfield") })
 	{
 		if (FParse::Param(FCommandLine::Get(), Fixture))
 		{

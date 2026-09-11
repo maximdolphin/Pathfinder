@@ -135,7 +135,9 @@ void ALedgerAtmosphere::ConfigureForAir(
 		// **A deck only where something condenses.** An airless moon and a
 		// carbon-dioxide world at 170 K have no water to make clouds out of,
 		// and the component used to run on all three regardless.
-		Clouds->SetVisibility(bHasAir && Air.bHasClouds);
+		// `-noclouds` hides the deck: a control arm, so a frame full of something
+		// can be asked whether the something is cloud.
+		Clouds->SetVisibility(bHasAir && Air.bHasClouds && !FParse::Param(FCommandLine::Get(), TEXT("noclouds")));
 		if (bHasAir && Air.bHasClouds)
 		{
 			// **Altitudes are SetDecks's business now.** T094. What is left
@@ -156,6 +158,11 @@ void ALedgerAtmosphere::ConfigureForAir(
 			Clouds->ShadowViewSampleCountScale = 1.0f;
 			Clouds->PlanetRadius = RadiusKm;
 			Clouds->TracingMaxDistance = 250.0f;
+			// **From orbit too.** A ray only starts marching if the layer is within
+			// this many kilometres, and the default 350 is a sixth of the way to
+			// the air show's orbit frame -- which came back with no cloud at all
+			// even with the probe putting density everywhere.
+			Clouds->TracingStartMaxDistance = 30000.0f;
 		}
 		Clouds->MarkRenderStateDirty();
 	}
@@ -204,7 +211,7 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 
 	const bool bAny = Decks.Cumulus.bPresent || Decks.Middle.bPresent
 		|| Decks.Cirrus.bPresent;
-	Clouds->SetVisibility(bAny);
+	Clouds->SetVisibility(bAny && !FParse::Param(FCommandLine::Get(), TEXT("noclouds")));
 	if (!bAny)
 	{
 		return;
@@ -366,4 +373,19 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 			Decks.Cirrus.bPresent ? Decks.Cirrus.Coverage * 100.0 : 0.0);
 	}
 	Clouds->MarkRenderStateDirty();
+}
+
+void ALedgerAtmosphere::SetSunElevationFloorDegrees(double Degrees)
+{
+	if (Atmosphere == nullptr)
+	{
+		return;
+	}
+	const float Floor = static_cast<float>(FMath::Clamp(Degrees, -90.0, 90.0));
+	// Only when it moves by a meaningful amount: the setter marks the render
+	// state dirty, and a tenth of a degree is below anything the sky shows.
+	if (FMath::Abs(Atmosphere->TransmittanceMinLightElevationAngle - Floor) > 0.1f)
+	{
+		Atmosphere->SetTransmittanceMinLightElevationAngle(Floor);
+	}
 }

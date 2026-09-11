@@ -34,7 +34,7 @@ namespace
 		return Params;
 	}
 
-	FVector3d AtLatitude(double Degrees)
+	FVector3d SnowAtLatitude(double Degrees)
 	{
 		const double Radians = FMath::DegreesToRadians(Degrees);
 		return FVector3d(FMath::Cos(Radians), 0.0, FMath::Sin(Radians)).GetSafeNormal();
@@ -46,9 +46,9 @@ namespace
 	/// Built rather than sampled from the terrain: the acceptance is about the
 	/// snow line, and sampling real ground would make every answer depend on
 	/// whether that particular hillside happened to be at that height.
-	FLedgerClimate Weather(double LatitudeDegrees, double AltitudeMetres, double SeasonPhase)
+	FLedgerClimate SnowWeather(double LatitudeDegrees, double AltitudeMetres, double SeasonPhase)
 	{
-		const FVector3d Point = AtLatitude(LatitudeDegrees);
+		const FVector3d Point = SnowAtLatitude(LatitudeDegrees);
 		FLedgerClimate Climate;
 		const double SinLat = FMath::Sin(FMath::DegreesToRadians(LatitudeDegrees));
 		Climate.SeaLevelTemperatureC =
@@ -67,7 +67,7 @@ namespace
 	{
 		for (double Altitude = 0.0; Altitude <= 9000.0; Altitude += 10.0)
 		{
-			if (LedgerClimate::SnowCover(Weather(LatitudeDegrees, Altitude, SeasonPhase)) > 0.5)
+			if (LedgerClimate::SnowCover(SnowWeather(LatitudeDegrees, Altitude, SeasonPhase)) > 0.5)
 			{
 				return Altitude;
 			}
@@ -87,8 +87,8 @@ bool FLedgerSnowComesAndGoesWithTheSeason::RunTest(const FString&)
 	// takes another 5. That puts it either side of freezing across the year,
 	// which is exactly the case the acceptance is about -- somewhere the answer
 	// is not obvious from the latitude alone.
-	const double Summer = LedgerClimate::SnowCover(Weather(55.0, 800.0, NorthernSummer));
-	const double Winter = LedgerClimate::SnowCover(Weather(55.0, 800.0, NorthernWinter));
+	const double Summer = LedgerClimate::SnowCover(SnowWeather(55.0, 800.0, NorthernSummer));
+	const double Winter = LedgerClimate::SnowCover(SnowWeather(55.0, 800.0, NorthernWinter));
 
 	AddInfo(FString::Printf(TEXT("55 N at 800 m: %.2f in summer, %.2f in winter"),
 		Summer, Winter));
@@ -138,8 +138,8 @@ bool FLedgerSnowLineMovesWithAltitude::RunTest(const FString&)
 
 	// And within one latitude, higher ground is snowier. That is the half of
 	// the acceptance about altitude, and it is what the lapse rate buys.
-	const double Low = LedgerClimate::SnowCover(Weather(45.0, 0.0, 0.0));
-	const double High = LedgerClimate::SnowCover(Weather(45.0, 4000.0, 0.0));
+	const double Low = LedgerClimate::SnowCover(SnowWeather(45.0, 0.0, 0.0));
+	const double High = LedgerClimate::SnowCover(SnowWeather(45.0, 4000.0, 0.0));
 	AddInfo(FString::Printf(TEXT("45 N: %.2f at sea level, %.2f at 4,000 m"), Low, High));
 	TestTrue(TEXT("higher ground carries more snow"), High > Low);
 	return true;
@@ -165,9 +165,9 @@ bool FLedgerSnowSeasonsAreOpposite::RunTest(const FString&)
 	for (double Latitude = 10.0; Latitude <= 80.0; Latitude += 10.0)
 	{
 		const double North = LedgerClimate::SeasonalOffsetC(
-			AtLatitude(Latitude), NorthernSummer, SnowTiltRadians);
+			SnowAtLatitude(Latitude), NorthernSummer, SnowTiltRadians);
 		const double South = LedgerClimate::SeasonalOffsetC(
-			AtLatitude(-Latitude), NorthernSummer, SnowTiltRadians);
+			SnowAtLatitude(-Latitude), NorthernSummer, SnowTiltRadians);
 
 		TestTrue(FString::Printf(TEXT("%.0f N is warmed in northern summer"), Latitude),
 			North > 0.0);
@@ -176,9 +176,9 @@ bool FLedgerSnowSeasonsAreOpposite::RunTest(const FString&)
 			South < 0.0);
 
 		const double NorthSwing = North - LedgerClimate::SeasonalOffsetC(
-			AtLatitude(Latitude), NorthernWinter, SnowTiltRadians);
+			SnowAtLatitude(Latitude), NorthernWinter, SnowTiltRadians);
 		const double SouthSwing = LedgerClimate::SeasonalOffsetC(
-			AtLatitude(-Latitude), NorthernWinter, SnowTiltRadians) - South;
+			SnowAtLatitude(-Latitude), NorthernWinter, SnowTiltRadians) - South;
 		TestEqual(FString::Printf(
 			TEXT("%.0f S has the same size of year as %.0f N"), Latitude, Latitude),
 			SouthSwing, NorthSwing, 0.001);
@@ -189,8 +189,8 @@ bool FLedgerSnowSeasonsAreOpposite::RunTest(const FString&)
 	// not zero -- the star is off the equator at both, so both are slightly
 	// cooler than an equinox -- but the year has no north and south to it.
 	TestEqual(TEXT("the equator's two solstices match"),
-		LedgerClimate::SeasonalOffsetC(AtLatitude(0.0), NorthernWinter, SnowTiltRadians),
-		LedgerClimate::SeasonalOffsetC(AtLatitude(0.0), NorthernSummer, SnowTiltRadians),
+		LedgerClimate::SeasonalOffsetC(SnowAtLatitude(0.0), NorthernWinter, SnowTiltRadians),
+		LedgerClimate::SeasonalOffsetC(SnowAtLatitude(0.0), NorthernSummer, SnowTiltRadians),
 		0.001);
 	return true;
 }
@@ -203,7 +203,7 @@ bool FLedgerSnowNeedsMoisture::RunTest(const FString&)
 {
 	// The coldest deserts on Earth are bare, and a model that puts a snowfield
 	// on every cold thing paints the whole of this planet's high ground white.
-	FLedgerClimate Dry = Weather(70.0, 1500.0, NorthernWinter);
+	FLedgerClimate Dry = SnowWeather(70.0, 1500.0, NorthernWinter);
 	Dry.Moisture = 0.0;
 	FLedgerClimate Wet = Dry;
 	Wet.Moisture = 0.6;
@@ -283,15 +283,15 @@ bool FLedgerSnowNoTiltNoSeasons::RunTest(const FString&)
 		{
 			TestEqual(
 				*FString::Printf(TEXT("no tilt, latitude %.0f, phase %.3f"), Latitude, Phase),
-				LedgerClimate::SeasonalOffsetC(AtLatitude(Latitude), Phase, 0.0), 0.0, 1e-9);
+				LedgerClimate::SeasonalOffsetC(SnowAtLatitude(Latitude), Phase, 0.0), 0.0, 1e-9);
 		}
 	}
 
 	// And more tilt is more season, which is the other half of the claim.
 	const double Small = LedgerClimate::SeasonalOffsetC(
-		AtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(5.0));
+		SnowAtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(5.0));
 	const double Large = LedgerClimate::SeasonalOffsetC(
-		AtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(35.0));
+		SnowAtLatitude(60.0), NorthernSummer, FMath::DegreesToRadians(35.0));
 	AddInfo(FString::Printf(
 		TEXT("at 60 degrees in midsummer: %+.2f C with a 5 degree tilt, %+.2f C with 35"),
 		Small, Large));

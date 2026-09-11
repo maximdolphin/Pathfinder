@@ -86,9 +86,16 @@ namespace LedgerSurface
 
 		// How sharply the two interlock. This is the depth over which the two
 		// height maps compete: small values make a hard, gravelly boundary,
-		// large ones soften back towards a cross-fade. 0.2 keeps pebbles
-		// sitting proud of the soil rather than dissolving into it.
-		constexpr float BlendDepth = 0.2f;
+		// large ones soften back towards a cross-fade.
+		//
+		// **0.5, not 0.2.** 0.2 kept pebbles proud of the soil at the scale it
+		// was judged at, and at eye height in T437's four biomes it drew crisp
+		// polygonal patches of the paler set -- a boundary with a hard edge and
+		// a straight side reads as a texture seam, which is the one thing a
+		// person spots as a game. At 0.5 the height maps still compete, so the
+		// transition is not a dissolve, but it happens over a patch rather than
+		// along a line.
+		constexpr float BlendDepth = 0.5f;
 
 		/// Everything one surface set contributes, sampled once.
 		struct FSampled

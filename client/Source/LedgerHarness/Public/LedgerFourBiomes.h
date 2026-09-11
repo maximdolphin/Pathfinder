@@ -47,4 +47,7 @@ private:
 	bool bCaptured = false;
 	int32 Shot = 0;
 	double Settle = 0.0;
+
+	/// Where the stones stand, per site, for the report.
+	FString Footings;
 };
