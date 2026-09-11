@@ -124,6 +124,28 @@ namespace LedgerAir
 		double SurfaceTemperatureKelvin, double SurfaceGravity,
 		double PlanetRadiusMetres);
 
+	/// Mass density at an altitude above the datum, kg/m3.
+	///
+	/// **The number everything aerodynamic is actually asking for.** Drag,
+	/// dynamic pressure, wind noise and terminal velocity are all this times a
+	/// speed squared, and it was being open-coded from the number density, the
+	/// molecular mass and the scale height wherever it was wanted. Isothermal,
+	/// like the rest of the profile: exp(-h/H) and no more.
+	///
+	/// Zero on an airless body, at or above the top of the air, and below the
+	/// datum it keeps rising -- a valley floor does hold denser air.
+	LEDGERCORE_API double DensityAt(
+		const FLedgerAirProfile& Air, double AltitudeMetres);
+
+	/// Dynamic pressure, pascals: half rho v squared.
+	///
+	/// Kept next to the density because the pair of them is the whole of what
+	/// "how hard is the air hitting this" means, and because a caller who has
+	/// to write the half themselves will eventually write it twice.
+	LEDGERCORE_API double DynamicPressure(
+		const FLedgerAirProfile& Air, double AltitudeMetres,
+		double SpeedMetresPerSecond);
+
 	/// Rayleigh scattering at one wavelength, per metre.
 	///
 	/// beta = 8 pi^3 (n^2 - 1)^2 F / (3 N lambda^4), with the refractivity taken

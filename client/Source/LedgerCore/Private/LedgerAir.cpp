@@ -213,6 +213,33 @@ namespace LedgerAir
 		}
 	}
 
+	double DensityAt(const FLedgerAirProfile& Air, double AltitudeMetres)
+	{
+		if (!Air.HasAir() || !(Air.ScaleHeightMetres > 0.0))
+		{
+			return 0.0;
+		}
+
+		// Above the top there is nothing. The top is twelve scale heights, a
+		// millionth of the surface density -- stopping there rather than
+		// letting the exponential run on is what makes "in vacuum" a place
+		// rather than a very quiet limit.
+		if (AltitudeMetres >= Air.TopMetres)
+		{
+			return 0.0;
+		}
+
+		const double Surface =
+			Air.NumberDensityPerCubicMetre * Air.MolecularMassKg;
+		return Surface * FMath::Exp(-AltitudeMetres / Air.ScaleHeightMetres);
+	}
+
+	double DynamicPressure(
+		const FLedgerAirProfile& Air, double AltitudeMetres, double Speed)
+	{
+		return 0.5 * DensityAt(Air, AltitudeMetres) * Speed * Speed;
+	}
+
 	double RayleighPerMetre(
 		ELedgerAir Composition, double Density, double Wavelength)
 	{

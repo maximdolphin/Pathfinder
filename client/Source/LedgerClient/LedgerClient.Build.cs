@@ -35,7 +35,11 @@ public class LedgerClient : ModuleRules
 			// The frame-time recorder reads the engine's own thread and GPU
 			// counters. "It felt smooth" is not a measurement.
 			"RenderCore",
-			"RHI"
+			"RHI",
+			// T102 generates the wind rather than playing a loop of it, which
+			// needs USynthComponent. No sound assets follow from this and none
+			// are wanted: wind has no loop point.
+			"AudioMixer"
 		});
 
 		// Building a static mesh asset from generated geometry is an editor
