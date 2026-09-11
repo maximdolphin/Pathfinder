@@ -683,7 +683,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 2
+   "doneCount": 3
   },
   {
    "id": "M06",
@@ -8611,9 +8611,9 @@
    "dependsOn": [
     "T438"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-11",
@@ -8639,9 +8639,21 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Playtests 6-9 (offscreen, -playtest). Found from the record: (1) the allocator shared a shortfall by least squares, so a coupled turn at 150 m/s (59 m/s^2 asked across the nose, 26 available) gave up yaw and lurched at 73 deg/s, and a pitch-up tumbled at 181 deg/s; now torque is made whole first, then force axis by axis by bisection. (2) Coupled throttle only stopped adding, so a ship sliding backwards after a pitch-up was sped up by the brake; throttle is now a speed along the nose, centred = rest. (3) Turn rate in coupled capped at 0.8*a/v so the velocity follows the nose (8 deg/s at 150 m/s, no slip; 22 deg/s left 110 m/s sideways). Playtest 8 and 9: all 14 legs, worst spin 45.7 deg/s (the commanded roll), let-go stops from 73 m/s in 3 s and holds 0.0, reverse -40, descend 20, hover 0. Acceptance still wants the twenty randomised sequences: added to the playtest (seeded, 25 s each), run 10 in progress."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Acceptance met in the ten-minute offscreen session (34 of 34 legs: the 14 scripted plus 20 seeded random-stick sequences): worst spin 99.8 deg/s against the 180 limit, worst speed 299.7 m/s inside the coupled envelope (300 along the nose, 40 across), nothing NaN, never outside the planet's float-safe range, hull 1.00 throughout, 0 ensures. The three causes found from the playtest's own record and fixed: the allocator sharing a shortfall by least squares (turns lurched at 73 deg/s, a pitch-up tumbled at 181) -- torque is now made whole before force, axis by axis; coupled throttle that only stopped adding, so a ship sliding backwards was sped up by the brake -- throttle is now a speed along the nose; and a turn rate the thrusters could not swing the velocity through (110 m/s of slip) -- now capped at 0.8a/v. The 22 ground hits in the random sequences are the random pilot's: a stick held 47 degrees nose down at 180 m/s arrives, and they are counted, not scored as divergence. Commit cb4d681."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T439-2026-09-11T22-08-28-376.txt",
+     "caption": "Ten minutes offscreen: 14 scripted legs then 20 seeded random-stick sequences. Worst spin 99.8 deg/s, worst speed 299.7 m/s, hull 1.00, no NaN, no ensure.",
+     "source": "../out/playtest-full.txt",
+     "addedAt": "2026-09-11T22:08:28.377Z"
+    }
+   ],
    "plannedStartDay": 305.5,
    "plannedEndDay": 309.5,
    "plannedStart": "2027-11-08",
@@ -8704,6 +8716,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Playtest 8 captures, edge contrast (tools: scratchpad sharpness.py, mean Sobel below the HUD): hover 32.8, forward 25.0, cruise 15.2, pitch-down 21.3, let-go 25.6, reverse 25.1, descend 24.3, hover-end 25.9 -- against 5.2 when the canopy fogged (heater on, glass starting at 295 K fixed that). Fog and ice 0.00 through every leg. Acceptance still needs a static control frame from the same place, and space black. Seen in the captures and not yet fixed: at 300 m/s the clouds break into blocky rectangles."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The blocky clouds at 300 m/s are NOT temporal reprojection smear. A/B offscreen, same scripted legs, same simulated moment: baseline against -dpcvars=r.VolumetricRenderTarget.ReprojectionBoxConstraint=1 (which holds reprojected cloud history to the neighbourhood of the fresh samples, the usual cure for history blocks under fast camera motion). The two cruise captures are the same picture -- the same angular parallelograms in the same places -- so the shapes are the cloud material's own noise, not history. Not adding the CVar. Where to look next: LedgerCloudMaterial.cpp, the domed threshold and the noise that cuts the band (T094's shaping), which stretches cloud fragments into slanted parallelograms; the same diagonal streaks show at hover, where the camera is still, which is the giveaway. Cosmetic, below the playability work."
     }
    ],
    "evidence": [],
@@ -15676,5 +15693,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T21:54:24.869Z"
+ "updatedAt": "2026-09-11T22:08:28.468Z"
 }
