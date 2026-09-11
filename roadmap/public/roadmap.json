@@ -4430,6 +4430,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Step (1) of the three named: the fallback colour path (patches with no biomes) wrote FColor's default alpha, 255, which this project reads as full snow cover. It writes 0 now; the ramp carries its own white at the top. Steps (2) -- what T051's drying-rate change did to cover -- and (3) the overlay's own shaping remain, and are measurements that need the four-biome captures with -snow."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Root cause found: the -snow material never compiled. The snow cover masked A off VertexColor's default output, which is RGB only (float3), so every -snow and -channel=snow run logged 'Failed to compile Material ... Default Material will be used' and drew without the overlay. The '0.5 on warm grassland' reading was the ordinary lit ground, not snow: -snowch, -snow and plain frames match to 0.4/255. Fix: read output 4 (alpha) directly. The per-vertex SnowCover is 0 at all four sites (14-29 C). Rerun queued to measure the channel with a material that compiles."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Measured with a material that compiles: -channel=snow over the warm grassland is black -- zero -- across the ground, where the per-vertex SnowCover is 0 at 14.3 C. The overlay is provably nothing at zero cover, as designed. Both reasons the -snow switch was left off ('grassland reads 0.5', 'the desert comes back grey and half-snowed') were the engine's default material standing in for one that did not compile. Remaining: a capture where cover is above zero, to show snow drawing where the climate puts it, then the switch comes out."
     }
    ],
    "evidence": [
@@ -4802,6 +4812,16 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "The gate's collision criterion fails and the cause is identified but not fixable without one of two design choices; and the fixture is too noisy to argue from. Both in docs/comparisons/transect/."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The fixture is now repeatable: -benchmark -fps=60 runs 13,334 frames every time for the 200 km, and two fixed-step runs of one build read 99.69% and 98.81% missed -- about a point apart, against 89-99.8% before. Section upgrade in place is implemented (the proc mesh section is re-set with collision on: a render re-upload and an async cook, no job) and fired ZERO times in both runs. Why: collision is wanted by distance from a patch's CENTRE, and at 900 m/s the ground drawn under the ship is a coarse ancestor still standing in for leaves that have not landed -- kilometres across, centre outside the 3 km radius, so nothing drawn under the ship ever asked. Now measured from the patch's nearest edge (centre distance minus the half-diagonal); rerun queued."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Committed (see git log): collision is now wanted from a patch's nearest edge (not the resident shell, whose collision stayed under finer ground and put every four-biome stone metres off it until excluded -- the footing probe caught it), and an active section can gain collision in place. Two fixed-step runs: 95.9% and 96.7% missed (from 99.7/98.8), longest gap 5,390 frames (from 13,205). Still failing, and in-place upgrades fired 0 times on the transect. The diagnostics say why this is not mostly a collision problem: 0-348 sections active against ~3,000 visible leaves and 2,400-2,900 holes -- at 50 m and 900 m/s the ground under the ship is mostly not drawn at all. Next: classify each miss as no ground drawn vs ground drawn without collision, then decide between speed-scaled detail and throughput."
     }
    ],
    "evidence": [
@@ -6385,6 +6405,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "State after a day on the engine side (fog code uncommitted, diagnostics in LedgerGroundFog.cpp). Established from LocalFogVolumeCommon.ush / LocalFogVolumeRendering.cpp and measured: (1) radial and height coverage multiply, so the radial term must be on -- with it at 0 nothing ever drew; (2) densities are per metre (the unit-sphere optical depth is scaled by the radius in metres); (3) HeightFogFalloff is scaled by 0.01 before packing; (4) the volume is placed exactly as intended (centre 11,360 m above the fill level on the axis, radius 14,200 m), both cameras inside; (5) with a flat falloff the pool renders as sensible graded haze, near ground clear and distance fading; (6) any steep falloff (engine value >= 20) turns every view into a uniform saturated wall, identical at 1x, 0.01x and 0.001x density and at offsets -0.8 and -0.95 -- which the shader's own formula does not predict; (7) the same volume turned upside down (-fogflip) draws almost nothing. Unexplained: (6). Next: reproduce it in a minimal scene (small sphere, camera inside, engine-default falloff) to separate engine behaviour from this setup; or give the pool its top another way (two volumes, or a flat falloff inside a sphere sized to the pool)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Finding (6) explained from LocalFogVolumeCommon.ush, and it is this setup, not the engine. The height density is Extinction * exp(-Falloff * (z - Offset)) EVERYWHERE in the sphere, and with the offset at the fill level it grows by e every 36 m below the top -- not only over the sampled valley but over all ground inside the sphere's lower cap, 2.84 km deep and 8.5 km across: the four unsampled segments outside the 6x6 grid, gorges narrower than its 2 km spacing, lower valleys, the sea bed under translucent water. Ground 260 m below the fill level meets the fog at e^7 its top density, which is opaque at 0.001x. The terms then combine as T = 1 - (1-TR)(1-TH) in unit space, so wherever the height term saturates the pixel's opacity is the radial term's -- a saturating mask here -- which is why density scaling moved nothing. Why the local fog volume cannot hold this pool at all: the three terms are packed R11G11B10F (radial capped near 65,000); a low top in a big sphere gives the exploding cap; a top near the rim of a huge sphere puts the pool where the radial density (1-d^2) goes to zero. A wide, shallow, flat-topped pool is not a shape it can express. Next: a volume-domain material on a box, voxelised into volumetric fog (a flat, bounded top; absent from orbit beyond the volumetric fog distance), with the global height fog kept at zero density."
     }
    ],
    "evidence": [
@@ -6529,6 +6554,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "A defect found by accident: a camera inside a cloud deck sees the volumetric clouds as concentric slice shells -- nested rounded bands of sepia noise filling the frame, no terrain, no sky. The T054 cliff cameras at 0.2-0.55 drops above a 1,899 m site stand 2.0-2.3 km up, inside the low deck, and every one of their frames was this; with -noclouds the same cameras show the face under a clear sky. So the climb-through-decks capture this task still owes will show it too. Likely the cloud ray-march's step count and jitter inside the layer (TracingStartMaxDistance and sample counts were set for views from outside)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The climb runs end to end (b5128b6): below, in and above each deck, then orbit, 10 views. Two things it showed. (1) This world's site stands at 2,365 m, above the whole cumulus deck (1,237-1,732 m), so four of the ten frames were the ground -- the log now says so per step, and the climb now starts from the lowest ground within 200 km instead. (2) The cirrus deck was opaque: at 0.25 of the material's 0.04 per metre through 2.5 km it is ~25 optical depths, so in-cirrus is a uniform brown wall and below-cirrus an opaque lid with dripping holes. Cirrus is about one optical depth; now 0.03. No concentric shells in any in-deck climb frame; the cliff's in-deck shells are being separated by an aerial-perspective on/off/high-quality experiment on the same camera."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The in-deck arches are not aerial perspective: the same in-deck cliff camera (1,283 m in a 1,237-1,737 m deck) with r.VolumetricCloud.EnableAerialPerspectiveSampling=0 keeps every arch, sharper and noisier, and cloud then covers the near ground. The view sample count is not starved by our settings (ViewSampleCountScale 1.2 against the engine's 768 over 15 km, ~16-33 m steps), while the arches are ~900 m apart and have staircase edges -- which points at the reduced-resolution trace and its reconstruction. Queued: r.VolumetricRenderTarget=0, ViewRaySampleMaxCount=4096, DistanceToSampleMaxCount=1, each on the same camera."
     }
    ],
    "evidence": [
@@ -14295,5 +14330,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T06:54:38.031Z"
+ "updatedAt": "2026-09-11T07:43:20.779Z"
 }
