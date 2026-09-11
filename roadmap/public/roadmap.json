@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 2
+   "doneCount": 3
   },
   {
    "id": "M05",
@@ -6491,11 +6491,24 @@
    "dependsOn": [
     "T101"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-11",
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Wind noise is half rho v squared and nothing else: LedgerAir::DensityAt for the density where the listener is, ULedgerWind::SpeedAt for the speed at the same point -- the same subsystem the flight model and the vegetation read -- so there is no 'in space' flag to fall out of step with the ephemeris. Measured from 2 m to 144 km: level over q varies by 2.22e-16 across the seven rungs where it is neither zero nor clipped, and above the top of the air it is exactly zero. Vacuum is a place rather than a limit -- the profile ends at twelve scale heights, so DensityAt returns exactly zero past it and the test asserts equality rather than a tolerance. The loudest rung is not the lowest: T093's log profile has the ground dragging on the air, so the noise climbs for the first kilometre before the density takes it back, which nothing was written for. The voice is generated rather than played (wind has no loop point): white noise through a one-pole low pass whose cutoff follows the speed, 200 Hz still and 3 kHz in a gale, with the pole's attenuation divided back out so the level keeps meaning what it says. The fixture reports the generator's own RMS beside the level, so 'silent in vacuum' is a measurement of the audio rather than of the intention. LedgerAir gains DensityAt and DynamicPressure. Precipitation on surfaces and thunder have nothing to sound yet and wait on T095. -windheard, 125 tests pass, landed in be0166d. docs/comparisons/wind-audio/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T102-2026-09-11T00-10-29-796.txt",
+     "caption": "Level against dynamic pressure from 2 m to 144 km: proportional to 2.22e-16, exactly zero above the air",
+     "source": "../out/wind-audio.txt",
+     "addedAt": "2026-09-11T00:10:29.799Z"
+    }
+   ],
    "plannedStartDay": 246,
    "plannedEndDay": 247.5,
    "plannedStart": "2027-08-17",
@@ -14004,5 +14017,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T00:00:42.484Z"
+ "updatedAt": "2026-09-11T00:10:37.862Z"
 }

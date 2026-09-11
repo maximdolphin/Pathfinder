@@ -1,0 +1,20 @@
+Wind noise against dynamic pressure, from the ground to vacuum (T102).
+
+body             1 (Home)
+air              nitrogen-oxygen at 96898 Pa
+scale height     8010 m
+top of the air   96115 m
+
+  altitude m   rho kg/m3   wind m/s     q Pa    level   cutoff Hz    rms
+           2     1.24058        7.5     34.78    0.058         874  0.033
+         801     1.12280       19.7    216.84    0.361        1969  0.218
+        4005     0.75264       21.5    174.13    0.290        2136  0.179
+        8010     0.45650       21.5    105.61    0.176        2136  0.106
+       16019     0.16794       21.5     38.85    0.065        2136  0.039
+       32038     0.02273       21.5      5.26    0.009        2136  0.005
+       64077     0.00042       21.5      0.10    0.000        2136  0.000
+       96115     0.00001       21.5      0.00    0.000        2136  0.000
+      144173     0.00000       21.5      0.00    0.000        2136  0.000
+
+level / q over 7 rungs varies by 2.22e-16 -- proportional
+above the top of the air the level is exactly zero
