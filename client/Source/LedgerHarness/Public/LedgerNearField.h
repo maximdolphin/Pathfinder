@@ -40,5 +40,9 @@ private:
 	bool bCaptured = false;
 	bool bLookedDown = false;
 	bool bLoggedGiveUp = false;
+
+	/// The T430 pair under -pomprobe: -1 not started, 0 and 1 the two frames.
+	int32 PomShot = -1;
+	int32 PomFrames = 0;
 	double Waited = 0.0;
 };

@@ -78,10 +78,10 @@ namespace LedgerPatchDisk
 
 		// The stitch flags collapse vertices along an edge, so they change the
 		// elevations themselves and not only the indices.
-		MixValue(Hash, Job.bStitchLeft);
-		MixValue(Hash, Job.bStitchRight);
-		MixValue(Hash, Job.bStitchBottom);
-		MixValue(Hash, Job.bStitchTop);
+		MixValue(Hash, Job.StitchLeft);
+		MixValue(Hash, Job.StitchRight);
+		MixValue(Hash, Job.StitchBottom);
+		MixValue(Hash, Job.StitchTop);
 
 		// The planet.
 		MixValue(Hash, Job.Params.Seed);

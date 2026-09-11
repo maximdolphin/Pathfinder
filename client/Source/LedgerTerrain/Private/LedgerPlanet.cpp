@@ -635,12 +635,12 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		{
 			const int32 Section = ActiveSections.FindChecked(NodeKey(*Leaf));
 			const FLedgerSectionMeta& Meta = SectionMeta[Section];
-			const bool bLeft = LeafDepthAtFace(Leaf->Face, Leaf->U - 0.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent) < Leaf->Depth;
-			const bool bRight = LeafDepthAtFace(Leaf->Face, Leaf->U + 1.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent) < Leaf->Depth;
-			const bool bBottom = LeafDepthAtFace(Leaf->Face, Leaf->U + 0.5 * Leaf->Extent, Leaf->V - 0.02 * Leaf->Extent) < Leaf->Depth;
-			const bool bTop = LeafDepthAtFace(Leaf->Face, Leaf->U + 0.5 * Leaf->Extent, Leaf->V + 1.02 * Leaf->Extent) < Leaf->Depth;
-			if (bLeft != Meta.bStitchLeft || bRight != Meta.bStitchRight
-				|| bBottom != Meta.bStitchBottom || bTop != Meta.bStitchTop)
+			const uint8 LeftLevel = StitchLevelAt(*Leaf, Leaf->U - 0.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent);
+			const uint8 RightLevel = StitchLevelAt(*Leaf, Leaf->U + 1.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent);
+			const uint8 BottomLevel = StitchLevelAt(*Leaf, Leaf->U + 0.5 * Leaf->Extent, Leaf->V - 0.02 * Leaf->Extent);
+			const uint8 TopLevel = StitchLevelAt(*Leaf, Leaf->U + 0.5 * Leaf->Extent, Leaf->V + 1.02 * Leaf->Extent);
+			if (LeftLevel != Meta.StitchLeft || RightLevel != Meta.StitchRight
+				|| BottomLevel != Meta.StitchBottom || TopLevel != Meta.StitchTop)
 			{
 				const bool bCollision = MeshPool.IsValidIndex(Section) && MeshPool[Section] != nullptr
 					&& MeshPool[Section]->GetCollisionEnabled() != ECollisionEnabled::NoCollision;

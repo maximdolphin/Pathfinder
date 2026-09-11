@@ -162,11 +162,17 @@ namespace LedgerScatter
 				if (bHasMesh)
 				{
 					const double Du = 1.0 / (Side - 1);
-					const double StepU = LocalU + Du <= 1.0 ? Du : -Du;
-					const double StepV = LocalV + Du <= 1.0 ? Du : -Du;
+					// The steeper of the quads either side, on each axis: a stone
+					// sits on one triangle, and a one-sided difference averaged the
+					// face it stands on with the ground beside it -- the first run of
+					// this still left 165 rainforest stones on 45-60 degrees.
 					const double Here = MeshRadiusAt(LocalU, LocalV);
-					const double AlongU = MeshRadiusAt(LocalU + StepU, LocalV) - Here;
-					const double AlongV = MeshRadiusAt(LocalU, LocalV + StepV) - Here;
+					const double AlongU = FMath::Max(
+						FMath::Abs(MeshRadiusAt(FMath::Min(LocalU + Du, 1.0), LocalV) - Here),
+						FMath::Abs(Here - MeshRadiusAt(FMath::Max(LocalU - Du, 0.0), LocalV)));
+					const double AlongV = FMath::Max(
+						FMath::Abs(MeshRadiusAt(LocalU, FMath::Min(LocalV + Du, 1.0)) - Here),
+						FMath::Abs(Here - MeshRadiusAt(LocalU, FMath::Max(LocalV - Du, 0.0))));
 					DrawnSlopeDegrees = FMath::RadiansToDegrees(FMath::Atan2(
 						FVector2d(AlongU, AlongV).Length() / 100.0, PatchMetres / (Side - 1)));
 				}

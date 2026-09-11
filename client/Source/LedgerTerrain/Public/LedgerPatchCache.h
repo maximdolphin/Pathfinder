@@ -33,10 +33,10 @@
 struct FLedgerCachedPatch
 {
 	FVector3d Centre = FVector3d::ZeroVector;
-	bool bStitchLeft = false;
-	bool bStitchRight = false;
-	bool bStitchBottom = false;
-	bool bStitchTop = false;
+	uint8 StitchLeft = 0;
+	uint8 StitchRight = 0;
+	uint8 StitchBottom = 0;
+	uint8 StitchTop = 0;
 
 	FProcMeshSection Land;
 	FProcMeshSection Water;

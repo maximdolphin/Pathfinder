@@ -19,6 +19,7 @@
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionCameraPositionWS.h"
 #include "Materials/MaterialExpressionCameraVectorWS.h"
+#include "Materials/MaterialExpressionCustom.h"
 #include "Materials/MaterialExpressionDistance.h"
 #include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialExpressionNormalize.h"
@@ -27,6 +28,7 @@
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionPixelDepth.h"
 #include "Materials/MaterialExpressionTextureSample.h"
+#include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
@@ -328,8 +330,76 @@ namespace LedgerSurface
 			Graph.Multiply(Graph.Subtract(ProbeHeight, Graph.Constant(0.5f)), Depth3D),
 			Graph.OneMinus(ParallaxFade));
 
-		UMaterialExpression* ParallaxPosition = Graph.Subtract(WorldPosition,
-			Graph.Multiply(Graph.Divide(Tangential, Facing), ParallaxAmount));
+		// ---- and occlusion: a march, unless it is switched off. T430 ---------
+		//
+		// One step moves the ground under a moving camera, but it samples the
+		// height once, at the pixel's own position, so it cannot make a pebble
+		// hide the one behind it. The march walks the view ray down through the
+		// height field from its top and stops at the first sample the ray has
+		// gone under, then interpolates between the last two -- so a pixel shows
+		// the first thing the ray reaches, which is what occlusion is. Sixteen
+		// steps of three samples, at mip 0, and only inside the parallax fade.
+		// The coordinate going in is the camera-relative one the triplanar
+		// sampling already uses, so the march has the same precision it does.
+		// `-nopom` (with -livematerials) is the control: the one-step offset.
+		UMaterialExpression* MaxOffset = Graph.Multiply(Graph.Divide(Tangential, Facing),
+			Graph.Multiply(Depth3D, Graph.OneMinus(ParallaxFade)));
+		UMaterialExpression* ParallaxPosition = nullptr;
+		if (FParse::Param(FCommandLine::Get(), TEXT("nopom")))
+		{
+			ParallaxPosition = Graph.Subtract(WorldPosition,
+				Graph.Multiply(Graph.Divide(Tangential, Facing), ParallaxAmount));
+		}
+		else
+		{
+			UMaterialExpressionTextureObjectParameter* HeightMap =
+				Graph.Make<UMaterialExpressionTextureObjectParameter>();
+			HeightMap->ParameterName = *SlotParameter(0, TEXT("Packed"));
+			HeightMap->Texture = Flat.Packed;
+			HeightMap->SamplerType = SAMPLERTYPE_Masks;
+
+			UMaterialExpression* Tiling = Graph.ScalarParameter(*SlotParameter(0, TEXT("Tiling")),
+				1.0f / static_cast<float>(Flat.TilingMetres * 100.0));
+
+			UMaterialExpressionCustom* March = Graph.Make<UMaterialExpressionCustom>();
+			March->OutputType = CMOT_Float1;
+			March->Description = TEXT("LedgerParallaxOcclusion");
+			March->Code = FString(
+				TEXT("int n = 16;\n")
+				TEXT("float stepR = 1.0 / n;\n")
+				TEXT("float r = 1.0;\n")
+				TEXT("float3 q = SP - SD * (r - 0.5);\n")
+				TEXT("float h = W.x * Tex.SampleLevel(TexSampler, q.yz, 0).b + W.y * Tex.SampleLevel(TexSampler, q.xz, 0).b + W.z * Tex.SampleLevel(TexSampler, q.xy, 0).b;\n")
+				TEXT("float rPrev = r;\n")
+				TEXT("float hPrev = h;\n")
+				TEXT("if (dot(SD, SD) < 1e-14) return 0.0;\n")
+				TEXT("[loop] for (int i = 0; i < n && h < r; ++i)\n")
+				TEXT("{\n")
+				TEXT("    rPrev = r;\n")
+				TEXT("    hPrev = h;\n")
+				TEXT("    r -= stepR;\n")
+				TEXT("    q = SP - SD * (r - 0.5);\n")
+				TEXT("    h = W.x * Tex.SampleLevel(TexSampler, q.yz, 0).b + W.y * Tex.SampleLevel(TexSampler, q.xz, 0).b + W.z * Tex.SampleLevel(TexSampler, q.xy, 0).b;\n")
+				TEXT("}\n")
+				TEXT("float a = hPrev - rPrev;\n")
+				TEXT("float b = h - r;\n")
+				TEXT("float t = saturate(a / (a - b - 1e-5));\n")
+				TEXT("return -(lerp(rPrev, r, t) - 0.5);\n"));
+			March->Inputs.Reset();
+			auto AddInput = [March](const TCHAR* Name, UMaterialExpression* Expression)
+			{
+				FCustomInput& Input = March->Inputs.AddDefaulted_GetRef();
+				Input.InputName = Name;
+				Input.Input.Expression = Expression;
+			};
+			AddInput(TEXT("Tex"), HeightMap);
+			AddInput(TEXT("SP"), ProbePosition);
+			AddInput(TEXT("SD"), Graph.Multiply(MaxOffset, Tiling));
+			AddInput(TEXT("W"), Weights);
+			// The factor the one-step offset used, -(height - 0.5), but at the
+			// height where the ray went under rather than the height it started on.
+			ParallaxPosition = Graph.Add(WorldPosition, Graph.Multiply(MaxOffset, March));
+		}
 
 		const FSampled Rock = SampleSet(Graph, Steep, ParallaxPosition, WeightX, WeightY, WeightZ);
 		const FSampled ScreeSampled =

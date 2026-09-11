@@ -89,10 +89,10 @@ struct FLedgerPatchJob
 	double WorldSize = 0.0;
 
 	/// Edges that border a coarser neighbour and therefore need stitching.
-	bool bStitchLeft = false;
-	bool bStitchRight = false;
-	bool bStitchBottom = false;
-	bool bStitchTop = false;
+	uint8 StitchLeft = 0;
+	uint8 StitchRight = 0;
+	uint8 StitchBottom = 0;
+	uint8 StitchTop = 0;
 
 	// ---- outputs --------------------------------------------------------
 	TArray<FVector> Vertices;
@@ -183,10 +183,10 @@ struct FLedgerSectionMeta
 {
 	uint64 Key = 0;
 	FVector3d Centre = FVector3d::ZeroVector;
-	bool bStitchLeft = false;
-	bool bStitchRight = false;
-	bool bStitchBottom = false;
-	bool bStitchTop = false;
+	uint8 StitchLeft = 0;
+	uint8 StitchRight = 0;
+	uint8 StitchBottom = 0;
+	uint8 StitchTop = 0;
 
 	/// Carried so the geometry can be put back in the cache with the palette
 	/// its vertex colours were written against.
@@ -842,6 +842,9 @@ private:
 	/// Resolving an out-of-range face coordinate onto its real face is exact
 	/// and costs a divide.
 	int32 LeafDepthAtFace(ELedgerCubeFace Face, double U, double V) const;
+
+	/// Levels coarser than Node the drawn neighbour at (U, V) is, 0 to 6.
+	uint8 StitchLevelAt(const FLedgerQuadNode& Node, double U, double V) const;
 
 	/// The tree descent both entry points share, on coordinates already known
 	/// to belong to this face.

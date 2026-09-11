@@ -220,22 +220,38 @@ bool FLedgerScatterNothingFloats::RunTest(const FString&)
 	FillJob(OnFunction, Biomes);
 	LedgerScatter::ScatterPatch(OnFunction);
 
-	if (OnFunction.Scatter.Num() != Job.Scatter.Num())
+	// **The mesh may take cells away, never add them.** Placement also rejects
+	// on the drawn mesh's own slope (T437: stones stood on 45-60 degree faces
+	// the function a cell away called gentle), and a patch with no mesh has no
+	// such slope to reject on. So the mesh run is a subset of the function run,
+	// and the corrections are measured on the cells both kept -- paired by
+	// direction, which the height does not change, rather than by index, which
+	// every rejected cell shifts.
+	if (Job.Scatter.Num() > OnFunction.Scatter.Num())
 	{
 		AddError(FString::Printf(
-			TEXT("the mesh changed which cells were accepted, not just their "
-			     "height: %d with a mesh, %d without"),
+			TEXT("the mesh accepted cells the function did not: %d with a mesh, %d without"),
 			Job.Scatter.Num(), OnFunction.Scatter.Num()));
 		return false;
 	}
 
 	double WorstCorrection = 0.0;
-	for (int32 Index = 0; Index < Job.Scatter.Num(); ++Index)
+	int32 Paired = 0;
+	for (const FLedgerScatterInstance& OnMesh : Job.Scatter)
 	{
-		WorstCorrection = FMath::Max(WorstCorrection,
-			(FVector3d(Job.Scatter[Index].Position)
-				- FVector3d(OnFunction.Scatter[Index].Position)).Length() / 100.0);
+		const FVector3d MeshAt = FVector3d(OnMesh.Position) + Job.Centre;
+		for (const FLedgerScatterInstance& OnField : OnFunction.Scatter)
+		{
+			const FVector3d FieldAt = FVector3d(OnField.Position) + OnFunction.Centre;
+			if (FVector3d::DotProduct(MeshAt.GetSafeNormal(), FieldAt.GetSafeNormal()) > 1.0 - 1e-12)
+			{
+				WorstCorrection = FMath::Max(WorstCorrection, (MeshAt - FieldAt).Length() / 100.0);
+				++Paired;
+				break;
+			}
+		}
 	}
+	TestEqual(TEXT("every cell the mesh kept is one the function kept too"), Paired, Job.Scatter.Num());
 
 	AddInfo(FString::Printf(
 		TEXT("%d instances; mesh wanders %.3f m from the height function, "

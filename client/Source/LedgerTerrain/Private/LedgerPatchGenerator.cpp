@@ -159,29 +159,6 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			double LocalU = static_cast<double>(X) * Inverse;
 			double LocalV = static_cast<double>(Y) * Inverse;
 
-			// Collapse this vertex onto its even neighbour along a stitched
-			// edge, so the finer mesh meets the coarser one exactly —
-			// edge-index stitching, not skirts (§6.8). Skirts hide the crack
-			// behind extra fill rate; this removes it.
-			const bool bOddX = (X & 1) != 0;
-			const bool bOddY = (Y & 1) != 0;
-			if (X == 0 && Job.bStitchLeft && bOddY)
-			{
-				LocalV = static_cast<double>(Y - 1) * Inverse;
-			}
-			else if (X == Side - 1 && Job.bStitchRight && bOddY)
-			{
-				LocalV = static_cast<double>(Y - 1) * Inverse;
-			}
-			else if (Y == 0 && Job.bStitchBottom && bOddX)
-			{
-				LocalU = static_cast<double>(X - 1) * Inverse;
-			}
-			else if (Y == Side - 1 && Job.bStitchTop && bOddX)
-			{
-				LocalU = static_cast<double>(X - 1) * Inverse;
-			}
-
 			const double U = Job.U + LocalU * Job.Extent;
 			const double V = Job.V + LocalV * Job.Extent;
 			const FVector3d UnitSphere = LedgerTerrain::CubeToSphere(
@@ -189,10 +166,26 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 
 			const int32 Index = Y * Side + X;
 
+			// **A stitched edge is sampled at its neighbour's spacing.** The height
+			// depends on the spacing -- the near-field band a patch may carry is
+			// decided by what it can resolve (T429) -- so a vertex this patch and
+			// its coarser neighbour share was two different heights, one each,
+			// and putting the in-between vertices on the neighbour's line could not
+			// close an edge whose end points already disagreed. On a stitched edge
+			// the shared vertices take the neighbour's spacing, so they are the
+			// neighbour's vertices exactly; a corner on two stitched edges takes
+			// the coarser of the two.
+			uint8 EdgeLevel = 0;
+			if (X == 0) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchLeft); }
+			if (X == Side - 1) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchRight); }
+			if (Y == 0) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchBottom); }
+			if (Y == Side - 1) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchTop); }
+			const double VertexSpacing = SpacingMetres * static_cast<double>(1 << FMath::Min<int32>(EdgeLevel, 16));
+
 			// The one line the whole disk cache exists for.
 			const double Elevation = bFromDisk
 				? Elevations[Index]
-				: LedgerTerrain::Elevation(UnitSphere, Job.Params, SpacingMetres);
+				: LedgerTerrain::Elevation(UnitSphere, Job.Params, VertexSpacing);
 			const FVector3d Surface = UnitSphere * (Job.Params.Radius + Elevation);
 			// Relative to the node centre: this is what keeps float precision
 			// local, and it is why the same code works at planetary scale.
@@ -204,6 +197,46 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			}
 		}
 	}
+
+	// ---- edge stitching --------------------------------------------------
+	//
+	// **Onto the coarser neighbour's edge, however much coarser it is.** A
+	// neighbour k levels coarser has a vertex every 2^k of ours along the
+	// shared edge, and between two of them its edge is a straight line, so
+	// every vertex of ours between two it keeps is put on that line -- by
+	// position and by elevation, so the morph targets below agree. The old
+	// stitch collapsed odd onto even, which is one level and nothing more,
+	// and T049 measured what it left beside a neighbour six levels coarser:
+	// 37,608 edge vertices more than a centimetre off, the worst 41 km. It
+	// also left a degenerate triangle per odd vertex; this leaves none.
+	auto StitchEdge = [&Job, &Elevations, Side](uint8 Level, auto IndexAt)
+	{
+		if (Level == 0)
+		{
+			return;
+		}
+		const int32 Step = FMath::Min(1 << FMath::Min<int32>(Level, 16), Side - 1);
+		for (int32 I = 0; I < Side; ++I)
+		{
+			const int32 Offset = I % Step;
+			if (Offset == 0)
+			{
+				continue;
+			}
+			const int32 J0 = I - Offset;
+			const int32 J1 = FMath::Min(J0 + Step, Side - 1);
+			const double T = static_cast<double>(I - J0) / static_cast<double>(J1 - J0);
+			const int32 A = IndexAt(J0);
+			const int32 B = IndexAt(J1);
+			const int32 C = IndexAt(I);
+			Job.Vertices[C] = FMath::Lerp(Job.Vertices[A], Job.Vertices[B], T);
+			Elevations[C] = FMath::Lerp(Elevations[A], Elevations[B], T);
+		}
+	};
+	StitchEdge(Job.StitchLeft, [Side](int32 I) { return I * Side; });
+	StitchEdge(Job.StitchRight, [Side](int32 I) { return I * Side + Side - 1; });
+	StitchEdge(Job.StitchBottom, [](int32 I) { return I; });
+	StitchEdge(Job.StitchTop, [Side](int32 I) { return (Side - 1) * Side + I; });
 
 	// ---- geomorph targets ------------------------------------------------
 	//
@@ -408,6 +441,11 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		{
 			Job.Colors[Index] = SurfaceColour(
 				Elevations[Index], Job.Params.MaxElevation, Steepness);
+			// No snow overlay on the fallback ramp. Alpha is snow cover everywhere
+			// else in this project (T060), and Blend hands back FColor's default
+			// alpha of 255 -- full snow -- on every patch that has no biomes. The
+			// ramp carries its own white at the top already.
+			Job.Colors[Index].A = 0;
 		}
 		else
 		{

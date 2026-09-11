@@ -53,10 +53,19 @@ namespace
 		/// higher. The debris the acceptance asks for was under the bottom edge
 		/// of the frame in every run.
 		bool bAtFoot;
+
+		/// Aim at the ground this many drops downhill of the face, when not
+		/// negative. The apron shot: every framing from AT the foot filled the
+		/// frame with wall, because a seventy-degree face subtends more than the
+		/// field of view from anywhere close to it. The debris is seen from out
+		/// on the flat, looking back and down -- a different position, not a
+		/// different aim.
+		double AimDropsFromFace;
 	};
 
 	const FCliffShot CliffShots[] =
 	{
+		{ TEXT("cliff-apron.png"),  1.00,  0.35,   0.0, false, 0.10 },
 		// Across the face from below, so the foot of it is in frame -- which is
 		// where the debris is, and the half of the acceptance a photograph of
 		// the face alone would miss.
@@ -64,9 +73,9 @@ namespace
 		// (LedgerTerrainMaterial.cpp), so a shot framed 530 m off a 295 m face
 		// photographs the fade rather than the rock -- which is what the first
 		// framing did, and the reason the face came back smooth and white.
-		{ TEXT("cliff-foot.png"),   0.06,  0.016,  8.0, true },
-		{ TEXT("cliff-face.png"),   0.60,  0.18,   0.0, false },
-		{ TEXT("cliff-wide.png"),   1.60,  0.55,   0.0, false },
+		{ TEXT("cliff-foot.png"),   0.06,  0.016,  8.0, true,  -1.0 },
+		{ TEXT("cliff-face.png"),   0.60,  0.18,   0.0, false, -1.0 },
+		{ TEXT("cliff-wide.png"),   1.60,  0.55,   0.0, false, -1.0 },
 	};
 
 	FVector3d CliffOnSphere(double LatitudeDegrees, double LongitudeDegrees)
@@ -122,6 +131,57 @@ bool ULedgerCliffSite::FindFace()
 	constexpr int32 RefineSteps = 12;
 	const double RefineArc = 800.0 / Params.Radius;
 
+	// **Refine only where the coarse grid already sees relief.**
+	//
+	// The refine walks 625 points around every candidate, and every lit land
+	// sample on the planet was a candidate: about a billion height evaluations
+	// on the game thread, and the run heartbeat killed it after five silent
+	// minutes. A face that falls hundreds of metres at sixty degrees is also a
+	// kilometre of relief at the coarse scale, so a first pass ranks every
+	// candidate by that and only the four hundred with the most are walked.
+	const double CoarseArc = 100000.0 / Params.Radius;
+	auto CoarseRelief = [&Params, CoarseArc](
+		const FVector3d& Coarse, const FVector3d& CoarseEast, const FVector3d& CoarseNorth)
+	{
+		const double Here = LedgerTerrain::Elevation(Coarse, Params);
+		const double EastOf = LedgerTerrain::Elevation((Coarse * FMath::Cos(CoarseArc)
+			+ CoarseEast * FMath::Sin(CoarseArc)).GetSafeNormal(), Params);
+		const double NorthOf = LedgerTerrain::Elevation((Coarse * FMath::Cos(CoarseArc)
+			+ CoarseNorth * FMath::Sin(CoarseArc)).GetSafeNormal(), Params);
+		return FMath::Max(FMath::Abs(EastOf - Here), FMath::Abs(NorthOf - Here));
+	};
+	TArray<double> Reliefs;
+	for (double Latitude = -80.0; Latitude <= 80.0; Latitude += 0.2)
+	{
+		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 0.2)
+		{
+			const FVector3d Coarse = CliffOnSphere(Latitude, Longitude);
+			if (FVector3d::DotProduct(Coarse, SunDirection) < 0.2
+				|| LedgerTerrain::Elevation(Coarse, Params) <= 0.0)
+			{
+				continue;
+			}
+			FVector3d CoarseEast = FVector3d::CrossProduct(FVector3d(0.0, 0.0, 1.0), Coarse);
+			if (CoarseEast.IsNearlyZero())
+			{
+				continue;
+			}
+			CoarseEast.Normalize();
+			Reliefs.Add(CoarseRelief(Coarse, CoarseEast,
+				FVector3d::CrossProduct(Coarse, CoarseEast).GetSafeNormal()));
+		}
+	}
+	constexpr int32 RefineCandidates = 400;
+	double ReliefThreshold = 0.0;
+	if (Reliefs.Num() > RefineCandidates)
+	{
+		Reliefs.Sort([](double A, double B) { return A > B; });
+		ReliefThreshold = Reliefs[RefineCandidates - 1];
+	}
+	UE_LOG(LogLedger, Log,
+		TEXT("cliff site: %d lit land candidates; refining the %d with at least %.0f m of relief in a kilometre"),
+		Reliefs.Num(), FMath::Min(Reliefs.Num(), RefineCandidates), ReliefThreshold / 100.0);
+
 	for (double Latitude = -80.0; Latitude <= 80.0; Latitude += 0.2)
 	{
 		for (double Longitude = 0.0; Longitude < 360.0; Longitude += 0.2)
@@ -144,6 +204,10 @@ bool ULedgerCliffSite::FindFace()
 			CoarseEast.Normalize();
 			const FVector3d CoarseNorth =
 				FVector3d::CrossProduct(Coarse, CoarseEast).GetSafeNormal();
+			if (CoarseRelief(Coarse, CoarseEast, CoarseNorth) < ReliefThreshold)
+			{
+				continue;
+			}
 
 			for (int32 OffsetY = -RefineSteps; OffsetY <= RefineSteps; ++OffsetY)
 			{
@@ -308,6 +372,7 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Face.Z, -1.0, 1.0))),
 			FMath::RadiansToDegrees(FMath::Atan2(Face.Y, Face.X)));
 		Body += TEXT("cliff-face.png is the face, cliff-foot.png the ground under it,\n"
+			"cliff-apron.png the debris at its foot seen from out on the flat,\n"
 			"cliff-wide.png both in context.\n");
 		Body += FString::Printf(TEXT("\na sixty-degree face exists: %s\n"),
 			SlopeDegrees >= 60.0 ? TEXT("yes") : TEXT("NO"));
@@ -381,7 +446,10 @@ void ULedgerCliffSite::Place()
 	// Fractions of the setback were tried twice and both framed wall; see
 	// AimMetres.
 	const double AimArc = (Current.AimMetres * 100.0) / Planet->Radius;
-	const FVector3d Aim = Current.bAtFoot
+	const double ApronArc = (FMath::Max(Current.AimDropsFromFace, 0.0) * Scale * 100.0) / Planet->Radius;
+	const FVector3d Aim = Current.AimDropsFromFace >= 0.0
+		? (Face * FMath::Cos(ApronArc) + Downhill * FMath::Sin(ApronArc)).GetSafeNormal()
+		: Current.bAtFoot
 		? (Eye3d * FMath::Cos(AimArc) - Downhill * FMath::Sin(AimArc)).GetSafeNormal()
 		: Face;
 	const FVector Target = FVector(FVector3d(Planet->GetActorLocation())

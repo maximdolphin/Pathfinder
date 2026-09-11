@@ -56,17 +56,17 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 		FParse::Param(FCommandLine::Get(), TEXT("breakstitching"));
 	if (bBreakStitching)
 	{
-		Job->bStitchLeft = false;
-		Job->bStitchRight = false;
-		Job->bStitchBottom = false;
-		Job->bStitchTop = false;
+		Job->StitchLeft = 0;
+		Job->StitchRight = 0;
+		Job->StitchBottom = 0;
+		Job->StitchTop = 0;
 	}
 	else
 	{
-	Job->bStitchLeft = LeafDepthAtFace(Node.Face, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
-	Job->bStitchRight = LeafDepthAtFace(Node.Face, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth;
-	Job->bStitchBottom = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth;
-	Job->bStitchTop = LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth;
+	Job->StitchLeft = StitchLevelAt(Node, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent);
+	Job->StitchRight = StitchLevelAt(Node, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent);
+	Job->StitchBottom = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent);
+	Job->StitchTop = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent);
 	}
 
 	InFlight.Add(Job->Key, Job);
@@ -147,7 +147,7 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		}
 		SectionMeta[Job->SectionIndex] = FLedgerSectionMeta{
 			Job->Key, Job->Centre,
-			Job->bStitchLeft, Job->bStitchRight, Job->bStitchBottom, Job->bStitchTop,
+			Job->StitchLeft, Job->StitchRight, Job->StitchBottom, Job->StitchTop,
 			Job->Palette };
 
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
@@ -231,10 +231,10 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	// coarser neighbour has subdivided since needs different edge geometry, and
 	// the cached buffers would leave a crack along that edge.
 	FLedgerCachedPatch& Entry = *Found;
-	if (Entry.bStitchLeft != (LeafDepthAtFace(Node.Face, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth)
-		|| Entry.bStitchRight != (LeafDepthAtFace(Node.Face, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent) < Node.Depth)
-		|| Entry.bStitchBottom != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent) < Node.Depth)
-		|| Entry.bStitchTop != (LeafDepthAtFace(Node.Face, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent) < Node.Depth))
+	if (Entry.StitchLeft != StitchLevelAt(Node, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent)
+		|| Entry.StitchRight != StitchLevelAt(Node, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent)
+		|| Entry.StitchBottom != StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent)
+		|| Entry.StitchTop != StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent))
 	{
 		// Counted as well as acted on. The rebuild fixes it; T067 wants to know
 		// how often it happened, because each one was a crack until it landed.
@@ -286,7 +286,7 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	ActiveSections.Add(Key, SectionIndex);
 	SectionMeta[SectionIndex] = FLedgerSectionMeta{
 		Key, Entry.Centre,
-		Entry.bStitchLeft, Entry.bStitchRight, Entry.bStitchBottom, Entry.bStitchTop,
+		Entry.StitchLeft, Entry.StitchRight, Entry.StitchBottom, Entry.StitchTop,
 		Entry.Palette };
 
 	// Removed, not kept: the geometry is on screen again and holding a second
@@ -394,10 +394,10 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 			TSharedPtr<FLedgerCachedPatch> Entry = MakeShared<FLedgerCachedPatch>();
 			const FLedgerSectionMeta& Meta = SectionMeta[SectionIndex];
 			Entry->Centre = Meta.Centre;
-			Entry->bStitchLeft = Meta.bStitchLeft;
-			Entry->bStitchRight = Meta.bStitchRight;
-			Entry->bStitchBottom = Meta.bStitchBottom;
-			Entry->bStitchTop = Meta.bStitchTop;
+			Entry->StitchLeft = Meta.StitchLeft;
+			Entry->StitchRight = Meta.StitchRight;
+			Entry->StitchBottom = Meta.StitchBottom;
+			Entry->StitchTop = Meta.StitchTop;
 			Entry->Palette = Meta.Palette;
 			if (const FPatchScatter* Scattered = LiveScatter.Find(Key))
 			{
@@ -631,4 +631,12 @@ double ALedgerPlanet::SeasonPhase() const
 		return TOptional<double>();
 	}();
 	return Asked.IsSet() ? Asked.GetValue() : FMath::Max(0.0, SeasonFromOrbit);
+}
+
+uint8 ALedgerPlanet::StitchLevelAt(const FLedgerQuadNode& Node, double U, double V) const
+{
+	// How many levels coarser the drawn neighbour at (U, V) is; 0 for none.
+	// Beyond six, one of its quads spans this patch's whole 64-quad edge and
+	// every further level stitches the same way, so the byte is capped there.
+	return static_cast<uint8>(FMath::Clamp(Node.Depth - LeafDepthAtFace(Node.Face, U, V), 0, 6));
 }

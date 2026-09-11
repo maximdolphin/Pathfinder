@@ -183,7 +183,7 @@ bool FLedgerPatchDiskKeyCoversWhatMatters::RunTest(const FString&)
 	Differs(TEXT("where on it"), [](FLedgerPatchJob& Job) { Job.U += 0.001; });
 	Differs(TEXT("how big"), [](FLedgerPatchJob& Job) { Job.Extent *= 2.0; });
 	Differs(TEXT("the grid"), [](FLedgerPatchJob& Job) { Job.Side = 65; });
-	Differs(TEXT("a stitched edge"), [](FLedgerPatchJob& Job) { Job.bStitchLeft = true; });
+	Differs(TEXT("a stitched edge"), [](FLedgerPatchJob& Job) { Job.StitchLeft = 1; });
 	Differs(TEXT("the seed"), [](FLedgerPatchJob& Job) { Job.Params.Seed = 7; });
 	Differs(TEXT("sea level"), [](FLedgerPatchJob& Job) { Job.Params.SeaLevel += 0.01; });
 	Differs(TEXT("peak elevation"), [](FLedgerPatchJob& Job) { Job.Params.MaxElevation *= 2.0; });

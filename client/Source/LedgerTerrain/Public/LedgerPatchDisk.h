@@ -71,7 +71,14 @@ namespace LedgerPatchDisk
 	/// away, which removes stones from every steep patch -- and the first run
 	/// after that change measured exactly the old stones, to the unit, because
 	/// every patch it drew came off the disk with its scatter already in it.
-	constexpr uint32 FormatVersion = 11;
+	/// Also: the fallback ramp (no biomes) no longer writes full snow into alpha.
+	/// 12: T049. Stitch flags became levels, and a stitched edge is put on the
+	/// coarser neighbour's line however many levels coarser it is, instead of
+	/// collapsing odd vertices onto even ones -- every stitched edge moves.
+	/// 13: T437 again. The drawn-slope test takes the steeper of the quads either
+	/// side of a stone on each axis, not a one-sided difference.
+	/// 14: T049. Stitched-edge vertices are sampled at the neighbour's spacing.
+	constexpr uint32 FormatVersion = 14;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

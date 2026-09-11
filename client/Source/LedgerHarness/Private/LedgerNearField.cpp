@@ -43,6 +43,13 @@ namespace
 
 	constexpr int32 ProfileSamples = 600;
 
+	/// `-pomprobe`: the two T430 frames after the usual shots.
+	bool NearFieldPomProbe()
+	{
+		static const bool bProbe = FParse::Param(FCommandLine::Get(), TEXT("pomprobe"));
+		return bProbe;
+	}
+
 	/// Eye height, and the framing the acceptance is written against.
 	constexpr double EyeMetres = 1.7;
 	constexpr double ViewportWidthPixels = 1920.0;
@@ -221,6 +228,33 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// **Two more frames for T430, when asked.** A flat texture shifts between
+	// two camera positions the way one plane does; a surface with depth shifts
+	// by different amounts at different heights, so the spread of the local
+	// shift across the frame is the parallax, and tools/parallax_spread.py
+	// measures it. Thirty frames on each view first, so the temporal
+	// accumulation is of this position and not the last.
+	if (NearFieldPomProbe() && PomShot < 2)
+	{
+		if (PomShot < 0)
+		{
+			PomShot = 0;
+			PomFrames = 0;
+			return;
+		}
+		if (++PomFrames < 30)
+		{
+			return;
+		}
+		const FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(
+			FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+			FString::Printf(TEXT("near-field-pom-%d.png"), PomShot)));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		++PomShot;
+		PomFrames = 0;
+		return;
+	}
+
 	bRunning = false;
 	const bool bHolds = Measure();
 	UE_LOG(LogLedger, Log, TEXT("near field: %s"),
@@ -280,10 +314,24 @@ void ULedgerNearField::Park()
 	// standing one. Eight metres up, which frames about sixteen metres of
 	// ground at 90 degrees -- eight tile repeats of a 2 m scan.
 	const bool bDown = bCaptured && !bLookedDown;
-	const FVector Eye = bDown
-		? FVector(Origin + Eye3d * (Ground + 800.0 * 100.0))
+	// The T430 pair: two metres up, forty degrees down along the profile, the
+	// second a metre further along it.
+	const bool bPom = NearFieldPomProbe() && bLookedDown && PomShot >= 0 && PomShot < 2;
+	const FVector3d PomEye3d =
+		(Eye3d + Ahead * (FMath::Max(PomShot, 0) * 100.0 / Planet->Radius)).GetSafeNormal();
+	const FVector3d PomAim = (PomEye3d + Ahead * (238.0 / Planet->Radius)).GetSafeNormal();
+	const FVector PomTarget = FVector(Origin + PomAim * Planet->SurfaceRadiusAt(PomAim));
+	// **Eight metres, as the comment above says and the code did not.** This
+	// was `800.0 * 100.0` -- eight hundred metres, a frame a kilometre and a
+	// half across, in which a two-metre tile repeat is under a pixel.
+	const FVector Eye = bPom
+		? FVector(Origin + PomEye3d * (Planet->SurfaceRadiusAt(PomEye3d) + 200.0))
+		: bDown
+		? FVector(Origin + Eye3d * (Ground + 800.0))
 		: FVector(Origin + Eye3d * (Ground + EyeMetres * 100.0));
-	const FRotator Look = bDown
+	const FRotator Look = bPom
+		? FRotationMatrix::MakeFromXZ(PomTarget - Eye, FVector(PomEye3d)).Rotator()
+		: bDown
 		? FRotationMatrix::MakeFromXZ(
 			FVector(-Eye3d), FVector(ProfileDirection(Eye3d))).Rotator()
 		: FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Eye3d)).Rotator();

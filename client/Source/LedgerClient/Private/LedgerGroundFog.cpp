@@ -173,7 +173,15 @@ int32 ALedgerGroundFog::Configure(
 		// fog bank both from above and from within it, which is what this is
 		// for. The physical profile of a cold pool is a thing T099 can model
 		// properly when there is a temperature field to hang it on.
-		Volume->SetHeightFogFalloff(120.0f);
+		// **Finite.** 120 put e^120 at the bottom of every cell -- past the
+		// largest float -- and the infinity poisoned the fog integration for the
+		// whole view: the ridge frame was one opaque orange, peaks and sky
+		// included, and zeroing only this term (-fogradialonly) gave back the
+		// valley, the cloud sea and the peaks. The falloff is per unit-sphere
+		// radius, so a five-metre transition at the top of a cell whose half
+		// height is H metres is H / 5; capped at 20, which keeps the bottom at
+		// e^20 -- dense, and representable.
+		Volume->SetHeightFogFalloff(static_cast<float>(FMath::Clamp(Deep * 0.5 / 5.0, 1.0, 20.0)));
 		Volume->SetHeightFogOffset(0.0f);
 		Volume->SetFogPhaseG(0.35f);
 		Volume->SetFogAlbedo(FLinearColor(0.92f, 0.94f, 0.97f));

@@ -225,6 +225,11 @@ bool ULedgerClimateTransect::WriteTransect()
 	bool bMonotonic = true;
 	int32 RangesFound = 0;
 	int32 RangesWithShadow = 0;
+	// Why a range did not shadow, so the list can be read rather than counted.
+	int32 NoShadowBoundary = 0;
+	int32 NoShadowDry = 0;
+	int32 NoShadowLeeWetter = 0;
+	int32 NoShadowOther = 0;
 
 	for (const double Longitude : Meridians)
 	{
@@ -388,15 +393,45 @@ bool ULedgerClimateTransect::WriteTransect()
 			}
 			else
 			{
+				// The prevailing wind turns through zero at the band edges, so
+				// there the march has no fetch; with no moisture on either side
+				// there is nothing to take out; and a wetter lee says the air
+				// arrives from the other side.
+				const double AbsLatitude = FMath::Abs(Latitude);
+				const TCHAR* Why = TEXT("");
+				if ((AbsLatitude > 25.0 && AbsLatitude <= 35.0) || (AbsLatitude > 55.0 && AbsLatitude <= 65.0))
+				{
+					Why = TEXT("wind-band boundary");
+					++NoShadowBoundary;
+				}
+				else if (FMath::Max(Windward, Lee) < 0.03)
+				{
+					Why = TEXT("dry both sides");
+					++NoShadowDry;
+				}
+				else if (Lee > Windward)
+				{
+					Why = TEXT("lee wetter");
+					++NoShadowLeeWetter;
+				}
+				else
+				{
+					++NoShadowOther;
+				}
 				Body += FString::Printf(
-					TEXT("  %5d  %5.1f  %6.0f m   %6.3f  %6.3f   NO SHADOW\n"),
-					Longitude, Latitude, Peak, Windward, Lee);
+					TEXT("  %5d  %5.1f  %6.0f m   %6.3f  %6.3f   NO SHADOW  %s\n"),
+					Longitude, Latitude, Peak, Windward, Lee, Why);
 			}
 		}
 	}
 	Body += FString::Printf(
 		TEXT("  (only the ones without a shadow are listed; %d had one)\n\n"),
 		RangesWithShadow);
+	Body += FString::Printf(
+		TEXT("  no shadow: %d at a wind-band boundary (25-35 or 55-65 degrees, where the prevailing "
+			 "wind turns through zero), %d dry on both sides (nothing to shadow), %d wetter on the "
+			 "lee, %d other\n\n"),
+		NoShadowBoundary, NoShadowDry, NoShadowLeeWetter, NoShadowOther);
 
 	// ---- the ridge statistic -------------------------------------------
 	//
