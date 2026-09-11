@@ -358,10 +358,67 @@
    "estimateDays": 40,
    "plannedStart": "2027-05-10",
    "plannedEnd": "2027-07-05",
-   "status": "complete-pending-gate",
-   "gatePassedAt": null,
-   "evidence": [],
-   "doneCount": 20
+   "status": "done",
+   "gatePassedAt": "2026-09-11",
+   "evidence": [
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-181.txt",
+     "caption": "The eight gate checks against the automation run of 2026-09-11 (165 of 165 tests pass): each check, the tests that answer it and their results, and the captures that show it",
+     "source": "../out/m03-gate.txt",
+     "addedAt": "2026-09-11T18:45:46.188Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-283.png",
+     "caption": "Check 1: the moon rising on the horizon at the time the ephemeris chose",
+     "source": "public/evidence/T088-2026-09-10T20-30-30-656.png",
+     "addedAt": "2026-09-11T18:45:46.287Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-362.png",
+     "caption": "Check 1: transit at 79.19 degrees, a gibbous limb",
+     "source": "public/evidence/T088-2026-09-10T20-30-30-797.png",
+     "addedAt": "2026-09-11T18:45:46.364Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-450.png",
+     "caption": "Check 1: set -- a pale moon low in a brightening sky",
+     "source": "public/evidence/T088-2026-09-10T20-30-30-955.png",
+     "addedAt": "2026-09-11T18:45:46.455Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-532.png",
+     "caption": "Check 4: 80.3% lit, an elliptical terminator lit by the same light as the ground",
+     "source": "public/evidence/T074-2026-09-10T14-12-46-784.png",
+     "addedAt": "2026-09-11T18:45:46.549Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-623.txt",
+     "caption": "Check 5: a predicted total eclipse -- ground 74.10 in daylight, 0.00 at the predicted moment",
+     "source": "public/evidence/T075-2026-09-10T14-22-19-441.txt",
+     "addedAt": "2026-09-11T18:45:46.625Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-702.txt",
+     "caption": "Check 6: E*d^2 constant to zero drift across three decades",
+     "source": "public/evidence/T076-2026-09-10T14-42-34-359.txt",
+     "addedAt": "2026-09-11T18:45:46.704Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-780.png",
+     "caption": "Check 7: landed on body 3 in the same session, same terrain path -- black sky, stars, regolith",
+     "source": "public/evidence/T088-2026-09-11T00-00-32-722.png",
+     "addedAt": "2026-09-11T18:45:46.785Z"
+    },
+    {
+     "file": "evidence/M03-2026-09-11T18-45-46-860.txt",
+     "caption": "Check 7: 0.104 g on the moon and no atmosphere",
+     "source": "public/evidence/T078-2026-09-10T15-10-27-850.txt",
+     "addedAt": "2026-09-11T18:45:46.861Z"
+    }
+   ],
+   "doneCount": 20,
+   "gateChecksAnsweredAt": "2026-09-11",
+   "gateNote": "All eight checks answered. Auto checks 1-4, 6 and 8 by the automation run of 2026-09-11 (165/165 pass, after the cave and sky-capture changes): the sky/ephemeris agreement test samples 100 times and places to the arcminute and covers the moon's rise, transit and set as well as the T088 photographs of them; stepped and direct ephemeris agree over a century; phase matches the sun-target-observer geometry; illuminance follows the inverse square; one seed gives the same positions in a second process. Capture checks 5 and 7 by T075's eclipse at the predicted moment and T088's landing on body 3 through the same terrain code at 0.104 g with no air."
   },
   {
    "id": "M04",
@@ -5090,6 +5147,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Skirts in, on a quiet machine (no analysis running beside it -- chain134's 266 was taken with an Insights export and is void). 300 m, 900 m/s, warm cache: 101 frames over 16.7 ms (from 161), worst 48 ms, mean 6.9 ms; game-thread-bound 6 (from 41 -- the collision allowance), render-thread 22, 'waits' 73, frames with a patch upload over 4 ms 63; traces missed 0. SEAMS: the raw edge gaps are still there at speed (stale stitches, up to km between coarse patches at the horizon), but every patch edge now hangs a skirt 5% of its width deep, and the probe counts the gaps deeper than the skirt under them: 0 at nine samples of ten and 4 vertices at the tenth. Skirts are left off patches with caves under them (they walled the passage) and skirted patches read back from the disk cache are trimmed to the grid first (the second visit had stopped being bit-identical -- a test caught it). Left for the gate: the 101 frames (next: the render-thread and wait frames, and uploads over 4 ms) and a no-clouds photograph of the edges at speed; the transect's own photographs are inside the cloud deck at 300 m."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The periodic spikes were the sky light: chain146's twenty 60-75 ms frames sat on the exact 10 km marks, each with FilterReflectionEnvironment and ComputeSingleAverageBrightnessFromCubemap and ~50 ms of extra scene render on the render thread (Insights, render-thread export). A static sky capture re-renders the scene six times; ground travel barely changes the sky, so it is now asked for again on the angle 'up' has turned (1 degree, the same as the sun) or the height, not on distance. Chain150, warm cache, quiet: 188 over 16.7 ms (from 325), worst 61.3 ms (from 74.5), mean 8.96 ms; traces missed 0. Of the 188: 159 with no thread over budget, 19 game, 10 render; 63 with a patch upload over 4 ms. 332 of chain146's 446 over-budget frames were between 16.7 and 22 ms. What remains in them, game thread: LedgerPlanet's tick 9.5 ms against 2.4 in a normal frame -- procedural-mesh render-state updates (+3.2 ms) and physics-state creation for patch collision (+2.2 ms)."
     }
    ],
    "evidence": [
@@ -15155,5 +15217,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T18:23:40.499Z"
+ "updatedAt": "2026-09-11T18:48:00.579Z"
 }

@@ -1,0 +1,16 @@
+BeginEvents: Ledger.Body.WhoKeepsAnAtmosphereIsDerivedNotDeclared
+the rule against bodies somebody has been to:
+  Earth    escape  11186 m/s, thermal  477 m/s, ratio  23.5 -> air (expected air)
+  Moon     escape   2375 m/s, thermal  490 m/s, ratio   4.8 -> none (expected none)
+  Mars     escape   5027 m/s, thermal  432 m/s, ratio  11.6 -> air (expected air)
+  Titan    escape   2641 m/s, thermal  289 m/s, ratio   9.1 -> air (expected air)
+  Mercury  escape   4250 m/s, thermal  626 m/s, ratio   6.8 -> none (expected none)
+  Ceres    escape    517 m/s, thermal  457 m/s, ratio   1.1 -> none (expected none)
+
+EndEvents: Ledger.Body.WhoKeepsAnAtmosphereIsDerivedNotDeclared
+BeginEvents: Ledger.Body.AMoonIsLighterUnderfootThanItsPlanet
+the bodies of this system:
+  body 1 (planet): radius 6320 km, gravity 9.55 m/s^2 (0.973 g), escape 10985 m/s, 245 K, air yes
+  body 2 (moon): radius 2159 km, gravity 0.99 m/s^2 (0.101 g), escape 2067 m/s, 245 K, air none
+
+the moon pulls at 0.104 of the planet's surface gravity

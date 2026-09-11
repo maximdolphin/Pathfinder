@@ -1,0 +1,27 @@
+1. A moon rises, transits and sets within one arcminute of the ephemeris prediction.
+     Success  Ledger.Agreement.TheSkyAndTheEphemerisAgreeToTheArcminuteEverywhere
+     Success  Ledger.Sky.LocalNoonIsWhenTheSunIsHighest
+     capture  T088 captures rise, transit (79.19 deg) and set at the ephemeris times.
+2. Sky and ephemeris agree to the arcminute at 100 sampled times and locations.
+     Success  Ledger.Agreement.TheSkyAndTheEphemerisAgreeToTheArcminuteEverywhere
+3. Positions computed forward from zero and directly at time t agree to sub-metre over a simulated century.
+     Success  Ledger.Ephemeris.SteppedAndDirectAgreeOverACentury
+     Success  Ledger.Clock.SkippingAYearCostsNothingBecauseTheEphemerisIsAFunction
+4. A moon's phase matches the sun-moon-observer geometry from any body in the system.
+     Success  Ledger.SkyBody.PhaseMatchesTheSunTargetObserverGeometry
+     Success  Ledger.SkyBody.FullAtOppositionAndNewAtConjunction
+     capture  T074 captures: 61.0 ... 99.7 per cent lit around one month.
+5. An eclipse predicted by the ephemeris is observable from the surface at the predicted time.
+     Success  Ledger.Eclipse.APredictedEclipseIsThereAtThePredictedTime
+     Success  Ledger.Eclipse.CoverageMatchesTheDiscGeometry
+     capture  T075 capture: ground 74.10 in daylight, 0.00 at the predicted moment.
+6. Illuminance at each planet matches the inverse-square prediction.
+     Success  Ledger.Star.IlluminanceFollowsTheInverseSquare
+     capture  T076: E*d^2 constant across three decades.
+7. Landing on a moon uses the same terrain code path, with correct low gravity and no atmosphere.
+     Success  Ledger.Body.AMoonIsLighterUnderfootThanItsPlanet
+     capture  T078 and T088 captures: landed on body 3, black sky, 0.104 g.
+8. A system regenerates identically from its seed in a second process.
+     Success  Ledger.Agreement.OneSeedGivesTheSamePositionsInAnotherProcess
+
+165 tests in the run; every test the gate names: passed
