@@ -69,6 +69,7 @@ namespace LedgerSurface
 	UMaterialInterface* BuildUnderwaterMaterial(UObject* Outer);
 	UMaterialInterface* BuildFlatMaterial(UObject* Outer);
 	UMaterialInterface* BuildCloudMaterial(UObject* Outer);
+	UMaterialInterface* BuildGroundFogMaterial(UObject* Outer);
 	UMaterialInterface* BuildStarMaterial(UObject* Outer);
 	UMaterialInterface* BuildFoliageMaterial(UObject* Outer);
 

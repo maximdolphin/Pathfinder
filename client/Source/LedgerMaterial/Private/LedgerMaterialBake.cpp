@@ -212,6 +212,7 @@ namespace LedgerSurface
 		// instance each.
 		Record(TEXT("M_Flat"), [](UObject* Outer) { return BuildFlatMaterial(Outer); });
 		Record(TEXT("M_Clouds"), [](UObject* Outer) { return BuildCloudMaterial(Outer); });
+		Record(TEXT("M_GroundFog"), [](UObject* Outer) { return BuildGroundFogMaterial(Outer); });
 		Record(TEXT("M_Star"), [](UObject* Outer) { return BuildStarMaterial(Outer); });
 		Record(TEXT("M_Foliage"), [](UObject* Outer) { return BuildFoliageMaterial(Outer); });
 

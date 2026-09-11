@@ -136,6 +136,21 @@ namespace LedgerSurface
 #endif
 	}
 
+	UMaterialInterface* CreateGroundFogMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_GroundFog")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning, TEXT("ground fog material built in memory: no baked asset."));
+		return BuildGroundFogMaterial(Outer);
+#else
+		// A volume without its material is an opaque slab; no fog is better.
+		return nullptr;
+#endif
+	}
+
 	UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour,
 		float Roughness)
 	{

@@ -1,6 +1,13 @@
 #include "LedgerGroundFog.h"
 
-#include "Components/LocalFogVolumeComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/StaticMesh.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
+#include "Camera/PlayerCameraManager.h"
+#include "LedgerAtmosphere.h"
+#include "LedgerSurface.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "LedgerFrames.h"
 #include "LedgerLog.h"
 #include "LedgerPlanet.h"
@@ -29,18 +36,20 @@ namespace
 	constexpr double GroundFogBaseSize = 500.0;
 
 	constexpr double GroundFogCentimetresPerMetre = 100.0;
+	// How far volumetric fog reaches: past the ridge, and nowhere near orbit.
+	constexpr double GroundFogVolumetricMetres = 20000.0;
 }
 
 ALedgerGroundFog::ALedgerGroundFog()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	SetRootComponent(CreateDefaultSubobject<USceneComponent>(TEXT("Root")));
 }
 
 int32 ALedgerGroundFog::Configure(
 	ALedgerPlanet* Planet, const FVector3d& AnchorDirection, const FLedgerFog& Fog)
 {
-	for (ULocalFogVolumeComponent* Volume : Volumes)
+	for (UStaticMeshComponent* Volume : Volumes)
 	{
 		if (Volume != nullptr)
 		{
@@ -97,54 +106,71 @@ int32 ALedgerGroundFog::Configure(
 
 	FilledToMetres = ValleyFloorMetres + Fog.DepthMetres;
 
-	// **One volume, with its top at the fill level.**
+	// **One box, with its top at the fill level.** T091.
 	//
-	// A local fog volume has a rotation and ONE scale -- LocalFogVolumeCommon.ush
-	// unpacks a single UniformScale -- so the flat lenses this used to lay, 3.2 km
-	// across and 86 m tall, were each a sphere 3.2 km in radius, reaching three
-	// kilometres up through the lookout. That was the opaque orange frame every
-	// version of this produced with the height term on, and with it off the fog
-	// was a faint haze because the radial term is all that was left.
-	//
-	// A cold pool has a level top, and the component can give that directly:
-	// its height term is Extinction * exp(-Falloff * (z - Offset)) in the unit
-	// sphere's own up. So: radial term off, and the Offset put at the fill level.
-	// Below it, fog; above it, clear air; and the ground that stands above the
-	// level -- the ridge -- stands out of the fog on its own.
-	//
-	// **The top sits low in the sphere, because the bottom must stay a number.**
-	// The density grows as exp(Falloff * (Offset - z)) below the top and is
-	// largest at z = -1; a float stops at e^88, and e^120 was the NaN that
-	// poisoned the whole view. With the top at z = -0.8 the bottom is only 0.2 of
-	// the radius below it, so a falloff of 400 -- an e-fold every ~35 m, a sharp
-	// top -- puts e^80 there. The sphere is sized so the circle where it meets the
-	// level (0.6 of its radius) still covers the whole sampled square.
-	constexpr double TopInUnits = -0.8;
-	constexpr double Falloff = 400.0;
-	const double PoolRadiusMetres = GroundFogExtentMetres * 0.71 / FMath::Sqrt(1.0 - TopInUnits * TopInUnits);
-	const double PerMetre = Fog.ExtinctionPerMetre * Fog.Fraction;
+	// A local fog volume is a sphere whose height term is an exponential, and
+	// this pool is not a shape it has -- see LedgerGroundFogMaterial.cpp. A box
+	// voxelised into volumetric fog is: density up to the level, nothing above,
+	// soft sides. It ends at its own floor, so no ground lower than the valley
+	// meets an exponential grown under it, and volumetric fog ends at its own
+	// distance, which is what keeps the pool out of the view from orbit.
+	constexpr double SoftMetres = 10.0;
+	constexpr double FloorMarginMetres = 50.0;
+	constexpr float EdgeFraction = 0.15f;
+	const double BottomMetres = ValleyFloorMetres - FloorMarginMetres;
+	const double TopOfBoxMetres = FilledToMetres + 4.0 * SoftMetres;
+	const double HeightMetres = TopOfBoxMetres - BottomMetres;
+	const double WidthMetres = GroundFogExtentMetres / (1.0 - 2.0 * EdgeFraction);
 
-	ULocalFogVolumeComponent* Volume = NewObject<ULocalFogVolumeComponent>(this);
-	Volume->SetupAttachment(GetRootComponent());
-	Volume->SetMobility(EComponentMobility::Movable);
-	Volume->RegisterComponent();
-	Volume->SetWorldLocation(FVector(Centre
-		+ Up * ((FilledToMetres - TopInUnits * PoolRadiusMetres) * GroundFogCentimetresPerMetre)));
-	Volume->SetWorldRotation(FRotationMatrix::MakeFromZ(FVector(Up)).Rotator());
-	Volume->SetWorldScale3D(FVector(PoolRadiusMetres * GroundFogCentimetresPerMetre / GroundFogBaseSize));
+	// `-fogscale=N` multiplies the density, for looking at the fog rather than
+	// the model.
+	double FogScale = 1.0;
+	FParse::Value(FCommandLine::Get(), TEXT("fogscale="), FogScale);
+	const double PerMetre = Fog.ExtinctionPerMetre * Fog.Fraction * FogScale;
 
-	// Per unit of the sphere's radius: the shader integrates optical depth in the
-	// unit sphere's own space, so a rate per metre becomes that rate times the
-	// radius in metres. It is packed as an 11-bit float, whose top is 65,024.
-	const float UnitExtinction = static_cast<float>(
-		FMath::Clamp(PerMetre * PoolRadiusMetres, 0.0, 60000.0));
-	Volume->SetRadialFogExtinction(0.0f);
-	Volume->SetHeightFogExtinction(UnitExtinction);
-	Volume->SetHeightFogFalloff(static_cast<float>(Falloff));
-	Volume->SetHeightFogOffset(static_cast<float>(TopInUnits));
-	Volume->SetFogPhaseG(0.35f);
-	Volume->SetFogAlbedo(FLinearColor(0.92f, 0.94f, 0.97f));
-	Volumes.Add(Volume);
+	UMaterialInstanceDynamic* Material = nullptr;
+	if (UMaterialInterface* Parent = LedgerSurface::CreateGroundFogMaterial(this))
+	{
+		Material = UMaterialInstanceDynamic::Create(Parent, this);
+	}
+	UStaticMesh* Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	if (Material == nullptr || Cube == nullptr)
+	{
+		UE_LOG(LogLedger, Warning, TEXT("ground fog: no %s, so no fog"),
+			Material == nullptr ? TEXT("material") : TEXT("cube mesh"));
+		return 0;
+	}
+	Material->SetScalarParameterValue(TEXT("Density"), static_cast<float>(PerMetre));
+	Material->SetScalarParameterValue(TEXT("TopFraction"),
+		static_cast<float>((FilledToMetres - BottomMetres) / HeightMetres));
+	Material->SetScalarParameterValue(TEXT("SoftFraction"), static_cast<float>(SoftMetres / HeightMetres));
+	Material->SetScalarParameterValue(TEXT("EdgeFraction"), EdgeFraction);
+
+	UStaticMeshComponent* Box = NewObject<UStaticMeshComponent>(this);
+	Box->SetupAttachment(GetRootComponent());
+	Box->SetMobility(EComponentMobility::Movable);
+	Box->SetStaticMesh(Cube);
+	Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Box->SetCastShadow(false);
+	Box->bAffectDistanceFieldLighting = false;
+	Box->RegisterComponent();
+	Box->SetMaterial(0, Material);
+	Box->SetWorldLocation(FVector(Centre
+		+ Up * ((BottomMetres + TopOfBoxMetres) * 0.5 * GroundFogCentimetresPerMetre)));
+	Box->SetWorldRotation(FRotationMatrix::MakeFromZ(FVector(Up)).Rotator());
+	// The engine's cube is a metre on a side, so the scale is the size in metres.
+	Box->SetWorldScale3D(FVector(WidthMetres, WidthMetres, HeightMetres));
+	Volumes.Add(Box);
+
+	// Volumetric fog is switched on by Tick, while the camera is near.
+	int32 Atmospheres = 0;
+	for (TActorIterator<ALedgerAtmosphere> It(GetWorld()); It; ++It)
+	{
+		Atmosphere = *It;
+		++Atmospheres;
+	}
+	PoolCentre = Box->GetComponentLocation();
+	bVolumetricOn = false;
 
 	int32 Below = 0;
 	for (const double Surface : Ground)
@@ -152,13 +178,43 @@ int32 ALedgerGroundFog::Configure(
 		Below += Surface < FilledToMetres ? 1 : 0;
 	}
 	UE_LOG(LogLedger, Log,
-		TEXT("ground fog: valley floor %.0f m, filled to %.0f m (%.0f m deep); one volume %.1f km in "
-			 "radius, top %.0f m above its centre, %.0f per unit radius, an e-fold every %.0f m above "
-			 "the top; %d of %d sampled cells under the level, %.0f%% remaining, visibility %.0f m"),
+		TEXT("ground fog: valley floor %.0f m, filled to %.0f m (%.0f m deep); a box %.1f km wide from "
+			"%.0f to %.0f m, %.4f per metre below the level, softened over %.0f m; %d of %d sampled cells "
+			"under the level, %.0f%% remaining, visibility %.0f m; volumetric fog to %.0f km on %d atmosphere(s)"),
 		ValleyFloorMetres - Planet->Radius / GroundFogCentimetresPerMetre,
 		FilledToMetres - Planet->Radius / GroundFogCentimetresPerMetre,
-		Fog.DepthMetres, PoolRadiusMetres / 1000.0, TopInUnits * PoolRadiusMetres, UnitExtinction,
-		PoolRadiusMetres / Falloff, Below, Ground.Num(), Fog.Fraction * 100.0,
-		3.0 / FMath::Max(PerMetre, 1e-9));
+		Fog.DepthMetres, WidthMetres / 1000.0,
+		BottomMetres - Planet->Radius / GroundFogCentimetresPerMetre,
+		TopOfBoxMetres - Planet->Radius / GroundFogCentimetresPerMetre,
+		PerMetre, SoftMetres, Below, Ground.Num(), Fog.Fraction * 100.0,
+		3.0 / FMath::Max(PerMetre, 1e-9), GroundFogVolumetricMetres / 1000.0, Atmospheres);
 	return Below;
+}
+
+void ALedgerGroundFog::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	ALedgerAtmosphere* Air = Atmosphere.Get();
+	const APlayerController* Controller = GetWorld() != nullptr ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (Air == nullptr || Volumes.Num() == 0 || Controller == nullptr || Controller->PlayerCameraManager == nullptr)
+	{
+		return;
+	}
+	// Three times the distance volumetric fog reaches: close enough that the
+	// froxels are there before the pool is in them, far short of orbit.
+	const bool bNear = FVector::Dist(Controller->PlayerCameraManager->GetCameraLocation(), PoolCentre)
+		< 3.0 * GroundFogVolumetricMetres * GroundFogCentimetresPerMetre;
+	if (bNear != bVolumetricOn)
+	{
+		bVolumetricOn = bNear;
+		if (bNear)
+		{
+			Air->UseVolumetricFogOnly(GroundFogVolumetricMetres);
+		}
+		else
+		{
+			Air->StopVolumetricFog();
+		}
+		UE_LOG(LogLedger, Log, TEXT("ground fog: volumetric fog %s"), bNear ? TEXT("on, camera near the pool") : TEXT("off, camera far from the pool"));
+	}
 }

@@ -88,6 +88,11 @@ namespace LedgerSurface
 	/// deck's height is a temperature and temperatures move.
 	LEDGERMATERIAL_API UMaterialInterface* CreateCloudMaterial(UObject* Outer);
 
+	/// A valley's cold pool: a volume material for a box, voxelised into
+	/// volumetric fog, with a level top and soft sides. T091. Density,
+	/// TopFraction, SoftFraction and EdgeFraction are parameters.
+	LEDGERMATERIAL_API UMaterialInterface* CreateGroundFogMaterial(UObject* Outer);
+
 	/// Unlit emissive, for the star field. T077 computed eight hundred stars
 	/// and nothing drew them; this is what draws them.
 	LEDGERMATERIAL_API UMaterialInterface* CreateStarMaterial(UObject* Outer);

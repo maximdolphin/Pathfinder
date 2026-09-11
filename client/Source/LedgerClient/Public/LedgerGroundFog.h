@@ -22,7 +22,8 @@
 #include "LedgerGroundFog.generated.h"
 
 class ALedgerPlanet;
-class ULocalFogVolumeComponent;
+class ALedgerAtmosphere;
+class UStaticMeshComponent;
 
 UCLASS()
 class LEDGERCLIENT_API ALedgerGroundFog : public AActor
@@ -44,11 +45,18 @@ public:
 	/// so a fixture can put a camera above and below it.
 	double TopMetres() const { return FilledToMetres; }
 	double FloorMetres() const { return ValleyFloorMetres; }
+	virtual void Tick(float DeltaSeconds) override;
 
 private:
 	UPROPERTY()
-	TArray<TObjectPtr<ULocalFogVolumeComponent>> Volumes;
+	TArray<TObjectPtr<UStaticMeshComponent>> Volumes;
 
 	double FilledToMetres = 0.0;
 	double ValleyFloorMetres = 0.0;
+	/// Volumetric fog is on only while the camera is near the pool: the height
+	/// fog it needs turns the view from orbit into a white disc under an orange
+	/// sky, and a pool seen from orbit is not something anyone can see anyway.
+	TWeakObjectPtr<ALedgerAtmosphere> Atmosphere;
+	FVector PoolCentre = FVector::ZeroVector;
+	bool bVolumetricOn = false;
 };

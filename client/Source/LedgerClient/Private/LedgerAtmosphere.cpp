@@ -183,6 +183,12 @@ void ALedgerAtmosphere::ConfigureForAir(
 		Fog->SetFogDensity(0.0f);
 		Fog->SetVolumetricFog(false);
 		Fog->SetVisibility(false);
+		// Unless a ground fog has asked for volumetric fog, which it needs for
+		// its froxels and nothing else.
+		if (VolumetricOnlyMetres > 0.0)
+		{
+			UseVolumetricFogOnly(VolumetricOnlyMetres);
+		}
 		Fog->MarkRenderStateDirty();
 	}
 
@@ -201,6 +207,46 @@ void ALedgerAtmosphere::ConfigureForAir(
 		Air.MieAbsorptionPerMetre.Z * 1000.0, Air.MieAnisotropy,
 		Air.OzoneAbsorptionPerMetre * 1000.0,
 		Air.bHasClouds ? TEXT("yes") : TEXT("no"));
+}
+
+void ALedgerAtmosphere::UseVolumetricFogOnly(double DistanceMetres)
+{
+	VolumetricOnlyMetres = DistanceMetres;
+	if (Fog == nullptr)
+	{
+		return;
+	}
+	// The height fog itself stays as good as off -- ConfigureForAir says why.
+	// What turning it on buys is the froxel grid, which a volume material on
+	// a mesh is voxelised into, and which ends at this distance. Not zero: the
+	// engine drops a height fog whose density is under 1e-8 from the scene,
+	// volumetric fog and all. 1e-7 with its opacity capped at a thousandth is
+	// nothing, even from orbit.
+	Fog->SetFogDensity(1.0e-7f);
+	Fog->SetFogMaxOpacity(0.001f);
+	Fog->SetVolumetricFog(true);
+	// And none of the height fog's own density in the froxels. It is a plane
+	// in world Z, and a camera in orbit can stand thousands of kilometres
+	// "below" it, where its exponential saturates whatever the density: the
+	// orbit frame came back as a white planet under an orange sky. The opacity
+	// cap bounds the analytic fog, not what volumetric fog integrates.
+	Fog->SetVolumetricFogExtinctionScale(0.0f);
+	Fog->SetVolumetricFogDistance(static_cast<float>(DistanceMetres * 100.0));
+	Fog->SetVisibility(true);
+	Fog->MarkRenderStateDirty();
+}
+
+void ALedgerAtmosphere::StopVolumetricFog()
+{
+	VolumetricOnlyMetres = 0.0;
+	if (Fog == nullptr)
+	{
+		return;
+	}
+	Fog->SetFogDensity(0.0f);
+	Fog->SetVolumetricFog(false);
+	Fog->SetVisibility(false);
+	Fog->MarkRenderStateDirty();
 }
 
 void ALedgerAtmosphere::SetViewerAltitude(double MetresAboveSea)

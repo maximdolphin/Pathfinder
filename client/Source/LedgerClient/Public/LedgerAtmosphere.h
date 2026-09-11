@@ -76,6 +76,12 @@ public:
 	/// Inside it the tracing distance comes down: see the definition.
 	void SetViewerAltitude(double MetresAboveSea);
 
+	/// Volumetric fog to this distance with the height fog's own density at
+	/// zero, for a ground fog volume to voxelise into. T091.
+	void UseVolumetricFogOnly(double DistanceMetres);
+	/// And off again: the height fog hidden, as ConfigureForAir leaves it.
+	void StopVolumetricFog();
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;
@@ -98,4 +104,7 @@ private:
 	double LayerBottomMetres = 0.0;
 	double LayerTopMetres = 0.0;
 	bool bTracingInside = false;
+
+	/// Non-zero once a ground fog has asked for volumetric fog.
+	double VolumetricOnlyMetres = 0.0;
 };
