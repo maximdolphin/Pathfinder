@@ -129,7 +129,12 @@ namespace LedgerCloud
 			Out.Cirrus.Coverage = 0.15 + 0.45 * CloudRandom(
 				System.Seed, BodyIndex, 771
 					+ static_cast<int32>(SecondsFromEpoch / 43200.0));
-			Out.Cirrus.Opacity = 0.25;
+			// **Thin, because cirrus is.** Ice cloud has an optical depth of about
+			// one through its whole thickness, and this deck is two and a half
+			// kilometres of it: at 0.25 of the material's 0.04 per metre it came to
+			// twenty-five, and the climb photographed the inside of a brown wall and
+			// the underside of an opaque lid. 0.03 is about 3 where fully covered.
+			Out.Cirrus.Opacity = 0.03;
 		}
 
 		// **Each deck drifts with the wind at its own height.** That is why a

@@ -118,41 +118,78 @@ void ULedgerAirShow::OnWorldBeginPlay(UWorld& InWorld)
 		TEXT("air show: body %d (%s), %s at %.0f Pa and %.1f K"),
 		Home, *System.Bodies[Home].Name, LexToString(Air.Composition),
 		Air.SurfacePressurePascals, Air.SurfaceTemperatureKelvin);
+}
+
+void ULedgerAirShow::BuildClimb(ALedgerPlanet* Planet)
+{
+	// **From the lowest ground near the site, so the climb starts under every
+	// deck.** The decks are altitudes above sea level and a site can stand above
+	// one: this world's plateau is 2,365 m, over the whole cumulus deck, and a
+	// climb from it photographs the ground four times and calls it three decks.
+	// ponytail: 24 bearings on rings every 20 km out to 200 km -- coarse, and
+	// enough, because what it is looking for is sea or a lowland, which are wide.
+	FVector3d East = FVector3d::CrossProduct(FVector3d::UnitZ(), Anchor);
+	if (East.IsNearlyZero())
+	{
+		East = FVector3d::CrossProduct(FVector3d::UnitX(), Anchor);
+	}
+	East.Normalize();
+	const FVector3d North = FVector3d::CrossProduct(Anchor, East);
+	const double SiteRadius = Planet->SurfaceRadiusAt(Anchor);
+	FVector3d Lowest = Anchor;
+	double LowestRadius = SiteRadius;
+	for (int32 Ring = 1; Ring <= 10; ++Ring)
+	{
+		const double Angle = Ring * 2000000.0 / Planet->Radius;
+		for (int32 Bearing = 0; Bearing < 24; ++Bearing)
+		{
+			const double Theta = UE_TWO_PI * Bearing / 24.0;
+			const FVector3d Try = (Anchor * FMath::Cos(Angle)
+				+ (East * FMath::Cos(Theta) + North * FMath::Sin(Theta)) * FMath::Sin(Angle)).GetSafeNormal();
+			const double Radius = Planet->SurfaceRadiusAt(Try);
+			if (Radius < LowestRadius)
+			{
+				LowestRadius = Radius;
+				Lowest = Try;
+			}
+		}
+	}
+	UE_LOG(LogLedger, Log, TEXT("cloud climb: the site's ground is %.0f m; climbing from %.0f m, %.0f km away"),
+		(SiteRadius - Planet->Radius) / 100.0, (LowestRadius - Planet->Radius) / 100.0,
+		FMath::Acos(FMath::Clamp(FVector3d::DotProduct(Anchor, Lowest), -1.0, 1.0)) * Planet->Radius / 100000.0);
+	Anchor = Lowest;
 
 	// **The climb, from the profile the decks are drawn from.** The same call
 	// the world builder makes, at the same place and hour, so the altitudes
 	// photographed are the ones the atmosphere was given.
-	if (bClimb)
+	const double Latitude = FMath::Asin(FMath::Clamp(Anchor.Z, -1.0, 1.0));
+	const double Longitude = FMath::Atan2(Anchor.Y, Anchor.X);
+	const FLedgerCloudDecks Decks = LedgerCloud::DecksAt(
+		System, Home, Air, Latitude, Longitude, NoonSeconds);
+	auto Add = [this](const FString& Name, double Metres, double LookUp)
 	{
-		const double Latitude = FMath::Asin(FMath::Clamp(Anchor.Z, -1.0, 1.0));
-		const double Longitude = FMath::Atan2(Anchor.Y, Anchor.X);
-		const FLedgerCloudDecks Decks = LedgerCloud::DecksAt(
-			System, Home, Air, Latitude, Longitude, NoonSeconds);
-		auto Add = [this](const FString& Name, double Metres, double LookUp)
+		ClimbNames.Add(Name);
+		ClimbMetres.Add(Metres);
+		ClimbLookUp.Add(LookUp);
+	};
+	auto Deck = [this, &Add](const TCHAR* Name, const FLedgerCloudDeck& Layer)
+	{
+		ClimbDecks += FString::Printf(TEXT("%-8s %s"), Name, Layer.bPresent
+			? *FString::Printf(TEXT("%.0f to %.0f m, cover %.2f"), Layer.BaseMetres, Layer.TopMetres, Layer.Coverage)
+			: TEXT("absent")) + LINE_TERMINATOR;
+		if (Layer.bPresent)
 		{
-			ClimbNames.Add(Name);
-			ClimbMetres.Add(Metres);
-			ClimbLookUp.Add(LookUp);
-		};
-		auto Deck = [this, &Add](const TCHAR* Name, const FLedgerCloudDeck& Layer)
-		{
-			ClimbDecks += FString::Printf(TEXT("%-8s %s"), Name, Layer.bPresent
-				? *FString::Printf(TEXT("%.0f to %.0f m, cover %.2f"), Layer.BaseMetres, Layer.TopMetres, Layer.Coverage)
-				: TEXT("absent")) + LINE_TERMINATOR;
-			if (Layer.bPresent)
-			{
-				Add(FString::Printf(TEXT("below-%s"), Name), Layer.BaseMetres - 300.0, 0.25);
-				Add(FString::Printf(TEXT("in-%s"), Name), 0.5 * (Layer.BaseMetres + Layer.TopMetres), 0.0);
-				Add(FString::Printf(TEXT("above-%s"), Name), Layer.TopMetres + 300.0, -0.25);
-			}
-		};
-		Deck(TEXT("cumulus"), Decks.Cumulus);
-		Deck(TEXT("middle"), Decks.Middle);
-		Deck(TEXT("cirrus"), Decks.Cirrus);
-		Add(TEXT("orbit"), -1.0, 0.0);
-		UE_LOG(LogLedger, Log, TEXT("cloud climb: %d views%s%s"),
-			ClimbNames.Num(), LINE_TERMINATOR, *ClimbDecks);
-	}
+			Add(FString::Printf(TEXT("below-%s"), Name), Layer.BaseMetres - 300.0, 0.25);
+			Add(FString::Printf(TEXT("in-%s"), Name), 0.5 * (Layer.BaseMetres + Layer.TopMetres), 0.0);
+			Add(FString::Printf(TEXT("above-%s"), Name), Layer.TopMetres + 300.0, -0.25);
+		}
+	};
+	Deck(TEXT("cumulus"), Decks.Cumulus);
+	Deck(TEXT("middle"), Decks.Middle);
+	Deck(TEXT("cirrus"), Decks.Cirrus);
+	Add(TEXT("orbit"), -1.0, 0.0);
+	UE_LOG(LogLedger, Log, TEXT("cloud climb: %d views%s%s"),
+		ClimbNames.Num(), LINE_TERMINATOR, *ClimbDecks);
 }
 
 void ULedgerAirShow::Place()
@@ -164,6 +201,10 @@ void ULedgerAirShow::Place()
 	if (Planet == nullptr || Controller == nullptr)
 	{
 		return;
+	}
+	if (bClimb && ClimbNames.Num() == 0)
+	{
+		BuildClimb(Planet);
 	}
 
 	const int32 Which = FMath::Clamp(bAimed ? Step - 1 : Step, 0, ViewCount() - 1);
@@ -277,6 +318,10 @@ void ULedgerAirShow::Tick(float DeltaSeconds)
 	}
 
 	Place();
+	if (bClimb && ClimbNames.Num() == 0)
+	{
+		return;
+	}
 
 	Settle += DeltaSeconds;
 	// The first frame gets a long settle because auto-exposure is an

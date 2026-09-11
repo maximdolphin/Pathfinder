@@ -17,6 +17,7 @@
 #include "LedgerAirShow.generated.h"
 
 class ACameraActor;
+class ALedgerPlanet;
 
 UCLASS()
 class LEDGERHARNESS_API ULedgerAirShow : public UTickableWorldSubsystem
@@ -32,6 +33,7 @@ public:
 private:
 	void Place();
 	void Report();
+	void BuildClimb(ALedgerPlanet* Planet);
 
 	UPROPERTY()
 	TObjectPtr<ACameraActor> Camera;
