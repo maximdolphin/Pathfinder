@@ -50,4 +50,14 @@ private:
 	bool bAimed = false;
 	bool bRunning = false;
 	double Settle = 0.0;
+
+	/// `-cloudclimb`: below, inside and above each deck the profile predicts at
+	/// the site, then orbit. T094.
+	bool bClimb = false;
+	TArray<FString> ClimbNames;
+	TArray<double> ClimbMetres;   // above sea level; negative for the orbit view
+	TArray<double> ClimbLookUp;
+	FString ClimbDecks;           // the profile's altitudes, for the report
+	int32 ViewCount() const;
+	const TCHAR* ViewName(int32 Index) const;
 };

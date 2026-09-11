@@ -158,6 +158,7 @@ void ALedgerAtmosphere::ConfigureForAir(
 			Clouds->ShadowViewSampleCountScale = 1.0f;
 			Clouds->PlanetRadius = RadiusKm;
 			Clouds->TracingMaxDistance = 250.0f;
+			bTracingInside = false;
 			// **From orbit too.** A ray only starts marching if the layer is within
 			// this many kilometres, and the default 350 is a sixth of the way to
 			// the air show's orbit frame -- which came back with no cloud at all
@@ -202,6 +203,36 @@ void ALedgerAtmosphere::ConfigureForAir(
 		Air.bHasClouds ? TEXT("yes") : TEXT("no"));
 }
 
+void ALedgerAtmosphere::SetViewerAltitude(double MetresAboveSea)
+{
+	if (Clouds == nullptr || LayerTopMetres <= LayerBottomMetres)
+	{
+		return;
+	}
+
+	// **Short steps inside the layer.** The engine spreads at most 768 samples
+	// (x1.2 here) along a view ray over the whole traced distance past 15 km,
+	// and from inside the layer that is the full 250 km: a step of about
+	// 270 m, and every step drawn as a spherical shell in the cloud noise --
+	// the concentric sepia bands that filled every frame taken from inside
+	// the deck (T054's cliff cameras at 2 km, T094). From outside, a ray
+	// only crosses the layer's thickness and the 250 km is what grazing
+	// views at the horizon need. Inside, the density hides anything thirty
+	// kilometres off, and thirty makes the step about 30 m.
+	const bool bInside = MetresAboveSea > LayerBottomMetres - 200.0
+		&& MetresAboveSea < LayerTopMetres + 200.0;
+	if (bInside == bTracingInside)
+	{
+		return;
+	}
+	bTracingInside = bInside;
+	Clouds->TracingMaxDistance = bInside ? 30.0f : 250.0f;
+	Clouds->MarkRenderStateDirty();
+	UE_LOG(LogLedger, Log, TEXT("clouds: viewer %s the layer (%.0f m; layer %.0f-%.0f m), tracing to %.0f km"),
+		bInside ? TEXT("inside") : TEXT("outside"), MetresAboveSea, LayerBottomMetres, LayerTopMetres,
+		Clouds->TracingMaxDistance);
+}
+
 void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 {
 	if (Clouds == nullptr)
@@ -224,6 +255,8 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 	const double Span = FMath::Max(Decks.HighestMetres - Bottom, 500.0);
 	Clouds->LayerBottomAltitude = static_cast<float>(Bottom / 1000.0);
 	Clouds->LayerHeight = static_cast<float>(Span / 1000.0);
+	LayerBottomMetres = Bottom;
+	LayerTopMetres = Bottom + Span;
 
 	// **Which material draws the deck, and why the choice exists.**
 	//
@@ -273,6 +306,9 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 		Clouds->LayerBottomAltitude = static_cast<float>(Only.BaseMetres / 1000.0);
 		Clouds->LayerHeight = FMath::Max(
 			static_cast<float>((Only.TopMetres - Only.BaseMetres) / 1000.0), 0.5f);
+		// The layer is the one deck here, so that is what "inside" means.
+		LayerBottomMetres = Only.BaseMetres;
+		LayerTopMetres = Only.BaseMetres + FMath::Max(Only.TopMetres - Only.BaseMetres, 500.0);
 		CloudMaterial->SetScalarParameterValue(
 			TEXT("Cloud_GlobalCoverage"), static_cast<float>(Only.Coverage));
 		CloudMaterial->SetScalarParameterValue(

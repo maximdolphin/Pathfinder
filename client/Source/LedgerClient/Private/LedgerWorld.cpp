@@ -303,6 +303,10 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 			(FVector3d(ViewPoint) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
 		Atmosphere->SetSunElevationFloorDegrees(FMath::RadiansToDegrees(FMath::Asin(
 			FMath::Clamp(FVector3d::DotProduct(SunFacing.GetSafeNormal(), ViewerUp), -1.0, 1.0))));
+		// Against the same sea-level radius the cloud component is wrapped round.
+		Atmosphere->SetViewerAltitude(
+			(FVector3d(ViewPoint) - FVector3d(Planet->GetActorLocation())).Length() / 100.0
+			- Planet->Radius / 100.0);
 	}
 
 	// **Moving it is not enough: the capture has to be asked for again.**

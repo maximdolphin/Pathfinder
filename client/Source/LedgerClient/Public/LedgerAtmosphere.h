@@ -72,6 +72,10 @@ public:
 	/// the complete answer is a world frame whose +Z is the viewer's up.
 	void SetSunElevationFloorDegrees(double Degrees);
 
+	/// Where the viewer is against the cloud layer, metres above sea level.
+	/// Inside it the tracing distance comes down: see the definition.
+	void SetViewerAltitude(double MetresAboveSea);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;
@@ -88,4 +92,10 @@ private:
 	TObjectPtr<class UMaterialInstanceDynamic> CloudMaterial;
 
 	double LastCoverage = -1.0;
+
+	/// The one volumetric layer's extent, from SetDecks, and whether the
+	/// tracing distance is currently the short, in-layer one.
+	double LayerBottomMetres = 0.0;
+	double LayerTopMetres = 0.0;
+	bool bTracingInside = false;
 };

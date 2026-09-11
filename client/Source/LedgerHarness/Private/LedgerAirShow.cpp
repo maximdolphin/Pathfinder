@@ -1,4 +1,5 @@
 #include "LedgerAirShow.h"
+#include "LedgerCloud.h"
 
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
@@ -66,7 +67,8 @@ TStatId ULedgerAirShow::GetStatId() const
 void ULedgerAirShow::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
-	bRunning = FParse::Param(FCommandLine::Get(), TEXT("airshow"));
+	bClimb = FParse::Param(FCommandLine::Get(), TEXT("cloudclimb"));
+	bRunning = bClimb || FParse::Param(FCommandLine::Get(), TEXT("airshow"));
 	if (!bRunning)
 	{
 		return;
@@ -116,6 +118,41 @@ void ULedgerAirShow::OnWorldBeginPlay(UWorld& InWorld)
 		TEXT("air show: body %d (%s), %s at %.0f Pa and %.1f K"),
 		Home, *System.Bodies[Home].Name, LexToString(Air.Composition),
 		Air.SurfacePressurePascals, Air.SurfaceTemperatureKelvin);
+
+	// **The climb, from the profile the decks are drawn from.** The same call
+	// the world builder makes, at the same place and hour, so the altitudes
+	// photographed are the ones the atmosphere was given.
+	if (bClimb)
+	{
+		const double Latitude = FMath::Asin(FMath::Clamp(Anchor.Z, -1.0, 1.0));
+		const double Longitude = FMath::Atan2(Anchor.Y, Anchor.X);
+		const FLedgerCloudDecks Decks = LedgerCloud::DecksAt(
+			System, Home, Air, Latitude, Longitude, NoonSeconds);
+		auto Add = [this](const FString& Name, double Metres, double LookUp)
+		{
+			ClimbNames.Add(Name);
+			ClimbMetres.Add(Metres);
+			ClimbLookUp.Add(LookUp);
+		};
+		auto Deck = [this, &Add](const TCHAR* Name, const FLedgerCloudDeck& Layer)
+		{
+			ClimbDecks += FString::Printf(TEXT("%-8s %s"), Name, Layer.bPresent
+				? *FString::Printf(TEXT("%.0f to %.0f m, cover %.2f"), Layer.BaseMetres, Layer.TopMetres, Layer.Coverage)
+				: TEXT("absent")) + LINE_TERMINATOR;
+			if (Layer.bPresent)
+			{
+				Add(FString::Printf(TEXT("below-%s"), Name), Layer.BaseMetres - 300.0, 0.25);
+				Add(FString::Printf(TEXT("in-%s"), Name), 0.5 * (Layer.BaseMetres + Layer.TopMetres), 0.0);
+				Add(FString::Printf(TEXT("above-%s"), Name), Layer.TopMetres + 300.0, -0.25);
+			}
+		};
+		Deck(TEXT("cumulus"), Decks.Cumulus);
+		Deck(TEXT("middle"), Decks.Middle);
+		Deck(TEXT("cirrus"), Decks.Cirrus);
+		Add(TEXT("orbit"), -1.0, 0.0);
+		UE_LOG(LogLedger, Log, TEXT("cloud climb: %d views%s%s"),
+			ClimbNames.Num(), LINE_TERMINATOR, *ClimbDecks);
+	}
 }
 
 void ULedgerAirShow::Place()
@@ -129,9 +166,17 @@ void ULedgerAirShow::Place()
 		return;
 	}
 
-	const int32 Which = FMath::Clamp(
-		bAimed ? Step - 1 : Step, 0, UE_ARRAY_COUNT(AirShowViews) - 1);
-	const FAirShowView& View = AirShowViews[Which];
+	const int32 Which = FMath::Clamp(bAimed ? Step - 1 : Step, 0, ViewCount() - 1);
+	FAirShowView View = AirShowViews[FMath::Min(Which, static_cast<int32>(UE_ARRAY_COUNT(AirShowViews)) - 1)];
+	double ClimbMetresHere = -1.0;
+	if (bClimb)
+	{
+		View.What = *ClimbNames[Which];
+		ClimbMetresHere = ClimbMetres[Which];
+		View.AltitudeInRadii = ClimbMetresHere < 0.0 ? 2.0 : 0.0;
+		View.LookUp = ClimbLookUp[Which];
+		View.FieldOfView = ClimbMetresHere < 0.0 ? 50.0f : 70.0f;
+	}
 
 	// The sunset frame is a different moment, not just a different aim.
 	const bool bSunset = FString(View.What) == TEXT("sunset");
@@ -149,7 +194,12 @@ void ULedgerAirShow::Place()
 	const double Height = View.AltitudeInRadii > 0.0
 		? Planet->Radius * View.AltitudeInRadii
 		: AirShowEyeMetres * 100.0;
-	const FVector Eye = FVector(Centre + Anchor * (Ground + Height));
+	// A climb step stands at its altitude above sea level, which is what the
+	// deck profile gives -- and never below the ground at the site.
+	const FVector Eye = ClimbMetresHere >= 0.0
+		? FVector(Centre + Anchor * FMath::Max(Planet->Radius + ClimbMetresHere * 100.0,
+			Ground + AirShowEyeMetres * 100.0))
+		: FVector(Centre + Anchor * (Ground + Height));
 
 	// **The sun's bearing, so every body is photographed with the light in the
 	// same place.** Comparing three skies means comparing three skies, not
@@ -242,14 +292,14 @@ void ULedgerAirShow::Tick(float DeltaSeconds)
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 				FString::Printf(TEXT("airshow-%d-%s.png"),
-					Home, AirShowViews[Step - 1].What)));
+					Home, ViewName(Step - 1))));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
 		bAimed = false;
 		Settle = 0.0;
 		return;
 	}
 
-	if (Step >= UE_ARRAY_COUNT(AirShowViews))
+	if (Step >= ViewCount())
 	{
 		bRunning = false;
 		Report();
@@ -258,8 +308,21 @@ void ULedgerAirShow::Tick(float DeltaSeconds)
 	}
 
 	UE_LOG(LogLedger, Log, TEXT("air show %d/%d: %s"),
-		Step + 1, static_cast<int32>(UE_ARRAY_COUNT(AirShowViews)),
-		AirShowViews[Step].What);
+		Step + 1, ViewCount(),
+		ViewName(Step));
+	// A climb step under the site's ground is photographed from the ground, so
+	// say so: that frame is not at the altitude its name gives.
+	if (bClimb && ClimbMetres[Step] >= 0.0)
+	{
+		const ALedgerPlanet* Planet = GetWorld()->GetSubsystem<ULedgerWorldBuilder>()->GetPlanet();
+		const double GroundMetres = Planet != nullptr
+			? (Planet->SurfaceRadiusAt(Anchor) - Planet->Radius) / 100.0 : 0.0;
+		if (ClimbMetres[Step] < GroundMetres + AirShowEyeMetres)
+		{
+			UE_LOG(LogLedger, Warning, TEXT("air show: %s wants %.0f m, but the ground here is at %.0f m; photographed from %.0f m above it"),
+				ViewName(Step), ClimbMetres[Step], GroundMetres, static_cast<double>(AirShowEyeMetres));
+		}
+	}
 	++Step;
 	bAimed = true;
 	Settle = 0.0;
@@ -295,9 +358,23 @@ void ULedgerAirShow::Report()
 			: TEXT("none"),
 		LINE_TERMINATOR);
 
+	if (bClimb)
+	{
+		Body += FString(TEXT("cloud decks at the site, from the profile:")) + LINE_TERMINATOR + ClimbDecks;
+	}
 	const FString Path = FPaths::ConvertRelativePathToFull(
 		FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 			FString::Printf(TEXT("airshow-%d.txt"), Home)));
 	FFileHelper::SaveStringToFile(Body, *Path);
 	UE_LOG(LogLedger, Log, TEXT("air show: wrote %s"), *Path);
+}
+
+int32 ULedgerAirShow::ViewCount() const
+{
+	return bClimb ? ClimbNames.Num() : static_cast<int32>(UE_ARRAY_COUNT(AirShowViews));
+}
+
+const TCHAR* ULedgerAirShow::ViewName(int32 Index) const
+{
+	return bClimb ? *ClimbNames[Index] : AirShowViews[Index].What;
 }
