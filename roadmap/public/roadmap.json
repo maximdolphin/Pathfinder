@@ -4915,6 +4915,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Same build, warm cache, one cvar apart: a warm-up run 44.1% missed; then resident-leaf collision 10.1% (longest gap 156 frames) against -noresidentcollision 9.1% (gap 100). So the 50.2% was the cold cache after the format bump, and resident-leaf collision buys nothing -- reverted. With a warm cache, detail scaled by speed alone brings the transect from 98.9% to ~9%. What is left: ~1,000 misses with only the resident shell drawn under the ship, ~200 drawn and not yet cooked, the longest gap 1.7 s; and the cold-cache number (44%) is the one a first flight over new ground would see."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The gate as written, 200 km at 300 m and 900 m/s (-transectaltitude=300, committed): warm-up 9.3% missed, then on the warm cache 7.2%, the longest gap 46 frames (0.77 s). Of 958 misses: 593 over drawn ground whose collision was asked for and had not cooked, 344 over the resident shell alone, 21 with nothing drawn. The largest group is a release rule: a parent is dropped the frame its children are drawn, and a child's collision cooks some frames later. Now the parent, if it has collision, holds until every child with collision has cooked it (the body setup's triangle mesh exists); queued with the footing guard."
     }
    ],
    "evidence": [
@@ -6757,6 +6762,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The cloud shadow map is not it either: off (r.VolumetricCloud.ShadowMap=0) the frames are the same to a tenth of a level (above-middle 122.1 against 122.0; orbit 118.1 against 118.0). Ruled out now: the air show's framing alone, the one global sun transmittance, the shadow map. Within a frame the cloud is about as bright as the sand under it, where a thick cumulus deck should be about half again brighter -- which points at the clouds being optically too thin (coverage-thresholded, wispy) and the forward-biased phase, not the lighting. The weather noise and multiple scattering are committed. The acceptance is layering from orbit, not brightness: from two radii a deck is a fraction of a pixel, so the climb now adds a low-orbit view at 400 km looking at the limb, queued with a cloud-free reference."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "From a low orbit (400 km, looking 20 degrees down at the limb) the decks do not read as layers: one flat, speckled, sepia veil over nearly the whole disc, the ground in a few dark gaps, no cumulus tops against the limb and no cirrus distinguishable from what is under it. So the orbit half is not met, and it is not a lighting setting -- framing, the global sun transmittance and the cloud shadow map are all ruled out. It is the shapes: every deck is the same fine noise cut at a coverage threshold, which is sub-kilometre speckle at any altitude, so three decks superimpose into one texture. Meeting it is a redesign of the cloud material's morphology -- cumulus as puffs with flat bases, cirrus as long streaks along the wind, each deck its own large-scale structure, and brightness from optical depth -- which is design work, not a parameter. The climb half stays met (b5128b6, 11087cc, f311b57)."
     }
    ],
    "evidence": [
@@ -14547,5 +14557,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:36:39.938Z"
+ "updatedAt": "2026-09-11T09:48:45.101Z"
 }
