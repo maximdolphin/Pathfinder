@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 7
+   "doneCount": 16
   },
   {
    "id": "M05",
@@ -481,10 +481,10 @@
    "estimateDays": 48.5,
    "plannedStart": "2027-08-30",
    "plannedEnd": "2027-11-05",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 19
   },
   {
    "id": "M06",
@@ -550,10 +550,10 @@
    "estimateDays": 45,
    "plannedStart": "2027-11-05",
    "plannedEnd": "2028-01-07",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 1
   },
   {
    "id": "M07",
@@ -5369,6 +5369,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Render side under way (4385d6f): -surfacestudy -reference renders 2/20/200 m at a chosen -studyat site; sites logged for desert gravel 3.0,123.0, rainforest floor 2.0,154.0, cliff apron scree -2.3968,120.0014, winter snow -52.0,43.0 at season 0.25. First pass was white (exposure pinned) and rolled 90 degrees at the equator; both fixed. Photographs need the user's permission to download."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Scree re-rendered where the site actually is, with -studyasis so the study does not walk to the flattest ground: at 2 m it is still sand with a scatter of pebbles and scree only on the upper slope, so the scree deficiency stands (no clast field on the talus itself). Contact sheet at out/reference-sheet.jpg covers gravel, rainforest, scree, sky and snow. The verdicts against CC0 reference photographs wait on permission to download them."
     }
    ],
    "evidence": [],
@@ -6964,10 +6969,16 @@
    "dependsOn": [
     "T096"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Storms are the deepest lows: onset 2500 Pa, full at 4000, with a 2 km squall front; 8 flashes a minute and 18 m/s rms gusts at the core (Ledger.Weather.StormsAreTheDeepestLowsAndTheirGustsRepeat). -stormwatch: 40 s through the storm at 3000 m costs the hull 0.39 with 17.2 m/s rms gusts and 5.5 m/s of cross-track; calm air costs nothing. From 400 km the storm is a solid deck (frame mean 0.599) where calm air is broken cloud with ground between (0.481). That is drawn by the project three-deck cloud material, which reads the twelve published lows; the engine default single deck cannot place weather at all, so storms from orbit in the default sky arrive with the T094 material switch (-threedecks until then)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 235.5,
    "plannedEndDay": 238.5,
@@ -6988,10 +6999,16 @@
    "dependsOn": [
     "T097"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Orographic vertical wind (w = u . grad h, e-folding over 1000 m) and thermals as forces on the flight model. -ridgeflight: 24 km downwind across 1915 m of relief in a 17.8 m/s gale, 250 m over the highest ground. Hands off, the ship is thrown 185 m off its height and follows the vertical field (r = 0.95, field -9.3 to +8.1 m/s); flown, it holds within 13 m with 0.135 g rms of correction; calm air needs 0.008 g. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 238.5,
    "plannedEndDay": 240.5,
@@ -7012,10 +7029,16 @@
    "dependsOn": [
     "T098"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerEnvironment::At: ground temperature from the climate, the lapse rate, a tropopause floor at 0.75 of the surface temperature, and pressure by scale height; the settlement vane, the precipitation view and the ship all read it. -airprobe: a column over the town matches the lapse rate to 8e-12 K and the scale height to 1.5e-13; the freezing level found by bisecting the field (1505.145 m) is the precipitation model boundary; settlement and renderer read 282.859659 K both. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 240.5,
    "plannedEndDay": 242,
@@ -7036,10 +7059,16 @@
    "dependsOn": [
     "T099"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Sutton-Graves heating on quadratic drag, a radiating skin, hull loss above 2150 K, and the entry glow driven by the same flux. -entryburn: steep -8 deg peaks 1.43 MW/m2 at 53.6 km, skin 2328 K, hull loses 0.61; shallow -1 deg peaks 0.69 MW/m2, skin 1941 K, loses nothing though it takes in twice the heat -- what burns is the rate against what the skin can radiate. Ledger.Flight.ASteepEntryBurnsAndAShallowOneDoesNot. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 242,
    "plannedEndDay": 244,
@@ -7060,10 +7089,16 @@
    "dependsOn": [
     "T100"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerCanopy::Expose: water that runs with airspeed, fog from dew point against glass temperature, icing, wipers and heater; M_Visor draws it on the ship. -visorwatch in daylight rain at 4.1 C: at 15 m/s the streaks run down (-0.33), at 150 m/s back (+1.00); glass fogged at -10 C clears with the heater (fog 1.00 to 0.00, glass 28.7 C). PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 244,
    "plannedEndDay": 246,
@@ -7121,10 +7156,16 @@
    "dependsOn": [
     "T102"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerAurora: dipole from the body, Kp from stellar activity, the oval at 67.8 deg magnetic at Kp 1.5 moving to 55.4 at Kp 7.9; M_Aurora as an additive shell at 110 km. -aurorawatch: overhead 1.00 at 64 N during the event, from the ground and from orbit; 0.00 on a quiet night, 0.0000 at 15 deg magnetic in the same event. Ledger.Aurora test: 60 of 72 event hours overhead at 62 magnetic, none outside events or at the equator. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 247.5,
    "plannedEndDay": 249,
@@ -7145,10 +7186,16 @@
    "dependsOn": [
     "T103"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerWeather::ForecastAt: the pressure field carried forward with an uncertainty that grows with lead time. Ledger.Weather.ASixHourForecastLandsInsideItsOwnConfidence: 98 of 100 six-hour forecasts inside two sigma, worst miss 37 Pa; rain called right 100 of 100."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 249,
    "plannedEndDay": 250.5,
@@ -7169,10 +7216,16 @@
    "dependsOn": [
     "T104"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerVolumeBudget: four levels over cloud samples, fog resolution and drop scale, chosen against a GPU budget (-gpubudgetms, Ledger.Precip.DropScale). -volumebudget inside a 3971 Pa low at 1.5 km, in its cloud and rain: full detail costs 0.11 ms over volumetrics off, 0.19 ms as budgeted against 4 ms; squeezed to 2.96 ms it drops to level 3 (0.10 ms) rather than the frame. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 250.5,
    "plannedEndDay": 252.5,
@@ -7193,10 +7246,16 @@
    "dependsOn": [
     "T105"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Ledger.Weather.TheSameSeedIsTheSameWeatherAndTheSkyShowsTheStorm: two systems from one seed give identical wind, storm severity and gusts at 100 sampled times and places, and 100 of 100 severe places sit under a low the cloud material is given (twelve lows at 1.5x reach; it was 87 of 100 with four). Drawn in the three-deck material -- see T097 for the default deck."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 252.5,
    "plannedEndDay": 254,
@@ -7242,10 +7301,16 @@
    "dependsOn": [
     "T107"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Ships are JSON in client/Config/Ships (courier, hauler): hull, flight, components with typed ports, connections, compartments, hardpoints, instruments and nozzles. -shiptrial at 150 km: both load and fly on their own numbers -- courier 270.3 m/s gained against 270.4, hauler 156.6 against 156.6 -- and turn on their nozzles (45.0 and 22.0 deg/s reached, as asked). The hauler is one data file and the same hull art scaled. PASS both."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 255.5,
    "plannedEndDay": 257.5,
@@ -7266,10 +7331,16 @@
    "dependsOn": [
     "T108"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Ports typed power, coolant, fuel and data; ConnectedTo discovers the graph at runtime (the bus found to feed the main engine through its coupling). Seven kinds of broken file are each refused with a reason and none crash (Ledger.Ships.AnUnsatisfiableConnectionIsALoadErrorNotACrash)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 257.5,
    "plannedEndDay": 260,
@@ -7290,10 +7361,16 @@
    "dependsOn": [
     "T109"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "SolvePower: networks by union-find through buses and couplings, plants that follow their load, strict priority shedding. A quarter reactor (100 kW for 230 asked) sheds rcs then main_engine, in the order the file states (Ledger.Ships.AnOverloadedBusShedsTheLowestPriorityFirst)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 260,
    "plannedEndDay": 262,
@@ -7314,10 +7391,16 @@
    "dependsOn": [
     "T110"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "StepThermal: heat as a share of the power handled, coolant loops to radiators whose pumps need power, throttling past 400 K and failure at the fail point. Radiator retracted at full power: the reactor reaches 400 K at 494 s against 494 s predicted (Ledger.Ships.RadiatorsRetractedTheShipOverheatsOnSchedule)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 262,
    "plannedEndDay": 264.5,
@@ -7338,10 +7421,16 @@
    "dependsOn": [
     "T111"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Propellant and reactor fuel are separate tank kinds; Burn takes mass at thrust over Isp g0, from the thrust the flight model actually gave. Ten minutes: 25.340 kg burnt against 25.340 expected from 497 MN s of impulse; full throttle ran dry at 474 s and stopped the engines (Ledger.Ships.FuelBurntMatchesThrustGivenAndDryStopsTheEngines)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 264.5,
    "plannedEndDay": 266.5,
@@ -7362,10 +7451,16 @@
    "dependsOn": [
     "T112"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "MassProperties from hull, components, tank contents and cargo: mass, centre and the full inertia tensor, recomputed as fuel burns. The hauler loaded to starboard: centre +0.257 m, roll inertia 64623 to 89715 kg m2, and the same lift rolls it at -0.334 rad/s2 where balanced it does not (Ledger.Ships.CargoOnOneSideHandlesAsPredicted)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 266.5,
    "plannedEndDay": 268.5,
@@ -7386,10 +7481,16 @@
    "dependsOn": [
     "T113"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Damage along the graph: a destroyed component spills a quarter of what is left of a hit to each neighbour. Destroying coupling_aft loses exactly main_engine, radiator and rcs -- what is downstream of it in power -- and keeps computer, sensor, life support and gear (Ledger.Ships.DestroyingACouplingKillsExactlyWhatIsDownstream)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 268.5,
    "plannedEndDay": 271,
@@ -7410,10 +7511,16 @@
    "dependsOn": [
     "T114"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Hull integrity, armour per hit, and breaches per compartment venting by choked flow. A 0.0095 m2 hole in 9.4 m3: 55670 Pa at 5 s against 55670 predicted, and only that compartment vents (Ledger.Ships.ABreachVentsTheCompartmentBehindItAndNotTheRest)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 271,
    "plannedEndDay": 273.5,
@@ -7434,10 +7541,16 @@
    "dependsOn": [
     "T115"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Wear by operating hours and abuse; thrust share falls with condition and service is asked below 0.4. A neglected main engine gives 80 percent after 100 h, asks for service at 325 h and fails at 500 h (Ledger.Ships.ANeglectedThrusterLosesOutputAndWarnsBeforeItFails)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 273.5,
    "plannedEndDay": 275,
@@ -7458,10 +7571,16 @@
    "dependsOn": [
     "T116"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Field repair to 0.7 from the spares aboard, workshop repair to 1.0 from its stock, and a destroyed part only replaced in a workshop. Engine 0.40 to 0.70 for 10.5 kg of spares; in the workshop to 1.00, the coupling replaced for 12.5 kg (Ledger.Ships.RepairsReachAStatedConditionAndSpendParts)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 275,
    "plannedEndDay": 277,
@@ -7482,10 +7601,16 @@
    "dependsOn": [
     "T117"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Life support scrubs carbon dioxide and makes oxygen from a reserve; compartments leak on a 48 h time constant. A day in vacuum running: no warnings, 4.22 kg of reserve used. Cut: the low-oxygen warning at 5.91 h against 5.91 h predicted (Ledger.Ships.CutLifeSupportInVacuumAndTheAirRunsDownOnSchedule)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 277,
    "plannedEndDay": 279,
@@ -7531,10 +7656,16 @@
    "dependsOn": [
     "T119"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Signature from the thermal and power models: heat rejected, power emitted, and cross-section with gear and radiators out. Everything on: seen at 221 km; cold and quiet: 45 km (Ledger.Ships.RunningColdAndQuietShortensDetectionRange)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 281,
    "plannedEndDay": 283,
@@ -7555,10 +7686,16 @@
    "dependsOn": [
     "T120"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Hardpoints with size classes; Mount checks class and occupancy and wires the power. A class 2 laser is refused by the class 1 nose and taken by the dorsal mount; its 60 kW and 18 kW of heat appear in the ship totals (Ledger.Ships.AMountTakesItsClassAndItsDrawShowsInTheTotals)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 283,
    "plannedEndDay": 285,
@@ -7603,10 +7740,16 @@
    "dependsOn": [
     "T122"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Actuators -- gear, ramps, radiators -- are components that draw power only while they move. The gear cut at half travel stays at 0.50 for ten seconds and finishes when power returns (Ledger.Ships.GearCutMidCycleStaysHalfDownUntilPowerReturns)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 287,
    "plannedEndDay": 289,
@@ -7627,10 +7770,16 @@
    "dependsOn": [
     "T123"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "StartupOrder from the graph; TryStart refuses anything whose required inputs are not live. Cold start: reactor_fuel, tank, radiator, reactor, bus, coupling_aft, computer, sensor, life support, shield, gear, main engine, rcs; with the reactor skipped nine refuse to start (Ledger.Ships.ColdStartComesUpInDependencyOrder)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 289,
    "plannedEndDay": 290.5,
@@ -7651,10 +7800,16 @@
    "dependsOn": [
     "T124"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Instruments name a component, a reading and a sensor, and ReadGauge is the one path every display reads through. 8 gauges traced; with reactor_sensor destroyed the reactor gauge is unavailable and says why rather than showing a number (Ledger.Ships.EveryGaugeTracesToAReadingAndADeadSensorBlanksIt)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 290.5,
    "plannedEndDay": 293,
@@ -7675,10 +7830,16 @@
    "dependsOn": [
     "T125"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Alarms raised by the system in trouble, each with its own voice: nine distinct tones and cadences, from the overheating reactor at 1200 Hz fast to the worn engine at 350 Hz slow (Ledger.Ships.EverySystemInTroubleSoundsItsOwnAlarm). LedgerShipAudio adds the engine note from throttle and load and the coolant pump under thermal stress; the coupling proof hears the alarm."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 293,
    "plannedEndDay": 295,
@@ -7747,10 +7908,16 @@
    "dependsOn": [
     "T128"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "SaveState and LoadState, with the configuration from ToJson, every number at full precision. A damaged, half-fuelled, refitted ship saves 8683 plus 3911 characters and reloads to the last bit: engine at 0.62998333333333323, tank at 1200 kg (Ledger.Ships.ADamagedHalfFuelledRefittedShipReloadsExactly)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 299,
    "plannedEndDay": 300.5,
@@ -7771,10 +7938,16 @@
    "dependsOn": [
     "T129"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "A headless rig: 14 of 14 failure modes reproduce without flying -- overload, coolant, reactor fuel, propellant, coupling, radiators, breach, hull, wear, life support, dead sensor, start-up order, gear, shields (Ledger.Ships.Rig.EveryFailureModeReproducesWithoutFlying)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 300.5,
    "plannedEndDay": 302.5,
@@ -7819,10 +7992,16 @@
    "dependsOn": [
     "T131"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerRigidBody: Euler equations with the full tensor M05 computes, fourth-order Runge-Kutta. The response about each axis matches the tensor to 1e-4; an off-axis thrust of 20000 N m gives -0.14533 rad/s of yaw in half a second, as predicted; a torque-free tumble keeps momentum to 3e-8 and energy to 3e-13. The ship now turns through it: -shiptrial holds a full yaw, 45.0 deg/s reached and 39.7 deg turned against 39.7 predicted, 0.44 m/s of drift (hauler 22.0 and 19.3)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 304,
    "plannedEndDay": 306.5,
@@ -14610,5 +14789,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T10:45:25.075Z"
+ "updatedAt": "2026-09-11T12:48:55.996Z"
 }
