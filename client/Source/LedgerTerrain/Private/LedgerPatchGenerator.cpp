@@ -445,13 +445,21 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 
 		if (!bBiomes)
 		{
-			Job.Colors[Index] = SurfaceColour(
-				Elevations[Index], Job.Params.MaxElevation, Steepness);
-			// No snow overlay on the fallback ramp. Alpha is snow cover everywhere
-			// else in this project (T060), and Blend hands back FColor's default
-			// alpha of 255 -- full snow -- on every patch that has no biomes. The
-			// ramp carries its own white at the top already.
-			Job.Colors[Index].A = 0;
+			// Not for a patch off disk: bBiomes is false there because the
+			// climate pass is skipped, and the ramp overwrote the cached biome
+			// colours -- slot weights and snow -- with the elevation ramp. The
+			// biome branch below is no place for it either: its climate grid is
+			// the part a disk patch skips, and indexing it crashed every run.
+			if (!bFromDisk)
+			{
+				Job.Colors[Index] = SurfaceColour(
+					Elevations[Index], Job.Params.MaxElevation, Steepness);
+				// No snow overlay on the fallback ramp. Alpha is snow cover everywhere
+				// else in this project (T060), and Blend hands back FColor's default
+				// alpha of 255 -- full snow -- on every patch that has no biomes. The
+				// ramp carries its own white at the top already.
+				Job.Colors[Index].A = 0;
+			}
 		}
 		else
 		{

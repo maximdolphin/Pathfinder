@@ -673,10 +673,16 @@ namespace LedgerSurface
 
 		// Rock has no biome and takes no tint, so the ground's tint fades out
 		// with it. Otherwise a cliff in a rainforest would be green rock.
+		//
+		// **Into the rock's own mean, not into one.** The scan was divided by its
+		// mean above, so what is left is variation around 1; the tint is what
+		// puts the absolute colour back. Fading it to 1 drew every cliff at an
+		// albedo of about 1 -- a 62-degree face at 17.7 C with no snow came back
+		// white, and so did every steep peak on the planet, desert included.
 		UMaterialExpression* TintMix = Graph.Lerp(
 			Graph.Lerp(SoilTint, Graph.Constant3(FLinearColor(0.30f, 0.29f, 0.27f)),
 				ScreeWeight),
-			Graph.Constant(1.0f), Blend);
+			Graph.Constant3(Steep.MeanAlbedo), Blend);
 		TintMix = Graph.Lerp(TintMix, Graph.Constant(1.0f), SnowWeight);
 
 		// Macro breakup. One tile of ground is two metres; from a kilometre up,
