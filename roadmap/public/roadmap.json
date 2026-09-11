@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 5
+   "doneCount": 6
   },
   {
    "id": "M05",
@@ -3917,6 +3917,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Found why the lee read wetter: the moisture march walked out against the wind and came back WITH it, re-reading the wind each step, so wherever the wind turns the walk back ended somewhere else and the moisture reported for a point belonged to another (273915e). It now retraces its recorded path. Census: 521 of 577 major ranges shadowed (was 476), 17 wetter on the lee (was 41), 7 at a wind-band boundary, 21 dry on both sides, 11 other; every wind-crossing ridge 94% (bar 75). The remaining lee-wetter ranges have no latitude cluster any more (18-24, 40-48, 66-72 degrees) and most differ by thousandths; the few large ones are the next to take apart (a sea within 15 km of the lee refills the air)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Taken apart with the march traced (altitude and moisture every step). The rain-out works along every march: range 29's lee march carries 0.158 up to the 715 m peak and arrives at 0.101 (-36%); range 63's 0.135 -> 0.064 over its 1,374 m peak. What reads as 'lee wetter' is the comparison, not the physics: each point's moisture comes from its OWN march, which starts 300 km upwind at a fixed 0.5, and the lee point's march starts 30 km further downwind -- so passing the windward point it carries 0.16 where the windward point's own march arrives with 0.095. Two points on the same streamline do not agree about the air upstream of them, and the map shows it. Next: the full traces, to see what differs at the start (sea against land is the likely one)."
     }
    ],
    "evidence": [
@@ -4456,6 +4461,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Measured with a material that compiles: -channel=snow over the warm grassland is black -- zero -- across the ground, where the per-vertex SnowCover is 0 at 14.3 C. The overlay is provably nothing at zero cover, as designed. Both reasons the -snow switch was left off ('grassland reads 0.5', 'the desert comes back grey and half-snowed') were the engine's default material standing in for one that did not compile. Remaining: a capture where cover is above zero, to show snow drawing where the climate puts it, then the switch comes out."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Snow on land at the world's season (0.686), from the climate report: 0-30 degrees none, 30-60 degrees 38.5% of land with any and mean cover 0.29, 60-90 degrees all of it at mean 0.87. At 0.29 the overlay whites only the hollows by design, which is why the lit orbit frame changes in 0.12% of its pixels with -snow; the evidence still owed is a capture of land above 60."
     }
    ],
    "evidence": [
@@ -4843,6 +4853,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Every miss is ground not drawn, not ground without collision. The transect now asks the terrain query what is under the ship on each miss: 13,290 of 13,290 had no drawn section at all, 0 drawn without collision, 0 drawn and uncooked (99.7% this run, on a freshly invalidated patch cache). So this is streaming, not collision: at 50 m and 900 m/s the tree wants ~38 m patches under the ship, crossed in a few frames and never built in time. Next, queued with its control: the split threshold scaled with camera speed above 150 m/s (-nospeedlod turns it off), plus a check that the query finds ground on the frames that hit."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Detail scaled with speed moves it most of the way: fixed-step transect 34.7% missed (from 96-99%), longest gap 2,139 frames (from 5,000-13,000), the split threshold x6 at 900 m/s. The miss classifier is validated: on all 8,705 hits the terrain query found drawn ground under the ship. The misses now: 31 with no ground drawn, 4,477 drawn without collision, 121 drawn and not yet cooked -- and the drawn patch averages 6,700 km across, i.e. under the ship on those frames only the resident shell is drawn, which never takes collision (it stayed under finer ground for good when it did). Also found and fixed on the way: the first frame's camera placement read as 58,000 km/s, multiplied the threshold 387,179 times and left collapse flags that made the near-field harness load and release the same sections every frame until it ran out of memory. Next: a coarsening sweep (full detail to 75 and 40 m/s)."
     }
    ],
    "evidence": [
@@ -4996,6 +5011,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Measured per pixel (tools/occlusion_fb.py): dense flow forward and back between the two raking captures 25 cm apart, counting pixels whose round trip fails -- which is what disocclusion does and a smooth offset does not (self-test: plain shift 0.00%, moving occluder 1.62%). On the world-locked pair: march 7.7% off by more than 1 px, one-step 8.3%, flat ground 8.6%. The ~8% floor is the scattered stones and the light; the march adds nothing above it. So occlusion is not there at a 3 cm depth on a smooth gravel height map, now measured rather than argued. Next: deepen or sharpen the gravel's height and re-measure the same way."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "At 8 cm (-parallaxdepth=8, after the near-field harness stopped running out of memory) the per-pixel round trip does not separate occlusion from the scene. Whole ground: flat 16.6%, one-step 17.6%, march 18.1% off by more than 1 px -- the order occlusion predicts. Near ground only (bottom 40%): flat 20.8%, one-step 18.3%, march 15.7% -- the reverse; and at 3 cm the same crop puts the one-step control highest of all (20.9%). An ordering that flips with the crop is the stones and the light, not parallax. So occlusion remains unevidenced at 3 and at 8 cm, and this measure on this scan cannot evidence it. What could: a controlled fixture -- a synthetic height map with sharp relief (a checker of steps) under raking light, where a pixel hidden behind a step can be predicted and checked -- rather than a natural scan whose relief is smooth and small."
     }
    ],
    "evidence": [
@@ -6413,9 +6433,9 @@
    "dependsOn": [
     "T090"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -6441,6 +6461,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The pool, as a box of volume material in volumetric fog, measured against a -fogoff control on the same build: the valley frame differs in 84% of pixels (a fog of ~360 m visibility, the model's), the ridge frame in 24% -- the shadowed lowland that shows dunes and stones in the control is a flat pale sheet with the ridge clear above it, the top level because the box's density stops at 1,379 m. Orbit is wrong: turning on the height fog that volumetric fog needs makes the view from orbit a white disc under an orange sky (mean 115 against 24), and zeroing its own volumetric extinction did not change that. Now volumetric fog is on only while the camera is within 60 km of the pool; queued with its control."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "All three criteria evidenced against a -fogoff control on the same build. Fills the valley at dawn: the valley frame differs from its control in 84.5% of pixels, a fog of ~360 m visibility, the model's. Absent on the ridge: the ridge frame differs in 23.8% -- the shadowed lowland that shows dunes and stones in the control is a flat pale sheet, the ridge standing 1,821 m clear of the 1,379 m fill level. Invisible from orbit: 0.0% of the orbit frame changes (mean 24.2 against 24.1), because volumetric fog is on only within 60 km of the pool. The mechanism is a box of volume material voxelised into volumetric fog; why a local fog volume cannot hold a wide shallow pool is in the notes above."
     }
    ],
    "evidence": [
@@ -6449,6 +6474,24 @@
      "caption": "Dawn in the valley: the cold pool, 86 m deep, visibility 363 m",
      "source": "out/fogwatch-valley.png",
      "addedAt": "2026-09-10T19:17:23.396Z"
+    },
+    {
+     "file": "evidence/T091-2026-09-11T08-46-53-752.png",
+     "caption": "valley, with the pool; the -fogoff control from the same build is fogwatch-valley-boxoff",
+     "source": "../out/fogwatch-valley-box3.png",
+     "addedAt": "2026-09-11T08:46:53.755Z"
+    },
+    {
+     "file": "evidence/T091-2026-09-11T08-46-53-868.png",
+     "caption": "ridge, with the pool; the -fogoff control from the same build is fogwatch-ridge-boxoff",
+     "source": "../out/fogwatch-ridge-box3.png",
+     "addedAt": "2026-09-11T08:46:53.871Z"
+    },
+    {
+     "file": "evidence/T091-2026-09-11T08-46-54-002.png",
+     "caption": "orbit, with the pool; the -fogoff control from the same build is fogwatch-orbit-boxoff",
+     "source": "../out/fogwatch-orbit-box3.png",
+     "addedAt": "2026-09-11T08:46:54.005Z"
     }
    ],
    "plannedStartDay": 219.5,
@@ -6610,6 +6653,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Orbit, measured against a cloud-free control from the same air show: with clouds the disc's mean luminance moves 116.4 -> 117.8, 29.6% of it brighter by more than 20 and 30.4% darker, and the brightest 1% DIMMER (157 against 170). Clouds seen from above are a grey veil that lifts the ocean and dulls the land -- sunlit cloud tops should be the brightest thing on the disc. With the in-deck frames' sepia, that reads as clouds not receiving direct sun rather than a coverage problem; the weather-scale noise (clusters hundreds of km across) is in and visible from the above-middle view, but cannot read from orbit while the cloud is grey."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Multiple scattering added (a VolumetricAdvancedMaterialOutput: two octaves, a forward 0.6 / back -0.3 phase, ground contribution). Inside the deck it helped -- cumulus now have bright tops and dark bases instead of a sepia murk -- and from orbit it did nothing: the brightest 1% of the disc is 144 against 170 without cloud. And not because of distance: from 4 km above the cumulus deck (above-middle) the clouds are charcoal, darker than the sand under them. Clouds are dark whenever seen from above and lit from the side, and the in-deck sepia says the sunlight reaching cloud samples is strongly reddened -- which reads as the per-sample atmospheric transmittance being evaluated in a frame that does not match the planet, not as a phase or scattering problem. That is next."
     }
    ],
    "evidence": [
@@ -14400,5 +14448,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T08:31:47.780Z"
+ "updatedAt": "2026-09-11T08:46:54.126Z"
 }
