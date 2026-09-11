@@ -234,6 +234,31 @@ namespace LedgerWeather
 			* FMath::Atan2(FMath::Sqrt(A), FMath::Sqrt(FMath::Max(1.0 - A, 0.0)));
 	}
 
+	double CellAnomalyPascals(
+		const FLedgerSystem& System, int32 BodyIndex,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch)
+	{
+		if (!System.Bodies.IsValidIndex(BodyIndex))
+		{
+			return 0.0;
+		}
+		const FLedgerBody& Body = System.Bodies[BodyIndex];
+
+		TArray<FLedgerPressureCell> Live;
+		CellsAt(System, BodyIndex, SecondsFromEpoch, Live);
+
+		double Anomaly = 0.0;
+		for (const FLedgerPressureCell& Cell : Live)
+		{
+			const double Distance = WeatherDistance(Body.RadiusMetres,
+				LatitudeRadians, LongitudeRadians,
+				Cell.LatitudeRadians, Cell.LongitudeRadians);
+			const double Scaled = Distance / FMath::Max(Cell.RadiusMetres, 1.0);
+			Anomaly += Cell.AnomalyPascals * FMath::Exp(-Scaled * Scaled);
+		}
+		return Anomaly;
+	}
+
 	double PressureAt(
 		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
 		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch)
@@ -250,20 +275,13 @@ namespace LedgerWeather
 		const int32 Cells = CirculationCells(Body);
 		const double Edge = (LedgerPi * 0.5) / Cells;
 		const double Bands = FMath::Abs(LatitudeRadians) / Edge;
-		double Pressure = Air.SurfacePressurePascals
+		const double Background = Air.SurfacePressurePascals
 			- 600.0 * FMath::Cos(Bands * LedgerPi);
 
-		TArray<FLedgerPressureCell> Live;
-		CellsAt(System, BodyIndex, SecondsFromEpoch, Live);
-		for (const FLedgerPressureCell& Cell : Live)
-		{
-			const double Distance = WeatherDistance(Body.RadiusMetres,
-				LatitudeRadians, LongitudeRadians,
-				Cell.LatitudeRadians, Cell.LongitudeRadians);
-			const double Scaled = Distance / FMath::Max(Cell.RadiusMetres, 1.0);
-			Pressure += Cell.AnomalyPascals * FMath::Exp(-Scaled * Scaled);
-		}
-		return Pressure;
+		// Climate plus forecast. One falloff, written once: a second copy of
+		// this loop in the rain model would be a second weather.
+		return Background + CellAnomalyPascals(
+			System, BodyIndex, LatitudeRadians, LongitudeRadians, SecondsFromEpoch);
 	}
 
 	FVector2D WindAt(

@@ -93,6 +93,18 @@ namespace LedgerWeather
 	/// How many cells the schedule has, alive or not.
 	LEDGERCORE_API int32 CellCount();
 
+	/// How far the cells alone push the pressure at a place, pascals.
+	///
+	/// The same sum PressureAt makes, without the zonal background. Negative
+	/// inside a low. **This is the number that says where the weather is** --
+	/// the background field is a climate and the anomaly is a forecast -- and
+	/// it is separate so that rain, which happens where air is being made to
+	/// rise, does not have to subtract one from the other and get the
+	/// subtropical ridge in the answer.
+	LEDGERCORE_API double CellAnomalyPascals(
+		const FLedgerSystem& System, int32 BodyIndex,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch);
+
 	/// Sea-level pressure at a place, pascals.
 	///
 	/// The background field plus every cell's anomaly. The background is the
