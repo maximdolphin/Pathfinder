@@ -683,7 +683,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 3
+   "doneCount": 4
   },
   {
    "id": "M06",
@@ -8673,17 +8673,29 @@
    "dependsOn": [
     "T439"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Evicted ray-tracing geometry: the terrain's hidden pooled patches were evicted past the 400 MB resident pool and a patch shown again handed the renderer an evicted geometry (ensure + skipped instance, seen in a -play session and the cave walk). r.RayTracing.UseReferenceBasedResidency=0 (commit 39a48ae); playtest 9: CVar set, no eviction line, no ensure, 586 frames over 16.7 ms against 697. Still to show: the ten-minute session (run 10) with no ensure and no hitch over 250 ms after the first minute."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Acceptance met: a ten-minute offscreen session (34 legs, 46,907 frames) logs 0 ensures, no crash, and 0 hitches over 250 ms after its first minute. The three causes: (1) evicted ray-tracing geometry -- the terrain's hidden pooled patches were evicted past the 400 MB resident pool and a patch shown again handed the renderer an evicted geometry, an ensure and a frame of Lumen tracing through ground that is there; fixed with r.RayTracing.UseReferenceBasedResidency=0 (39a48ae), the pool of patches being bounded. (2) The divergence that ended the first session is fixed in T439 (cb4d681). (3) The one frame over 250 ms in earlier runs was the harness photographing itself: a 1920x1080 screenshot stalls the frame after it is asked for, 234.7 ms at 36.3 s and 251.8 ms at 71.8 s, both one second after a capture was logged. Those are now named and counted apart from the game's own frames; the passing run had none of either. NOT fixed and not this task: 11,457 of 46,907 frames over 16.7 ms -- the frame budget is T068's."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T440-2026-09-11T22-21-08-078.txt",
+     "caption": "Ten minutes offscreen, no ensure, no crash, 0 hitches over 250 ms after the first minute (and 0 capture stalls).",
+     "source": "../out/tenmin.txt",
+     "addedAt": "2026-09-11T22:21:08.085Z"
+    }
+   ],
    "plannedStartDay": 309.5,
    "plannedEndDay": 312,
    "plannedStart": "2027-11-12",
@@ -15693,5 +15705,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T22:08:28.468Z"
+ "updatedAt": "2026-09-11T22:21:08.167Z"
 }
