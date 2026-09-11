@@ -274,6 +274,12 @@ void ALedgerPlanet::TearDown()
 	Stats = FLedgerTerrainStats();
 }
 
+// `Ledger.Terrain.Freeze 1` holds the LOD where it is. T430.
+static TAutoConsoleVariable<int32> CVarLedgerTerrainFreeze(
+	TEXT("Ledger.Terrain.Freeze"), 0,
+	TEXT("1 holds the terrain where it is: the tree, streaming and collision aim at the camera position from the moment it was set."),
+	ECVF_Default);
+
 void ALedgerPlanet::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -305,7 +311,30 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		}
 	}
 
-	const FVector3d CameraLocal = FVector3d(CameraWorld - GetActorLocation());
+	FVector3d CameraLocal = FVector3d(CameraWorld - GetActorLocation());
+
+	// **Held, when a measurement needs the ground to stay one mesh.** The
+	// parallax pair steps the camera 25 cm, and the tree re-selected under
+	// it: the two frames had different triangles and different blend
+	// weights, so nothing matched between them and no control cancelled it.
+	// With the camera held, velocity reads zero and nothing re-splits.
+	// ponytail: one held position per process, which is one planet.
+	static FVector3d HeldCameraLocal = FVector3d::ZeroVector;
+	static bool bHeld = false;
+	if (CVarLedgerTerrainFreeze.GetValueOnGameThread() != 0)
+	{
+		if (!bHeld)
+		{
+			HeldCameraLocal = CameraLocal;
+			bHeld = true;
+			UE_LOG(LogLedger, Log, TEXT("terrain: held at the camera, %.1f m from the centre"), CameraLocal.Length() / 100.0);
+		}
+		CameraLocal = HeldCameraLocal;
+	}
+	else
+	{
+		bHeld = false;
+	}
 
 	// Velocity is what makes the collision cook *predictive* rather than
 	// reactive. §6.8: cook ahead along the velocity vector, never on demand.

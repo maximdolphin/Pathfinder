@@ -1,4 +1,5 @@
 #include "LedgerNearField.h"
+#include "HAL/IConsoleManager.h"
 
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
@@ -259,29 +260,17 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 					break;
 				}
 			}
-			// Three stops brighter for the pair. Under a ten-degree sun auto
-			// exposure left the gravel at a mean of 10 of 255 -- a photograph
-			// of the dark, and too little contrast to match tiles in.
-			if (Camera != nullptr)
-			{
-				if (UCameraComponent* Lens = Camera->GetCameraComponent())
-				{
-					Lens->PostProcessSettings.bOverride_AutoExposureBias = true;
-					Lens->PostProcessSettings.AutoExposureBias = 3.0f;
-					// And adapted now, not over the next few seconds: the pair came back
-					// at means of 9 and 12 thirty ticks apart, still climbing toward the
-					// bias when each shutter went.
-					Lens->PostProcessSettings.bOverride_AutoExposureSpeedUp = true;
-					Lens->PostProcessSettings.AutoExposureSpeedUp = 1000.0f;
-					Lens->PostProcessSettings.bOverride_AutoExposureSpeedDown = true;
-					Lens->PostProcessSettings.AutoExposureSpeedDown = 1000.0f;
-				}
-			}
+			// Exposure left to settle, not forced. Three stops of bias blew the
+			// pair out once adaptation was made instant, and instant adaptation
+			// flickered -- two of six frames came back black. At the default speed
+			// it needs seconds after the clock jumps to a ten-degree sun, so the
+			// first shot waits 300 ticks and the second, a 25 cm step over the
+			// same ground, 60.
 			PomShot = 0;
 			PomFrames = 0;
 			return;
 		}
-		if (++PomFrames < 30)
+		if (++PomFrames < (PomShot == 0 ? 300 : 60))
 		{
 			return;
 		}
@@ -289,6 +278,12 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 			FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 			FString::Printf(TEXT("near-field-pom-%d.png"), PomShot)));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		// The terrain held from the first frame of the pair to the last, so
+		// the step moves the camera and nothing else.
+		if (IConsoleVariable* Freeze = IConsoleManager::Get().FindConsoleVariable(TEXT("Ledger.Terrain.Freeze")))
+		{
+			Freeze->Set(PomShot == 0 ? 1 : 0, ECVF_SetByCode);
+		}
 		++PomShot;
 		PomFrames = 0;
 		return;

@@ -306,6 +306,16 @@ void ULedgerFogWatch::Place()
 		Toward = LedgerFrames::ToBody(
 			{ Home, ValleyDirection, FVector3d(-Sun.Y, Sun.X, 0.06) }).Metres
 			.GetSafeNormal();
+		// Where the eye is against the pool: a view from the rim, facing out,
+		// looks through metres of fog however thick it is.
+		const FVector3d ToAxis = (Anchor - ValleyDirection * FVector3d::DotProduct(Anchor, ValleyDirection))
+			.GetSafeNormal();
+		UE_LOG(LogLedger, Log,
+			TEXT("fog watch: valley eye %.1f km from the fog's axis, looking %.0f degrees from the way to it"),
+			FMath::Acos(FMath::Clamp(FVector3d::DotProduct(Anchor, ValleyDirection), -1.0, 1.0))
+				* Planet->Radius / 100000.0,
+			FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(
+				FVector3d::DotProduct(Toward, ToAxis), -1.0, 1.0))));
 	}
 	else if (Which == 1)
 	{
