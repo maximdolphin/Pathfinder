@@ -4930,6 +4930,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The trace was not it: at 5 km instead of 400 m, 923 missed (6.9%) against 877 -- the same within noise -- and 604 of them still over drawn ground with collision enabled and nothing to hit. When collision is there it is right: the hit is 1.0 m from the exact surface on average, 194.8 m at worst (committed; the report now carries both). So those misses are collision not yet present. The likeliest reason the cook-hold passes early: a pooled component keeps its previous patch's body setup, triangle mesh and all, until the new asynchronous cook swaps a new one in, so 'has a triangle mesh' is true of stale geometry. Next: record the body setup each section had at upload and count it cooked only once that object has been replaced."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Counting a child cooked only once its body setup has been swapped (stale pooled geometry excluded) changed nothing: 942 missed (7.1%), 621 over drawn ground with collision enabled and nothing to hit; reverted. So it is timing, not a false 'cooked': the parent a fast ship is over usually has no collision of its own (built far away), so the hold does not apply, and the leaves that replace it cook asynchronously while the ship arrives. Next: cook synchronously for the patch landing under the ship -- a few milliseconds on that frame, collision there on the frame it is drawn."
     }
    ],
    "evidence": [
@@ -14584,5 +14589,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T10:03:33.954Z"
+ "updatedAt": "2026-09-11T10:09:03.110Z"
 }
