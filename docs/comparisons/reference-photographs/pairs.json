@@ -1,0 +1,110 @@
+[
+ {
+  "biome": "gravel",
+  "scale_m": 2,
+  "pair": "docs/comparisons/reference-photographs/pair-gravel-2m.jpg",
+  "photo": "gravel-2m-desertpavementmojave2010.jpg",
+  "title": "File:DesertPavementMojave2010.JPG",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3ADesertPavementMojave2010.JPG"
+ },
+ {
+  "biome": "gravel",
+  "scale_m": 20,
+  "pair": "docs/comparisons/reference-photographs/pair-gravel-20m.jpg",
+  "photo": "gravel-20m-desert_pavement_mojave_2000.jpg",
+  "title": "File:Desert Pavement Mojave 2000.jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3ADesert_Pavement_Mojave_2000.jpg"
+ },
+ {
+  "biome": "gravel",
+  "scale_m": 200,
+  "pair": "docs/comparisons/reference-photographs/pair-gravel-200m.jpg",
+  "photo": "gravel-200m-260_boa_vista.jpg",
+  "title": "File:260 Boa Vista.jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3A260_Boa_Vista.jpg"
+ },
+ {
+  "biome": "scree",
+  "scale_m": 2,
+  "pair": "docs/comparisons/reference-photographs/pair-scree-2m.jpg",
+  "photo": "scree-2m-talus_slopes_2830890492578_29.jpg",
+  "title": "File:Talus Slopes (30890492578).jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3ATalus_Slopes_%2830890492578%29.jpg"
+ },
+ {
+  "biome": "scree",
+  "scale_m": 20,
+  "pair": "docs/comparisons/reference-photographs/pair-scree-20m.jpg",
+  "photo": "scree-20m-velebit_scree_field_20250915_132608_hdr.jpg",
+  "title": "File:Velebit scree field 20250915 132608 HDR.jpg",
+  "licence": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File%3AVelebit_scree_field_20250915_132608_HDR.jpg"
+ },
+ {
+  "biome": "scree",
+  "scale_m": 200,
+  "pair": "docs/comparisons/reference-photographs/pair-scree-200m.jpg",
+  "photo": "scree-200m-talus.jpg",
+  "title": "File:Talus.jpg",
+  "licence": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File%3ATalus.jpg"
+ },
+ {
+  "biome": "forest",
+  "scale_m": 2,
+  "pair": "docs/comparisons/reference-photographs/pair-forest-2m.jpg",
+  "photo": "forest-2m-autumn_forest_floor_by_east_kelowna_2c_b.jpg",
+  "title": "File:Autumn Forest Floor by East Kelowna, British Columbia.png",
+  "licence": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File%3AAutumn_Forest_Floor_by_East_Kelowna%2C_British_Columbia.png"
+ },
+ {
+  "biome": "forest",
+  "scale_m": 20,
+  "pair": "docs/comparisons/reference-photographs/pair-forest-20m.jpg",
+  "photo": "forest-20m-fallen_leaves_and_a_bench_in_south_korea.jpg",
+  "title": "File:Fallen leaves and a bench in South Korea, 19 November 2004.jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3AFallen_leaves_and_a_bench_in_South_Korea%2C_19_November_2004.jpg"
+ },
+ {
+  "biome": "forest",
+  "scale_m": 200,
+  "pair": "docs/comparisons/reference-photographs/pair-forest-200m.jpg",
+  "photo": "forest-200m-hanging_bridges_2c_la_fortuna.jpg",
+  "title": "File:Hanging bridges, La Fortuna.jpg",
+  "licence": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File%3AHanging_bridges%2C_La_Fortuna.jpg"
+ },
+ {
+  "biome": "snow",
+  "scale_m": 2,
+  "pair": "docs/comparisons/reference-photographs/pair-snow-2m.jpg",
+  "photo": "snow-2m-close_up_of_snow_and_ice.jpg",
+  "title": "File:Close-up of snow and ice (53457826676).jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3AClose-up_of_snow_and_ice_%2853457826676%29.jpg"
+ },
+ {
+  "biome": "snow",
+  "scale_m": 20,
+  "pair": "docs/comparisons/reference-photographs/pair-snow-20m.jpg",
+  "photo": "snow-20m-anta0183_2819778502135_29.jpg",
+  "title": "File:Anta0183 (19778502135).jpg",
+  "licence": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File%3AAnta0183_%2819778502135%29.jpg"
+ },
+ {
+  "biome": "snow",
+  "scale_m": 200,
+  "pair": "docs/comparisons/reference-photographs/pair-snow-200m.jpg",
+  "photo": "snow-200m-20260731_120825_hdr.jpg",
+  "title": "File:20260731 120825 HDR.jpg",
+  "licence": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File%3A20260731_120825_HDR.jpg"
+ }
+]

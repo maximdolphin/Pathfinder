@@ -307,7 +307,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 6
+   "doneCount": 7
   },
   {
    "id": "M03",
@@ -5371,9 +5371,9 @@
    "dependsOn": [
     "T434"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -5389,9 +5389,39 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Scree re-rendered where the site actually is, with -studyasis so the study does not walk to the flattest ground: at 2 m it is still sand with a scatter of pebbles and scree only on the upper slope, so the scree deficiency stands (no clast field on the talus itself). Contact sheet at out/reference-sheet.jpg covers gravel, rainforest, scree, sky and snow. The verdicts against CC0 reference photographs wait on permission to download them."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Twelve pairs published in docs/comparisons/reference-photographs/: desert gravel, scree, forest floor and snow at 2, 20 and 200 m, each render beside a CC0 or public-domain photograph from Wikimedia Commons (fourteen downloaded, author and source recorded in surfaces/reference/manifest.json), each with a written verdict. Distance and ground are matched; focal length, sun and exposure are not, so they compare what the ground is rather than how it is lit. Eleven of twelve lose and every one of those names its deficiency. In order of cost to the picture: no clasts where the ground is stone (gravel and scree render as sand at every distance -- a close stone scatter, talus block geometry, and the right scan winning at those sites), dark skies at the reference sites (every 20 m and 200 m frame near black against bright photographs), no vegetation or litter in the forest, and snow without grain at 2 m. The one that holds, snow at 20 m, holds on shape alone. These are what the rest of M2S has to fix."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T435-2026-09-11T13-50-52-786.jpg",
+     "caption": "Gravel at 2 m: the render is smooth sand, the photograph desert pavement -- no clasts where the ground is stone",
+     "source": "../docs/comparisons/reference-photographs/pair-gravel-2m.jpg",
+     "addedAt": "2026-09-11T13:50:52.794Z"
+    },
+    {
+     "file": "evidence/T435-2026-09-11T13-50-52-930.jpg",
+     "caption": "Scree at 2 m: sand against a talus of angular blocks -- scree needs block geometry, not a texture",
+     "source": "../docs/comparisons/reference-photographs/pair-scree-2m.jpg",
+     "addedAt": "2026-09-11T13:50:52.933Z"
+    },
+    {
+     "file": "evidence/T435-2026-09-11T13-50-53-041.jpg",
+     "caption": "Forest at 20 m: green marble hills with no tree against trunks and leaf litter",
+     "source": "../docs/comparisons/reference-photographs/pair-forest-20m.jpg",
+     "addedAt": "2026-09-11T13:50:53.043Z"
+    },
+    {
+     "file": "evidence/T435-2026-09-11T13-50-53-151.jpg",
+     "caption": "Snow at 20 m, the closest pair: wind-shaped drifts against sastrugi; the sky is dark where it should be bright",
+     "source": "../docs/comparisons/reference-photographs/pair-snow-20m.jpg",
+     "addedAt": "2026-09-11T13:50:53.153Z"
+    }
+   ],
    "plannedStartDay": 165.5,
    "plannedEndDay": 169.5,
    "plannedStart": "2027-04-26",
@@ -14886,5 +14916,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T13:09:37.155Z"
+ "updatedAt": "2026-09-11T13:50:53.261Z"
 }

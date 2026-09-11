@@ -100,3 +100,22 @@ any that does not. That check runs in CI beside the module layering.
 When adding an asset from anywhere, the question to answer in the manifest is
 not "is it free" but "free to do *what*" — the two Megascans tiers above are
 exactly why.
+
+## CC0 and public-domain sources (added 2026-09-11)
+
+Owner's permission on 2026-09-11 to download freely licensed assets for realism.
+Two sources so far, both with nothing to comply with:
+
+- **Poly Haven textures** -- CC0 1.0, every asset, no attribution required (it is
+  given anyway in `client/Config/surfaces.json`). Imported by rule into the same
+  packed format as the Megascans sets: `gravel_stones_polyhaven` and
+  `dry_river_pebbles_polyhaven`, both 2 m square, by Amal Kumar. Downloaded
+  as the 2k PNG maps (diffuse, OpenGL normal -- the convention the Megascans
+  normals were measured to use -- roughness, displacement, AO).
+- **Wikimedia Commons photographs** -- only files whose structured licence is
+  CC0 or whose status is public domain. They are reference plates for the
+  T435 comparison, not game assets, and each is listed with its author and
+  source page in `surfaces/reference/manifest.json`.
+
+Fab items are not downloaded by me: they need the owner's account. Where a
+free Fab item would help, it is named for the owner to add.
