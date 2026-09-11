@@ -6752,6 +6752,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "With the sun behind the camera (the climb only; the air show still faces the sun), measured against the same views without cloud: above the middle deck, 10.0% of the lower frame darker by more than 20 and 0.3% brighter; from orbit 37.6% brighter and 26.5% darker, the brightest 1% 156 against 192 clear. So the framing was part of it and not all: lit from behind, cumulus of albedo 0.98 should be the brightest thing in view and is a mid-grey veil -- it lifts the ocean and dulls the land. Next arm: the cloud shadow map off (r.VolumetricCloud.ShadowMap=0), since a shadow map placed wrongly at planet scale would put every cloud sample in shade."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The cloud shadow map is not it either: off (r.VolumetricCloud.ShadowMap=0) the frames are the same to a tenth of a level (above-middle 122.1 against 122.0; orbit 118.1 against 118.0). Ruled out now: the air show's framing alone, the one global sun transmittance, the shadow map. Within a frame the cloud is about as bright as the sand under it, where a thick cumulus deck should be about half again brighter -- which points at the clouds being optically too thin (coverage-thresholded, wispy) and the forward-biased phase, not the lighting. The weather noise and multiple scattering are committed. The acceptance is layering from orbit, not brightness: from two radii a deck is a fraction of a pixel, so the climb now adds a low-orbit view at 400 km looking at the limb, queued with a cloud-free reference."
     }
    ],
    "evidence": [
@@ -14542,5 +14547,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:30:47.490Z"
+ "updatedAt": "2026-09-11T09:36:39.938Z"
 }
