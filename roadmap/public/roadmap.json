@@ -5311,6 +5311,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The sky capture's cost is NOT its resolution: negative, reverted (chain169). The cubemap dropped from the engine's default 128 to 64 -- a quarter of the fill -- and the frame at 110.7 km came back 59.5 ms with the render thread at 56.4, against 61.9 and 58.9 at 128. So what that frame costs is the scene being submitted into six cube faces (culling, draw setup, the passes), which resolution barely moves; lowering it would have cost ambient quality for nothing. ALSO, AND IT MATTERS FOR EVERY ARM MEASURED THIS WAY: chain168 changed NO behaviour -- it only reads the engine's counters every frame instead of on over-budget frames -- and the count went 118 to 127. Four runs of what is effectively one tree read 118, 121, 127 and 135, so the run-to-run spread on 'frames over 16.7 ms' is at least plus or minus ten, and no arm can be judged by that number alone. Targeted numbers (a named frame, at a fixed place, across runs) are what decided this one. WHAT T068'S REMAINING GAP IS MADE OF, from chain169's worst twelve: (a) one sky-light capture per degree of arc -- 110.7 km on this planet -- at 56-59 ms on the render thread, resolution-independent, and by itself a breach of 'none over 33 ms'; the real-time capture path is not an alternative because it renders black here (LedgerWorld.cpp says so at length); (b) the cold-start burst, seven of the top eight frames inside the first kilometre, game thread 15-39 ms with 85-160 jobs in flight and render waiting 7-44 ms -- a player entering a world meets this too; (c) about 81 frames that are genuinely time outside every counter the engine exposes. None of (a), (b) or (c) is a tuning knob, and the next honest step is a trace (Insights) of one cold-start frame and one wait frame rather than another arm."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] chain170 is VOID, both arms, for two different reasons -- recorded so nobody reads 606 or 179 as a regression against the 118-135 baseline. ARM A (as the gate measures it today) read 606 over 16.7 ms, worst 673 ms, and it measured the machine rather than the code: the spikes sit in one time band (7.7-14.3 km, about 8-16 s in) rather than at the cold start; jobs in flight are 0-10 and patch upload 0.0 on nearly every one of them, so the streamer was idle; the GPU column reads 12-15 ms on EVERY frame against 5.8-9.8 in chain162 and chain169, so the whole machine was slower; and the attribution is incoherent frame to frame (render 412 ms with everything else quiet, then game 199 with render-waiting 301), which is what external preemption looks like. Windows Defender, Discord and the Radeon overlay were all live. Same failure as chain156. ARM B was invalid by my own doing: the -transectsettle condition was not latched, so it re-entered every time the streaming queue got busy again IN FLIGHT -- which is constantly -- freezing the ship, re-placing it at the start, and leaving the frame clock holding a stale timestamp across the gap, hence a 10,558 ms 'frame' (the settle period itself) and 147 'waits'. Now latched: it can only settle once, before the clock starts. Neither arm says anything about load versus flight; that question is still open and needs a quiet machine."
     }
    ],
    "evidence": [
@@ -15752,5 +15757,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T23:03:03.822Z"
+ "updatedAt": "2026-09-11T23:12:53.962Z"
 }
