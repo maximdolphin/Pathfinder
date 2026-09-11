@@ -793,8 +793,28 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 			// direct lighting off rendered the entire world -- terrain, town,
 			// trees -- as a pure black silhouette against a blue sky, which is
 			// what found it. Tick moves it to the viewer; see KeepSkyWithViewer.
-			Component->bRealTimeCapture = true;
+			Component->bRealTimeCapture = !FParse::Param(FCommandLine::Get(), TEXT("skystatic"));
+
+			// **Control arms for a sky light that lights nothing.** Every face
+			// the sun does not reach renders (0,0,0), with Lumen on and with it
+			// off. `-skyprobe` paints the capture's lower hemisphere magenta: a
+			// magenta wall means the light is applied and its sky half is black;
+			// a black wall means the light is not reaching the surface at all.
+			// `-skystatic` captures the scene the old way instead of in real time.
+			if (FParse::Param(FCommandLine::Get(), TEXT("skyprobe")))
+			{
+				Component->bLowerHemisphereIsBlack = true;
+				Component->LowerHemisphereColor = FLinearColor(1.0f, 0.0f, 1.0f);
+			}
 			Component->RecaptureSky();
+			UE_LOG(LogLedger, Log,
+				TEXT("sky light: affects world %d, visible %d, registered %d, intensity %.2f, "
+					 "indirect %.2f, real-time %d, lower hemisphere black %d (%s), cast shadows %d"),
+				static_cast<int32>(Component->bAffectsWorld), static_cast<int32>(Component->IsVisible()),
+				static_cast<int32>(Component->IsRegistered()), Component->Intensity,
+				Component->IndirectLightingIntensity, static_cast<int32>(Component->bRealTimeCapture),
+				static_cast<int32>(Component->bLowerHemisphereIsBlack),
+				*Component->LowerHemisphereColor.ToString(), static_cast<int32>(Component->CastShadows));
 		}
 	}
 

@@ -225,6 +225,35 @@ void ULedgerFogWatch::Place()
 		ValleyMetres = Sampled[Low].Key;
 		ValleyDirection = Sampled[Low].Value;
 
+		// **A lookout with the sun behind it.** The lookout was the single
+		// highest sample, whichever side of the valley that put it -- and at
+		// dawn, which is when a cold pool exists, the far side looks down into
+		// a sun three degrees up through dusty air. That frame is forward-
+		// scattered glare, orange edge to edge, with the clouds off as much as
+		// on. So: of the highest twentieth, the one whose line to the valley
+		// has the sun most nearly behind it.
+		{
+			const FVector3d SunSurface = LedgerSky::SunDirectionInSurface(
+				System, Home, Anchor, Builder->GetWhenSeconds());
+			const FVector3d SunFlat = LedgerFrames::ToBody(
+				{ Home, Anchor, FVector3d(SunSurface.X, SunSurface.Y, 0.0) }).Metres.GetSafeNormal();
+			double Best = TNumericLimits<double>::Max();
+			for (int32 Index = Sampled.Num() * 19 / 20; Index < Sampled.Num(); ++Index)
+			{
+				const double Facing = FVector3d::DotProduct(
+					(ValleyDirection - Sampled[Index].Value).GetSafeNormal(), SunFlat);
+				if (Facing < Best)
+				{
+					Best = Facing;
+					RidgeMetres = Sampled[Index].Key;
+					RidgeDirection = Sampled[Index].Value;
+				}
+			}
+			UE_LOG(LogLedger, Log,
+				TEXT("fog watch: lookout chosen with the sun %.0f degrees from directly behind it"),
+				FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(-Best, -1.0, 1.0))));
+		}
+
 		if (Weather.bForms && !FParse::Param(FCommandLine::Get(), TEXT("fogoff")))
 		{
 			FActorSpawnParameters Params;
@@ -272,8 +301,10 @@ void ULedgerFogWatch::Place()
 			TEXT("fog watch: valley eye at %.0f m, ground under it %.0f m"),
 			ValleyMetres + FogWatchValleyEyeMetres,
 			Planet->SurfaceRadiusAt(ValleyDirection) / 100.0);
+		// Across the sun, not into it: side light rakes the fog's top without
+		// the forward-scattered glare a three-degree sun puts over the frame.
 		Toward = LedgerFrames::ToBody(
-			{ Home, ValleyDirection, FVector3d(Sun.X, Sun.Y, 0.06) }).Metres
+			{ Home, ValleyDirection, FVector3d(-Sun.Y, Sun.X, 0.06) }).Metres
 			.GetSafeNormal();
 	}
 	else if (Which == 1)
@@ -361,6 +392,16 @@ void ULedgerFogWatch::Place()
 		Ship->SetVelocity(FVector::ZeroVector);
 		Ship->SetActorHiddenInGame(true);
 		Ship->SetActorLocation(Eye);
+	}
+
+	static int32 LoggedView = -1;   // ponytail: one world per process
+	if (LoggedView != Which)
+	{
+		LoggedView = Which;
+		const FVector3d SunWorld = LedgerFrames::ToBody({ Home, Anchor, Sun }).Metres.GetSafeNormal();
+		UE_LOG(LogLedger, Log, TEXT("fog watch: view %d looks %.0f degrees from the sun"),
+			Which, FMath::RadiansToDegrees(FMath::Acos(
+				FMath::Clamp(FVector3d::DotProduct(Toward, SunWorld), -1.0, 1.0))));
 	}
 
 	const FRotator Look =

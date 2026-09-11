@@ -214,7 +214,13 @@ namespace LedgerSurface
 		// everywhere.
 		UMaterialExpressionWorldPosition* Position =
 			Graph.Make<UMaterialExpressionWorldPosition>();
-		Position->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
+		// **Camera-relative, and not the "no offsets" variant.** The cloud pass
+		// fills WorldPosition_CamRelative but leaves WorldPosition_NoOffsets_CamRelative
+		// as a literal TODO (VolumetricCloudMaterialPixelCommon.ush,
+		// UpdateMaterialCloudParam), so a noise fed from the no-offsets variant
+		// never moved with the sample: once the density reached the right pin,
+		// probe and decks alike came back an empty sky.
+		Position->WorldPositionShaderOffset = WPT_CameraRelative;
 
 		UMaterialExpressionVectorParameter* Anchor =
 			Graph.Make<UMaterialExpressionVectorParameter>();
@@ -370,7 +376,12 @@ namespace LedgerSurface
 			// **Thin enough to see through.** At 3e-4 per metre a full column of
 			// the seven-kilometre layer is about two optical depths, so the frame
 			// shows the noise itself -- structure if it varies, flat if it does not.
-			EditorData->SubsurfaceColor.Expression = Graph.Scale(Noise, 3.0e-4f);
+			// `-cloudconst` takes the noise out too: a constant thin extinction. A
+			// uniform haze then means the pin reaches the integrator and the noise
+			// is what comes out as zero; nothing means the pin does not.
+			EditorData->SubsurfaceColor.Expression = FParse::Param(FCommandLine::Get(), TEXT("cloudconst"))
+				? Graph.Constant(3.0e-4f)
+				: Graph.Scale(Noise, 3.0e-4f);
 			UE_LOG(LogLedger, Log,
 				TEXT("cloud material: probe on, density is the raw noise"));
 		}

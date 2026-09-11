@@ -158,3 +158,46 @@ The passage frames are no longer behind a solid overcast — the moon transits a
 79° through 43% cirrus. They are black because it is *night* and nothing renders
 a night sky at this exposure yet. That is the star-field and exposure work, not
 the cloud work, and T088's blocker has moved from T089/T094 to it.
+
+## The density never reached the renderer
+
+The "shaping problem" was not one. A volume-domain material's density is its
+**Extinction** pin, and Extinction is the `SubsurfaceColor` property under
+another name — `MaterialAttributeDefinitionMap.cpp` returns "Extinction" for
+`MP_SubsurfaceColor` when the domain is `MD_Volume`. **Opacity is not read at
+all.** This material wired its noise, its three bands and every coverage
+threshold into Opacity, and left Extinction at the pin's default of one per
+metre: seven thousand optical depths across a 7.3 km layer, the same
+everywhere. Every uniform sky this task produced was that constant, and so was
+every change that "changed no pixel" — the coverage ramp, the flattened noise,
+the factor-of-a-hundred density change. None of them was connected to anything.
+
+Two things gave it away once the probe was made thin enough to see through:
+
+- At 3e-6 "per centimetre" a full column should be about two optical depths,
+  so the ground ought to show through from orbit. It came back an opaque tan
+  shell, which a density of that size cannot produce.
+- From orbit there had been no cloud at all, because a ray only starts marching
+  if the layer is within `TracingStartMaxDistance` (350 km by default) and the
+  orbit frame is 12,700 km out. Raising that to 30,000 km turned an empty frame
+  into the same uniform shell — the layer was there, at the default extinction,
+  whatever the graph said.
+
+The units were wrong too: volumetric cloud extinction is per metre, not per
+centimetre. The fix wires `SubsurfaceColor`, with 0.04 per metre for the decks
+(a 500 m cumulus deck is twenty optical depths, opaque as a cloud is) and 3e-4
+per metre for the probe (about two optical depths a column).
+
+## And the noise never moved
+
+With the density on the right pin, the probe and the real decks both came back
+an empty blue sky — two different graphs whose only shared input was the
+noise. The noise was fed `WPT_CameraRelativeNoOffsets`, and the cloud pass never
+fills that field: `UpdateMaterialCloudParam` in
+`VolumetricCloudMaterialPixelCommon.ush` sets `WorldPosition_CamRelative` and
+leaves `WorldPosition_NoOffsets_CamRelative` as a literal `// TODO`. So every
+sample in every column read the same coordinate. It now uses
+`WPT_CameraRelative`, which the pass does set. The earlier note that "driving the
+density from the raw noise proved" a precision problem was reading a pin the
+renderer ignored; the precision reasoning for the anchor still holds, but that
+run proved nothing.

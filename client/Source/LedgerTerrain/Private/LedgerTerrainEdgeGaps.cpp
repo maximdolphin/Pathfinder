@@ -108,6 +108,8 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 	int32 WorstNeighbourDepth = 0;
 	int32 Measured = 0;
 	int32 Skipped = 0;
+	int32 Overlapping = 0;
+	int32 OverOneCm = 0;
 	int32 DeepestGapLevels = 0;
 	int32 MeasuredAcrossLevels = 0;
 
@@ -143,6 +145,23 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 					++Skipped;
 					continue;
 				}
+				// **Adjacent, not overlapping.** What is drawn just past an edge
+				// is a neighbour only if its facing edge lies on this edge's line.
+				// A parent still drawn behind children that are streaming in
+				// contains this patch instead of touching it, and its "facing
+				// edge" is on the far side of it -- the first run reported a
+				// 4,855 km gap between a quarter-face and the whole face it sits in.
+				const double Eps = Node.Extent * 1e-6;
+				const bool bAdjacent =
+					Edge == Left   ? FMath::IsNearlyEqual(Across->U + Across->Extent, Node.U, Eps)
+					: Edge == Right  ? FMath::IsNearlyEqual(Across->U, Node.U + Node.Extent, Eps)
+					: Edge == Bottom ? FMath::IsNearlyEqual(Across->V + Across->Extent, Node.V, Eps)
+					: FMath::IsNearlyEqual(Across->V, Node.V + Node.Extent, Eps);
+				if (!bAdjacent)
+				{
+					++Overlapping;
+					continue;
+				}
 
 				// The distance from this vertex to the neighbour's facing edge,
 				// as a polyline through every vertex that edge has.
@@ -159,6 +178,7 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 				}
 
 				++Measured;
+				OverOneCm += Nearest > 1.0 ? 1 : 0;
 				const int32 Levels = FMath::Abs(Node.Depth - Across->Depth);
 				MeasuredAcrossLevels += Levels > 0 ? 1 : 0;
 				DeepestGapLevels = FMath::Max(DeepestGapLevels, Levels);
@@ -176,8 +196,9 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 		TEXT("edge gaps (T049): %d drawn patches, %d edge vertices measured, "
 			 "%d of them across a depth change of up to %d levels; %d skipped "
 			 "(cube-face borders or no drawn neighbour), %d irregular sections\n"
-			 "worst gap %.2f cm, between depth %d and depth %d\n"),
+			 "%d edge vertices over a patch still drawn behind its children (not adjacent, not measured)\n"
+			 "worst gap %.2f cm, between depth %d and depth %d; %d vertices more than 1 cm off\n"),
 		Drawn.Num(), Measured, MeasuredAcrossLevels, DeepestGapLevels, Skipped,
-		Irregular, Worst, WorstDepth, WorstNeighbourDepth);
+		Irregular, Overlapping, Worst, WorstDepth, WorstNeighbourDepth, OverOneCm);
 	return Worst;
 }

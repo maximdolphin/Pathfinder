@@ -363,7 +363,10 @@ bool ULedgerNearField::Measure()
 	TArray<double> BandOnly;
 	Distance.Reserve(ProfileSamples);
 
-	double PatchWorldSize = 0.0;
+	// The finest patch the profile crosses. Min, not max: on a profile long
+	// enough to leave the forced region the max is the coarsest patch, and the
+	// T049 run reported 608 m quads for a region pinned at 150 m.
+	double PatchWorldSize = TNumericLimits<double>::Max();
 	int32 Missing = 0;
 
 	for (int32 Index = 0; Index < ProfileSamples; ++Index)
@@ -379,7 +382,7 @@ bool ULedgerNearField::Measure()
 			++Missing;
 			continue;
 		}
-		PatchWorldSize = FMath::Max(PatchWorldSize, Sample.PatchWorldSize);
+		PatchWorldSize = FMath::Min(PatchWorldSize, Sample.PatchWorldSize);
 
 		// And the field, at the spacing this patch is drawn at, against the
 		// field at a spacing too coarse to carry the near-field band. The

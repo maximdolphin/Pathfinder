@@ -103,7 +103,7 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 		{
 			FString Lines;
 			const int32 Off = Planet->MeasureScatterFootings(
-				Camera != nullptr ? Camera->GetActorLocation() : FVector::ZeroVector, 400.0, Lines);
+				Camera != nullptr ? Camera->GetActorLocation() : FVector::ZeroVector, 1500.0, Lines);
 			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
 			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
 				*Names[Shot], Off) + Lines;
