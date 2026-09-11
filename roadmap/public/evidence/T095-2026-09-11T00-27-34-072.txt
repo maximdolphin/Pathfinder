@@ -1,0 +1,31 @@
+A low crosses a site (T095).
+
+body            1 (Home)
+site            -20.7 N, 127.8 E, 9.8 C
+deepest anomaly -675 Pa
+cloud           1237 to 5242 m
+
+  moment        hours   anomaly Pa   falling      mm/h   drops
+  before          -18            0   none        0.00       0
+  arriving         -5         -622   rain        0.54     805
+  rain             +0         -675   rain        0.63     938
+  snow             +0         -675   snow        0.63     938
+  after           +18         -335   rain        0.06      87
+
+  altitude m   falling
+           0   rain
+         500   rain
+        1000   rain
+        1500   rain
+        2000   snow
+        2500   snow
+        3000   snow
+        3500   snow
+        4000   snow
+        4500   snow
+        5000   snow
+        5500   none
+        6000   none
+
+freezing level declared 1517.304 m, changeover found by bisection 1517.304 m, 4.77e-12 apart
+the boundary is where the lapse rate puts it: yes

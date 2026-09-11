@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 3
+   "doneCount": 4
   },
   {
    "id": "M05",
@@ -3060,6 +3060,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "The project opens on /Game/Maps/Ledger, built by tools/make_level.py and holding exactly three actors: Sun, SkyLight, WorldPostProcess. Listed and kept as evidence in docs/comparisons/project-level/level-actors.txt. The level says WHAT EXISTS and the code says HOW IT BEHAVES: ULedgerWorldBuilder finds a placed actor and configures it, falling back to spawning so a world with no level still comes up lit. That fallback matters -- before this, the engine's Entry map contributed a PlayerStart and the code spawned a second one. Two consecutive flights on the new map are BYTE-IDENTICAL, worst channel difference 0, via compare_captures.py --between. What I could NOT establish: the captures differ from the previous references by a structural residual of 25 to 32. That is not the map's doing -- a control run on the old engine map differs from the same references by the same amounts (town 28.97 either way), and the lighting configuration is provably identical on both, logged at world build: sun rotation R(P=-50.11,Y=-147.53), intensity 11, atmosphere sun on, sky 3.2 with real-time capture, exposure 0.03-8.0 bias 0.10. So the references were already stale against the current build before this task, from a commit I did not identify, and I did not pretend to. Re-baselined against a run that is now reproducible."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Finished what ADR-0006's third tier asked for: the level now holds the planet, the atmosphere and the settlement as well as the sun, sky light and post-process -- six actors, read back from disk. The builder finds and configures them before they begin play, and a body switch rebuilds the same planet in place rather than destroying and respawning three actors. tools/make_level.py was never idempotent despite saying so: it had only run once, with no map present. Re-run, does_asset_exist answered False for the map so the delete never happened, new_level refused, the save was refused, and the report said PASS from the list of actors it had asked for. It now opens an existing map and replaces only the actors it owns, and the verdict comes from loading the saved file again. docs/comparisons/proper-world/"
     }
    ],
    "evidence": [],
@@ -3096,6 +3101,11 @@
      "at": "2026-09-09",
      "kind": "note",
      "text": "[2026-09-09] CORRECTION to the evidence above. The claim that two consecutive bakes were byte-identical, 3 of 3, was wrong. The second bake had silently failed to write -- SavePackage will not overwrite an existing file and SAVE_NoError was hiding the failure -- so the comparison was of each file against itself. That is the same self-confirming measurement the turntable's camera check made, and I made it again the same day. Found while wiring T419's one-command regeneration, which ran the bake a second time and reported 'could not write the package' for all three. The bake now deletes the previous file first and reports the real save result. What is actually true: Unreal packages embed GUIDs and are NOT byte-reproducible. Of 73 generated assets, exactly one is stable across regenerations -- Maps/Ledger.umap, which is the only one tracked in version control, so nothing churns. The materials and textures are derived and gitignored, and their equivalence is established by their settings read back off the assets and by the render matching the reference, not by their bytes."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The bake had not been re-run since M_Star (T077) and M_Clouds (T094) were added, so both were built in memory on every launch. Re-run, and extended: MPC_LedgerWind, the wind collection T093's vegetation was meant to read and which had never existed, and M_Foliage, which leans the canopies with it. M_Foliage then failed to compile silently into the default material -- a collection node binds by parameter GUID and the builder set only the name. One helper sets both, for the cloud material too, and the collection's parameters get deterministic ids so a re-bake does not orphan the materials baked against it. 8 of 8, zero materials built in memory at runtime."
     }
    ],
    "evidence": [],
@@ -6323,11 +6333,36 @@
    "dependsOn": [
     "T094"
    ],
-   "status": "todo",
-   "startedAt": null,
-   "completedAt": null,
-   "notes": [],
-   "evidence": [],
+   "status": "done",
+   "startedAt": "2026-09-11",
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "A low crosses the site, found by scanning twenty days of weather for the deepest anomaly over the town: nothing at -18 h, rain at 0.54 mm/h arriving, 0.63 at the peak, 0.06 after. At the same instant 900 m above the freezing level it snows. The boundary is found, not read: FrozenOrNot walks the lapse rate down from the surface temperature, FreezingLevelMetres solves for 273.15 K separately, and bisecting the first lands on the second to 4.77e-12 m -- the only form of the test that can fail. Textbook Earth: 2,288 m against 2,280. The first run snowed at the ground under every low because the profile's datum temperature is planet-wide; the local surface temperature now comes from the terrain's climate model rather than a second climate in LedgerCore. Rate comes from the cell anomaly alone (LedgerWeather::CellAnomalyPascals, split out of PressureAt so the falloff is written once). No condensable water means dust above 17 m/s instead. Drawn as a camera-following forty-metre box of up to nine thousand particles, each moving at the wind from ULedgerWind plus its terminal velocity -- rain 9 m/s as a 1/25 s streak, snow 1 m/s as a flake -- which makes it T093's particle consumer. Sky over the rain is clear because the cloud deck is still T094's open problem. 127 tests pass, landed in 9c494e9. docs/comparisons/precipitation/"
+    }
+   ],
+   "evidence": [
+    {
+     "file": "evidence/T095-2026-09-11T00-27-34-072.txt",
+     "caption": "A low crosses the site: none, rain, rain, snow aloft, tail; boundary bisected to 4.77e-12 m of the freezing level",
+     "source": "../out/front.txt",
+     "addedAt": "2026-09-11T00:27:34.073Z"
+    },
+    {
+     "file": "evidence/T095-2026-09-11T00-27-34-136.png",
+     "caption": "The peak at the ground: rain slanting with the wind over the town",
+     "source": "../out/front-2-rain.png",
+     "addedAt": "2026-09-11T00:27:34.138Z"
+    },
+    {
+     "file": "evidence/T095-2026-09-11T00-27-34-203.png",
+     "caption": "The same instant, 900 m above the freezing level: snow",
+     "source": "../out/front-3-snow.png",
+     "addedAt": "2026-09-11T00:27:34.205Z"
+    }
+   ],
    "plannedStartDay": 230.5,
    "plannedEndDay": 233.5,
    "plannedStart": "2027-07-26",
@@ -14017,5 +14052,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T00:10:37.862Z"
+ "updatedAt": "2026-09-11T02:00:29.129Z"
 }
