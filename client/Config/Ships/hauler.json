@@ -10,8 +10,8 @@
 		"crew": 2
 	},
 	"flight": {
-		"mainThrust": 5200,
-		"manoeuvringThrust": 1400,
+		"mainThrust": 52,
+		"manoeuvringThrust": 14,
 		"pitchRate": 28,
 		"yawRate": 22,
 		"rollRate": 40,
@@ -671,7 +671,7 @@
 				0,
 				0
 			],
-			"thrustN": 259620400
+			"thrustN": 2596204
 		},
 		{
 			"component": "rcs",
@@ -685,7 +685,7 @@
 				0,
 				1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -699,7 +699,7 @@
 				0,
 				-1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -713,7 +713,7 @@
 				1,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -727,7 +727,7 @@
 				-1,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -741,7 +741,7 @@
 				0,
 				1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -755,7 +755,7 @@
 				0,
 				-1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -769,7 +769,7 @@
 				1,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -783,7 +783,7 @@
 				-1,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -797,7 +797,7 @@
 				0,
 				1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -811,7 +811,7 @@
 				0,
 				-1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -825,7 +825,7 @@
 				0,
 				1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -839,7 +839,7 @@
 				0,
 				-1
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -853,7 +853,7 @@
 				0,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		},
 		{
 			"component": "rcs",
@@ -867,7 +867,7 @@
 				0,
 				0
 			],
-			"thrustN": 34948900
+			"thrustN": 349489
 		}
 	]
 }

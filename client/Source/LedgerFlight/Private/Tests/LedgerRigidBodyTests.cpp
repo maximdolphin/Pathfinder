@@ -171,7 +171,9 @@ bool FLedgerAllocationMeets::RunTest(const FString&)
 		{ TEXT("a third of its pitch"), FVector3d::ZeroVector, FVector3d(0.0, Pitch / 3.0, 0.0) },
 		{ TEXT("a third of its yaw"), FVector3d::ZeroVector, FVector3d(0.0, 0.0, -Yaw / 3.0) },
 		{ TEXT("a third of its roll"), FVector3d::ZeroVector, FVector3d(Roll / 3.0, 0.0, 0.0) },
-		{ TEXT("strafe and yaw together"), FVector3d(0.0, 200.0 * M, 0.0), FVector3d(0.0, 0.0, Yaw / 5.0) },
+		// Half the manoeuvring acceleration, not a fixed 200 m/s^2: that figure was
+		// only makeable while the courier's thrust was a hundred times too high (M5P).
+		{ TEXT("strafe and yaw together"), FVector3d(0.0, 0.5 * Ship.Flight.ManoeuvringThrust * M, 0.0), FVector3d(0.0, 0.0, Yaw / 5.0) },
 		{ TEXT("hover against gravity"), FVector3d(0.0, 0.0, 9.81 * M), FVector3d::ZeroVector },
 		{ TEXT("half the main engine, held straight"), FVector3d(0.5 * Ship.Flight.MainThrust * M, 0.0, 0.0), FVector3d::ZeroVector },
 		{ TEXT("nothing"), FVector3d::ZeroVector, FVector3d::ZeroVector },

@@ -83,6 +83,14 @@ void ALedgerShip::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// **The demister on from the start (M5P).** The canopy model leaves the heater
+	// off, and a cold day then fogs the glass from the cabin's own moisture --
+	// which the visor draws as a five-tap blur washed towards white. The first
+	// playtest saw exactly that at the pad, doubled trees in a grey veil, and
+	// called it blurry. A pilot switches the demister off, not on; the visor
+	// fixture still sets it per step.
+	Canopy.bHeater = true;
+
 	if (const UWorld* World = GetWorld())
 	{
 		if (const ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>())
@@ -360,8 +368,21 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 		Air = LedgerFlight::Aerodynamics(ShipDefinition.Aero, BellyArea, Flight, FVector3d(LastWind) / 100.0,
 			LedgerAir::DensityAt(AirProfile, AboveDatum), Stick.Turn, &LastAero);
 	}
-	const FLedgerCommand Command = LedgerFlight::Control(FlightMode, Stick, FLedgerHandling::From(ShipDefinition.Flight),
+	FLedgerCommand Command = LedgerFlight::Control(FlightMode, Stick, FLedgerHandling::From(ShipDefinition.Flight),
 		Mass, Flight, DeltaSeconds, Air.Torque);
+	// **Coupled holds against gravity (M5P).** The drift hold closes vertical
+	// drift in proportion to it and knew nothing of weight, so with the stick
+	// centred the ship settled where the hold matched g: the first playtest sank
+	// from 42 m to the pad at a steady 2.5 m/s, which is g over the hold's 4 per
+	// second. The weight is now asked for outright, in the body frame the
+	// command is in, and the hold only has the rest to do.
+	if (FlightMode == ELedgerFlightMode::Coupled && Planet != nullptr)
+	{
+		const FVector3d Radial = FVector3d(GetActorLocation()) - FVector3d(Planet->GetActorLocation());
+		const double Distance = FMath::Max(Radial.Length(), 1.0);
+		const double GravityHere = SurfaceGravity / 100.0 * FMath::Square(Planet->Radius / Distance);
+		Command.Force += Flight.Spin.Orientation.UnrotateVector(Radial / Distance * GravityHere) * Mass.MassKg;
+	}
 
 	// Each nozzle limited by what its thruster can give -- power, wear, fuel.
 	const int32 MainEngine = ShipDefinition.FindComponent(TEXT("main_engine"));

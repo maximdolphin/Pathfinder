@@ -15,9 +15,11 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "LedgerShipAudio.generated.h"
 
-/// Engine saw, pump noise and an alarm tone, mixed, with every level and
-/// pitch pushed in from the game thread.
-class FLedgerShipToneGenerator : public ISoundGenerator
+/// The engine's hum and rumble, the pumps' low noise and an alarm tone, mixed,
+/// with every level and pitch pushed in from the game thread and glided to per
+/// sample (M5P: the first playtest heard the old saw, a 1 kHz hiss and a gain
+/// that stepped sixty times a second, and called it static).
+class LEDGERCLIENT_API FLedgerShipToneGenerator : public ISoundGenerator
 {
 public:
 	explicit FLedgerShipToneGenerator(int32 InSampleRate) : SampleRate(InSampleRate) {}
@@ -38,7 +40,17 @@ private:
 	double EnginePhase = 0.0;
 	double AlarmPhase = 0.0;
 	double AlarmClock = 0.0;
+	// Two one-pole stages each: the rumble under the engine, the pumps' noise.
+	float Rumble = 0.0f;
+	float RumbleLow = 0.0f;
 	float Pumped = 0.0f;
+	float PumpedLow = 0.0f;
+	// What is actually sounding, gliding towards what the game thread asked for.
+	float EngineNow = 0.0f;
+	float PumpNow = 0.0f;
+	float AlarmNow = 0.0f;
+	float GateNow = 0.0f;
+	double PitchNow = 55.0;
 	FRandomStream Noise{ 20260911 };
 };
 

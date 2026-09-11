@@ -153,6 +153,14 @@ public:
 	/// the engine note is pitched from it. T126.
 	float CurrentThrottle() const { return FMath::Clamp(ThrottleInput + AutoThrottle, 0.0f, 1.0f); }
 
+	/// The whole stick at once, for a playtest that flies the ship the way a
+	/// player would: the same six axes the key bindings feed, nothing else.
+	void SetStick(float Throttle, float Strafe, float Lift, float Pitch, float Yaw, float Roll)
+	{
+		ThrottleInput = Throttle; StrafeInput = Strafe; LiftInput = Lift;
+		PitchInput = Pitch; YawInput = Yaw; RollInput = Roll;
+	}
+
 	/// The hull, for the damage view to paint. T127.
 	UProceduralMeshComponent* GetHullMesh() const { return Hull; }
 	void SetCanopyHeater(bool bOn) { Canopy.bHeater = bOn; }
@@ -263,11 +271,15 @@ private:
 	void UpdateCanopy(float DeltaSeconds);
 	void LoadDefinition();
 
-	void InputThrottle(float Value) { ThrottleInput = Value; }
-	void InputStrafe(float Value) { StrafeInput = Value; }
-	void InputLift(float Value) { LiftInput = Value; }
-	void InputPitch(float Value) { PitchInput = Value; }
-	void InputYaw(float Value) { YawInput = Value; }
-	void InputRoll(float Value) { RollInput = Value; }
+	// **Clamped to the stick's travel (M5P).** The mouse axes arrive as raw
+	// counts a frame -- tens, not a fraction -- and were taken as deflection, so
+	// a flick asked for many times the ship's full turn rate and the rate hold
+	// tumbled it. Full deflection is one, from any device.
+	void InputThrottle(float Value) { ThrottleInput = FMath::Clamp(Value, -1.0f, 1.0f); }
+	void InputStrafe(float Value) { StrafeInput = FMath::Clamp(Value, -1.0f, 1.0f); }
+	void InputLift(float Value) { LiftInput = FMath::Clamp(Value, -1.0f, 1.0f); }
+	void InputPitch(float Value) { PitchInput = FMath::Clamp(Value, -1.0f, 1.0f); }
+	void InputYaw(float Value) { YawInput = FMath::Clamp(Value, -1.0f, 1.0f); }
+	void InputRoll(float Value) { RollInput = FMath::Clamp(Value, -1.0f, 1.0f); }
 	void InputNextMode() { FlightMode = static_cast<ELedgerFlightMode>((static_cast<uint8>(FlightMode) + 1) % 3); }
 };

@@ -7,7 +7,8 @@
 
 int32 FLedgerShipToneGenerator::OnGenerateAudio(float* OutAudio, int32 NumSamples)
 {
-	const double Step = 1.0 / FMath::Max(SampleRate, 1);
+	const float Rate = static_cast<float>(FMath::Max(SampleRate, 1));
+	const double Step = 1.0 / Rate;
 	const float Engine = EngineGain.load(std::memory_order_relaxed);
 	const double Pitch = EngineHz.load(std::memory_order_relaxed);
 	const float Pump = PumpGain.load(std::memory_order_relaxed);
@@ -15,19 +16,46 @@ int32 FLedgerShipToneGenerator::OnGenerateAudio(float* OutAudio, int32 NumSample
 	const double On = AlarmOn.load(std::memory_order_relaxed);
 	const double Period = On + AlarmOff.load(std::memory_order_relaxed);
 	const float AlarmLevel = AlarmGain.load(std::memory_order_relaxed);
+
+	// **Glided, not stepped (M5P).** Every level and the pitch move towards what
+	// the game thread asked for over about 30 ms, the alarm's gate over 5. They
+	// used to jump once a frame, and a level that steps sixty times a second is
+	// a crackle -- half of what the first playtest heard as static.
+	const float Glide = 1.0f - FMath::Exp(-1.0f / (0.03f * Rate));
+	const float GateGlide = 1.0f - FMath::Exp(-1.0f / (0.005f * Rate));
+	// One-pole low passes as a fraction per sample, two stages each so the
+	// noise falls away rather than hisses: the rumble near 90 Hz, the pumps
+	// near 250. The pumps were one stage near 1 kHz -- the other half.
+	const float RumbleCut = 1.0f - FMath::Exp(-UE_TWO_PI * 90.0f / Rate);
+	const float PumpCut = 1.0f - FMath::Exp(-UE_TWO_PI * 250.0f / Rate);
+
 	for (int32 Sample = 0; Sample < NumSamples; ++Sample)
 	{
-		// The engine: a saw, which is what a turbine's blade-pass sounds like
-		// through a hull.
-		EnginePhase = FMath::Fmod(EnginePhase + Pitch * Step, 1.0);
-		const float Saw = static_cast<float>(EnginePhase * 2.0 - 1.0);
-		// The pumps: noise through a low pass, a hiss that rises with the heat.
-		Pumped += 0.15f * (Noise.FRandRange(-1.0f, 1.0f) - Pumped);
-		// The alarm: a sine, gated on and off in its own rhythm.
+		EngineNow += Glide * (Engine - EngineNow);
+		PumpNow += Glide * (Pump - PumpNow);
+		AlarmNow += Glide * (AlarmLevel - AlarmNow);
+		PitchNow += Glide * (Pitch - PitchNow);
+
+		// The engine: a note with two softer harmonics over a low rumble. A
+		// turbine through a hull is a hum; the saw this replaced was a buzz.
+		EnginePhase = FMath::Fmod(EnginePhase + PitchNow * Step, 1.0);
+		const float Angle = static_cast<float>(EnginePhase) * UE_TWO_PI;
+		const float Note = FMath::Sin(Angle) + 0.35f * FMath::Sin(2.0f * Angle) + 0.15f * FMath::Sin(3.0f * Angle);
+		Rumble += RumbleCut * (Noise.FRandRange(-1.0f, 1.0f) - Rumble);
+		RumbleLow += RumbleCut * (Rumble - RumbleLow);
+
+		// The pumps: a low wash that rises with the heat.
+		Pumped += PumpCut * (Noise.FRandRange(-1.0f, 1.0f) - Pumped);
+		PumpedLow += PumpCut * (Pumped - PumpedLow);
+
+		// The alarm: a sine in its own rhythm, its gate faded rather than cut.
 		AlarmClock = Period > 0.0 ? FMath::Fmod(AlarmClock + Step, Period) : 0.0;
 		AlarmPhase = FMath::Fmod(AlarmPhase + Alarm * Step, 1.0);
-		const float Tone = (Alarm > 0.0 && AlarmClock < On) ? FMath::Sin(static_cast<float>(AlarmPhase * UE_TWO_PI)) : 0.0f;
-		OutAudio[Sample] = FMath::Clamp(Engine * Saw * 0.5f + Pump * Pumped + AlarmLevel * Tone, -1.0f, 1.0f);
+		GateNow += GateGlide * ((Alarm > 0.0 && AlarmClock < On ? 1.0f : 0.0f) - GateNow);
+		const float Tone = GateNow * FMath::Sin(static_cast<float>(AlarmPhase) * UE_TWO_PI);
+
+		OutAudio[Sample] = FMath::Clamp(EngineNow * (0.45f * Note + 6.0f * RumbleLow)
+			+ PumpNow * 6.0f * PumpedLow + AlarmNow * Tone, -1.0f, 1.0f);
 	}
 	return NumSamples;
 }
@@ -105,7 +133,8 @@ void ULedgerShipAudio::Tick(float DeltaSeconds)
 	if (Voice != nullptr && Voice->Generator.IsValid())
 	{
 		FLedgerShipToneGenerator& Out = *Voice->Generator;
-		Out.EngineHz.store(static_cast<float>(55.0 + 110.0 * Throttle), std::memory_order_relaxed);
+		// Lower than it was (55-165 Hz): a hull hums, it does not whine.
+		Out.EngineHz.store(static_cast<float>(45.0 + 70.0 * Throttle), std::memory_order_relaxed);
 		Out.EngineGain.store(static_cast<float>(LastEngine), std::memory_order_relaxed);
 		Out.PumpGain.store(static_cast<float>(LastPump), std::memory_order_relaxed);
 		Out.AlarmHz.store(static_cast<float>(LastAlarmHz), std::memory_order_relaxed);
