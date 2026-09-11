@@ -7647,7 +7647,14 @@
      "text": "Directional shields: four sectors charged from the power the shield draws, which competes on the bus like anything else. Ledger.Ships.RaisingShieldsTakesPowerFromThrust: 360 kW left for thrust with the shield down, 240 with it up; at 70 percent reactor raising it sheds the main engine; a megajoule from ahead leaves the fore sector empty and passes 250 kJ. On the instruments: the ship panel (ALedgerHUD) shows it -- -shippanel, courier 359 kW with the shield down and 239 kW up; hauler 928 and 708. PASS."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T119-2026-09-11T13-09-19-080.png",
+     "caption": "Shield up: 239 kW left for thrust against 359 with it down",
+     "source": "../out/panel-courier-1-shield-up.png",
+     "addedAt": "2026-09-11T13:09:19.083Z"
+    }
+   ],
    "plannedStartDay": 279,
    "plannedEndDay": 281,
    "plannedStart": "2027-10-01",
@@ -7738,7 +7745,14 @@
      "text": "Cargo is items with mass, volume and a place in a hold; Stow refuses by whichever binds first and says which. Ledger.Ships.AHoldFillsByVolumeOrMassWhicheverBindsFirst: lead stops at 2 crates, too heavy; foam at 60, no room. The contents are visible: the ship panel draws the hold as a grid of cubic metres filled in stowing order with a mass bar under it -- -shippanel on the hauler took 30 crates of ore (800 kg, 2 m3 each) and stopped at no room, 60 of 60 m3 and 24000 of 30000 kg, and the frame shows the grid full. And the hauler loaded to one side handles as predicted (T113)."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T122-2026-09-11T13-09-18-977.png",
+     "caption": "The hauler hold, 30 crates of ore: 60 of 60 m3 and 24000 of 30000 kg, full by volume",
+     "source": "../out/panel-hauler-3-hold.png",
+     "addedAt": "2026-09-11T13:09:18.980Z"
+    }
+   ],
    "plannedStartDay": 285,
    "plannedEndDay": 287,
    "plannedStart": "2027-10-11",
@@ -7918,7 +7932,14 @@
      "text": "PreviewSwap computes a fitting before it is made -- slot class, ports, and the consequences -- without touching the ship. Ledger.Ships.AnOversizedPlantShowsItsMassHeatAndHandlingBeforeFitting: a class 3 plant is refused; the 700 kW one adds 700 kg and 150 kW of heat flat out, 300 kW of margin, and takes main thrust from 9000 to 8553 m/s2. The configuration screen shows all three: -shippanel photographs the panel with the fitting offered (FITTING: mass +700 kg, heat +150 kW flat out, power +300 kW of margin, handling 9000 to 8553 m/s2). PASS on the courier."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T128-2026-09-11T13-09-18-862.png",
+     "caption": "A 700 kW plant offered for the reactor slot: mass, heat, margin and handling shown before it is fitted",
+     "source": "../out/panel-courier-2-fitting.png",
+     "addedAt": "2026-09-11T13:09:18.865Z"
+    }
+   ],
    "plannedStartDay": 297,
    "plannedEndDay": 299,
    "plannedStart": "2027-10-27",
@@ -8008,7 +8029,20 @@
      "text": "-couplingproof, courier on the ground, shields up: a shot destroys coupling_aft. The thrusters on that bus go dead at once (main and manoeuvring 0.00); the radiator pump, main engine and rcs lose power at +8 s, the shield at +1014 s once the loop cannot carry its heat; the reactor climbs from 293 K to 427 K; flames and a smoke column stand over the coupling and the alarm sounds. The workshop replaces the coupling and mends the shield, and the ship comes back: full thrust, reactor cooling to 397 K, every load powered again. Two faults found on the way: a sampling window that a long frame at 20x stepped over, and a shield on no coolant loop that cooked in fourteen minutes whatever happened to the coupling. PASS."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T131-2026-09-11T13-09-18-638.png",
+     "caption": "The aft coupling shot out: smoke and flame over it, thrust on that bus at zero, the panel sounding coupling_aft destroyed",
+     "source": "../out/coupling-1-hit.png",
+     "addedAt": "2026-09-11T13:09:18.642Z"
+    },
+    {
+     "file": "evidence/T131-2026-09-11T13-09-18-752.png",
+     "caption": "After the workshop: full thrust, every load powered, the reactor cooling",
+     "source": "../out/coupling-3-repaired.png",
+     "addedAt": "2026-09-11T13:09:18.755Z"
+    }
+   ],
    "plannedStartDay": 302.5,
    "plannedEndDay": 304,
    "plannedStart": "2027-11-03",
@@ -14837,5 +14871,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T13:07:59.334Z"
+ "updatedAt": "2026-09-11T13:09:19.086Z"
 }
