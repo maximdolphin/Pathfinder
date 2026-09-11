@@ -129,6 +129,13 @@ namespace LedgerBiomes
 	LEDGERTERRAIN_API FVector3f SlotWeights(
 		const TArray<double>& Weights, const FLedgerBiomePalette& Palette);
 
+	/// T053: the ground channel each biome is drawn from, 0 to 6, or INDEX_NONE
+	/// for the biome whose ground is snow, which goes to the snow overlay. The
+	/// rule LedgerSurface::GroundChannels applies to the same files, in the
+	/// same order, for the terrain material.
+	constexpr int32 GroundChannelCount = 7;
+	LEDGERTERRAIN_API TArray<int32> GroundChannels(const TArray<FLedgerBiome>& Biomes);
+
 	/// Index of the heaviest biome, or INDEX_NONE for an empty set.
 	LEDGERTERRAIN_API int32 Dominant(
 		const TArray<FLedgerBiome>& Biomes,

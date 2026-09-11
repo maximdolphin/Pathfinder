@@ -32,6 +32,7 @@ public:
 private:
 	bool WriteSurvey();
 	void Place();
+	void Walk(float DeltaSeconds);
 
 	UPROPERTY()
 	TObjectPtr<ACameraActor> Camera;
@@ -44,4 +45,27 @@ private:
 	bool bCaptured = false;
 	int32 Shot = 0;
 	double Settle = 0.0;
+
+	/// T056's walk, `-cavewalk`: the route through the passage from one mouth to
+	/// the one furthest from it, as lattice cell centres eight metres apart (a
+	/// direction and an altitude each), and what walking it found.
+	TArray<FVector3d> WalkDirections;
+	TArray<double> WalkAltitudes;
+	double WalkedMetres = 0.0;
+	double WalkSettle = 0.0;
+	FVector PreviousWalk = FVector::ZeroVector;
+	bool bWalkStarted = false;
+	int32 WalkTicks = 0;
+	int32 WalkBlocked = 0;
+	int32 WalkFloorless = 0;
+	int32 WalkClimbed = 0;
+	int32 WalkShots = 0;
+	TArray<FString> WalkNotes;
+	/// Stretches rather than steps: where a run of blocked or floorless steps
+	/// began, and what the first of them hit.
+	bool bWasBlocked = false;
+	bool bWasFloorless = false;
+	double BlockFrom = 0.0;
+	double FloorFrom = 0.0;
+	FString BlockWhat;
 };

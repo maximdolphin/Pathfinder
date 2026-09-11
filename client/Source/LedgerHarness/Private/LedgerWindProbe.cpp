@@ -50,6 +50,10 @@ namespace
 	constexpr int32 ProbeTreePhotoFrames = 30;
 	constexpr double ProbeTreeCanopyCm = 1300.0;
 	constexpr double ProbeTreeStandOffCm = 2200.0;
+	/// `-treeimpostor`: the canopy photographs with every tree forced to its
+	/// impostor LOD, which is the clause of T058 that asks for wind "at every
+	/// LOD including the impostor".
+	const bool bTreeImpostor = FParse::Param(FCommandLine::Get(), TEXT("treeimpostor"));
 
 	FString ProbeOut(const TCHAR* Name)
 	{
@@ -173,7 +177,20 @@ void ULedgerWindProbe::Read(FReading (&Out)[Consumers]) const
 				&& Instance->GetScalarParameterValue(TEXT("WindSpeed"), Speed))
 			{
 				Out[1].Consumer = FVector3d(Direction.R, Direction.G, Direction.B) * Speed;
-				Out[1].Field = Wind->WindAtMetres(Eye);
+				// The canopy leans across the local up, so the collection carries the
+				// wind's direction across it at the wind's full speed (ULedgerWind::
+				// Publish). Compared against the whole 3D field this read NEVER in the
+				// gale of -treephoto, where the vertical part is three times larger:
+				// 30.4, 20.5, -6.4 against 32.2, 18.2, -5.3 -- the same speed, the same
+				// wind, a different question. So the field is put the same way.
+				{
+					const FVector3d Field = Wind->WindAtMetres(Eye);
+					const ALedgerPlanet* Body = Builder->GetPlanet();
+					const FVector3d Up = Body != nullptr
+						? (FVector3d(Eye) - FVector3d(Body->GetActorLocation())).GetSafeNormal() : FVector3d::UnitZ();
+					const FVector3d Across = Field - Up * FVector3d::DotProduct(Field, Up);
+					Out[1].Field = Across.GetSafeNormal() * Field.Length();
+				}
 				Out[1].bAvailable = true;
 			}
 		}
@@ -246,6 +263,12 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 	FVector3d Up = Anchor;
 	if (bTreePhoto && Town != nullptr)
 	{
+		if (bTreeImpostor)
+		{
+			// Every tree drawn as its impostor: the full trees hidden, the
+			// impostors drawn at every distance.
+			Town->ForceTreeLod(2);
+		}
 		const FTransform Tree = Town->TreeNearestPad();
 		const FVector3d TreeUp = FVector3d(Tree.GetRotation().GetUpVector());
 		const FVector3d Canopy = FVector3d(Tree.GetLocation())
@@ -308,7 +331,7 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 		// photograph the new wind twice.
 		if (bTreePhoto && !bBeforePhotoTaken)
 		{
-			FScreenshotRequest::RequestScreenshot(ProbeOut(TEXT("wind-tree-before.png")), false, false);
+			FScreenshotRequest::RequestScreenshot(ProbeOut(bTreeImpostor ? TEXT("wind-tree-impostor-before.png") : TEXT("wind-tree-before.png")), false, false);
 			bBeforePhotoTaken = true;
 			return;
 		}
@@ -364,7 +387,7 @@ void ULedgerWindProbe::Tick(float DeltaSeconds)
 
 		if (bTreePhoto && !bAfterPhotoTaken && FramesSinceSwitch >= ProbeTreePhotoFrames)
 		{
-			FScreenshotRequest::RequestScreenshot(ProbeOut(TEXT("wind-tree-after.png")), false, false);
+			FScreenshotRequest::RequestScreenshot(ProbeOut(bTreeImpostor ? TEXT("wind-tree-impostor-after.png") : TEXT("wind-tree-after.png")), false, false);
 			bAfterPhotoTaken = true;
 			UE_LOG(LogLedger, Log, TEXT("wind probe: canopy photographed %d frames after the change"),
 				FramesSinceSwitch);

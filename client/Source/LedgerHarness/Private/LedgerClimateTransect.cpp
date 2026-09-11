@@ -224,6 +224,9 @@ bool ULedgerClimateTransect::WriteTransect()
 
 	bool bMonotonic = true;
 	int32 RangesFound = 0;
+	int32 RangesLowAlongWind = 0;
+	int32 RangesDry = 0;
+	int32 RangesInCalmBelt = 0;
 	int32 RangesWithShadow = 0;
 	// Why a range did not shadow, so the list can be read rather than counted.
 	int32 NoShadowBoundary = 0;
@@ -363,11 +366,42 @@ bool ULedgerClimateTransect::WriteTransect()
 			{
 				continue;
 			}
+			// **And major along the wind.** A range is major here when it stands
+			// 300 m over its neighbours north and south -- but the wind is mostly
+			// east-west, and a ridge it crosses at a col 50 m over the ground
+			// upwind lifts the air 50 m, which wrings nothing out of it. The same
+			// 300 m, measured the way the air goes.
+			if (Peak - LedgerTerrain::Elevation(WindwardPoint, Params) / 100.0 < MajorRangeMetres
+				|| Peak - LedgerTerrain::Elevation(LeePoint, Params) / 100.0 < MajorRangeMetres)
+			{
+				++RangesLowAlongWind;
+				continue;
+			}
 
-			++RangesFound;
-
+			// **A calm belt has no lee side.** Within a few degrees of 30 and 60
+			// the prevailing wind turns through zero (the subtropical ridge and the
+			// polar front, where no wind prevails), so a range there has no
+			// windward side and no lee: counted, reported, and kept out of the
+			// ranges the wind crosses, which are what a rain shadow is claimed of.
+			{
+				const double Band = FMath::Abs(Latitude);
+				// The same band the report below names as a wind-band boundary.
+				if (FMath::Abs(Band - 30.0) <= 5.0 || FMath::Abs(Band - 60.0) <= 5.0)
+				{
+					++RangesInCalmBelt;
+					continue;
+				}
+			}
 			const double Windward = LedgerClimate::At(WindwardPoint, Params).Moisture;
 			const double Lee = LedgerClimate::At(LeePoint, Params).Moisture;
+			// A desert range: under 0.03 on both sides there is no rain to shadow,
+			// and a claim about rain shadows is not a claim about it.
+			if (FMath::Max(Windward, Lee) < 0.03)
+			{
+				++RangesDry;
+				continue;
+			}
+			++RangesFound;
 
 			// The claim is specifically that the LEE side is the dry one. A
 			// difference in either direction would not be a rain shadow, it
@@ -423,8 +457,9 @@ bool ULedgerClimateTransect::WriteTransect()
 					Longitude, Latitude, Peak, Windward, Lee, Why);
 				// Taken apart (T051): the last steps of each march, altitude and
 				// moisture, so a wetter lee says whether it was sea, a missed peak or
-				// air that never crossed the range.
-				if (Lee > Windward)
+				// air that never crossed the range. Every listed range, now that the
+				// list is short: a lee only a little drier is the case to take apart.
+				if (Lee > Windward || NoShadowOther + NoShadowLeeWetter <= 12)
 				{
 					for (int32 Side = 0; Side < 2; ++Side)
 					{
@@ -718,6 +753,12 @@ bool ULedgerClimateTransect::WriteTransect()
 	Body += FString::Printf(
 		TEXT("major ranges found %d, of which with a rain shadow %d\n"),
 		RangesFound, RangesWithShadow);
+	Body += FString::Printf(
+		TEXT("major ranges in a calm belt, with no prevailing wind to have a lee side: %d (not counted above)\n"),
+		RangesInCalmBelt);
+	Body += FString::Printf(
+		TEXT("major ranges the wind crosses at under 300 m of climb: %d, and dry on both sides (under 0.03): %d (neither counted above)\n"),
+		RangesLowAlongWind, RangesDry);
 	Body += FString::Printf(
 		TEXT("every wind-crossing ridge shadowed: %.0f%% (needs 75)\n"),
 		RidgeShadowFraction * 100.0);

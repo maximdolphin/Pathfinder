@@ -14,6 +14,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Algo/Reverse.h"
 
 namespace
 {
@@ -92,7 +93,8 @@ void ULedgerCaveSurvey::OnWorldBeginPlay(UWorld& InWorld)
 	// A mesher nobody has looked at is the failure this project keeps writing
 	// down: a report with a VERDICT line in it is not evidence that the thing
 	// being measured is on screen.
-	if (!FParse::Param(FCommandLine::Get(), TEXT("cavephoto")) || !bFound)
+	if ((!FParse::Param(FCommandLine::Get(), TEXT("cavephoto"))
+		&& !FParse::Param(FCommandLine::Get(), TEXT("cavewalk"))) || !bFound)
 	{
 		FPlatformMisc::RequestExit(false);
 	}
@@ -130,6 +132,11 @@ void ULedgerCaveSurvey::Tick(float DeltaSeconds)
 
 	if (!bSurveyed || !bFound || DeltaSeconds <= 0.0f)
 	{
+		return;
+	}
+	if (FParse::Param(FCommandLine::Get(), TEXT("cavewalk")))
+	{
+		Walk(DeltaSeconds);
 		return;
 	}
 	if (!FParse::Param(FCommandLine::Get(), TEXT("cavephoto")))
@@ -243,6 +250,218 @@ void ULedgerCaveSurvey::Place()
 	}
 }
 
+void ULedgerCaveSurvey::Walk(float DeltaSeconds)
+{
+	// In at one mouth, through the passage and out at the other, as a capsule
+	// the size of a person swept from each point to the next -- the walk T056
+	// asks for, without legs. Collision is checked every tick two ways: the
+	// sweep must not be stopped (something across the passage, a lid over a
+	// mouth, a wall where the field says air) and there must be a floor within
+	// thirty metres below (a crack at a brick seam, a floor never meshed, a
+	// cave without collision). Three photographs on the way for the light.
+	UWorld* World = GetWorld();
+	ULedgerWorldBuilder* Builder = World != nullptr ? World->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	ALedgerPlanet* Planet = Builder != nullptr ? Builder->GetPlanet() : nullptr;
+	APlayerController* Controller = World != nullptr ? World->GetFirstPlayerController() : nullptr;
+	ALedgerShip* Ship = Controller != nullptr ? Cast<ALedgerShip>(Controller->GetPawn()) : nullptr;
+	if (Planet == nullptr || Controller == nullptr)
+	{
+		return;
+	}
+
+	const double Length = (WalkDirections.Num() - 1) * CellMetres;
+	auto Finish = [&](const TCHAR* Why)
+	{
+		if (bWasBlocked)
+		{
+			WalkNotes.Add(FString::Printf(TEXT("blocked from %.0f m to the end by %s"), BlockFrom, *BlockWhat));
+		}
+		if (bWasFloorless)
+		{
+			WalkNotes.Add(FString::Printf(TEXT("no floor from %.0f m to the end"), FloorFrom));
+		}
+		const bool bPass = WalkDirections.Num() >= 2 && WalkTicks > 0 && WalkBlocked == 0 && WalkFloorless == 0;
+		FString Body = TEXT("Walking the passage (T056): in at one mouth, out at the other.\n\n");
+		Body += FString::Printf(TEXT("route		 %d cells, %.0f m \n"), WalkDirections.Num(), Length);
+		Body += FString::Printf(TEXT("walked		%.0f m in %d steps \n"), WalkedMetres, WalkTicks);
+		Body += FString::Printf(TEXT("blocked	   %d steps (a capsule 40 cm by 1.8 m swept from each point to the next) \n"), WalkBlocked);
+		Body += FString::Printf(TEXT("no floor	  %d steps (nothing within 30 m below) \n"), WalkFloorless);
+		Body += FString::Printf(TEXT("climbed       %d steps (stopped by ground rising under it, cleared by lifting 60 cm) \n"), WalkClimbed);
+		for (const FString& Note : WalkNotes)
+		{
+			Body += TEXT("  ") + Note + TEXT("\n");
+		}
+		Body += FString::Printf(TEXT("photographs   cave-walk-1.png, -2, -3 at 10, 50 and 90 per cent \n"));
+		Body += FString::Printf(TEXT("\nVERDICT: %s%s \n"), bPass ? TEXT("PASS") : TEXT("FAIL"), Why);
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"), TEXT("cave-walk.txt")));
+		FFileHelper::SaveStringToFile(Body, *Path);
+		UE_LOG(LogLedger, Log, TEXT("cave walk: VERDICT %s, %d blocked, %d without a floor, %.0f of %.0f m -> %s"),
+			bPass ? TEXT("PASS") : TEXT("FAIL"), WalkBlocked, WalkFloorless, WalkedMetres, Length, *Path);
+		FPlatformMisc::RequestExit(false);
+	};
+	if (WalkDirections.Num() < 2)
+	{
+		Finish(TEXT(" -- no route between two mouths"));
+		return;
+	}
+
+	const double RadiusMetres = Planet->TerrainParams().Radius / 100.0;
+	auto WorldAt = [&](double Metres)
+	{
+		const double Along = FMath::Clamp(Metres / CellMetres, 0.0, WalkDirections.Num() - 1.0);
+		const int32 Index = FMath::Min(FMath::FloorToInt32(Along), WalkDirections.Num() - 2);
+		const double Fraction = Along - Index;
+		const FVector3d Direction = FMath::Lerp(WalkDirections[Index], WalkDirections[Index + 1], Fraction).GetSafeNormal();
+		const double Altitude = FMath::Lerp(WalkAltitudes[Index], WalkAltitudes[Index + 1], Fraction);
+		return FVector(FVector3d(Planet->GetActorLocation()) + Direction * ((RadiusMetres + Altitude) * 100.0));
+	};
+
+	// **On the floor, not at the lattice cell's centre.** The route is cell
+	// centres eight metres apart, and near a mouth those sit just under the
+	// ground: chain116's walk was stopped for thirty metres by the ground's
+	// underside 0.8 m over its head, which is a person walking along the roof.
+	// So the capsule stands on the first surface below its point on the route,
+	// its base 40 cm clear -- a step's height.
+	const FVector OnRoute = WorldAt(WalkedMetres);
+	const FVector3d Up = (FVector3d(OnRoute) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
+	FVector Here = OnRoute;
+	{
+		FCollisionQueryParams FloorQuery(SCENE_QUERY_STAT(LedgerCaveWalkFloor), true);
+		if (Ship != nullptr)
+		{
+			FloorQuery.AddIgnoredActor(Ship);
+		}
+		FHitResult Underfoot;
+		if (World->LineTraceSingleByChannel(Underfoot, OnRoute, OnRoute - FVector(Up) * 3000.0, ECC_WorldStatic, FloorQuery))
+		{
+			Here = Underfoot.ImpactPoint + FVector(Up) * 130.0;
+		}
+	}
+	const FVector Ahead = WorldAt(WalkedMetres + 24.0);
+
+	// The pawn goes with the walker, hidden: collision streams around it.
+	if (Ship != nullptr)
+	{
+		Ship->SetFlightEnabled(false);
+		Ship->SetActorHiddenInGame(true);
+		Ship->SetActorLocation(Here);
+	}
+	const FRotator Look = FRotationMatrix::MakeFromXZ(
+		(Ahead - Here).IsNearlyZero() ? FVector(Up) : Ahead - Here, FVector(Up)).Rotator();
+	if (Camera == nullptr)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.ObjectFlags |= RF_Transient;
+		Camera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Here, Look, SpawnParams);
+		if (Camera != nullptr)
+		{
+			// Auto exposure, as for the mouth photographs: a cave is a dark room
+			// with a bright doorway.
+			Camera->GetCameraComponent()->PostProcessSettings.bOverride_AutoExposureBias = true;
+			Camera->GetCameraComponent()->PostProcessSettings.AutoExposureBias = 0.0f;
+			Controller->SetViewTarget(Camera);
+		}
+	}
+	if (Camera != nullptr)
+	{
+		Camera->SetActorLocationAndRotation(Here, Look);
+	}
+
+	// At the first mouth until the ground there has streamed, with collision.
+	if (!bWalkStarted)
+	{
+		WalkSettle += DeltaSeconds;
+		if (WalkSettle < 8.0 || (Planet->GetStats().UnfilledNodes > 0 && WalkSettle < 60.0))
+		{
+			return;
+		}
+		bWalkStarted = true;
+		PreviousWalk = Here;
+		UE_LOG(LogLedger, Log, TEXT("cave walk: %d cells, %.0f m, starting after %.0f s with %d holes"),
+			WalkDirections.Num(), Length, WalkSettle, Planet->GetStats().UnfilledNodes);
+		return;
+	}
+
+	FCollisionQueryParams Query(SCENE_QUERY_STAT(LedgerCaveWalk), true);
+	if (Ship != nullptr)
+	{
+		Query.AddIgnoredActor(Ship);
+	}
+	const FQuat Standing = FQuat::FindBetweenNormals(FVector::UpVector, FVector(Up));
+	FHitResult Hit;
+	bool bBlocked = World->SweepSingleByChannel(Hit, PreviousWalk, Here, Standing, ECC_WorldStatic,
+		FCollisionShape::MakeCapsule(40.0f, 90.0f), Query);
+	// **A step, not a wall.** What stops a capsule and faces upward is ground
+	// rising under it -- chain117's walk was stopped three times by a floor at
+	// 0.5 of up, sixty degrees -- and a walker lifts a foot over it. Swept again
+	// 60 cm higher; if that clears, it is a climb and counted as one. A wall, a
+	// roof or anything the lift does not clear stays blocked.
+	if (bBlocked && FVector::DotProduct(Hit.ImpactNormal, FVector(Up)) > 0.35)
+	{
+		FHitResult Lifted;
+		const FVector Lift = FVector(Up) * 60.0;
+		if (!World->SweepSingleByChannel(Lifted, PreviousWalk + Lift, Here + Lift, Standing, ECC_WorldStatic,
+			FCollisionShape::MakeCapsule(40.0f, 90.0f), Query))
+		{
+			bBlocked = false;
+			++WalkClimbed;
+		}
+	}
+	if (bBlocked)
+	{
+		++WalkBlocked;
+		if (!bWasBlocked)
+		{
+			BlockFrom = WalkedMetres;
+			// What stopped it: drawn ground, or the invisible collision proxy, and
+			// which way the surface faced -- a floor at +1, a roof at -1, a wall near 0.
+			const UPrimitiveComponent* What = Hit.GetComponent();
+			BlockWhat = FString::Printf(TEXT("%s %s, surface facing %.2f of up, %.1f m from the route"),
+				What != nullptr && !What->IsVisible() ? TEXT("the collision proxy") : TEXT("drawn ground"),
+				What != nullptr ? *What->GetName() : TEXT("(nothing named)"),
+				FVector::DotProduct(Hit.ImpactNormal, FVector(Up)),
+				FVector::Dist(Hit.ImpactPoint, Here) / 100.0);
+		}
+	}
+	else if (bWasBlocked && WalkNotes.Num() < 24)
+	{
+		WalkNotes.Add(FString::Printf(TEXT("blocked from %.0f to %.0f m by %s"), BlockFrom, WalkedMetres, *BlockWhat));
+	}
+	bWasBlocked = bBlocked;
+	FHitResult Floor;
+	const bool bFloor = World->LineTraceSingleByChannel(Floor, Here, Here - FVector(Up) * 3000.0, ECC_WorldStatic, Query);
+	if (!bFloor)
+	{
+		++WalkFloorless;
+		if (!bWasFloorless)
+		{
+			FloorFrom = WalkedMetres;
+		}
+	}
+	else if (bWasFloorless && WalkNotes.Num() < 24)
+	{
+		WalkNotes.Add(FString::Printf(TEXT("no floor from %.0f to %.0f m"), FloorFrom, WalkedMetres));
+	}
+	bWasFloorless = !bFloor;
+	++WalkTicks;
+	PreviousWalk = Here;
+
+	const double Marks[3] = { 0.1, 0.5, 0.9 };
+	if (WalkShots < 3 && WalkedMetres >= Marks[WalkShots] * Length)
+	{
+		++WalkShots;
+		FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::Combine(
+			FPaths::ProjectDir(), TEXT(".."), TEXT("out"), FString::Printf(TEXT("cave-walk-%d.png"), WalkShots))), false, false);
+	}
+
+	WalkedMetres += 10.0 * DeltaSeconds;
+	if (WalkedMetres > Length)
+	{
+		Finish(TEXT(""));
+	}
+}
+
 TStatId ULedgerCaveSurvey::GetStatId() const
 {
 	RETURN_QUICK_DECLARE_CYCLE_STAT(ULedgerCaveSurvey, STATGROUP_Tickables);
@@ -303,6 +522,7 @@ bool ULedgerCaveSurvey::WriteSurvey()
 	// the same answer.
 	bool bFoundMouth = false;
 	int32 MouthsSeen = 0;
+	TArray<FVector3d> Candidates;
 	for (double Lat = -80.0; Lat <= 80.0 && MouthsSeen < 5000; Lat += 0.25)
 	{
 		for (double Lon = 0.0; Lon < 360.0; Lon += 0.25)
@@ -338,9 +558,13 @@ bool ULedgerCaveSurvey::WriteSurvey()
 				// property of the planet and stays whole-planet; the choice of
 				// subject is a property of the camera.
 				const FVector3d SunDirection = Builder->GetSunFacing().GetSafeNormal();
-				if (!bFoundMouth && FVector3d::DotProduct(Point, SunDirection) > 0.35)
+				if (Candidates.Num() < 8 && FVector3d::DotProduct(Point, SunDirection) > 0.35)
 				{
-					Mouth = Point;
+					Candidates.Add(Point);
+					if (!bFoundMouth)
+					{
+						Mouth = Point;
+					}
 					bFoundMouth = true;
 					bFound = true;
 				}
@@ -367,140 +591,278 @@ bool ULedgerCaveSurvey::WriteSurvey()
 	Body += FString::Printf(TEXT("first mouth at %.2f lat, %.2f lon, ground %.0f m\n\n"),
 		MouthLat, MouthLon, LedgerTerrain::Elevation(Mouth, Params) / 100.0);
 
-	// ---- flood fill the passage --------------------------------------------
-	//
-	// The question the acceptance actually asks: does a mouth lead anywhere,
-	// and does what it leads to come back out. A flood fill on a local lattice
-	// answers both, and does it without a mesher, a collision shape or a pawn.
-	const FLocalFrame Frame = FrameAt(Mouth, Params);
-	const int32 Cells = BoxWide * BoxWide * BoxDeep;
-
-	TArray<uint8> Open;
-	Open.SetNumZeroed(Cells);
-	int32 OpenCells = 0;
-	for (int32 Z = 0; Z < BoxDeep; ++Z)
+	// **Every lit mouth the sweep found, up to eight, and the best of them.** It
+	// took the first, and on 11 September the first led to a passage whose two
+	// furthest mouths were eighteen metres apart -- a dent, and a FAIL, where
+	// the survey before had found a 680 m passage with mouths 120 m apart. The
+	// field did not change; which mouth came first in the sweep did.
+	double BestApart = -1.0;
+	FString BestPart;
+	FVector3d BestMouth = Mouth;
+	TArray<FVector3d> BestDirections;
+	TArray<double> BestAltitudes;
+	for (const FVector3d& Candidate : Candidates)
 	{
+		Mouth = Candidate;
+		FString Part = FString::Printf(TEXT("mouth at %.2f lat, %.2f lon, ground %.0f m \n"),
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Mouth.Z, -1.0, 1.0))),
+			FMath::RadiansToDegrees(FMath::Atan2(Mouth.Y, Mouth.X)),
+			LedgerTerrain::Elevation(Mouth, Params) / 100.0);
+		// ---- flood fill the passage --------------------------------------------
+		//
+		// The question the acceptance actually asks: does a mouth lead anywhere,
+		// and does what it leads to come back out. A flood fill on a local lattice
+		// answers both, and does it without a mesher, a collision shape or a pawn.
+		const FLocalFrame Frame = FrameAt(Mouth, Params);
+		const int32 Cells = BoxWide * BoxWide * BoxDeep;
+
+		TArray<uint8> Open;
+		Open.SetNumZeroed(Cells);
+		int32 OpenCells = 0;
+		// The ground under each column, once: it depends only on the column, and it
+		// was sampled once a cell -- ninety-six times as often -- which is what made
+		// surveying more than one mouth unaffordable.
+		TArray<double> ColumnGround;
+		ColumnGround.SetNumUninitialized(BoxWide * BoxWide);
 		for (int32 Y = 0; Y < BoxWide; ++Y)
 		{
 			for (int32 X = 0; X < BoxWide; ++X)
 			{
 				FVector3d Direction;
 				double Altitude = 0.0;
-				BoxPoint(Frame, Params, X, Y, Z, Direction, Altitude);
-
-				// Open means inside a cave AND under the ground. Above the
-				// ground it is simply outdoors, and counting that as cave would
-				// flood the whole sky.
-				const double Ground = LedgerTerrain::Elevation(Direction, Params) / 100.0;
-				const bool bUnderground = Altitude < Ground;
-				if (bUnderground
-					&& LedgerCaves::Density(Direction, Altitude, Ground, Params) > 0.0)
+				BoxPoint(Frame, Params, X, Y, 0, Direction, Altitude);
+				ColumnGround[Y * BoxWide + X] = LedgerTerrain::Elevation(Direction, Params) / 100.0;
+			}
+		}
+		for (int32 Z = 0; Z < BoxDeep; ++Z)
+		{
+			for (int32 Y = 0; Y < BoxWide; ++Y)
+			{
+				for (int32 X = 0; X < BoxWide; ++X)
 				{
-					Open[(Z * BoxWide + Y) * BoxWide + X] = 1;
-					++OpenCells;
+					FVector3d Direction;
+					double Altitude = 0.0;
+					BoxPoint(Frame, Params, X, Y, Z, Direction, Altitude);
+
+					// Open means inside a cave AND under the ground. Above the
+					// ground it is simply outdoors, and counting that as cave would
+					// flood the whole sky.
+					const double Ground = ColumnGround[Y * BoxWide + X];
+					const bool bUnderground = Altitude < Ground;
+					if (bUnderground
+						&& LedgerCaves::Density(Direction, Altitude, Ground, Params) > 0.0)
+					{
+						Open[(Z * BoxWide + Y) * BoxWide + X] = 1;
+						++OpenCells;
+					}
 				}
 			}
 		}
-	}
 
-	Body += FString::Printf(
-		TEXT("local box %d x %d x %d cells at %.0f m: %d open (%.3f%% of the rock)\n"),
-		BoxWide, BoxWide, BoxDeep, CellMetres, OpenCells, 100.0 * OpenCells / Cells);
+		Part += FString::Printf(
+			TEXT("local box %d x %d x %d cells at %.0f m: %d open (%.3f%% of the rock)\n"),
+			BoxWide, BoxWide, BoxDeep, CellMetres, OpenCells, 100.0 * OpenCells / Cells);
 
-	// Flood from every open cell adjacent to the mouth column.
-	TArray<int32> Frontier;
-	TArray<uint8> Seen;
-	Seen.SetNumZeroed(Cells);
-	for (int32 Z = 0; Z < BoxDeep; ++Z)
-	{
-		const int32 Index = (Z * BoxWide + BoxWide / 2) * BoxWide + BoxWide / 2;
-		if (Open[Index] != 0 && Seen[Index] == 0)
+		// Flood from every open cell adjacent to the mouth column.
+		TArray<int32> Frontier;
+		TArray<uint8> Seen;
+		Seen.SetNumZeroed(Cells);
+		for (int32 Z = 0; Z < BoxDeep; ++Z)
 		{
-			Seen[Index] = 1;
-			Frontier.Add(Index);
-		}
-	}
-
-	int32 Reached = 0;
-	int32 DeepestZ = 0;
-	int32 MinX = BoxWide;
-	int32 MaxX = 0;
-	int32 MinY = BoxWide;
-	int32 MaxY = 0;
-	int32 SurfaceTouches = 0;
-	TArray<int32> Breaches;
-
-	while (Frontier.Num() > 0)
-	{
-		const int32 Index = Frontier.Pop(EAllowShrinking::No);
-		++Reached;
-
-		const int32 X = Index % BoxWide;
-		const int32 Y = (Index / BoxWide) % BoxWide;
-		const int32 Z = Index / (BoxWide * BoxWide);
-		MinX = FMath::Min(MinX, X); MaxX = FMath::Max(MaxX, X);
-		MinY = FMath::Min(MinY, Y); MaxY = FMath::Max(MaxY, Y);
-		DeepestZ = FMath::Max(DeepestZ, Z);
-
-		// A breach is an open cell whose cell above is outdoors: that is where
-		// this passage meets the sky, and "out the other side" means finding
-		// two of them a long way apart.
-		if (Z > 0)
-		{
-			FVector3d Direction;
-			double Altitude = 0.0;
-			BoxPoint(Frame, Params, X, Y, Z - 1, Direction, Altitude);
-			if (Altitude >= LedgerTerrain::Elevation(Direction, Params) / 100.0)
+			const int32 Index = (Z * BoxWide + BoxWide / 2) * BoxWide + BoxWide / 2;
+			if (Open[Index] != 0 && Seen[Index] == 0)
 			{
-				++SurfaceTouches;
-				Breaches.Add(Index);
+				Seen[Index] = 1;
+				Frontier.Add(Index);
 			}
 		}
 
-		for (int32 Axis = 0; Axis < 6; ++Axis)
+		int32 Reached = 0;
+		int32 DeepestZ = 0;
+		int32 MinX = BoxWide;
+		int32 MaxX = 0;
+		int32 MinY = BoxWide;
+		int32 MaxY = 0;
+		int32 SurfaceTouches = 0;
+		TArray<int32> Breaches;
+
+		while (Frontier.Num() > 0)
 		{
-			static const int32 StepX[6] = { -1, 1, 0, 0, 0, 0 };
-			static const int32 StepY[6] = { 0, 0, -1, 1, 0, 0 };
-			static const int32 StepZ[6] = { 0, 0, 0, 0, -1, 1 };
-			const int32 NextX = X + StepX[Axis];
-			const int32 NextY = Y + StepY[Axis];
-			const int32 NextZ = Z + StepZ[Axis];
-			if (NextX < 0 || NextX >= BoxWide || NextY < 0 || NextY >= BoxWide
-				|| NextZ < 0 || NextZ >= BoxDeep)
+			const int32 Index = Frontier.Pop(EAllowShrinking::No);
+			++Reached;
+
+			const int32 X = Index % BoxWide;
+			const int32 Y = (Index / BoxWide) % BoxWide;
+			const int32 Z = Index / (BoxWide * BoxWide);
+			MinX = FMath::Min(MinX, X); MaxX = FMath::Max(MaxX, X);
+			MinY = FMath::Min(MinY, Y); MaxY = FMath::Max(MaxY, Y);
+			DeepestZ = FMath::Max(DeepestZ, Z);
+
+			// A breach is an open cell whose cell above is outdoors: that is where
+			// this passage meets the sky, and "out the other side" means finding
+			// two of them a long way apart.
+			if (Z > 0)
 			{
-				continue;
+				FVector3d Direction;
+				double Altitude = 0.0;
+				BoxPoint(Frame, Params, X, Y, Z - 1, Direction, Altitude);
+				if (Altitude >= ColumnGround[Y * BoxWide + X])
+				{
+					++SurfaceTouches;
+					Breaches.Add(Index);
+				}
 			}
-			const int32 Next = (NextZ * BoxWide + NextY) * BoxWide + NextX;
-			if (Open[Next] != 0 && Seen[Next] == 0)
+
+			for (int32 Axis = 0; Axis < 6; ++Axis)
 			{
-				Seen[Next] = 1;
-				Frontier.Add(Next);
+				static const int32 StepX[6] = { -1, 1, 0, 0, 0, 0 };
+				static const int32 StepY[6] = { 0, 0, -1, 1, 0, 0 };
+				static const int32 StepZ[6] = { 0, 0, 0, 0, -1, 1 };
+				const int32 NextX = X + StepX[Axis];
+				const int32 NextY = Y + StepY[Axis];
+				const int32 NextZ = Z + StepZ[Axis];
+				if (NextX < 0 || NextX >= BoxWide || NextY < 0 || NextY >= BoxWide
+					|| NextZ < 0 || NextZ >= BoxDeep)
+				{
+					continue;
+				}
+				const int32 Next = (NextZ * BoxWide + NextY) * BoxWide + NextX;
+				if (Open[Next] != 0 && Seen[Next] == 0)
+				{
+					Seen[Next] = 1;
+					Frontier.Add(Next);
+				}
 			}
 		}
-	}
 
-	// The two breaches furthest apart: how far you could walk in one mouth and
-	// out another without ever leaving the passage.
-	double FurthestApart = 0.0;
-	for (int32 First = 0; First < Breaches.Num(); ++First)
-	{
-		for (int32 Second = First + 1; Second < Breaches.Num(); ++Second)
+		// The two breaches furthest apart: how far you could walk in one mouth and
+		// out another without ever leaving the passage.
+		double FurthestApart = 0.0;
+		int32 FarFirst = INDEX_NONE;
+		int32 FarSecond = INDEX_NONE;
+		for (int32 First = 0; First < Breaches.Num(); ++First)
 		{
-			const int32 AX = Breaches[First] % BoxWide;
-			const int32 AY = (Breaches[First] / BoxWide) % BoxWide;
-			const int32 BX = Breaches[Second] % BoxWide;
-			const int32 BY = (Breaches[Second] / BoxWide) % BoxWide;
-			FurthestApart = FMath::Max(FurthestApart,
-				FVector2d(AX - BX, AY - BY).Length() * CellMetres);
+			for (int32 Second = First + 1; Second < Breaches.Num(); ++Second)
+			{
+				const int32 AX = Breaches[First] % BoxWide;
+				const int32 AY = (Breaches[First] / BoxWide) % BoxWide;
+				const int32 BX = Breaches[Second] % BoxWide;
+				const int32 BY = (Breaches[Second] / BoxWide) % BoxWide;
+				const double Apart = FVector2d(AX - BX, AY - BY).Length() * CellMetres;
+				if (Apart > FurthestApart)
+				{
+					FurthestApart = Apart;
+					FarFirst = Breaches[First];
+					FarSecond = Breaches[Second];
+				}
+			}
+		}
+
+		Part += FString::Printf(
+			TEXT("the passage from that mouth: %d cells, %.0f m across, %.0f m deep\n"),
+			Reached, FMath::Max(MaxX - MinX, MaxY - MinY) * CellMetres, DeepestZ * CellMetres);
+		Part += FString::Printf(
+			TEXT("it meets the sky at %d cells, and its two furthest mouths are %.0f m apart\n"),
+			SurfaceTouches, FurthestApart);
+
+		// ---- the route between the two furthest mouths, for -cavewalk ----------
+		//
+		// Breadth first through open cells, so it is a shortest route by cells and
+		// never leaves the passage. From the outdoor cell above the first mouth to
+		// the one above the second: in from the sky and out to it.
+		WalkDirections.Reset();
+		WalkAltitudes.Reset();
+		if (FarFirst != INDEX_NONE && FarSecond != INDEX_NONE)
+		{
+			TArray<int32> Parent;
+			Parent.Init(INDEX_NONE, Cells);
+			TArray<int32> Queue;
+			Queue.Add(FarFirst);
+			Parent[FarFirst] = FarFirst;
+			for (int32 Head = 0; Head < Queue.Num() && Parent[FarSecond] == INDEX_NONE; ++Head)
+			{
+				const int32 Index = Queue[Head];
+				const int32 X = Index % BoxWide;
+				const int32 Y = (Index / BoxWide) % BoxWide;
+				const int32 Z = Index / (BoxWide * BoxWide);
+				static const int32 RouteX[6] = { -1, 1, 0, 0, 0, 0 };
+				static const int32 RouteY[6] = { 0, 0, -1, 1, 0, 0 };
+				static const int32 RouteZ[6] = { 0, 0, 0, 0, -1, 1 };
+				for (int32 Axis = 0; Axis < 6; ++Axis)
+				{
+					const int32 NextX = X + RouteX[Axis];
+					const int32 NextY = Y + RouteY[Axis];
+					const int32 NextZ = Z + RouteZ[Axis];
+					if (NextX < 0 || NextX >= BoxWide || NextY < 0 || NextY >= BoxWide || NextZ < 0 || NextZ >= BoxDeep)
+					{
+						continue;
+					}
+					const int32 Next = (NextZ * BoxWide + NextY) * BoxWide + NextX;
+					if (Open[Next] != 0 && Parent[Next] == INDEX_NONE)
+					{
+						Parent[Next] = Index;
+						Queue.Add(Next);
+					}
+				}
+			}
+			if (Parent[FarSecond] != INDEX_NONE)
+			{
+				TArray<int32> Route;
+				for (int32 At = FarSecond; ; At = Parent[At])
+				{
+					Route.Add(At);
+					if (At == FarFirst)
+					{
+						break;
+					}
+				}
+				Algo::Reverse(Route);
+				auto AddCell = [&](int32 X, int32 Y, int32 Z)
+				{
+					FVector3d Direction;
+					double Altitude = 0.0;
+					BoxPoint(Frame, Params, X, Y, Z, Direction, Altitude);
+					WalkDirections.Add(Direction);
+					WalkAltitudes.Add(Altitude);
+				};
+				auto CellOf = [](int32 Index, int32& X, int32& Y, int32& Z)
+				{
+					X = Index % BoxWide;
+					Y = (Index / BoxWide) % BoxWide;
+					Z = Index / (BoxWide * BoxWide);
+				};
+				int32 X = 0, Y = 0, Z = 0;
+				CellOf(Route[0], X, Y, Z);
+				AddCell(X, Y, FMath::Max(0, Z - 1));
+				for (const int32 Index : Route)
+				{
+					CellOf(Index, X, Y, Z);
+					AddCell(X, Y, Z);
+				}
+				CellOf(Route.Last(), X, Y, Z);
+				AddCell(X, Y, FMath::Max(0, Z - 1));
+				Part += FString::Printf(TEXT("the route between them, for -cavewalk: %d cells, %.0f m \n"),
+					WalkDirections.Num(), (WalkDirections.Num() - 1) * CellMetres);
+			}
+		}
+
+		Body += FString::Printf(TEXT("  tried %.2f, %.2f: passage %d cells, furthest mouths %.0f m apart \n"),
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Mouth.Z, -1.0, 1.0))),
+			FMath::RadiansToDegrees(FMath::Atan2(Mouth.Y, Mouth.X)), Reached, FurthestApart);
+		if (FurthestApart > BestApart)
+		{
+			BestApart = FurthestApart;
+			BestPart = Part;
+			BestMouth = Mouth;
+			BestDirections = WalkDirections;
+			BestAltitudes = WalkAltitudes;
 		}
 	}
-
-	Body += FString::Printf(
-		TEXT("the passage from that mouth: %d cells, %.0f m across, %.0f m deep\n"),
-		Reached, FMath::Max(MaxX - MinX, MaxY - MinY) * CellMetres, DeepestZ * CellMetres);
-	Body += FString::Printf(
-		TEXT("it meets the sky at %d cells, and its two furthest mouths are %.0f m apart\n"),
-		SurfaceTouches, FurthestApart);
+	Mouth = BestMouth;
+	WalkDirections = BestDirections;
+	WalkAltitudes = BestAltitudes;
+	Body += TEXT("\nthe one kept:\n") + BestPart;
+	const double FurthestApart = FMath::Max(0.0, BestApart);
 
 	// ---- the acceptance, minus the walking ---------------------------------
 	//

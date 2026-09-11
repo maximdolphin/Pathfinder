@@ -189,6 +189,10 @@ namespace LedgerClimate
 
 		double Moisture = 0.5;
 		double PreviousAltitude = AltitudeMetres(Path[UpwindSteps], Params);
+		// The highest ground the air crossed in the last few steps, for the
+		// subsidence below.
+		constexpr int32 SubsidenceSteps = 4;
+		double RecentPeak = -1.0e9;
 		for (int32 Step = UpwindSteps - 1; Step >= 0; --Step)
 		{
 			const FVector3d& Sample = Path[Step];
@@ -203,6 +207,10 @@ namespace LedgerClimate
 			// from the far end still took a third at weight 0.3 (range 45).
 			const double Weight = FMath::Square(FMath::Min(1.0, (UpwindSteps - Step) / 20.0));
 			const double Altitude = AltitudeMetres(Sample, Params);
+			if (Step <= SubsidenceSteps)
+			{
+				RecentPeak = FMath::Max(RecentPeak, Altitude);
+			}
 
 			if (Altitude <= 0.0)
 			{
@@ -245,6 +253,22 @@ namespace LedgerClimate
 			}
 			PreviousAltitude = Altitude;
 		}
+
+		// **Sinking air is dry air.** T051. The march took water out only where
+		// the ground rose, so a lee slope was as wet as the air that had just
+		// crossed the crest -- and seventeen ranges read a lee only 4 to 18 per
+		// cent drier than their windward side. Air coming down a lee slope warms
+		// as it is compressed and its humidity falls, which is most of what a
+		// real rain shadow is. So the moisture here is cut by how far the air has
+		// come down from the highest ground of its last thirty kilometres. This
+		// is the moisture of the place, not of the air carried on: the next point
+		// downwind marches its own air.
+		// Sampled at the march's own steps. Half steps near the end were tried
+		// for crests narrower than a step and made the census worse (358 of 363
+		// ranges shadowed to 331 of 357): they dried the windward points as well,
+		// which sit in the lee of their own upwind bumps.
+		const double Descent = FMath::Max(0.0, RecentPeak - PreviousAltitude);
+		Moisture *= FMath::Exp(-Descent / 1500.0);
 
 		return FMath::Clamp(Moisture, 0.0, 1.0);
 	}

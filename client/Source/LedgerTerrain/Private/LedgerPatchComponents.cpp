@@ -194,12 +194,11 @@ namespace LedgerTerrain
 		{
 			Procedural->ClearMeshSection(LandSection);
 
-			// UV1 carries the geomorph target. The overload that takes it wants
-			// all four channels, so two go in empty.
-			const TArray<FVector2D> Unused;
+			// UV1 carries the geomorph target, UV2 and UV3 ground channels four to
+			// seven (T053).
 			Procedural->CreateMeshSection(
 				LandSection, Job.Vertices, Job.Triangles, Job.Normals, Job.UVs,
-				Job.MorphUVs, Unused, Unused,
+				Job.MorphUVs, Job.GroundWeightsB, Job.GroundWeightsC,
 				Job.Colors, Job.Tangents, Job.bWithCollision);
 			if (Land != nullptr)
 			{
@@ -208,18 +207,20 @@ namespace LedgerTerrain
 
 			// Caves as a third section, with collision: a passage you can see
 			// and cannot stand in is not a passage. Painted with the terrain
-			// material for now -- its vertex colour is unset, so all three
-			// biome slots weigh equally and a cave wall reads as a mix of the
-			// three grounds above it. Wrong, and a placeholder rather than a
-			// decision: cave rock wants its own surface set.
+			// material, which already draws any face steeper than soil holds as
+			// bare rock -- the walls and the roof -- and the floor as the first
+			// ground channel, the tundra's rocky ground, with no snow (T056).
+			// Unset, the colour was white: every channel at once and full snow
+			// cover, which drew a cave as a snowfield underground.
 			Procedural->ClearMeshSection(CaveSection);
 			if (Job.bHasCaves)
 			{
-				const TArray<FColor> NoColours;
+				TArray<FColor> CaveColours;
+				CaveColours.Init(FColor(255, 0, 0, 0), Job.CaveVertices.Num());
 				const TArray<FProcMeshTangent> NoTangents;
 				Procedural->CreateMeshSection(
 					CaveSection, Job.CaveVertices, Job.CaveTriangles, Job.CaveNormals,
-					Job.CaveUVs, NoColours, NoTangents, Job.bWithCollision);
+					Job.CaveUVs, CaveColours, NoTangents, Job.bWithCollision);
 				if (Land != nullptr)
 				{
 					Procedural->SetMaterial(CaveSection, Land);

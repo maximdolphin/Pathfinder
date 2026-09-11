@@ -1,10 +1,13 @@
 #include "LedgerPlanet.h"
+#include "LedgerCaves.h"
 
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 
 #include "Async/Async.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "Engine/CollisionProfile.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/IConsoleManager.h"
 #include "LedgerLog.h"
@@ -220,6 +223,12 @@ void ALedgerPlanet::SetUp()
 
 void ALedgerPlanet::EndPlay(const EEndPlayReason::Type Reason)
 {
+	// A proxy grid still being sampled finishes before the planet goes.
+	if (bProxyPending)
+	{
+		ProxyFuture.Wait();
+		bProxyPending = false;
+	}
 	TearDown();
 	Super::EndPlay(Reason);
 }
@@ -312,6 +321,18 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	}
 
 	FVector3d CameraLocal = FVector3d(CameraWorld - GetActorLocation());
+
+	// T068: the ground under whatever the player is flying, whatever the
+	// render LOD is doing with the patch there.
+	{
+		FVector3d Focus = CameraLocal;
+		const APlayerController* Player = World->GetFirstPlayerController();
+		if (const APawn* Pawn = Player != nullptr ? Player->GetPawn() : nullptr)
+		{
+			Focus = FVector3d(Pawn->GetActorLocation() - GetActorLocation());
+		}
+		UpdateCollisionProxy(Focus, DeltaSeconds);
+	}
 
 	// **Held, when a measurement needs the ground to stay one mesh.** The
 	// parallax pair steps the camera 25 cm, and the tree re-selected under
@@ -682,7 +703,9 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// changes a hundred neighbours at once should not rebuild a hundred patches
 	// in one frame. `-breakstitching` declares every edge un-stitched on
 	// purpose, so it would disagree with this forever; it is left alone.
-	constexpr int32 MaxRestitchesPerFrame = 8;
+	// 32, with slots of their own (RestitchReserve): at 8 behind a full queue a
+	// stale edge could stay open for seconds at speed.
+	constexpr int32 MaxRestitchesPerFrame = 32;
 	int32 RestitchedThisFrame = 0;
 	static const bool bNoRestitch = FParse::Param(FCommandLine::Get(), TEXT("breakstitching"));
 	for (const FLedgerQuadNode* Leaf : Leaves)
@@ -721,7 +744,7 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			{
 				const bool bCollision = MeshPool.IsValidIndex(Section) && MeshPool[Section] != nullptr
 					&& MeshPool[Section]->GetCollisionEnabled() != ECollisionEnabled::NoCollision;
-				if (LaunchPatch(*Leaf, bCollision))
+				if (LaunchPatch(*Leaf, bCollision, /*bRestitch*/ true))
 				{
 					++RestitchedThisFrame;
 					++Stats.Restitches;
@@ -774,3 +797,180 @@ void ALedgerPlanet::ApplyRegressionFaults()
 	}
 }
 
+namespace
+{
+	constexpr int32 ProxyCells = 48;
+	constexpr double ProxySpacing = 2500.0;
+
+	/// The proxy grid around a centre on the ground: a pure function of the
+	/// terrain parameters, so it can run on any thread. Its own triangles, both
+	/// windings -- a floor that answers a trace from either side, whatever order
+	/// the physics takes as the front -- and none over a cave mouth.
+	///
+	/// **No cell over a mouth** (T056). The grid is a height field and a height
+	/// field cannot have a hole, so it was a lid across every cave mouth the
+	/// ship flew near: the land mesh leaves the mouth open, and this closed it
+	/// again for everything that collides. A cell with any corner where the
+	/// ground itself is inside a cave is left out, which is the same test the
+	/// patch generator deletes the land's triangles by.
+	TPair<TArray<FVector>, TArray<int32>> SampleProxyGrid(const FVector3d& Centre, double PlanetRadius, const FLedgerTerrainParams& Params)
+	{
+		const FVector3d Up = Centre.GetSafeNormal();
+		FVector3d East = FVector3d::CrossProduct(FVector3d::UnitZ(), Up);
+		if (East.IsNearlyZero())
+		{
+			East = FVector3d::CrossProduct(FVector3d::UnitX(), Up);
+		}
+		East.Normalize();
+		const FVector3d North = FVector3d::CrossProduct(Up, East);
+		const double Half = ProxyCells * ProxySpacing * 0.5;
+		TArray<FVector> Vertices;
+		TArray<bool> OverMouth;
+		Vertices.Reserve((ProxyCells + 1) * (ProxyCells + 1));
+		OverMouth.Reserve((ProxyCells + 1) * (ProxyCells + 1));
+		for (int32 Row = 0; Row <= ProxyCells; ++Row)
+		{
+			for (int32 Column = 0; Column <= ProxyCells; ++Column)
+			{
+				const FVector3d Direction = (Centre + East * (Column * ProxySpacing - Half) + North * (Row * ProxySpacing - Half)).GetSafeNormal();
+				const double Ground = LedgerTerrain::Elevation(Direction, Params);
+				Vertices.Add(FVector(Direction * (PlanetRadius + Ground)));
+				OverMouth.Add(LedgerCaves::Density(Direction, Ground / 100.0, Ground / 100.0, Params) > 0.0);
+			}
+		}
+		// And the middle of each cell, in cave country only: a mouth is at most
+		// a passage wide (28 m) and often much less where the roof tapers, so it
+		// can sit between four corners 25 m apart -- chain117's walk met the lid
+		// over the exit it was walking out of. Outside cave country, which is
+		// three quarters of the planet, this costs one mask lookup.
+		TArray<bool> CentreOverMouth;
+		CentreOverMouth.Init(false, ProxyCells * ProxyCells);
+		if (LedgerCaves::MightContainCaves(Up, Half / 100.0 * 1.5, Params))
+		{
+			for (int32 Row = 0; Row < ProxyCells; ++Row)
+			{
+				for (int32 Column = 0; Column < ProxyCells; ++Column)
+				{
+					const FVector3d Direction = (Centre + East * ((Column + 0.5) * ProxySpacing - Half) + North * ((Row + 0.5) * ProxySpacing - Half)).GetSafeNormal();
+					const double Ground = LedgerTerrain::Elevation(Direction, Params) / 100.0;
+					CentreOverMouth[Row * ProxyCells + Column] = LedgerCaves::Density(Direction, Ground, Ground, Params) > 0.0;
+				}
+			}
+		}
+		TArray<int32> Triangles;
+		Triangles.Reserve(ProxyCells * ProxyCells * 12);
+		for (int32 Row = 0; Row < ProxyCells; ++Row)
+		{
+			for (int32 Column = 0; Column < ProxyCells; ++Column)
+			{
+				const int32 A = Row * (ProxyCells + 1) + Column;
+				const int32 B = A + 1;
+				const int32 C = A + ProxyCells + 1;
+				const int32 D = C + 1;
+				if (OverMouth[A] || OverMouth[B] || OverMouth[C] || OverMouth[D] || CentreOverMouth[Row * ProxyCells + Column])
+				{
+					continue;
+				}
+				Triangles.Append({ A, C, B, B, C, D, A, B, C, B, D, C });
+			}
+		}
+		return { MoveTemp(Vertices), MoveTemp(Triangles) };
+	}
+}
+
+void ALedgerPlanet::UpdateCollisionProxy(const FVector3d& FocusLocal, double DeltaSeconds)
+{
+	// The streamed patches carry collision too, but it goes with them: each
+	// time the render LOD replaces the patch under a fast ship there are frames
+	// with the new one not yet in the physics scene and the old one already
+	// gone -- 7% of them at 900 m/s, after the cook-hold, the stale-setup check
+	// and a synchronous cook had each been tried and changed nothing. This is a
+	// surface of its own around the pawn, sampled from the function the patches
+	// are built from. The first version sampled on the game thread (6.5 ms a
+	// rebuild) and cleared the grid it replaced, which left one frame in 13,334
+	// with nothing under the ship; now it samples on a worker, ahead along the
+	// velocity, and two components take turns.
+	static const bool bOff = FParse::Param(FCommandLine::Get(), TEXT("nocollisionproxy"));
+	const double Distance = FocusLocal.Length();
+	const FVector3d Velocity = DeltaSeconds > 0.0 ? (FocusLocal - LastFocusLocal) / DeltaSeconds : FVector3d::ZeroVector;
+	LastFocusLocal = FocusLocal;
+	if (bOff || Distance <= 0.0)
+	{
+		return;
+	}
+	if (bProxyPending && ProxyFuture.IsReady())
+	{
+		UploadCollisionProxy();
+	}
+	const FVector3d Up = FocusLocal / Distance;
+	const double Ground = SurfaceRadiusAt(Up);
+	if (bProxyPending || Distance - Ground > 2000000.0)
+	{
+		return;
+	}
+	const double Width = ProxyCells * ProxySpacing;
+	const FVector3d Here = Up * Ground;
+	// Ahead along the velocity -- half a second, but never more than a quarter
+	// of the grid, so the pawn stays well inside it until the next one lands.
+	const FVector3d AheadUp = (FocusLocal + (Velocity * 0.5).GetClampedToMaxSize(Width * 0.25)).GetSafeNormal();
+	const FVector3d Ahead = AheadUp * SurfaceRadiusAt(AheadUp);
+	if (bProxyBuilt && FVector3d::Dist(ProxyCentreLocal, Here) < Width * 0.12 && FVector3d::Dist(ProxyCentreLocal, Ahead) < Width * 0.2)
+	{
+		return;
+	}
+	PendingProxyCentre = Ahead;
+	bProxyPending = true;
+	const double PlanetRadius = Radius;
+	const FLedgerTerrainParams Params = TerrainParams();
+	if (!bProxyBuilt)
+	{
+		// The first one now: until it exists there is nothing to stand on.
+		TPromise<TPair<TArray<FVector>, TArray<int32>>> Now;
+		Now.SetValue(SampleProxyGrid(Ahead, PlanetRadius, Params));
+		ProxyFuture = Now.GetFuture();
+		UploadCollisionProxy();
+		return;
+	}
+	// Its own thread, not the pool: on the pool it waited behind the patch
+	// jobs and landed after the pawn had left the old grid -- 339 frames in
+	// 13,334 with nothing under the ship, against one with the grid sampled
+	// on the game thread.
+	ProxyFuture = Async(EAsyncExecution::Thread, [Ahead, PlanetRadius, Params]()
+	{
+		return SampleProxyGrid(Ahead, PlanetRadius, Params);
+	});
+}
+
+void ALedgerPlanet::UploadCollisionProxy()
+{
+	const double Started = FPlatformTime::Seconds();
+	const TPair<TArray<FVector>, TArray<int32>> Grid = ProxyFuture.Get();
+	bProxyPending = false;
+	while (CollisionProxies.Num() < 3)
+	{
+		UProceduralMeshComponent* Made = NewObject<UProceduralMeshComponent>(this);
+		// Cooked off the game thread: three take turns, so the two before this
+		// one keep answering while it cooks.
+		Made->bUseAsyncCooking = true;
+		Made->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+		Made->SetCollisionObjectType(ECC_WorldStatic);
+		Made->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Made->SetCastShadow(false);
+		Made->SetVisibility(false);
+		Made->SetupAttachment(GetRootComponent());
+		Made->RegisterComponent();
+		CollisionProxies.Add(Made);
+	}
+	// Into the one not in use; the other keeps answering until next time.
+	const TArray<FVector> NoNormals;
+	const TArray<FVector2D> NoUVs;
+	const TArray<FColor> NoColours;
+	const TArray<FProcMeshTangent> NoTangents;
+	CollisionProxies[ProxyNext]->CreateMeshSection(0, Grid.Key, Grid.Value, NoNormals, NoUVs, NoColours, NoTangents, true);
+	ProxyNext = (ProxyNext + 1) % CollisionProxies.Num();
+	ProxyCentreLocal = PendingProxyCentre;
+	bProxyBuilt = true;
+	++ProxyBuilds;
+	ProxyBuildMs = (FPlatformTime::Seconds() - Started) * 1000.0;
+	ProxyWorstMs = FMath::Max(ProxyWorstMs, ProxyBuildMs);
+}

@@ -1,0 +1,15 @@
+Five consumers, one wind change (T093).
+
+before           t=0 s
+after            t=259200 s (the free wind at the site turned 26 degrees)
+
+  consumer      before m/s        after m/s         field m/s          moved   agreed after
+  flight         5.4   3.6  -2.0  16.1  10.9  -5.9  16.1  10.9  -5.9  13.5   0.025 s, 1 frames
+  vegetation    10.1   6.8  -2.1  30.4  20.5  -6.4  30.5  20.6  -6.4  24.9   0.025 s, 1 frames
+  particles     10.7   6.1  -1.8  32.2  18.2  -5.3  32.2  18.2  -5.3  24.9   0.025 s, 1 frames
+  audio         12.5 (speed)      37.4 (speed)      37.4 (speed)      24.9   0.025 s, 1 frames
+  settlement     9.3   5.7  -2.0  28.0  17.2  -6.1  28.0  17.2  -6.1  22.3   0.025 s, 1 frames
+
+every old reading was at least 3 tolerances from the new field (a '!' marks one that was not)
+all five followed the change within a second: yes
+canopy photographed before and 30 frames after: wind-tree-before.png, wind-tree-after.png

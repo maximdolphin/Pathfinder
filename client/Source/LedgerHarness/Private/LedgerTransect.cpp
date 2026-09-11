@@ -24,6 +24,11 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "UnrealClient.h"
+#include "DynamicRHI.h"
+#include "RenderTimer.h"
+#include "ShaderCompiler.h"
+#include "UObject/UObjectGlobals.h"
 
 namespace
 {
@@ -53,6 +58,11 @@ namespace
 	// Whether collision is there is one question; how far it is from the true
 	// surface is another, and the report now answers both.
 	constexpr double TraceDepth = 500000.0;
+
+	/// Ticks since this fixture last asked for a photograph: the capture stalls
+	/// the pipeline for a second, which is the harness's cost and not the
+	/// terrain's, so those frames and the two after are left out of the timing.
+	int32 GTicksSincePhoto = 1000;
 }
 
 bool ULedgerTransect::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -75,6 +85,7 @@ void ULedgerTransect::OnWorldBeginPlay(UWorld& InWorld)
 	Misses = 0;
 	LongestMiss = 0;
 	CurrentMiss = 0;
+	FCoreUObjectDelegates::GetPostGarbageCollect().AddWeakLambda(this, [this]() { ++GCsSeen; });
 
 	UE_LOG(LogLedger, Log, TEXT("transect: %.0f km at %.0f m/s, %.0f m up, tracing every frame"),
 		TransectDistance / 100000.0, TransectSpeed / 100.0, TransectAltitude / 100.0);
@@ -110,6 +121,81 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 		return;
 	}
 
+	{
+		const double Now = FPlatformTime::Seconds();
+		++GTicksSincePhoto;
+		if (LastWallSeconds > 0.0 && GTicksSincePhoto > 3)
+		{
+			const double FrameMs = (Now - LastWallSeconds) * 1000.0;
+			WorstFrameMs = FMath::Max(WorstFrameMs, FrameMs);
+			FramesOverBudget += FrameMs > 16.7 ? 1 : 0;
+			FrameMsSum += FrameMs;
+			if (FrameMs > 16.7)
+			{
+				// The engine's own timings for the frame just finished, which is
+				// the one this wall-clock interval spans.
+				const double GameMs = FPlatformTime::ToMilliseconds(GGameThreadTime);
+				const double RenderMs = FPlatformTime::ToMilliseconds(GRenderThreadTime);
+				const double GpuMs = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
+				// And the three a frame can be spent waiting in without any thread above
+				// being busy: the RHI thread, the game thread's own wait for the render
+				// thread, and the present.
+				const double RhiMs = FPlatformTime::ToMilliseconds(GRHIThreadTime);
+				const double WaitMs = FPlatformTime::ToMilliseconds(GGameThreadWaitTime);
+				const double SwapMs = FPlatformTime::ToMilliseconds(GSwapBufferTime);
+				const double UploadMs = Planet->GetStats().LastFrameUploadMs;
+				const bool bGC = GCsSeen != GCsAtLastFrame;
+				const bool bShaders = GShaderCompilingManager != nullptr && GShaderCompilingManager->GetNumRemainingJobs() > 0;
+				const double Longest = FMath::Max3(GameMs, RenderMs, GpuMs);
+				OverWaiting += Longest <= 16.7 ? 1 : 0;
+				OverGame += Longest > 16.7 && Longest == GameMs ? 1 : 0;
+				OverRender += Longest > 16.7 && Longest == RenderMs && Longest != GameMs ? 1 : 0;
+				OverGpu += Longest > 16.7 && Longest == GpuMs && Longest != GameMs && Longest != RenderMs ? 1 : 0;
+				OverWithUpload += UploadMs > 4.0 ? 1 : 0;
+				OverWithGC += bGC ? 1 : 0;
+				OverWithShaders += bShaders ? 1 : 0;
+				WorstFrames.Add({ FrameMs, FString::Printf(
+					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, %.0f m above sea level%s%s"),
+					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, UploadMs, Planet->ProxyBuildMs,
+					Planet->GetStats().SectionsFree, Planet->GetStats().JobsInFlight,
+					(FVector3d(Ship->GetActorLocation()) - FVector3d(Planet->GetActorLocation())).Length() / 100.0 - Planet->Radius / 100.0,
+					bGC ? TEXT(", a GC") : TEXT(""), bShaders ? TEXT(", shaders compiling") : TEXT("")) });
+				WorstFrames.Sort([](const TPair<double, FString>& A, const TPair<double, FString>& B) { return A.Key > B.Key; });
+				if (WorstFrames.Num() > 12)
+				{
+					WorstFrames.SetNum(12);
+				}
+			}
+		}
+		LastWallSeconds = Now;
+		GCsAtLastFrame = GCsSeen;
+	}
+	// **Whether the patches meet, every 20 km** (T068's "no popping that reads as
+	// a seam"). The edge-gap probe measures every drawn patch edge against the
+	// patch across it, with the vertices the renderer was given; it is slow, so
+	// it runs ten times and its frames are kept out of the timing.
+	if (FMath::FloorToInt32(Travelled / 2000000.0) != FMath::FloorToInt32((Travelled + TransectSpeed * DeltaSeconds) / 2000000.0))
+	{
+		FString Gaps;
+		Planet->MeasureEdgeGaps(Gaps);
+		TArray<FString> GapLines;
+		Gaps.ParseIntoArrayLines(GapLines);
+		SeamSamples.Add(FString::Printf(TEXT("at %.0f km: %s | %s"), Travelled / 100000.0,
+			GapLines.IsValidIndex(2) ? *GapLines[2] : TEXT(""), GapLines.IsValidIndex(3) ? *GapLines[3] : TEXT("")));
+		GTicksSincePhoto = 0;
+	}
+	// Two photographs on the way (T068): at 100 km, where frames are within
+	// budget, and at 185 km, among the spikes, so the two can be compared.
+	for (const double Mark : { 10000000.0, 18500000.0 })
+	{
+		if (Travelled < Mark && Travelled + TransectSpeed * DeltaSeconds >= Mark)
+		{
+			GTicksSincePhoto = 0;
+			FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::Combine(
+				FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				FString::Printf(TEXT("transect-%.0fkm.png"), Mark / 100000.0))), false, false);
+		}
+	}
 	Travelled += TransectSpeed * DeltaSeconds;
 	Place(*Planet, *Ship, *Controller, Travelled);
 
@@ -210,9 +296,27 @@ void ULedgerTransect::Finish()
 			Terrain.VisibleNodes, Terrain.NodesWithCollision);
 		Body += FString::Printf(
 			TEXT("  worst cook    %.2f ms\n"), Terrain.WorstFrameCollisionMs);
+		// T068: the collision proxy under the ship, and what rebuilding it costs a frame.
+		Body += FString::Printf(TEXT("  collision proxy rebuilt %d times, %.2f ms at worst, %.2f ms last\n"),
+			Planet->ProxyBuilds, Planet->ProxyWorstMs, Planet->ProxyBuildMs);
 	}
 	Body += FString::Printf(TEXT("  altitude      %.0f m\n"), TransectAltitude / 100.0);
 	Body += FString::Printf(TEXT("  frames        %d\n"), Frames);
+	Body += FString::Printf(TEXT("  frame time    %.2f ms mean, %.2f ms worst, %d over 16.7 ms\n"),
+		Frames > 1 ? FrameMsSum / (Frames - 1) : 0.0, WorstFrameMs, FramesOverBudget);
+	Body += FString::Printf(TEXT("    over budget, by the longest of the three: game thread %d, render thread %d, GPU %d, none over budget (a wait) %d\n"),
+		OverGame, OverRender, OverGpu, OverWaiting);
+	Body += FString::Printf(TEXT("    over budget with a patch upload over 4 ms %d, a GC %d, shaders compiling %d\n"),
+		OverWithUpload, OverWithGC, OverWithShaders);
+	Body += TEXT("  seams (edge-gap probe, every 20 km):\n");
+	for (const FString& Sample : SeamSamples)
+	{
+		Body += TEXT("    ") + Sample + TEXT("\n");
+	}
+	for (const TPair<double, FString>& Frame : WorstFrames)
+	{
+		Body += TEXT("      ") + Frame.Value + TEXT("\n");
+	}
 	Body += FString::Printf(TEXT("  traces missed %d  (%.3f%%)\n"), Misses, MissFraction);
 	Body += FString::Printf(TEXT("    no ground drawn under the ship    %d\n"), MissesNoGround);
 	Body += FString::Printf(TEXT("    drawn, never asked for collision  %d\n"), MissesNoCollision);

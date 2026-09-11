@@ -1,3 +1,4 @@
+#include "LedgerCaves.h"
 #include "LedgerScatter.h"
 
 #include "Misc/CommandLine.h"
@@ -142,6 +143,15 @@ namespace LedgerScatter
 
 				const double Elevation = LedgerTerrain::Elevation(Direction, Job.Params);
 				if (Elevation <= 0.0)
+				{
+					continue;
+				}
+				// Not over a cave mouth (T056). The land's triangles are deleted
+				// there when caves are meshed, so a stone placed on the height field
+				// hung in the air over the hole -- the walk's photographs of an open
+				// passage had a sky full of floating rocks.
+				static const bool bCaveMesh = FParse::Param(FCommandLine::Get(), TEXT("cavemesh"));
+				if (bCaveMesh && LedgerCaves::Density(Direction, Elevation / 100.0, Elevation / 100.0, Job.Params) > 0.0)
 				{
 					continue;
 				}

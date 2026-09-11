@@ -310,4 +310,24 @@ namespace LedgerBiomes
 			static_cast<float>(Slot[1] / Total),
 			static_cast<float>(Slot[2] / Total));
 	}
+
+	TArray<int32> GroundChannels(const TArray<FLedgerBiome>& Biomes)
+	{
+		TArray<int32> Out;
+		int32 Next = 0;
+		for (const FLedgerBiome& Biome : Biomes)
+		{
+			if (Biome.SurfaceSet == TEXT("fresh_windswept_snow_ugspafgdy"))
+			{
+				Out.Add(INDEX_NONE);
+			}
+			else
+			{
+				// ponytail: seven channels. An eighth ground biome shares the last
+				// one until another UV channel is spent on it.
+				Out.Add(FMath::Min(Next++, GroundChannelCount - 1));
+			}
+		}
+		return Out;
+	}
 }

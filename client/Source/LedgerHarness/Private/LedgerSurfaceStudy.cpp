@@ -9,6 +9,7 @@
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "GameFramework/PlayerController.h"
+#include "LedgerSky.h"
 #include "LedgerLog.h"
 #include "LedgerPlanet.h"
 #include "LedgerShip.h"
@@ -257,6 +258,33 @@ void ULedgerSurfaceStudy::Place()
 				UE_LOG(LogLedger, Log, TEXT("surface study: flattest ground within 2 km at %.4f,%.4f, %.1f degrees"),
 					FMath::RadiansToDegrees(FMath::Asin(Found.Z)), FMath::RadiansToDegrees(FMath::Atan2(Found.Y, Found.X)),
 					FMath::RadiansToDegrees(FMath::Atan(Flattest)));
+			}
+			// **Daylight at the site, not at the town.** The clock is set for the
+			// home site, and a study a quarter of the way round the planet was
+			// photographed at dusk: every 20 m and 200 m frame of T435 had a sky near
+			// black against photographs taken at midday. The next two days searched
+			// ten minutes at a time for the sun closest to fifty degrees over this spot.
+			static bool bClockSet = false;
+			if (!bClockSet)
+			{
+				bClockSet = true;
+				const FLedgerSystem& System = Builder->GetSystem();
+				const int32 Home = Builder->GetHomeBodyIndex();
+				const double Start = Builder->GetWhenSeconds();
+				double Best = Start;
+				double BestMiss = 1.0e9;
+				for (double When = Start; When < Start + 2.0 * 86400.0; When += 600.0)
+				{
+					const double Miss = FMath::Abs(FMath::RadiansToDegrees(LedgerSky::SolarAltitude(System, Home, Found, When)) - 50.0);
+					if (Miss < BestMiss)
+					{
+						BestMiss = Miss;
+						Best = When;
+					}
+				}
+				Builder->SetWhenSeconds(Best);
+				UE_LOG(LogLedger, Log, TEXT("surface study: the clock set to t=%.0f s, the sun %.1f degrees over the site"),
+					Best, FMath::RadiansToDegrees(LedgerSky::SolarAltitude(System, Home, Found, Best)));
 			}
 			Up = Found;
 		}

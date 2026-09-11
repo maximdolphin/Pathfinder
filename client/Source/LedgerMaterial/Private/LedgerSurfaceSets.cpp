@@ -4,6 +4,7 @@
 
 #include "Dom/JsonObject.h"
 #include "Engine/Texture2D.h"
+#include "HAL/FileManager.h"
 #include "LedgerLog.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -147,5 +148,39 @@ namespace LedgerSurface
 		Set.Normal = Load(Name, TEXT("normal"));
 		Set.Packed = Load(Name, TEXT("packed_ao_rough_height"));
 		return Set;
+	}
+
+	TArray<FGroundChannel> GroundChannels()
+	{
+		TArray<FString> Files;
+		const FString Folder = FPaths::ProjectConfigDir() / TEXT("Biomes");
+		IFileManager::Get().FindFiles(Files, *(Folder / TEXT("*.json")), true, false);
+		Files.Sort();
+		TArray<FGroundChannel> Out;
+		for (const FString& File : Files)
+		{
+			FString Text;
+			TSharedPtr<FJsonObject> Root;
+			if (!FFileHelper::LoadFileToString(Text, *(Folder / File))
+				|| !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Text), Root) || !Root.IsValid())
+			{
+				continue;
+			}
+			FGroundChannel Channel;
+			if (!Root->TryGetStringField(TEXT("surfaceSet"), Channel.Set) || Channel.Set == TEXT("fresh_windswept_snow_ugspafgdy"))
+			{
+				continue;
+			}
+			const TArray<TSharedPtr<FJsonValue>>* Tint = nullptr;
+			if (Root->TryGetArrayField(TEXT("tint"), Tint) && Tint->Num() >= 3)
+			{
+				Channel.Tint = FLinearColor((*Tint)[0]->AsNumber(), (*Tint)[1]->AsNumber(), (*Tint)[2]->AsNumber());
+			}
+			if (Out.Num() < GroundChannelCount)
+			{
+				Out.Add(Channel);
+			}
+		}
+		return Out;
 	}
 }

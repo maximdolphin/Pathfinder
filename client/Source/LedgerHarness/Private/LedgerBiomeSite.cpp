@@ -525,7 +525,19 @@ void ULedgerBiomeSite::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < BiomeSettleSeconds)
+	// **And until the ground under it has streamed**, not only six seconds. The
+	// chain113 captures were taken with 1,200 to 1,500 visible leaves still
+	// without geometry, and the boundary frame came out as overlapping plates --
+	// a split parent drawn with its half-arrived children -- which is a picture
+	// of streaming, not of the ground. Held until there are no holes, for at
+	// most a minute, and the count is logged either way.
+	// And until nothing is streaming, as the cliff site learned: with no holes
+	// left a patch can still be waiting for its re-stitch (eight a frame), and
+	// its edge is then a straight chord beside a neighbour that has refined --
+	// the dark steps down the slope in chain116's boundary framing.
+	const int32 Holes = Planet->GetStats().UnfilledNodes;
+	const bool bStreaming = Planet->GetStats().JobsInFlight > 0 || Planet->GetStats().PendingBuilds > 0;
+	if (Settle < BiomeSettleSeconds || ((Holes > 0 || bStreaming) && Settle < 60.0))
 	{
 		return;
 	}
@@ -536,7 +548,13 @@ void ULedgerBiomeSite::Tick(float DeltaSeconds)
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 				FString(SiteShots[Index].Name)));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
-		UE_LOG(LogLedger, Log, TEXT("biome site -> %s"), *Path);
+		FString Gaps;
+		Planet->MeasureEdgeGaps(Gaps);
+		TArray<FString> GapLines;
+		Gaps.ParseIntoArrayLines(GapLines);
+		UE_LOG(LogLedger, Log, TEXT("biome site -> %s (%d holes, %d jobs in flight, %.0f s settled; %s %s)"), *Path,
+			Planet->GetStats().UnfilledNodes, Planet->GetStats().JobsInFlight, Settle,
+			GapLines.IsValidIndex(2) ? *GapLines[2] : TEXT(""), GapLines.IsValidIndex(3) ? *GapLines[3] : TEXT(""));
 		bCaptured = true;
 		return;
 	}
@@ -606,16 +624,29 @@ void ULedgerBiomeSite::Place()
 		Camera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Eye, Look, Params);
 		if (Camera != nullptr)
 		{
-			// Pinned exposure, for the same reason the surface study pins it:
-			// three framings of the same ground, and auto exposure exists to
-			// cancel exactly the differences being compared.
+			// Auto exposure, not a pinned brightness. It was pinned at 1.0, which
+			// against a sun quoted in lux (103,000) is a white frame: every
+			// capture from 11 September was 241-255 in every pixel, in both arms
+			// of T053's comparison, and read at first as cloud. The surface study
+			// found the same and stopped pinning under -reference. What is
+			// compared here is two grounds in one frame, which auto exposure
+			// does not cancel.
 			if (UCameraComponent* Component = Camera->GetCameraComponent())
 			{
 				FPostProcessSettings& Post = Component->PostProcessSettings;
-				Post.bOverride_AutoExposureMinBrightness = true;
-				Post.bOverride_AutoExposureMaxBrightness = true;
-				Post.AutoExposureMinBrightness = 1.0f;
-				Post.AutoExposureMaxBrightness = 1.0f;
+				// Except for a diagnostic view: -terrainvis and -channel draw a
+				// number from 0 to 1 unlit, and against an auto-exposed daylight sky
+				// that is black -- chain115's LOD frames were. Pinned at 1.0 the
+				// number is the pixel, which is what those views are for.
+				FString Diagnostic;
+				if (FParse::Value(FCommandLine::Get(), TEXT("terrainvis="), Diagnostic)
+					|| FParse::Value(FCommandLine::Get(), TEXT("channel="), Diagnostic))
+				{
+					Post.bOverride_AutoExposureMinBrightness = true;
+					Post.bOverride_AutoExposureMaxBrightness = true;
+					Post.AutoExposureMinBrightness = 1.0f;
+					Post.AutoExposureMaxBrightness = 1.0f;
+				}
 				Post.bOverride_AutoExposureBias = true;
 				Post.AutoExposureBias = 0.0f;
 			}

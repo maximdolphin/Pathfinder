@@ -1,0 +1,5 @@
+Ledger.Terrain.GroundChannelsAgreeAcrossPaletteCells (T053), from tests.log of chain115, 2026-09-11
+
+LogAutomationController: 3 land pairs across a palette cell boundary, 3 with different palettes; the worst disagreement on a shared edge is 0.0000 of a weight
+
+What it checks: two patches of the same size either side of u = 0.5 on a cube face, which is a boundary between two 600 km palette cells, on land; for each pair whose cells chose different palettes, the ground channel weights (vertex colour RGB, UV2, UV3) of every vertex on the shared edge, one patch against the other. Under the palette a vertex on that edge was drawn from one set of three grounds on one side and another set on the other.

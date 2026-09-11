@@ -18,6 +18,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Async/Future.h"
 #include "GameFramework/Actor.h"
 #include "LedgerPatchCache.h"
 #include "LedgerBiome.h"
@@ -127,6 +128,11 @@ struct FLedgerPatchJob
 	/// sets carry the colour, and painting a tint on top of an authored scan is
 	/// what made the old ramp read as a contour map (T053).
 	TArray<FColor> Colors;
+
+	/// T053: ground channels four and five (UV2) and six and seven (UV3); the
+	/// first three are the colour's red, green and blue.
+	TArray<FVector2D> GroundWeightsB;
+	TArray<FVector2D> GroundWeightsC;
 	TArray<FProcMeshTangent> Tangents;
 
 	/// Which three biomes this patch's vertex colours are weights of. Chosen
@@ -540,6 +546,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
 	int32 MaxJobsInFlight = 128;
 
+	/// Job slots only re-stitches may use (T068). A re-stitch waited behind new
+	/// patches for a free slot, and at 900 m/s the queue is full: the 300 m gate
+	/// transect caught shared edges 1.2 to 1.8 m open in one sample in five.
+	int32 RestitchReserve = 32;
+
 	/// Milliseconds per frame the game thread may spend on streaming: cache
 	/// uploads, finished patches and the scatter rebuild, together.
 	///
@@ -700,6 +711,32 @@ public:
 		TArray<FLedgerFooting>* OutAll = nullptr) const;
 
 private:
+	/// T068: collision around the pawn built straight from the terrain
+	/// function, rebuilt as it moves and never released by the render LOD, so
+	/// a trace from anything near the ground always has ground to hit. The
+	/// grid is sampled on a worker, ahead of the pawn along its velocity, and
+	/// two components take turns: the one in use is never cleared.
+	void UpdateCollisionProxy(const FVector3d& FocusLocal, double DeltaSeconds);
+	void UploadCollisionProxy();
+
+	UPROPERTY()
+	TArray<TObjectPtr<UProceduralMeshComponent>> CollisionProxies;
+
+	TFuture<TPair<TArray<FVector>, TArray<int32>>> ProxyFuture;
+	FVector3d ProxyCentreLocal = FVector3d::ZeroVector;
+	FVector3d PendingProxyCentre = FVector3d::ZeroVector;
+	FVector3d LastFocusLocal = FVector3d::ZeroVector;
+	int32 ProxyNext = 0;
+	bool bProxyBuilt = false;
+	bool bProxyPending = false;
+
+	/// Milliseconds the last upload took on the game thread, and the worst, for the transect report.
+public:
+	double ProxyBuildMs = 0.0;
+	double ProxyWorstMs = 0.0;
+	int32 ProxyBuilds = 0;
+private:
+
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
 
@@ -900,7 +937,10 @@ private:
 
 	/// Launches generation on a worker thread. Returns false if the pool or the
 	/// in-flight cap is exhausted.
-	bool LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision);
+	/// `bRestitch`: a drawn patch rebuilt because a neighbour changed depth. It
+	/// may use RestitchReserve slots past MaxJobsInFlight, since until it lands
+	/// the shared edge is open.
+	bool LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision, bool bRestitch = false);
 
 	/// Uploads whatever finished since last frame, within the budget.
 	void HarvestCompletedPatches();

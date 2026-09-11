@@ -7,6 +7,7 @@
 #include "LedgerWind.h"
 #include "Engine/World.h"
 #include "LedgerTerrainMath.h"
+#include "StaticMeshResources.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Rendering/StaticMeshVertexBuffer.h"
@@ -49,6 +50,11 @@ namespace
 	const FColor TrunkColour(58, 44, 32, 255);
 	const FColor CanopyColour(44, 68, 36, 255);
 	const FColor CanopyColourAlt(56, 78, 42, 255);
+
+	/// Where the impostors take over from the full trees, cm. An eighteen-metre
+	/// tree at 250 m is about seven per cent of a 90 degree view high, which is
+	/// where its cones stop reading as cones.
+	constexpr int32 TreeImpostorFromCm = 25000;
 }
 
 ALedgerSettlement::ALedgerSettlement()
@@ -67,6 +73,11 @@ ALedgerSettlement::ALedgerSettlement()
 		TreeInstances[Variant]->SetupAttachment(Root);
 		TreeInstances[Variant]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		TreeInstances[Variant]->SetCastShadow(true);
+		TreeImpostors[Variant] = CreateDefaultSubobject<
+			UHierarchicalInstancedStaticMeshComponent>(Variant == 0 ? TEXT("TreeImpostorsA") : TEXT("TreeImpostorsB"));
+		TreeImpostors[Variant]->SetupAttachment(Root);
+		TreeImpostors[Variant]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		TreeImpostors[Variant]->SetCastShadow(true);
 	}
 
 	// Buildings and the pad block, because a ship has to be able to land on
@@ -137,13 +148,19 @@ void ALedgerSettlement::SurfaceFrame(
 // meshes rather than one, because the variation is baked into vertex colour and
 // the alternative is a per-instance colour the flat material cannot read. Two
 // draws for three hundred and forty-two trees is still two.
-int32 ALedgerSettlement::DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCanopy)
+namespace LedgerTreeShape
 {
-	// The file-scope colours, used directly rather than shadowed.
+	// One tree, two descriptions of it: the mesh and its impostor.
 	constexpr double TrunkHeight = 620.0;
 	constexpr double TrunkRadius = 42.0;
 	constexpr double CanopyHeight = 1180.0;
 	constexpr double CanopyRadius = 400.0;
+}
+
+int32 ALedgerSettlement::DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCanopy)
+{
+	// The file-scope colours, used directly rather than shadowed.
+	using namespace LedgerTreeShape;
 
 	// Sunk, so the trunk still meets the ground on a slope. Scaled with the
 	// instance rather than fixed, which is if anything more correct: a bigger
@@ -167,6 +184,68 @@ int32 ALedgerSettlement::DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCano
 		CanopyRadius * 0.66, CanopyHeight * 0.7, 7, CanopyColourAlt);
 
 	return CanopyStartsAt;
+}
+
+int32 ALedgerSettlement::DescribeTreeImpostor(FLedgerMeshBuilder& Builder, bool bAltCanopy)
+{
+	using namespace LedgerTreeShape;
+	const double CanopyBase = TrunkHeight * 0.55;
+	const double UpperBase = CanopyBase + CanopyHeight * 0.42;
+	const FVector Up(0.0, 0.0, 1.0);
+
+	// Two planes at right angles, each the tree's outline seen side on.
+	// Normals are the cone's own, not the card's: a card lit by its face goes
+	// dark whenever the sun is behind it, which is half the forest at any hour.
+	// Tilted up by the cone's slope (radius over height), so the crown is lit
+	// from above the way the cones are.
+	auto Outward = [&Up](const FVector& Across, double Radius, double Height)
+	{
+		return (Across * Height + Up * Radius).GetSafeNormal();
+	};
+	const FVector Planes[2] = { FVector(1.0, 0.0, 0.0), FVector(0.0, 1.0, 0.0) };
+	for (const FVector& Across : Planes)
+	{
+		// The trunk, up into the canopy, sunk like the mesh's.
+		const FVector L0 = -Across * TrunkRadius + Up * -90.0;
+		const FVector R0 = Across * TrunkRadius + Up * -90.0;
+		const FVector L1 = -Across * TrunkRadius * 0.72 + Up * CanopyBase;
+		const FVector R1 = Across * TrunkRadius * 0.72 + Up * CanopyBase;
+		Builder.AddCardTriangle(L0, R0, R1, -Across, Across, Across, TrunkColour);
+		Builder.AddCardTriangle(L0, R1, L1, -Across, Across, -Across, TrunkColour);
+	}
+	const int32 CanopyStartsAt = Builder.Triangles.Num() / 3;
+	for (const FVector& Across : Planes)
+	{
+		Builder.AddCardTriangle(
+			-Across * CanopyRadius + Up * CanopyBase, Across * CanopyRadius + Up * CanopyBase,
+			Up * (CanopyBase + CanopyHeight),
+			Outward(-Across, CanopyRadius, CanopyHeight), Outward(Across, CanopyRadius, CanopyHeight), Up,
+			bAltCanopy ? CanopyColourAlt : CanopyColour);
+		Builder.AddCardTriangle(
+			-Across * CanopyRadius * 0.66 + Up * UpperBase, Across * CanopyRadius * 0.66 + Up * UpperBase,
+			Up * (UpperBase + CanopyHeight * 0.7),
+			Outward(-Across, CanopyRadius * 0.66, CanopyHeight * 0.7),
+			Outward(Across, CanopyRadius * 0.66, CanopyHeight * 0.7), Up,
+			CanopyColourAlt);
+	}
+	return CanopyStartsAt;
+}
+
+void ALedgerSettlement::ForceTreeLod(int32 Lod) const
+{
+	for (int32 Variant = 0; Variant < 2; ++Variant)
+	{
+		UHierarchicalInstancedStaticMeshComponent* Full = TreeInstances[Variant];
+		UHierarchicalInstancedStaticMeshComponent* Impostor = TreeImpostors[Variant];
+		if (Full == nullptr || Impostor == nullptr)
+		{
+			continue;
+		}
+		Full->SetVisibility(Lod != 2);
+		Impostor->SetVisibility(Lod != 1);
+		Full->SetCullDistances(0, Lod == 0 ? TreeImpostorFromCm : 0);
+		Impostor->SetCullDistances(Lod == 0 ? TreeImpostorFromCm : 0, 0);
+	}
 }
 
 
@@ -395,10 +474,40 @@ void ALedgerSettlement::PlaceTrees()
 		Component->SetStaticMesh(Mesh);
 		Component->AddInstances(TreeTransforms[Variant], /*bShouldReturnIndices*/ false,
 			/*bWorldSpace*/ true);
+		// The impostors: the same trees, from where the full ones stop.
+		{
+			const FString ImpostorName = FString(Names[Variant]) + TEXT("_Impostor");
+			UStaticMesh* ImpostorMesh = LoadObject<UStaticMesh>(nullptr,
+				*FString::Printf(TEXT("%s%s.%s"), LedgerMesh::MeshPackageRoot, *ImpostorName, *ImpostorName));
+			UHierarchicalInstancedStaticMeshComponent* Far = TreeImpostors[Variant];
+			if (ImpostorMesh != nullptr && Far != nullptr)
+			{
+				Far->ClearInstances();
+				Far->SetStaticMesh(ImpostorMesh);
+				Far->AddInstances(TreeTransforms[Variant], /*bShouldReturnIndices*/ false, /*bWorldSpace*/ true);
+				Component->SetCullDistances(0, TreeImpostorFromCm);
+				Far->SetCullDistances(TreeImpostorFromCm, 0);
+				const FStaticMeshRenderData* FarRender = ImpostorMesh->GetRenderData();
+				UE_LOG(LogLedger, Log, TEXT("trees %d: impostor %s, %d triangles, from %d m"), Variant, *ImpostorName,
+					FarRender != nullptr && FarRender->LODResources.Num() > 0 ? FarRender->LODResources[0].GetNumTriangles() : 0,
+					TreeImpostorFromCm / 100);
+			}
+			else
+			{
+				UE_LOG(LogLedger, Error, TEXT("no baked tree impostor %s: every tree is drawn in full at every distance. Run -bakemeshes"), *ImpostorName);
+			}
+		}
+
+		// The LODs the asset actually has, so an impostor that is not there is
+		// a line in the log rather than a photograph that looks the same.
+		const FStaticMeshRenderData* Render = Mesh->GetRenderData();
+		const int32 Lods = Render != nullptr ? Render->LODResources.Num() : 0;
 		UE_LOG(LogLedger, Log,
-			TEXT("trees %d: load %.1f ms, place %.1f ms, %d instances"),
+			TEXT("trees %d: load %.1f ms, place %.1f ms, %d instances, %d LODs (%d and %d triangles)"),
 			Variant, LoadMs, (FPlatformTime::Seconds() - PlaceStarted) * 1000.0,
-			Component->GetInstanceCount());
+			Component->GetInstanceCount(), Lods,
+			Lods > 0 ? Render->LODResources[0].GetNumTriangles() : 0,
+			Lods > 1 ? Render->LODResources[1].GetNumTriangles() : 0);
 
 	}
 }
@@ -587,7 +696,7 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 		// when the merged foliage mesh was removed left three hundred and
 		// forty-two trees rendering as black cut-outs -- correctly placed,
 		// correctly instanced, and lit by nothing.
-		for (UHierarchicalInstancedStaticMeshComponent* Component : TreeInstances)
+		for (UHierarchicalInstancedStaticMeshComponent* Component : { TreeInstances[0].Get(), TreeInstances[1].Get(), TreeImpostors[0].Get(), TreeImpostors[1].Get() })
 		{
 			if (Component == nullptr)
 			{
@@ -608,7 +717,7 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 			// trunk's deflection is the base of the cantilever and a wood
 			// whose trunks sway reads as rubber.
 			if (UMaterialInterface* Leaf = LedgerSurface::CreateFoliageMaterial(
-				this, FLinearColor(Component == TreeInstances[1] ? CanopyColourAlt : CanopyColour),
+				this, FLinearColor(Component == TreeInstances[1] || Component == TreeImpostors[1] ? CanopyColourAlt : CanopyColour),
 				0.88f))
 			{
 				Component->SetMaterial(1, Leaf);

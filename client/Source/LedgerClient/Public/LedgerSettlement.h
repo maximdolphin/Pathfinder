@@ -79,6 +79,16 @@ public:
 	/// can give the trunk and the canopy a material slot each.
 	static int32 DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCanopy);
 
+	/// The same tree as an impostor: its silhouette -- trunk, canopy, upper
+	/// canopy -- on two crossed cards, sixteen triangles against forty-six,
+	/// baked as the mesh's second LOD. The same local heights, so M_Foliage
+	/// leans it exactly as far as the tree it stands in for. T058.
+	static int32 DescribeTreeImpostor(FLedgerMeshBuilder& Builder, bool bAltCanopy);
+
+	/// Draws every tree as the full tree (1) or as its impostor (2), or lets
+	/// distance choose (0). For T058's photograph of the impostor in wind.
+	void ForceTreeLod(int32 Lod) const;
+
 	/// One building at unit size: a hundred-centimetre box standing on the
 	/// origin, with a roof cap overhanging it by four per cent. Every building
 	/// in the town is this mesh, scaled per instance, so the walls are slot 0
@@ -108,6 +118,12 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<class UHierarchicalInstancedStaticMeshComponent> TreeInstances[2];
+
+	/// The same trees as impostors, drawn past the distance the full trees stop
+	/// at. T058: a mesh LOD would be the usual way, and this engine rebuilt the
+	/// second LOD from the first whatever it was handed.
+	UPROPERTY()
+	TObjectPtr<class UHierarchicalInstancedStaticMeshComponent> TreeImpostors[2];
 
 	/// Where the town hangs. A plain scene component: nothing in the town is
 	/// generated geometry any more, so there is nothing for a root to draw.

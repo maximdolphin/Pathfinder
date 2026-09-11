@@ -29,6 +29,7 @@
 #include "Materials/MaterialExpressionPixelDepth.h"
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
+#include "Materials/MaterialExpressionTextureObject.h"
 #include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
@@ -192,6 +193,33 @@ namespace LedgerSurface
 		const FSurfaceSet Steep = LoadSurfaceSet(SteepSurface);
 		const FSurfaceSet Scree = LoadSurfaceSet(ScreeSurface);
 		const FSurfaceSet Snowfall = LoadSurfaceSet(TEXT("fresh_windswept_snow_ugspafgdy"));
+
+		// T053: a ground channel per biome, each its own scan, weighted per
+		// vertex. `-paletteground` is the control arm: the three palette slots.
+		struct FChannel
+		{
+			FSurfaceSet Set;
+			FLinearColor Tint;
+		};
+		TArray<FChannel> Channels;
+		bool bChannels = !FParse::Param(FCommandLine::Get(), TEXT("paletteground"));
+		if (bChannels)
+		{
+			for (const FGroundChannel& Ground : GroundChannels())
+			{
+				Channels.Add({ LoadSurfaceSet(Ground.Set), Ground.Tint });
+				if (!Channels.Last().Set.IsValid())
+				{
+					UE_LOG(LogLedger, Error, TEXT("terrain material: ground channel %s did not load"), *Ground.Set);
+					bChannels = false;
+				}
+			}
+			bChannels &= Channels.Num() > 0;
+			if (!bChannels)
+			{
+				UE_LOG(LogLedger, Error, TEXT("terrain material: no ground channels, drawing the three palette slots"));
+			}
+		}
 		if (!Flat.IsValid() || !Steep.IsValid() || !Scree.IsValid())
 		{
 			// Loudly, and with nothing returned. A terrain material that
@@ -269,6 +297,42 @@ namespace LedgerSurface
 		UMaterialExpression* WeightX = Graph.Mask(Weights, true, false, false);
 		UMaterialExpression* WeightY = Graph.Mask(Weights, false, true, false);
 		UMaterialExpression* WeightZ = Graph.Mask(Weights, false, false, true);
+
+		// ---- the ground channels' textures and weights. T053 ----------------
+		//
+		// Texture objects handed to HLSL rather than sample nodes: which channels
+		// a pixel samples is decided per pixel, and a graph cannot branch. Every
+		// sample in that code goes through the shared world sampler by name --
+		// twenty-one textures with a sampler each would be past the sixteen a
+		// shader gets.
+		const TCHAR* SharedSampler = TEXT("View.MaterialTextureBilinearWrapedSampler");
+		TArray<UMaterialExpression*> ChannelAlbedo;
+		TArray<UMaterialExpression*> ChannelNormal;
+		TArray<UMaterialExpression*> ChannelPacked;
+		UMaterialExpressionVertexColor* ChannelColour = nullptr;
+		UMaterialExpressionTextureCoordinate* ChannelUv2 = nullptr;
+		UMaterialExpressionTextureCoordinate* ChannelUv3 = nullptr;
+		if (bChannels)
+		{
+			auto Object = [&Graph](UTexture2D* Texture, EMaterialSamplerType Type) -> UMaterialExpression*
+			{
+				UMaterialExpressionTextureObject* Node = Graph.Make<UMaterialExpressionTextureObject>();
+				Node->Texture = Texture;
+				Node->SamplerType = Type;
+				return Node;
+			};
+			for (const FChannel& Channel : Channels)
+			{
+				ChannelAlbedo.Add(Object(Channel.Set.Albedo, SAMPLERTYPE_Color));
+				ChannelNormal.Add(Object(Channel.Set.Normal, SAMPLERTYPE_Normal));
+				ChannelPacked.Add(Object(Channel.Set.Packed, SAMPLERTYPE_Masks));
+			}
+			ChannelColour = Graph.Make<UMaterialExpressionVertexColor>();
+			ChannelUv2 = Graph.Make<UMaterialExpressionTextureCoordinate>();
+			ChannelUv2->CoordinateIndex = 2;
+			ChannelUv3 = Graph.Make<UMaterialExpressionTextureCoordinate>();
+			ChannelUv3->CoordinateIndex = 3;
+		}
 
 		// ---- parallax: the ground gets to have a thickness -----------------
 		//
@@ -449,6 +513,47 @@ namespace LedgerSurface
 			AddInput(TEXT("SP"), ProbePosition);
 			AddInput(TEXT("SD"), Graph.Multiply(MaxOffset, Tiling));
 			AddInput(TEXT("W"), Weights);
+			// T053: the relief of whichever channel weighs most here, at that
+			// channel's tiling. ponytail: the dominant one only -- where two
+			// grounds meet the relief switches along the line where they tie, a
+			// few centimetres at most; a blend of reliefs would march each one.
+			if (bChannels && !bPomChecker)
+			{
+				FString Tilings;
+				FString Height;
+				for (int32 Index = 0; Index < Channels.Num(); ++Index)
+				{
+					const float Tile = 1.0f / static_cast<float>(Channels[Index].Set.TilingMetres * 100.0);
+					Tilings += Index + 1 < Channels.Num()
+						? FString::Printf(TEXT("d == %d ? %.9f : "), Index, Tile)
+						: FString::Printf(TEXT("%.9f"), Tile);
+					Height += FString::Printf(
+						TEXT("%sif (d == %d) { h = W.x * K%d.SampleLevel(%s, q.yz, 0).b + W.y * K%d.SampleLevel(%s, q.xz, 0).b + W.z * K%d.SampleLevel(%s, q.xy, 0).b; }\n"),
+						Index == 0 ? TEXT("") : TEXT("else "), Index, Index, SharedSampler, Index, SharedSampler, Index, SharedSampler);
+				}
+				March->Code = FString(TEXT("float w[7] = { C.x, C.y, C.z, U2.x, U2.y, U3.x, U3.y };\n"))
+					+ TEXT("int d = 0;\n[unroll] for (int i = 1; i < 7; ++i) { if (w[i] > w[d]) { d = i; } }\n")
+					+ TEXT("float k = ") + Tilings + TEXT(";\n")
+					+ TEXT("float3 sp = SP * k;\nfloat3 sd = SD * k;\nint n = 16;\nfloat stepR = 1.0 / n;\nfloat r = 1.0;\n")
+					+ TEXT("float3 q = sp - sd * (r - 0.5);\nfloat h = 0.0;\n")
+					+ Height
+					+ TEXT("float rPrev = r;\nfloat hPrev = h;\nif (dot(sd, sd) < 1e-14) return 0.0;\n")
+					+ TEXT("[loop] for (int s = 0; s < n && h < r; ++s)\n{\nrPrev = r;\nhPrev = h;\nr -= stepR;\nq = sp - sd * (r - 0.5);\n")
+					+ Height
+					+ TEXT("}\nfloat a = hPrev - rPrev;\nfloat b = h - r;\nfloat t = saturate(a / (a - b - 1e-5));\n")
+					+ TEXT("return -(lerp(rPrev, r, t) - 0.5);\n");
+				March->Inputs.Reset();
+				AddInput(TEXT("SP"), WorldPosition);
+				AddInput(TEXT("SD"), MaxOffset);
+				AddInput(TEXT("W"), Weights);
+				AddInput(TEXT("C"), ChannelColour);
+				AddInput(TEXT("U2"), ChannelUv2);
+				AddInput(TEXT("U3"), ChannelUv3);
+				for (int32 Index = 0; Index < Channels.Num(); ++Index)
+				{
+					AddInput(*FString::Printf(TEXT("K%d"), Index), ChannelPacked[Index]);
+				}
+			}
 			// The factor the one-step offset used, -(height - 0.5), but at the
 			// height where the ray went under rather than the height it started on.
 			ParallaxPosition = Graph.Add(WorldPosition, Graph.Multiply(MaxOffset, March));
@@ -471,63 +576,189 @@ namespace LedgerSurface
 		// landed in. Every slot bids its own height plus its own weight and the
 		// proudest texel within BlendDepth wins, which is symmetric in the
 		// three by construction.
-		UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
-		UMaterialExpression* SlotWeight[GroundSlots] = {
-			Graph.Mask(VertexColour, true, false, false),
-			Graph.Mask(VertexColour, false, true, false),
-			Graph.Mask(VertexColour, false, false, true),
-		};
-
-		FSampled Slot[GroundSlots];
-		UMaterialExpression* SlotMean[GroundSlots] = {};
-		UMaterialExpression* SlotTint[GroundSlots] = {};
-		UMaterialExpression* SlotBid[GroundSlots] = {};
-		for (int32 Index = 0; Index < GroundSlots; ++Index)
-		{
-			Slot[Index] = SampleSlot(Graph, Index, Flat, ParallaxPosition, WeightX, WeightY, WeightZ);
-			SlotMean[Index] = Graph.VectorParameter(
-				*SlotParameter(Index, TEXT("Mean")), Flat.MeanAlbedo);
-			SlotTint[Index] = Graph.VectorParameter(
-				*SlotParameter(Index, TEXT("Tint")), FLinearColor::White);
-			SlotBid[Index] = Graph.Add(Slot[Index].Height, SlotWeight[Index]);
-		}
-
-		UMaterialExpression* GroundThreshold = Graph.Subtract(
-			Graph.Max(SlotBid[0], Graph.Max(SlotBid[1], SlotBid[2])), Graph.Constant(BlendDepth));
-
-		UMaterialExpression* SlotShare[GroundSlots] = {};
-		UMaterialExpression* ShareSum = Graph.Constant(0.0001f);
-		for (int32 Index = 0; Index < GroundSlots; ++Index)
-		{
-			// A slot with no weight must contribute nothing even if its height
-			// map happens to be proud here, or an unused third slot would show
-			// through the two that are actually on this patch.
-			SlotShare[Index] = Graph.Multiply(
-				Graph.Saturate(Graph.Subtract(SlotBid[Index], GroundThreshold)),
-				SlotWeight[Index]);
-			ShareSum = Graph.Add(ShareSum, SlotShare[Index]);
-		}
-
-		auto MixSlots = [&Graph, &SlotShare, ShareSum](
-			UMaterialExpression* A, UMaterialExpression* B, UMaterialExpression* C)
-		{
-			return Graph.Divide(
-				Graph.Add(Graph.Add(
-					Graph.Multiply(A, SlotShare[0]),
-					Graph.Multiply(B, SlotShare[1])),
-					Graph.Multiply(C, SlotShare[2])),
-				ShareSum);
-		};
-
 		FSampled Soil;
-		Soil.Albedo = MixSlots(Slot[0].Albedo, Slot[1].Albedo, Slot[2].Albedo);
-		Soil.Normal = MixSlots(Slot[0].Normal, Slot[1].Normal, Slot[2].Normal);
-		Soil.Roughness = MixSlots(Slot[0].Roughness, Slot[1].Roughness, Slot[2].Roughness);
-		Soil.Occlusion = MixSlots(Slot[0].Occlusion, Slot[1].Occlusion, Slot[2].Occlusion);
-		Soil.Height = MixSlots(Slot[0].Height, Slot[1].Height, Slot[2].Height);
+		UMaterialExpression* SoilMean = nullptr;
+		UMaterialExpression* SoilTint = nullptr;
+		UMaterialExpression* MacroMean = nullptr;
+		if (bChannels)
+		{
+			// **Seven grounds, any three of them at a pixel.** T053.
+			//
+			// The palette put three biomes on a 600 km cell and drew one hard line
+			// where two cells chose differently. Here a vertex carries a weight for
+			// every ground biome, so the only boundary between two grounds is the
+			// one in the climate field. The shader keeps the three heaviest --
+			// continuously, the fourth heaviest taken off every weight so a
+			// ground fades out as it is overtaken -- and samples only those, so
+			// the cost is the three slots' cost. Then the same height blend: each
+			// bids its height plus its weight and the proudest within BlendDepth
+			// wins.
+			//
+			// Explicit gradients, because which channels a pixel samples can
+			// differ across a pixel quad along a boundary, and a derivative taken
+			// inside a branch that only some of the quad took is garbage.
+			auto Triple = [SharedSampler](const FString& Tex, const TCHAR* Swizzle)
+			{
+				return FString::Printf(
+					TEXT("W.x * %s.SampleGrad(%s, q.yz, gx.yz, gy.yz).%s + W.y * %s.SampleGrad(%s, q.xz, gx.xz, gy.xz).%s + W.z * %s.SampleGrad(%s, q.xy, gx.xy, gy.xy).%s"),
+					*Tex, SharedSampler, Swizzle, *Tex, SharedSampler, Swizzle, *Tex, SharedSampler, Swizzle);
+			};
+			FString Code = TEXT("float w[7] = { C.x, C.y, C.z, U2.x, U2.y, U3.x, U3.y };\n")
+				TEXT("float fourth = 0.0;\n")
+				TEXT("[unroll] for (int i = 0; i < 7; ++i)\n{\nint above = 0;\n")
+				TEXT("[unroll] for (int j = 0; j < 7; ++j) { above += (w[j] > w[i] || (w[j] == w[i] && j < i)) ? 1 : 0; }\n")
+				TEXT("if (above == 3) { fourth = w[i]; }\n}\n")
+				TEXT("float total = 0.0;\n")
+				TEXT("[unroll] for (int m = 0; m < 7; ++m) { w[m] = max(w[m] - fourth, 0.0); total += w[m]; }\n")
+				TEXT("[unroll] for (int e = 0; e < 7; ++e) { w[e] /= max(total, 1.0e-5); }\n")
+				TEXT("float3 sg = float3(Nv.x >= 0.0 ? 1.0 : -1.0, Nv.y >= 0.0 ? 1.0 : -1.0, Nv.z >= 0.0 ? 1.0 : -1.0);\n")
+				TEXT("float3 dx = ddx(P);\nfloat3 dy = ddy(P);\n");
+			for (int32 Index = 0; Index < Channels.Num(); ++Index)
+			{
+				const float Tile = 1.0f / static_cast<float>(Channels[Index].Set.TilingMetres * 100.0);
+				Code += FString::Printf(TEXT("float3 a%d = 0.0;\nfloat3 n%d = Nv;\nfloat3 p%d = 0.0;\nfloat b%d = -1.0e9;\n"), Index, Index, Index, Index);
+				Code += FString::Printf(TEXT("if (w[%d] > 0.0)\n{\nfloat3 q = P * %.9f;\nfloat3 gx = dx * %.9f;\nfloat3 gy = dy * %.9f;\n"), Index, Tile, Tile, Tile);
+				Code += FString::Printf(TEXT("a%d = %s;\n"), Index, *Triple(FString::Printf(TEXT("A%d"), Index), TEXT("rgb")));
+				Code += FString::Printf(TEXT("p%d = %s;\n"), Index, *Triple(FString::Printf(TEXT("K%d"), Index), TEXT("rgb")));
+				Code += FString::Printf(TEXT("float2 tx = N%d.SampleGrad(%s, q.yz, gx.yz, gy.yz).rg * 2.0 - 1.0;\n"), Index, SharedSampler);
+				Code += FString::Printf(TEXT("float2 ty = N%d.SampleGrad(%s, q.xz, gx.xz, gy.xz).rg * 2.0 - 1.0;\n"), Index, SharedSampler);
+				Code += FString::Printf(TEXT("float2 tz = N%d.SampleGrad(%s, q.xy, gx.xy, gy.xy).rg * 2.0 - 1.0;\n"), Index, SharedSampler);
+				// The same swizzle as FGraph::TriplanarNormalParameter: each
+				// projection's out-of-surface channel onto its axis, signed by
+				// which way the surface faces.
+				Code += TEXT("float3 nx = float3(sqrt(saturate(1.0 - dot(tx, tx))) * sg.x, tx.x, tx.y);\n")
+					TEXT("float3 ny = float3(ty.x, sqrt(saturate(1.0 - dot(ty, ty))) * sg.y, ty.y);\n")
+					TEXT("float3 nz = float3(tz.x, tz.y, sqrt(saturate(1.0 - dot(tz, tz))) * sg.z);\n");
+				Code += FString::Printf(TEXT("n%d = normalize(W.x * nx + W.y * ny + W.z * nz);\nb%d = p%d.b + w[%d];\n}\n"), Index, Index, Index, Index);
+			}
+			FString Top = TEXT("b0");
+			for (int32 Index = 1; Index < Channels.Num(); ++Index)
+			{
+				Top = FString::Printf(TEXT("max(%s, b%d)"), *Top, Index);
+			}
+			Code += FString::Printf(TEXT("float threshold = %s - %.3f;\n"), *Top, BlendDepth);
+			Code += TEXT("float3 al = 0.0;\nfloat3 nn = 0.0;\nfloat3 pk = 0.0;\nfloat3 mn = 0.0;\nfloat3 tn = 0.0;\nfloat sum = 1.0e-4;\n");
+			for (int32 Index = 0; Index < Channels.Num(); ++Index)
+			{
+				const FLinearColor& Mean = Channels[Index].Set.MeanAlbedo;
+				const FLinearColor& Tint = Channels[Index].Tint;
+				Code += FString::Printf(
+					TEXT("{\nfloat sh = saturate(b%d - threshold) * w[%d];\nal += sh * a%d;\nnn += sh * n%d;\npk += sh * p%d;\n")
+					TEXT("mn += sh * float3(%.4f, %.4f, %.4f);\ntn += sh * float3(%.4f, %.4f, %.4f);\nsum += sh;\n}\n"),
+					Index, Index, Index, Index, Index, Mean.R, Mean.G, Mean.B, Tint.R, Tint.G, Tint.B);
+			}
+			Code += TEXT("LedgerNormal = normalize(nn / sum + Nv * 1.0e-4);\nLedgerPacked = pk / sum;\n")
+				TEXT("LedgerMean = mn / sum;\nLedgerTint = tn / sum;\nreturn al / sum;\n");
 
-		UMaterialExpression* SoilMean = MixSlots(SlotMean[0], SlotMean[1], SlotMean[2]);
-		UMaterialExpression* SoilTint = MixSlots(SlotTint[0], SlotTint[1], SlotTint[2]);
+			UMaterialExpressionCustom* GroundNode = Graph.Make<UMaterialExpressionCustom>();
+			GroundNode->Description = TEXT("LedgerGroundChannels");
+			GroundNode->OutputType = CMOT_Float3;
+			GroundNode->Code = Code;
+			GroundNode->Inputs.Reset();
+			auto GroundInput = [GroundNode](const FString& Name, UMaterialExpression* Expression)
+			{
+				FCustomInput& Input = GroundNode->Inputs.AddDefaulted_GetRef();
+				Input.InputName = *Name;
+				Input.Input.Expression = Expression;
+			};
+			GroundInput(TEXT("C"), ChannelColour);
+			GroundInput(TEXT("U2"), ChannelUv2);
+			GroundInput(TEXT("U3"), ChannelUv3);
+			GroundInput(TEXT("P"), ParallaxPosition);
+			GroundInput(TEXT("W"), Weights);
+			GroundInput(TEXT("Nv"), Normal);
+			for (int32 Index = 0; Index < Channels.Num(); ++Index)
+			{
+				GroundInput(FString::Printf(TEXT("A%d"), Index), ChannelAlbedo[Index]);
+				GroundInput(FString::Printf(TEXT("N%d"), Index), ChannelNormal[Index]);
+				GroundInput(FString::Printf(TEXT("K%d"), Index), ChannelPacked[Index]);
+			}
+			for (const TCHAR* Name : { TEXT("LedgerNormal"), TEXT("LedgerPacked"), TEXT("LedgerMean"), TEXT("LedgerTint") })
+			{
+				FCustomOutput& Output = GroundNode->AdditionalOutputs.AddDefaulted_GetRef();
+				Output.OutputName = Name;
+				Output.OutputType = CMOT_Float3;
+			}
+			GroundNode->RebuildOutputs();
+			auto GroundOutput = [&Graph, GroundNode](int32 Index)
+			{
+				UMaterialExpression* Picked = Graph.Mask(GroundNode, true, true, true);
+				static_cast<UMaterialExpressionComponentMask*>(Picked)->Input.OutputIndex = Index;
+				return Picked;
+			};
+			UMaterialExpression* GroundPacked = GroundOutput(2);
+			Soil.Albedo = GroundOutput(0);
+			Soil.Normal = GroundOutput(1);
+			Soil.Occlusion = Graph.Mask(GroundPacked, true, false, false);
+			Soil.Roughness = Graph.Mask(GroundPacked, false, true, false);
+			Soil.Height = Graph.Mask(GroundPacked, false, false, true);
+			SoilMean = GroundOutput(3);
+			SoilTint = GroundOutput(4);
+			// The macro breakup still reads slot 0's parameter, which is the
+			// default scan now that nothing binds it: mean-normalised, it is
+			// variation only.
+			MacroMean = Graph.VectorParameter(*SlotParameter(0, TEXT("Mean")), Flat.MeanAlbedo);
+		}
+		else
+		{
+			UMaterialExpressionVertexColor* VertexColour = Graph.Make<UMaterialExpressionVertexColor>();
+			UMaterialExpression* SlotWeight[GroundSlots] = {
+				Graph.Mask(VertexColour, true, false, false),
+				Graph.Mask(VertexColour, false, true, false),
+				Graph.Mask(VertexColour, false, false, true),
+			};
+
+			FSampled Slot[GroundSlots];
+			UMaterialExpression* SlotMean[GroundSlots] = {};
+			UMaterialExpression* SlotTint[GroundSlots] = {};
+			UMaterialExpression* SlotBid[GroundSlots] = {};
+			for (int32 Index = 0; Index < GroundSlots; ++Index)
+			{
+				Slot[Index] = SampleSlot(Graph, Index, Flat, ParallaxPosition, WeightX, WeightY, WeightZ);
+				SlotMean[Index] = Graph.VectorParameter(
+					*SlotParameter(Index, TEXT("Mean")), Flat.MeanAlbedo);
+				SlotTint[Index] = Graph.VectorParameter(
+					*SlotParameter(Index, TEXT("Tint")), FLinearColor::White);
+				SlotBid[Index] = Graph.Add(Slot[Index].Height, SlotWeight[Index]);
+			}
+
+			UMaterialExpression* GroundThreshold = Graph.Subtract(
+				Graph.Max(SlotBid[0], Graph.Max(SlotBid[1], SlotBid[2])), Graph.Constant(BlendDepth));
+
+			UMaterialExpression* SlotShare[GroundSlots] = {};
+			UMaterialExpression* ShareSum = Graph.Constant(0.0001f);
+			for (int32 Index = 0; Index < GroundSlots; ++Index)
+			{
+				// A slot with no weight must contribute nothing even if its height
+				// map happens to be proud here, or an unused third slot would show
+				// through the two that are actually on this patch.
+				SlotShare[Index] = Graph.Multiply(
+					Graph.Saturate(Graph.Subtract(SlotBid[Index], GroundThreshold)),
+					SlotWeight[Index]);
+				ShareSum = Graph.Add(ShareSum, SlotShare[Index]);
+			}
+
+			auto MixSlots = [&Graph, &SlotShare, ShareSum](
+				UMaterialExpression* A, UMaterialExpression* B, UMaterialExpression* C)
+			{
+				return Graph.Divide(
+					Graph.Add(Graph.Add(
+						Graph.Multiply(A, SlotShare[0]),
+						Graph.Multiply(B, SlotShare[1])),
+						Graph.Multiply(C, SlotShare[2])),
+					ShareSum);
+			};
+
+			Soil.Albedo = MixSlots(Slot[0].Albedo, Slot[1].Albedo, Slot[2].Albedo);
+			Soil.Normal = MixSlots(Slot[0].Normal, Slot[1].Normal, Slot[2].Normal);
+			Soil.Roughness = MixSlots(Slot[0].Roughness, Slot[1].Roughness, Slot[2].Roughness);
+			Soil.Occlusion = MixSlots(Slot[0].Occlusion, Slot[1].Occlusion, Slot[2].Occlusion);
+			Soil.Height = MixSlots(Slot[0].Height, Slot[1].Height, Slot[2].Height);
+
+			SoilMean = MixSlots(SlotMean[0], SlotMean[1], SlotMean[2]);
+			SoilTint = MixSlots(SlotTint[0], SlotTint[1], SlotTint[2]);
+			MacroMean = SlotMean[0];
+		}
 
 		// ---- which surface, and where the two meet -------------------------
 		//
@@ -733,7 +964,7 @@ namespace LedgerSurface
 		UMaterialExpression* Macro = Graph.Divide(
 			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Albedo")), Flat.Albedo,
 				MacroPosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color),
-			SlotMean[0]);
+			MacroMean);
 
 		// And again at 1.2 km, because ninety metres is itself a tile once the
 		// camera is high enough, and a repeat at any scale is the tell. The two
@@ -744,7 +975,7 @@ namespace LedgerSurface
 		UMaterialExpression* MacroFar = Graph.Divide(
 			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Albedo")), Flat.Albedo,
 				MacroFarPosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Color),
-			SlotMean[0]);
+			MacroMean);
 
 		// Distance fade, from the distance the pattern actually stops
 		// resolving. T432.
@@ -910,8 +1141,15 @@ namespace LedgerSurface
 				Graph.Subtract(Through, MorphBegin),
 				Graph.Subtract(Graph.Constant(1.0f), MorphBegin)));
 
-		EditorData->WorldPositionOffset.Expression =
-			Graph.Multiply(Radial, Graph.Multiply(MorphDelta, MorphFactor));
+		// `-nomorph` (with -livematerials) leaves every vertex where the mesh put
+		// it: the control arm for the cracks along patch edges on steep ground,
+		// which are either this moving one side of an edge and not the other, or
+		// the stitch itself, and one photograph with it off says which.
+		if (!FParse::Param(FCommandLine::Get(), TEXT("nomorph")))
+		{
+			EditorData->WorldPositionOffset.Expression =
+				Graph.Multiply(Radial, Graph.Multiply(MorphDelta, MorphFactor));
+		}
 
 		// `-rawsurface` puts the sampled scan straight into base colour: no biome
 		// tint, no mean division, no macro, no fade. If the ground still reads
@@ -1053,6 +1291,9 @@ namespace LedgerSurface
 		UE_LOG(LogLedger, Log,
 			TEXT("terrain material: %s at %.1f m over %s at %.1f m, height-blended"),
 			*Flat.Name, Flat.TilingMetres, *Steep.Name, Steep.TilingMetres);
+		UE_LOG(LogLedger, Log, TEXT("terrain material: %s"), *(bChannels
+			? FString::Printf(TEXT("%d ground channels from the vertex, one a biome"), Channels.Num())
+			: FString(TEXT("three palette slots"))));
 		return Material;
 	}
 }

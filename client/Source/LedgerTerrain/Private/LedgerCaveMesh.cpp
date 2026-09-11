@@ -51,7 +51,13 @@ namespace LedgerCaves
 		Job.CaveNormals.Reset();
 		Job.CaveUVs.Reset();
 
-		const int32 Across = BrickAcross + 1;
+		// One sample beyond the brick on +X and +Y, so the cells on its far
+		// edges have neighbours and the wall is joined across the boundary to
+		// the next brick. Without it the last cell and the next brick's first
+		// were never joined, and from inside a passage every brick seam was a
+		// slit of sky -- chain114's first photographs inside a cave. The next
+		// brick does not join its own first edge, so nothing is drawn twice.
+		const int32 Across = BrickAcross + 2;
 		const int32 Down = BrickDown + 1;
 		const double RadiusMetres = Job.Params.Radius / 100.0;
 
@@ -94,8 +100,10 @@ namespace LedgerCaves
 		// rather than a shape that follows every hillside. A passage crossing a
 		// dip has to stay inside it.
 		const double CentreGround = GroundAt(0.5, 0.5);
-		const double TopMetres = CentreGround + ShellAboveMetres;
 		const double CellDown = (ShellAboveMetres + BrickDepthMetres) / BrickDown;
+		// On a lattice of altitude shared by every brick, so two neighbours sample
+		// the same levels and meet along the same line rather than a cell apart.
+		const double TopMetres = FMath::CeilToDouble((CentreGround + ShellAboveMetres) / CellDown) * CellDown;
 
 		// ---- sample -----------------------------------------------------------
 		TArray<float> Samples;
@@ -108,8 +116,8 @@ namespace LedgerCaves
 
 		auto CornerPoint = [&Job, Across](int32 X, int32 Y)
 		{
-			const double LocalU = X / static_cast<double>(Across - 1);
-			const double LocalV = Y / static_cast<double>(Across - 1);
+			const double LocalU = X / static_cast<double>(BrickAcross);
+			const double LocalV = Y / static_cast<double>(BrickAcross);
 			return LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(
 				Job.Face, Job.U + LocalU * Job.Extent, Job.V + LocalV * Job.Extent));
 		};
@@ -125,8 +133,8 @@ namespace LedgerCaves
 				{
 					const FVector3d Direction = CornerPoint(X, Y);
 					const double LocalGround = GroundAt(
-						X / static_cast<double>(Across - 1),
-						Y / static_cast<double>(Across - 1));
+						X / static_cast<double>(BrickAcross),
+						Y / static_cast<double>(BrickAcross));
 					const float Value = static_cast<float>(
 						RockDensity(Direction, Altitude, LocalGround, Job.Params));
 					Samples[SampleIndex(X, Y, Z)] = Value;
@@ -145,11 +153,12 @@ namespace LedgerCaves
 
 		// ---- one vertex per crossed cell --------------------------------------
 		TArray<int32> CellVertex;
-		CellVertex.Init(INDEX_NONE, BrickAcross * BrickAcross * BrickDown);
+		constexpr int32 CellsAcross = BrickAcross + 1;
+		CellVertex.Init(INDEX_NONE, CellsAcross * CellsAcross * BrickDown);
 
 		auto CellIndexOf = [](int32 X, int32 Y, int32 Z)
 		{
-			return (Z * BrickAcross + Y) * BrickAcross + X;
+			return (Z * CellsAcross + Y) * CellsAcross + X;
 		};
 
 		/// The world position of a lattice corner, relative to the patch centre.
@@ -171,9 +180,9 @@ namespace LedgerCaves
 
 		for (int32 Z = 0; Z < BrickDown; ++Z)
 		{
-			for (int32 Y = 0; Y < BrickAcross; ++Y)
+			for (int32 Y = 0; Y < CellsAcross; ++Y)
 			{
-				for (int32 X = 0; X < BrickAcross; ++X)
+				for (int32 X = 0; X < CellsAcross; ++X)
 				{
 					FVector Sum = FVector::ZeroVector;
 					int32 Crossings = 0;
@@ -226,12 +235,24 @@ namespace LedgerCaves
 		// all four surrounding cells exist -- so the brick's own boundary is
 		// left open rather than sealed with a lid. A lid would be a wall across
 		// the passage at every patch boundary, which is worse than a seam.
-		auto Quad = [&Job](int32 A, int32 B, int32 C, int32 D, bool bFlip)
+		// **Wound towards the air, decided per quad from where the air is.** The
+		// winding used to come from which side of the edge was rock, which is
+		// right only while the lattice axes are right-handed -- and they are not
+		// on every cube face, and the depth axis points down. So on some faces
+		// every wall faced into the rock, and from inside the passage the whole
+		// cave was back faces: T056's camera eighteen metres under a mouth saw
+		// uniform sky. The front face here is the one whose normal is
+		// (P2 - P0) x (P1 - P0), the convention the normals below are
+		// accumulated with and the one every mesh in this project renders by.
+		auto Quad = [&Job](int32 A, int32 B, int32 C, int32 D, const FVector& Air)
 		{
 			if (A == INDEX_NONE || B == INDEX_NONE || C == INDEX_NONE || D == INDEX_NONE)
 			{
 				return;
 			}
+			const FVector& PA = Job.CaveVertices[A];
+			const FVector Front = FVector::CrossProduct(Job.CaveVertices[C] - PA, Job.CaveVertices[B] - PA);
+			const bool bFlip = FVector::DotProduct(Front, Air) < 0.0;
 			if (bFlip)
 			{
 				Job.CaveTriangles.Add(A); Job.CaveTriangles.Add(C); Job.CaveTriangles.Add(B);
@@ -246,9 +267,9 @@ namespace LedgerCaves
 
 		for (int32 Z = 1; Z < BrickDown; ++Z)
 		{
-			for (int32 Y = 1; Y < BrickAcross; ++Y)
+			for (int32 Y = 1; Y <= BrickAcross; ++Y)
 			{
-				for (int32 X = 1; X < BrickAcross; ++X)
+				for (int32 X = 1; X <= BrickAcross; ++X)
 				{
 					const float Here = Samples[SampleIndex(X, Y, Z)];
 
@@ -259,7 +280,7 @@ namespace LedgerCaves
 							CellVertex[CellIndexOf(X, Y, Z - 1)],
 							CellVertex[CellIndexOf(X, Y, Z)],
 							CellVertex[CellIndexOf(X, Y - 1, Z)],
-							Here > 0.0f);
+							(Here > 0.0f ? 1.0 : -1.0) * (CornerWorld(X + 1, Y, Z) - CornerWorld(X, Y, Z)));
 					}
 					// Along Y: differ in X and Z.
 					if ((Here > 0.0f) != (Samples[SampleIndex(X, Y + 1, Z)] > 0.0f))
@@ -268,7 +289,7 @@ namespace LedgerCaves
 							CellVertex[CellIndexOf(X, Y, Z - 1)],
 							CellVertex[CellIndexOf(X, Y, Z)],
 							CellVertex[CellIndexOf(X - 1, Y, Z)],
-							Here <= 0.0f);
+							(Here > 0.0f ? 1.0 : -1.0) * (CornerWorld(X, Y + 1, Z) - CornerWorld(X, Y, Z)));
 					}
 					// Along Z: differ in X and Y.
 					if ((Here > 0.0f) != (Samples[SampleIndex(X, Y, Z + 1)] > 0.0f))
@@ -277,7 +298,7 @@ namespace LedgerCaves
 							CellVertex[CellIndexOf(X, Y - 1, Z)],
 							CellVertex[CellIndexOf(X, Y, Z)],
 							CellVertex[CellIndexOf(X - 1, Y, Z)],
-							Here > 0.0f);
+							(Here > 0.0f ? 1.0 : -1.0) * (CornerWorld(X, Y, Z + 1) - CornerWorld(X, Y, Z)));
 					}
 				}
 			}

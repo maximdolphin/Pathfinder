@@ -52,6 +52,15 @@ struct LEDGERCLIENT_API FLedgerMeshBuilder
 		int32 Sides,
 		const FColor& Colour);
 
+	/// A triangle drawn from both sides with the normals given rather than its
+	/// face's, so a flat card is lit as the volume it stands for -- the same
+	/// on both faces, which a card seen from either side has to be. T058's
+	/// impostor.
+	void AddCardTriangle(
+		const FVector& A, const FVector& B, const FVector& C,
+		const FVector& NormalA, const FVector& NormalB, const FVector& NormalC,
+		const FColor& Colour);
+
 	void Reset();
 	int32 VertexCount() const { return Vertices.Num(); }
 

@@ -25,6 +25,7 @@
 #include "Misc/PackageName.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "StaticMeshAttributes.h"
+#include "StaticMeshResources.h"
 #include "StaticMeshOperations.h"
 #include "UObject/MetaData.h"
 #include "UObject/Package.h"
@@ -227,6 +228,17 @@ namespace LedgerMesh
 		}
 
 		const int32 Lods = Mesh->GetNumSourceModels();
+		// Per LOD, what was built and whether it had a description of its own:
+		// chain115 logged "2 LODs (46 and 46 triangles)" for trees whose second
+		// LOD was handed a sixteen-triangle impostor, and nothing said where it went.
+		FString PerLod;
+		const FStaticMeshRenderData* Render = Mesh->GetRenderData();
+		for (int32 Lod = 0; Lod < Lods; ++Lod)
+		{
+			PerLod += FString::Printf(TEXT(" lod%d %d tris%s"), Lod,
+				Render != nullptr && Render->LODResources.IsValidIndex(Lod) ? Render->LODResources[Lod].GetNumTriangles() : -1,
+				Mesh->IsMeshDescriptionValid(Lod) ? TEXT("") : TEXT(" (no description)"));
+		}
 		Line = FString::Printf(
 			TEXT("  %-16s %6d tris  nanite %s  lods %d  slots %d  collision %s  dist field %s"),
 			AssetName, Builder.Triangles.Num() / 3,
@@ -235,6 +247,7 @@ namespace LedgerMesh
 			Mesh->GetStaticMaterials().Num(),
 			Mesh->GetBodySetup() != nullptr ? TEXT("yes") : TEXT("NO "),
 			Mesh->bGenerateMeshDistanceField ? TEXT("yes") : TEXT("NO "));
+		Line += PerLod;
 
 		UE_LOG(LogLedger, Log, TEXT("mesh bake: %s -> %s"), AssetName, *PackageName);
 		return Mesh;

@@ -56,4 +56,26 @@ private:
 	/// hundred in a row are the same number of misses and very different bugs.
 	int32 CurrentMiss = 0;
 	int32 LongestMiss = 0;
+
+	// Wall-clock frame time over the run, for the budget the gate names.
+	double LastWallSeconds = 0.0;
+	double WorstFrameMs = 0.0;
+	double FrameMsSum = 0.0;
+	int32 FramesOverBudget = 0;
+
+	/// T068: what an over-budget frame was spent on. The longest of the game
+	/// thread, render thread and GPU for the frame just finished, or none of
+	/// them over budget, which is a wait; and what else happened in it.
+	int32 OverGame = 0;
+	int32 OverRender = 0;
+	int32 OverGpu = 0;
+	int32 OverWaiting = 0;
+	int32 OverWithUpload = 0;
+	int32 OverWithGC = 0;
+	int32 OverWithShaders = 0;
+	int32 GCsSeen = 0;
+	int32 GCsAtLastFrame = 0;
+	TArray<TPair<double, FString>> WorstFrames;
+	/// T068 seams: the edge-gap probe every 20 km, its first lines each time.
+	TArray<FString> SeamSamples;
 };

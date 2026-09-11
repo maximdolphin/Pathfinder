@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 21
+   "doneCount": 23
   },
   {
    "id": "M2S",
@@ -3957,6 +3957,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Quadratic taper over the far 150 km (committed): 541 of 577 major ranges shadowed, wetter on the lee 1 (41 -> 17 -> 9 -> 1 across the three fixes), every wind-crossing ridge 98%. Of the 36 without one: 9 at a wind-band boundary and 9 dry on both sides (18 that cannot have one by construction), 17 whose lee is drier but by less than the census threshold (20%, or 0.02 absolute), 1 wetter. The biome table moved with it -- desert 28.8% -> 19.7% of land, ice cap 22.0% -- because the far end of the fetch dries the air less. The verdict stays FAIL on the literal 'every major range' and the threshold is not being moved to pass it: whether 17 weak shadows and 18 impossible ones meet the acceptance is a reading of the acceptance, not a number this can change."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Rain-shadow census after subsidence (sinking air dries by exp(-descent/1500 m), the e-folding a dry-adiabatic 9.8 K/km and saturation doubling every ~10 K give) and after the census was made consistent with itself: a major range must be major along the wind it is tested against (300 m of climb, the same bar as along the meridian; 85 ranges were crossed at a col), the calm belt excluded is the report's own 25-35/55-65 band (105 ranges), and ranges dry on both sides (under 0.03, nothing to shadow) are counted apart (24). Result: 358 of 363 wind-crossed major ranges shadowed, every wind-crossing ridge population 98% (bar 75%), sea-level temperature monotonic pole to equator. The five left all have a drier lee (5-20%), below the census's 20% relative bar: three at 75-82 degrees in dry polar air, one at 20 degrees that is the second ridge of a double range (its windward point sits in the lee of a taller ridge 3 steps upwind, so both sides are shadowed), one at 12 degrees. One further model change was tried and reverted: half-step samples near the end of the march to catch crests narrower than the 7.5 km step made the census worse (331 of 357), because they dried the windward points too. Not accepted: the acceptance says every major range, and five are short of the census's own threshold."
     }
    ],
    "evidence": [
@@ -4029,9 +4034,9 @@
    "dependsOn": [
     "T052"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -4047,6 +4052,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "A fourth slot is ruled out on two independent grounds, which narrows the decision the note above leaves open. (1) It does not address the failing criterion. The cell palette already removed every patch seam and relocated the problem to one hard line per 600 km cell boundary; a fourth slot raises coverage from 89% to 96.9% of land, which is about showing the RIGHT biome, not about the line. Any per-region discrete choice produces a boundary, so no slot count removes it -- only a per-vertex index into a texture array does, which is what the note already concluded. (2) There is nowhere to put the weight. Vertex colour RGB carries the three slot weights and A carries snow cover (T060), so a fourth would need a new UV channel plumbed through the job, the cache payload and the material -- for 33% more ground sampling on the most-shaded surface in the game, to fix something it does not fix. Also recorded: T051's drying-rate change shifted the biome table under this task. Desert 50.6 -> 32.9%, temperate grassland 3.5 -> 15.3%, ice cap 23.6 -> 22.5%. The three-biome site the fixture now finds is a pale one and the wide capture does not read as three biomes meeting, so the site search may need revisiting before the blend band can be judged at all."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Accepted. The palette is gone: every ground biome is a channel of its own (vertex colour RGB, UV2, UV3; the snow biome joins the snow overlay in alpha), one material samples the three heaviest continuously and height-blends them, so a vertex can name any ground on the planet and two patches cannot disagree about which three it is drawn from. The line where two 600 km palette cells met is removed by construction and a test proves it (Ledger.Terrain.GroundChannelsAgreeAcrossPaletteCells: three land pairs across a cell boundary with different palettes, shared-edge disagreement 0.0000). Same cost as the three slots: the shader samples only the three heaviest channels, with explicit gradients so a branch taken by part of a pixel quad does not corrupt the mip. -paletteground (with -livematerials -nopatchdisk) is the control arm. The desert's ground is now the arid gravel scan (a desert is mostly stone), which T435's gravel pairs asked for. Found on the way and fixed: the biome-site fixture pinned exposure at 1.0 against a 103,000 lux sun and every frame was white, and it photographed before the ground had streamed; it now auto-exposes (pinning only for -terrainvis/-channel) and waits for zero holes. Not this task: the patch-edge steps visible on steep slopes at 30 m are a geomorph mismatch at stitched edges, T068's seams."
     }
    ],
    "evidence": [
@@ -4079,6 +4089,18 @@
      "caption": "The three-biome site after T051 shifted the biome table: pale, and not legibly three biomes.",
      "source": "../out/biomes-wide.png",
      "addedAt": "2026-09-10T06:53:05.553Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-11T15-10-51-759.txt",
+     "caption": "Two patches either side of a 600 km palette-cell boundary, three land pairs whose cells chose different palettes: the ground channel weights on every shared-edge vertex agree to 0.0000 of a weight. Under the palette the same edge was drawn from two different sets of three grounds.",
+     "source": "../out/t053-ground-channels-test.txt",
+     "addedAt": "2026-09-11T15:10:51.762Z"
+    },
+    {
+     "file": "evidence/T053-2026-09-11T15-10-51-905.png",
+     "caption": "Where three biomes meet, at 2 m, fully streamed (0 holes): three grounds on one slope -- grassland, the desert's arid gravel, the tundra's rocky ground -- drawn from one material with a channel per biome, no palette and no line.",
+     "source": "../out/biomes-close-channels.png",
+     "addedAt": "2026-09-11T15:10:51.908Z"
     }
    ],
    "plannedStartDay": 100,
@@ -4372,9 +4394,9 @@
    "dependsOn": [
     "T057"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -4385,6 +4407,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Delivered against the trees that exist; the impostor clause cannot be met because there is no impostor. M_Foliage leans the canopy by world position offset from MPC_LedgerWind (the one wind T093 publishes), lean = dir * saturate(v^2/900) * (z/18m)^2 * 150 cm plus gust. Measured: the wind probe changes the wind and all five consumers (ship, precipitation, audio, vane, materials) follow within a second. Photographed fairly for the first time: Ledger.Wind.Scale changes the wind at a fixed clock -- the earlier pair had jumped 72 hours and compared two suns -- and the crown moves ~115 px downwind with the base fixed. Two lighting faults found on the way and fixed: the sky light's real-time capture delivered nothing (every shaded face (0,0,0), Lumen on or off; a static capture fixes it), and M_Foliage multiplied the tint by a vertex colour that already carried it, an albedo near 0.01. STILL OPEN: the acceptance says 'at every LOD including the impostor'. The trees have one LOD (46 triangles) and T059 did not build impostors (its own note: 'NOT BUILT'). Either the acceptance is amended to the LODs that exist or an impostor tier is built first; that is a scope decision, not a technical blocker."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Accepted. The impostor now exists and is drawn: each tree has an impostor mesh of its own (SM_Tree_A_Impostor, SM_Tree_B_Impostor: trunk, canopy and upper canopy on two crossed cards, 16 triangles, normals from the cones so a card is lit as the volume it stands for) on its own instanced component, drawn from 250 m where the full trees stop. A mesh LOD was tried first and the engine rebuilt the second LOD from the first whatever it was handed -- through BuildFromMeshDescriptions and through committed source models alike, with a valid 16-triangle description reported for LOD 1 and 46 triangles built -- so the manual LOD is the one that works. Both sets use M_Foliage, whose lean is a function of the instance's local height and the one wind collection, so the impostor leans with the tree it stands in for: forced to impostors (-treeimpostor hides the full trees), the canopy moves downwind within 30 frames of a calm-to-gale change, and the frames differ from the full-tree ones in 240,135 pixels concentrated on the tree, which is what says the impostor is what was photographed (the first attempt differed in 6,602 scattered pixels and was the full tree both times). All five consumers agree within a frame; the probe's vegetation row had read NEVER under -treephoto because it compared the collection's across-the-up wind with the full 3D field, and now compares like with like."
     }
    ],
    "evidence": [
@@ -4399,6 +4426,24 @@
      "caption": "Thirty frames after the wind was tripled to 37 m/s: the crown leans ~115 px downwind, base fixed",
      "source": "../out/wind-tree-after5.png",
      "addedAt": "2026-09-11T04:16:20.418Z"
+    },
+    {
+     "file": "evidence/T058-2026-09-11T15-26-36-173.png",
+     "caption": "Every tree forced to its impostor (two crossed cards, 16 triangles, the silhouette of the 46-triangle tree), before the wind is scaled from calm to a gale at a fixed clock.",
+     "source": "../out/wind-tree-impostor-before.png",
+     "addedAt": "2026-09-11T15:26:36.183Z"
+    },
+    {
+     "file": "evidence/T058-2026-09-11T15-26-36-357.png",
+     "caption": "The same impostor 30 frames (0.5 s) after the change: the crown leans downwind by the same M_Foliage offset as the full tree -- the dark canopy's centroid moves 23.5 px, against 36.4 px for the full tree's cones.",
+     "source": "../out/wind-tree-impostor-after.png",
+     "addedAt": "2026-09-11T15:26:36.360Z"
+    },
+    {
+     "file": "evidence/T058-2026-09-11T15-26-36-503.txt",
+     "caption": "The wind probe: flight, vegetation, particles, audio and the settlement vane all followed the change within one frame (0.02 s); vegetation now compared with the across-the-local-up wind the collection actually carries.",
+     "source": "../out/wind-probe.txt",
+     "addedAt": "2026-09-11T15:26:36.505Z"
     }
    ],
    "plannedStartDay": 118,
@@ -4960,6 +5005,11 @@
      "at": "2026-09-11",
      "kind": "block",
      "text": "7% of frames at 300 m / 900 m/s still miss (98.9% at the start of this work; committed: detail scaled by speed, cook-aware parent release, a deeper trace that reports accuracy). The remaining misses follow the render LOD's replacement of the patch under the ship. Recommended next step, a design decision: a collision proxy decoupled from rendering -- a small collision surface generated around the ship directly from the terrain function each frame, never released by LOD churn -- rather than more tuning of the streamed patches."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Measured against the gate as worded (200 km at 300 m and 900 m/s), each clause separately. COLLISION: PASS at 300 m and at 50 m -- 0 traces missed in 13,334 frames, against 1,318 missed (9.9%) with the collision proxy switched off; the proxy is a 48 x 48 grid 2.5 km on a side sampled on its own thread ahead along the velocity, three components taking turns with async cooking, and it is cut wherever a cave mouth opens (T056). HOLES: 0 unfilled leaves at every biome-site shot once streaming settles. SEAMS: the patch geometry is watertight at rest -- the edge-gap probe reads 0.00 cm at every settled shot -- and the plates photographed earlier were stale stitches, a patch still stitched as a chord beside a neighbour that has since refined, waiting behind a full job queue for its re-stitch (8 a frame, no slots of its own). In flight they are real: the probe every 20 km along the 300 m transect found edges 1.2 to 1.8 m open in 1 to 2 samples of 10. Re-stitches now have 32 job slots of their own and up to 32 a frame; being measured. Also fixed on the way: a stitched edge now takes the coarser neighbour's geomorph, so the two sides move together as the neighbour nears collapse. FRAME TIME: FAIL -- 441 of 13,334 frames over 16.7 ms at 300 m (mean 6.6 ms, worst 104 ms). Attributed per frame (game, render, GPU, RHI, game-thread wait, swap, patch upload, altitude): the cloud deck owns the 43 ms GPU spikes and about 90 of the over-budget frames (349 with -noclouds, worst 65 ms); the rest is streaming -- game-thread patch uploads over 4 ms in about half of them, and waits with no thread over budget. Not yet solved."
     }
    ],
    "evidence": [
@@ -14916,5 +14966,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T13:50:53.261Z"
+ "updatedAt": "2026-09-11T15:32:18.338Z"
 }

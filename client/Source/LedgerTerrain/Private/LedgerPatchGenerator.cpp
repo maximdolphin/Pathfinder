@@ -284,6 +284,58 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		}
 	}
 
+	// ---- a stitched edge morphs with the neighbour it was stitched to ------
+	//
+	// **The crack was the morph, not the stitch.** A stitched edge sits on the
+	// coarser neighbour's straight edge -- but in the shader that neighbour's
+	// odd edge vertices ease towards ITS parent as it nears collapse, while
+	// this patch's stitched vertices eased by this patch's own rule: zero for
+	// the ones the stitch had put on the line, nothing at all for the ones on
+	// the neighbour's vertices, since those are even here. So the coarse edge
+	// moved and this one did not, by the neighbour's whole morph -- metres on
+	// a steep slope, and the biome site's boundary framing came out as plates
+	// with dark steps between them, in both arms of T053 and with every patch
+	// streamed.
+	//
+	// So every vertex of a stitched edge takes the neighbour's morph: at the
+	// neighbour's vertices what the neighbour computes there (the midpoint of
+	// its two neighbours, for its odd ones), in between the straight line
+	// between those, and the neighbour's node size, so the shader's morph
+	// factor is the one it computes for the same ground.
+	// ponytail: a neighbour six levels coarser has one vertex per edge of this
+	// patch and its odd ones' neighbours lie off this patch; those are left
+	// unmorphed.
+	auto MorphEdge = [&Job, &Elevations, Side](uint8 Level, auto IndexAt)
+	{
+		if (Level == 0)
+		{
+			return;
+		}
+		const int32 Step = FMath::Min(1 << FMath::Min<int32>(Level, 16), Side - 1);
+		const double NeighbourSize = Job.WorldSize * static_cast<double>(Step);
+		auto NeighbourDelta = [&](int32 J)
+		{
+			const bool bOdd = ((J / Step) & 1) != 0;
+			if (!bOdd || J - Step < 0 || J + Step > Side - 1)
+			{
+				return 0.0;
+			}
+			return 0.5 * (Elevations[IndexAt(J - Step)] + Elevations[IndexAt(J + Step)]) - Elevations[IndexAt(J)];
+		};
+		for (int32 I = 0; I < Side; ++I)
+		{
+			const int32 J0 = I - (I % Step);
+			const int32 J1 = FMath::Min(J0 + Step, Side - 1);
+			const double T = J1 > J0 ? static_cast<double>(I - J0) / static_cast<double>(J1 - J0) : 0.0;
+			const double Delta = FMath::Lerp(NeighbourDelta(J0), NeighbourDelta(J1), T);
+			Job.MorphUVs[IndexAt(I)] = FVector2D(Delta, NeighbourSize);
+		}
+	};
+	MorphEdge(Job.StitchLeft, [Side](int32 I) { return I * Side; });
+	MorphEdge(Job.StitchRight, [Side](int32 I) { return I * Side + Side - 1; });
+	MorphEdge(Job.StitchBottom, [](int32 I) { return I; });
+	MorphEdge(Job.StitchTop, [Side](int32 I) { return (Side - 1) * Side + I; });
+
 	Job.Triangles.Reset((Side - 1) * (Side - 1) * 6);
 	for (int32 Y = 0; Y < Side - 1; ++Y)
 	{
@@ -576,22 +628,63 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			}
 			Job.Palette = LedgerBiomes::ChoosePalette(CellTotals);
 		}
+		// T053: every ground biome has its own channel -- the colour's red, green
+		// and blue, then UV2 and UV3 -- so a vertex can name any of them, and two
+		// patches cannot disagree about which three a vertex is drawn from: there
+		// is no palette left to disagree about. The palette is still chosen, for
+		// -paletteground and the sampling API that reports it.
+		//
+		// Alpha stays snow. The biome whose ground is the snow scan joins it
+		// there rather than taking a channel: the same scan, the same look, and
+		// it leaves the seventh channel for a ground that is not snow.
+		const TArray<int32> Channels = LedgerBiomes::GroundChannels(*Biomes);
+		Job.GroundWeightsB.SetNumZeroed(VertexCount);
+		Job.GroundWeightsC.SetNumZeroed(VertexCount);
+		const bool bPaletteGround = FParse::Param(FCommandLine::Get(), TEXT("paletteground"));
+		auto Byte = [](float Value)
+		{
+			return static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Value, 0.0f, 1.0f) * 255.0f));
+		};
 		for (int32 Index = 0; Index < VertexCount; ++Index)
 		{
-			const FVector3f Slots = LedgerBiomes::SlotWeights(VertexWeights[Index], Job.Palette);
-
-			// Alpha is snow, which was the one channel nobody was using.
-			//
-			// Snow is not a biome: it lies on top of whichever ground is there,
-			// and giving it a palette slot would have cost a biome and made a
-			// snowy forest and a snowy desert the same place. As a fourth
-			// channel it is an overlay, which is what it is.
-			Job.Colors[Index] = FColor(
-				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.X, 0.0f, 1.0f) * 255.0f)),
-				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Y, 0.0f, 1.0f) * 255.0f)),
-				static_cast<uint8>(FMath::RoundToInt(FMath::Clamp(Slots.Z, 0.0f, 1.0f) * 255.0f)),
-				static_cast<uint8>(FMath::RoundToInt(
-					FMath::Clamp(VertexSnow[Index], 0.0f, 1.0f) * 255.0f)));
+			if (bPaletteGround)
+			{
+				// The control arm: three slots of the cell's palette, as before.
+				const FVector3f Slots = LedgerBiomes::SlotWeights(VertexWeights[Index], Job.Palette);
+				Job.Colors[Index] = FColor(Byte(Slots.X), Byte(Slots.Y), Byte(Slots.Z), Byte(VertexSnow[Index]));
+				continue;
+			}
+			float Channel[LedgerBiomes::GroundChannelCount] = {};
+			float Snowed = VertexSnow[Index];
+			float Ground = 0.0f;
+			for (int32 Biome = 0; Biome < Channels.Num() && Biome < VertexWeights[Index].Num(); ++Biome)
+			{
+				const float Weight = static_cast<float>(VertexWeights[Index][Biome]);
+				if (Channels[Biome] == INDEX_NONE)
+				{
+					Snowed = FMath::Max(Snowed, Weight);
+				}
+				else
+				{
+					Channel[Channels[Biome]] += Weight;
+					Ground += Weight;
+				}
+			}
+			if (Ground > UE_SMALL_NUMBER)
+			{
+				for (float& Weight : Channel)
+				{
+					Weight /= Ground;
+				}
+			}
+			else
+			{
+				// All snow: whatever lies under it, which nobody sees.
+				Channel[0] = 1.0f;
+			}
+			Job.Colors[Index] = FColor(Byte(Channel[0]), Byte(Channel[1]), Byte(Channel[2]), Byte(Snowed));
+			Job.GroundWeightsB[Index] = FVector2D(Channel[3], Channel[4]);
+			Job.GroundWeightsC[Index] = FVector2D(Channel[5], Channel[6]);
 		}
 	}
 

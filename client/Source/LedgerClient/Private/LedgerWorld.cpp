@@ -614,14 +614,22 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 				Planet->SetScatterMeshes(ScatterMeshes,
 					LedgerSurface::CreateFlatMaterial(
 						Planet, FLinearColor(0.16f, 0.15f, 0.13f), 0.86f));
-				ALedgerPlanet* Owner = Planet;
-				Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
-					[Owner, Surface](const FLedgerBiomePalette& Palette,
-						const TArray<FLedgerBiome>& Set)
-					{
-						return LedgerBiomeSurfaces::CreatePaletteInstance(
-							Owner, Surface, Palette, Set);
-					}));
+				// T053: no palette instances. Every ground biome has its own vertex
+				// channel and the one material samples all of them, so every patch is
+				// drawn with the same instance -- which is what removes the line where
+				// two palettes met. -paletteground puts the three-slot instances back
+				// as the control arm (with -livematerials, so the material matches).
+				if (FParse::Param(FCommandLine::Get(), TEXT("paletteground")))
+				{
+					ALedgerPlanet* Owner = Planet;
+					Planet->SetPaletteMaterialProvider(FLedgerPaletteMaterial::CreateLambda(
+						[Owner, Surface](const FLedgerBiomePalette& Palette,
+							const TArray<FLedgerBiome>& Set)
+						{
+							return LedgerBiomeSurfaces::CreatePaletteInstance(
+								Owner, Surface, Palette, Set);
+						}));
+				}
 			}
 		}
 	}
@@ -1025,6 +1033,10 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 			FLedgerMeshBuilder Builder;
 			const int32 CanopyStartsAt =
 				ALedgerSettlement::DescribeTree(Builder, Variant == 1);
+			// And its impostor, baked as a mesh of its own (T058).
+			FLedgerMeshBuilder Impostor;
+			const int32 ImpostorCanopyStartsAt =
+				ALedgerSettlement::DescribeTreeImpostor(Impostor, Variant == 1);
 			const FString Name = FString::Printf(TEXT("SM_Tree_%s"),
 				Variant == 0 ? TEXT("A") : TEXT("B"));
 			FString Line;
@@ -1037,6 +1049,15 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 				++Saved;
 			}
 			Body += Line + TEXT("\n");
+			const FString ImpostorName = Name + TEXT("_Impostor");
+			FString ImpostorLine;
+			if (LedgerMesh::Bake(Impostor,
+				FString(LedgerMesh::MeshPackageRoot) + ImpostorName, *ImpostorName, ImpostorLine,
+				/*bNanite*/ false, ImpostorCanopyStartsAt) != nullptr)
+			{
+				++Saved;
+			}
+			Body += ImpostorLine + TEXT("\n");
 		}
 
 		// Three stones. Angular, mixed, and water-worn -- the one axis of

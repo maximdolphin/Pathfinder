@@ -21,9 +21,9 @@
 #include "Misc/CommandLine.h"
 #include "ProceduralMeshComponent.h"
 
-bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision)
+bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision, bool bRestitch)
 {
-	if (FreeSections.Num() == 0 || InFlight.Num() >= MaxJobsInFlight)
+	if (FreeSections.Num() == 0 || InFlight.Num() >= MaxJobsInFlight + (bRestitch ? RestitchReserve : 0))
 	{
 		return false;
 	}

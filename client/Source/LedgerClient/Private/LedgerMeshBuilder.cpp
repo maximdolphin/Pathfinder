@@ -173,6 +173,32 @@ void FLedgerMeshBuilder::AddCone(
 	}
 }
 
+void FLedgerMeshBuilder::AddCardTriangle(
+	const FVector& A, const FVector& B, const FVector& C,
+	const FVector& NormalA, const FVector& NormalB, const FVector& NormalC,
+	const FColor& Colour)
+{
+	// Front and back as two triangles of their own, wound opposite ways, in
+	// AddTriangle's convention -- indices Base, Base + 2, Base + 1 for A B C
+	// counter-clockwise seen from the front.
+	const FVector Tangent = (B - A).GetSafeNormal();
+	const FVector Corners[2][3] = { { A, B, C }, { A, C, B } };
+	const FVector Normals3[2][3] = { { NormalA, NormalB, NormalC }, { NormalA, NormalC, NormalB } };
+	for (int32 Face = 0; Face < 2; ++Face)
+	{
+		const int32 Base = Vertices.Num();
+		for (int32 Corner = 0; Corner < 3; ++Corner)
+		{
+			Vertices.Add(Corners[Face][Corner]);
+			Normals.Add(Normals3[Face][Corner].GetSafeNormal());
+			Colors.Add(Colour);
+			Tangents.Add(FProcMeshTangent(Tangent, false));
+		}
+		UVs.Append({ FVector2D(0.0, 0.0), FVector2D(1.0, 0.0), FVector2D(0.5, 1.0) });
+		Triangles.Append({ Base, Base + 2, Base + 1 });
+	}
+}
+
 void FLedgerMeshBuilder::Reset()
 {
 	Vertices.Reset();

@@ -49,4 +49,18 @@ namespace LedgerSurface
 	/// Loads one set by manifest name. Returns an invalid set, and logs which
 	/// part was missing, rather than half of one.
 	LEDGERMATERIAL_API FSurfaceSet LoadSurfaceSet(const FString& Name);
+
+	/// T053: the ground channels. Every biome whose ground is not snow gets one,
+	/// in the order the biome files sort, up to seven -- the red, green and blue
+	/// of the vertex colour and the four of UV2 and UV3. The biome whose ground
+	/// is the snow scan goes to the snow overlay in alpha instead. The patch
+	/// generator applies the same rule to the biomes it loads
+	/// (LedgerBiomes::GroundChannels), and the terrain material samples these.
+	struct FGroundChannel
+	{
+		FString Set;
+		FLinearColor Tint = FLinearColor::White;
+	};
+	constexpr int32 GroundChannelCount = 7;
+	LEDGERMATERIAL_API TArray<FGroundChannel> GroundChannels();
 }

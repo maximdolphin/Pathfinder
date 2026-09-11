@@ -172,6 +172,16 @@ namespace LedgerPatchDisk
 		{
 			Reader.Serialize(Job.Colors.GetData(), Colours * sizeof(FColor));
 		}
+		for (TArray<FVector2D>* Weights : { &Job.GroundWeightsB, &Job.GroundWeightsC })
+		{
+			int32 Count = 0;
+			Reader << Count;
+			Weights->SetNumUninitialized(Count);
+			if (Count > 0)
+			{
+				Reader.Serialize(Weights->GetData(), Count * sizeof(FVector2D));
+			}
+		}
 
 		Reader.Serialize(&Job.Palette, sizeof(FLedgerBiomePalette));
 
@@ -207,6 +217,15 @@ namespace LedgerPatchDisk
 		{
 			Bytes.Serialize(const_cast<FColor*>(Job.Colors.GetData()),
 				Colours * sizeof(FColor));
+		}
+		for (const TArray<FVector2D>* Weights : { &Job.GroundWeightsB, &Job.GroundWeightsC })
+		{
+			int32 Count = Weights->Num();
+			Bytes << Count;
+			if (Count > 0)
+			{
+				Bytes.Serialize(const_cast<FVector2D*>(Weights->GetData()), Count * sizeof(FVector2D));
+			}
 		}
 
 		Bytes.Serialize(const_cast<FLedgerBiomePalette*>(&Job.Palette),
