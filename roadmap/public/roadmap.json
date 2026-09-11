@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 16
+   "doneCount": 17
   },
   {
    "id": "M05",
@@ -553,7 +553,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 1
+   "doneCount": 2
   },
   {
    "id": "M07",
@@ -7276,10 +7276,16 @@
    "dependsOn": [
     "T106"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "-stormfront: from 15 km outside the severe edge of a 3971 Pa low, 60 km in at 200 m/s and 700 m above the ground. Entry at 78.1 s; visibility falls from 6.9 to 2.9 km by 80.7 s, gusts rise from 0.2 to 8.1 m/s rms by 86.0 s, and the wind and thunder rise from 0.47 to 0.66 by 84.9 s -- together within eight seconds of the edge. The first flight met a front that took three minutes to cross, because the front was 100 Pa past the onset and at the edge of a deep low that is 35 km; the front is now two kilometres, measured as depth over the local pressure gradient. The storm flown into is the low the clouds are drawn over, 0.000 deg apart. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 254,
    "plannedEndDay": 255.5,
@@ -8022,10 +8028,16 @@
    "dependsOn": [
     "T132"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Nozzles are data (15 per ship: the main engine and fourteen RCS in fore and aft quads, roll pairs and retros, sized from the file thrust figures at full load) and LedgerFlight::Allocate is a box-constrained least squares by coordinate descent, torque weighted over force and a small price on thrust. Every commanded force and torque is made to a hundredth within every nozzle limit (Ledger.Flight.TheAllocatorMakesTheCommandedForceAndTorque). The most pitch is exactly what the nozzles have (140.33 MN m) and halves when they move halfway in; with the strongest pitch nozzle gone the solver makes the same turn another way, and the most pitch falls to 70.25 MN m against 70.25 predicted (140.33 less its 70.08) while the yaw it never gave stays (130.53 against 130.54) (Ledger.Flight.HandlingFollowsTheThrusterLayout). The ship flies on it: -shiptrial yaw 45.0 deg/s as asked."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 306.5,
    "plannedEndDay": 310,
@@ -14789,5 +14801,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T12:48:55.996Z"
+ "updatedAt": "2026-09-11T12:54:06.086Z"
 }
