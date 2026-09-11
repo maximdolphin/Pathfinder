@@ -3937,6 +3937,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The post-taper traces: the linear 75 km taper still leaks a big ridge near the edge -- range 45's windward march meets a 1,799 m ridge at its third step, weight 0.3, and still loses a third there (0.496 -> 0.332) while the lee march, starting four steps later, misses it; range 50 the same with a 998 m ridge. The 14 'other' are mostly real but weak shadows under the census's threshold (lee drier by 4-18%: 213 0.106/0.087, 221 0.162/0.142, 223 0.157/0.143), a few flat (293 0.139/0.139). The threshold is left alone. Next, queued: the taper quadratic over the far 150 km, so edge events weigh about 1% rather than 10-30%."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Quadratic taper over the far 150 km (committed): 541 of 577 major ranges shadowed, wetter on the lee 1 (41 -> 17 -> 9 -> 1 across the three fixes), every wind-crossing ridge 98%. Of the 36 without one: 9 at a wind-band boundary and 9 dry on both sides (18 that cannot have one by construction), 17 whose lee is drier but by less than the census threshold (20%, or 0.02 absolute), 1 wetter. The biome table moved with it -- desert 28.8% -> 19.7% of land, ice cap 22.0% -- because the far end of the fetch dries the air less. The verdict stays FAIL on the literal 'every major range' and the threshold is not being moved to pass it: whether 17 weak shadows and 18 impossible ones meet the acceptance is a reading of the acceptance, not a number this can change."
     }
    ],
    "evidence": [
@@ -4900,6 +4905,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Resident-leaf collision (a resident node that is itself the leaf takes collision; covered, it drops it at the component): 50.2% missed, the four-biome footings clean at every site (0 of 298,000 stones off), tests green. Not comparable with the 34.7% yet: this was the first transect on patch-disk format 19 (the tapered climate march), so the 200 km streamed cold where the 34.7% run's cache was warm. Queued properly: a warm-up run, then resident-leaf collision against -noresidentcollision on the same build and the same warm cache."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Same build, warm cache, one cvar apart: a warm-up run 44.1% missed; then resident-leaf collision 10.1% (longest gap 156 frames) against -noresidentcollision 9.1% (gap 100). So the 50.2% was the cold cache after the format bump, and resident-leaf collision buys nothing -- reverted. With a warm cache, detail scaled by speed alone brings the transect from 98.9% to ~9%. What is left: ~1,000 misses with only the resident shell drawn under the ship, ~200 drawn and not yet cooked, the longest gap 1.7 s; and the cold-cache number (44%) is the one a first flight over new ground would see."
     }
    ],
    "evidence": [
@@ -6732,6 +6742,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The dark clouds were the framing. The air show aims every view along the sun's bearing, on purpose -- so skies are compared at one sun angle -- which puts the sun in front of the camera: from above, the cloud faces in view are the shadowed anti-sun sides with bright rims, and the shadows fall towards the lens. Charcoal cloud over lit sand is what backlit cumulus looks like. The climb now looks away from the sun; queued with a matched cloud-free reference for the orbit and above-deck frames."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "With the sun behind the camera (the climb only; the air show still faces the sun), measured against the same views without cloud: above the middle deck, 10.0% of the lower frame darker by more than 20 and 0.3% brighter; from orbit 37.6% brighter and 26.5% darker, the brightest 1% 156 against 192 clear. So the framing was part of it and not all: lit from behind, cumulus of albedo 0.98 should be the brightest thing in view and is a mid-grey veil -- it lifts the ocean and dulls the land. Next arm: the cloud shadow map off (r.VolumetricCloud.ShadowMap=0), since a shadow map placed wrongly at planet scale would put every cloud sample in shade."
     }
    ],
    "evidence": [
@@ -14522,5 +14537,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:13:32.036Z"
+ "updatedAt": "2026-09-11T09:29:48.624Z"
 }
