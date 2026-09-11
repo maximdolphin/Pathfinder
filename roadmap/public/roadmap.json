@@ -3927,6 +3927,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The full forty-step traces say exactly what 'lee wetter' is. Range 29: the windward point's march starts 300 km upwind ON a 955 m ridge and loses 40% at its first step; the lee point's march starts 30 km downwind of that and begins at 0.494 on flat ground. Both then cross the same 546/804 m ridge and lose the same proportion (0.247 -> 0.136, 0.422 -> 0.230), and the lee march crosses the 715 m target peak losing a third (0.158 -> 0.103) -- and is still wetter than the windward point, whose own march carried the first ridge's loss the whole way. Range 50 the same, with a 998 m ridge at the window's edge. It is the hard edge of a sliding window: whether a ridge counts depends on which side of a 300 km line it sits. Now tapered -- events in the far 75 km count for less the further out they are -- so neighbouring points agree about the air upwind of them. Patch disk format 19; census queued."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Tapered window (committed): 532 of 577 major ranges shadowed (was 521, 476 before the retrace), wetter on the lee 9 (was 17, 41), every wind-crossing ridge 98% (bar 75). The 45 without a shadow: 8 at a wind-band boundary and 14 dry on both sides -- 22 that cannot have one by construction -- 9 lee-wetter and 14 other. The verdict stays FAIL on the literal 'every major range'; the remaining 23 are next, with the same traces."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The post-taper traces: the linear 75 km taper still leaks a big ridge near the edge -- range 45's windward march meets a 1,799 m ridge at its third step, weight 0.3, and still loses a third there (0.496 -> 0.332) while the lee march, starting four steps later, misses it; range 50 the same with a 998 m ridge. The 14 'other' are mostly real but weak shadows under the census's threshold (lee drier by 4-18%: 213 0.106/0.087, 221 0.162/0.142, 223 0.157/0.143), a few flat (293 0.139/0.139). The threshold is left alone. Next, queued: the taper quadratic over the far 150 km, so edge events weigh about 1% rather than 10-30%."
     }
    ],
    "evidence": [
@@ -4471,6 +4481,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Snow on land at the world's season (0.686), from the climate report: 0-30 degrees none, 30-60 degrees 38.5% of land with any and mean cover 0.29, 60-90 degrees all of it at mean 0.87. At 0.29 the overlay whites only the hollows by design, which is why the lit orbit frame changes in 0.12% of its pixels with -snow; the evidence still owed is a capture of land above 60."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Same location, two seasons (-fourbiomes -seasonsite picks the lit land where winter lays the most snow and summer none: 52 S, cover 1.00 in its winter, 0.00 in its summer). Snow is now on by default (-nosnow the control). The site's winter against its summer: ground mean 78.5 against 72.2, brighter by more than 20 on 17.3% of it, and cooler (blue minus red +1.0 against -8.0); scatter changes with the season as well, because it is placed from the seasonal climate. The summer run with and without the overlay is identical, as it must be at zero cover. The labels in the chain were northern (the site is southern), so its 'summer' file is the winter. Still to come: the winter without the overlay, to separate the overlay from the season's biome and scatter change. The snow line's movement with altitude is what LedgerSnowTests checks and they pass."
     }
    ],
    "evidence": [
@@ -4485,6 +4500,18 @@
      "caption": "Desert with the overlay on: grey and half-snowed. The blend is identity at zero cover, so this is the field, not the blend.",
      "source": "../out/snowtest-four-biomes-3-desert.png",
      "addedAt": "2026-09-10T06:44:02.515Z"
+    },
+    {
+     "file": "evidence/T060-2026-09-11T09-10-52-073.png",
+     "caption": "The season site at 52 S in its winter (season 0.25): snow in the hollows, the ground whiter and cooler. Winter cover 1.00 by the climate model.",
+     "source": "../out/season-summer.png",
+     "addedAt": "2026-09-11T09:10:52.076Z"
+    },
+    {
+     "file": "evidence/T060-2026-09-11T09-10-52-172.png",
+     "caption": "The same place in its summer (season 0.75): bare tan ground and boulders. Summer cover 0.00.",
+     "source": "../out/season-winter.png",
+     "addedAt": "2026-09-11T09:10:52.175Z"
     }
    ],
    "plannedStartDay": 123,
@@ -14478,5 +14505,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:06:54.059Z"
+ "updatedAt": "2026-09-11T09:10:52.305Z"
 }
