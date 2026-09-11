@@ -27,8 +27,16 @@
 
 namespace
 {
-	/// How high above the ground the ship is held, in centimetres.
-	constexpr double TransectAltitude = 5000.0;
+	/// How high above the ground the ship is held, in centimetres. Fifty metres
+	/// by default, stricter than the gate -- M02 names 300 m, which
+	/// `-transectaltitude=300` flies: nearer the ground the tree wants finer
+	/// patches, and that is where streaming falls behind at speed.
+	const double TransectAltitude = []()
+	{
+		double Metres = 50.0;
+		FParse::Value(FCommandLine::Get(), TEXT("transectaltitude="), Metres);
+		return FMath::Max(Metres, 1.0) * 100.0;
+	}();
 
 	/// Ground speed, cm/s. 900 m/s is the number in M02's gate.
 	constexpr double TransectSpeed = 90000.0;
