@@ -25,20 +25,26 @@ namespace
 	};
 
 	// Off the pad, out over the town and back, down to a hover: every axis, in
-	// about the order a player tries them.
+	// about the order a player tries them -- and, like a player, putting back
+	// what it took. Pitch and roll go one way and then the other by the same
+	// amount; letting go is the brake, and S backs up. The first version asked
+	// for 137 degrees of pitch in one leg, looped the ship, and then scored the
+	// dive it left behind.
 	const FPlaytestLeg Legs[] = {
-		{ TEXT("hover"),      6.0, 0.0f, 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, true },
-		{ TEXT("climb"),      8.0, 0.0f, 0.0f,  0.7f,  0.0f, 0.0f, 0.0f, false },
-		{ TEXT("forward"),   10.0, 0.5f, 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, true },
-		{ TEXT("turn"),       8.0, 0.5f, 0.0f,  0.0f,  0.0f, 0.5f, 0.0f, false },
-		{ TEXT("cruise"),    10.0, 1.0f, 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, true },
-		{ TEXT("roll"),       6.0, 0.3f, 0.0f,  0.0f,  0.0f, 0.0f, 0.6f, false },
-		{ TEXT("strafe"),     5.0, 0.0f, 0.6f,  0.0f,  0.0f, 0.0f, 0.0f, false },
-		{ TEXT("pitch-down"), 5.0, 0.3f, 0.0f,  0.0f, -0.4f, 0.0f, 0.0f, true },
-		{ TEXT("pitch-up"),   5.0, 0.3f, 0.0f,  0.0f,  0.5f, 0.0f, 0.0f, false },
-		{ TEXT("coast"),      8.0, 0.0f, 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, true },
-		{ TEXT("descend"),    8.0, 0.0f, 0.0f, -0.5f,  0.0f, 0.0f, 0.0f, true },
-		{ TEXT("hover-end"),  8.0, 0.0f, 0.0f,  0.0f,  0.0f, 0.0f, 0.0f, true },
+		{ TEXT("hover"),       6.0,  0.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("climb"),      25.0,  0.0f, 0.0f,  1.0f,  0.0f, 0.0f,  0.0f, false },
+		{ TEXT("forward"),    10.0,  0.5f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("turn"),        8.0,  0.5f, 0.0f,  0.0f,  0.0f, 0.5f,  0.0f, false },
+		{ TEXT("cruise"),     10.0,  1.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("roll-right"),  3.0,  0.3f, 0.0f,  0.0f,  0.0f, 0.0f,  0.5f, false },
+		{ TEXT("roll-left"),   3.0,  0.3f, 0.0f,  0.0f,  0.0f, 0.0f, -0.5f, false },
+		{ TEXT("strafe"),      5.0,  0.0f, 0.6f,  0.0f,  0.0f, 0.0f,  0.0f, false },
+		{ TEXT("pitch-down"),  3.0,  0.3f, 0.0f,  0.0f, -0.3f, 0.0f,  0.0f, true },
+		{ TEXT("pitch-up"),    3.0,  0.3f, 0.0f,  0.0f,  0.3f, 0.0f,  0.0f, false },
+		{ TEXT("let-go"),     10.0,  0.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("reverse"),     4.0, -1.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("descend"),     8.0,  0.0f, 0.0f, -0.5f,  0.0f, 0.0f,  0.0f, true },
+		{ TEXT("hover-end"),   8.0,  0.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
 	};
 
 	/// Long enough for the world to build and the ground under the town to arrive.
@@ -113,7 +119,7 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 		bPlaced = true;
 		Leg = 0;
 		LegClock = 0.0;
-		Lines.Add(TEXT("  time  leg          height m  speed m/s  spin deg/s  hull  frame ms"));
+		Lines.Add(TEXT("  time  leg          height m  speed m/s  ahead  spin deg/s  hull  frame ms   fog   ice  nose  nozzles"));
 		UE_LOG(LogLedger, Log, TEXT("playtest: the ship is over the pad, flying %d legs"), static_cast<int32>(UE_ARRAY_COUNT(Legs)));
 		return;
 	}
@@ -156,14 +162,29 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	{
 		Divergence = FString::Printf(TEXT("left the planet during %s"), Now.Name);
 	}
+	// Meeting the ground faster than a hard landing is a crash, whatever the hull
+	// says: the third playtest dived into it at 78 m/s and was scored a pass.
+	else if (Height < 3.0 && LastSpeed > 15.0)
+	{
+		Divergence = FString::Printf(TEXT("hit the ground at %.0f m/s during %s"), LastSpeed, Now.Name);
+	}
+	LastSpeed = Speed;
 
 	SinceSample += DeltaSeconds;
 	if (SinceSample >= SampleSeconds || !Divergence.IsEmpty())
 	{
 		SinceSample = 0.0;
-		Lines.Add(FString::Printf(TEXT("  %5.1f %-12s %9.1f %10.1f %11.1f %5.2f %9.1f %5.2f %5.2f"),
-			Clock - SettleSeconds, Now.Name, Height, Speed, Spin, Hull, FrameMs,
-			Ship->CanopyState().Fog, Ship->CanopyState().Ice));
+		// The nose above the local horizon, and whether the nozzles made what the
+		// assist asked -- the two things that say why a hands-off ship drifts.
+		const FVector3d LocalUp = (FVector3d(Where) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
+		const double NoseUp = FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(
+			FVector3d::DotProduct(FVector3d(Ship->GetActorForwardVector()), LocalUp), -1.0, 1.0)));
+		// And how much of the speed is along the nose: negative is sliding backwards.
+		const double Ahead = FVector::DotProduct(Ship->GetVelocity(), Ship->GetActorForwardVector()) / 100.0;
+		Lines.Add(FString::Printf(TEXT("  %5.1f %-12s %9.1f %10.1f %8.1f %11.1f %5.2f %9.1f %5.2f %5.2f %6.1f %s"),
+			Clock - SettleSeconds, Now.Name, Height, Speed, Ahead, Spin, Hull, FrameMs,
+			Ship->CanopyState().Fog, Ship->CanopyState().Ice, NoseUp,
+			Ship->Allocation().bMet ? TEXT("met") : TEXT("SHORT")));
 	}
 	if (!Divergence.IsEmpty())
 	{
@@ -176,9 +197,16 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	// the keys arrive. Not the stick itself: the key bindings write every axis
 	// every frame, zero when nothing is pressed, and the first playtest's
 	// commands were overwritten before the ship read them -- it sat on the pad.
-	Ship->SetAutoThrottle(Now.Throttle);
+	// Except that, like a player, it pulls up -- lets go of the throttle and
+	// lifts -- when the ground is closing and eight seconds away. The seventh
+	// playtest flew level at 300 m/s into rising ground a player would have seen.
+	const double Closing = (LastHeight - Height) / DeltaSeconds;
+	LastHeight = Height;
+	const bool bPullUp = Closing > 5.0 && Height < Closing * 8.0;
+	PulledSeconds += bPullUp ? DeltaSeconds : 0.0;
+	Ship->SetAutoThrottle(bPullUp ? 0.0f : Now.Throttle);
 	Ship->SetAutoStrafe(Now.Strafe);
-	Ship->SetAutoLift(Now.Lift);
+	Ship->SetAutoLift(bPullUp ? 1.0f : Now.Lift);
 	Ship->SetAutoTurn(FVector3f(Now.Pitch, Now.Yaw, Now.Roll));
 	LegClock += DeltaSeconds;
 	if (Now.bCapture && !bCaptured && LegClock > Now.Seconds * 0.5)
@@ -220,6 +248,7 @@ void ULedgerPlaytest::Finish(const FString& Why)
 	Lines.Add(FString::Printf(TEXT("worst speed       %.1f m/s"), WorstSpeed));
 	Lines.Add(FString::Printf(TEXT("lowest height     %.1f m"), LowestHeight));
 	Lines.Add(FString::Printf(TEXT("lowest hull       %.2f"), LowestHull));
+	Lines.Add(FString::Printf(TEXT("pulled up         %.1f s"), PulledSeconds));
 	Lines.Add(FString::Printf(TEXT("frames            %d, %d over 16.7 ms, %d over 33 ms, worst %.1f ms, %d hitches over 250 ms after the first minute"),
 		Frames, FramesOver, FramesOver33, WorstFrameMs, Hitches));
 	Lines.Add(TEXT(""));

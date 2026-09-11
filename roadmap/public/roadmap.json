@@ -8613,6 +8613,21 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Three causes found by the offscreen playtest, all fixed, rerun queued. (1) The ship data was a hundred times too strong: courier mainThrust 9000 and manoeuvringThrust 2600, documented as m/s^2, with nozzles rated 120.6 MN main and 17.4 MN each RCS -- about 900 g. Centimetre figures carried into a metre field. The second playtest went from rest to 430 m/s in under a second on 70% lift; that is the owner's 'flies all over the place'. Every thrust figure in courier.json and hauler.json divided by 100: courier 90 / 26 m/s^2, hauler 52 / 14. (2) Coupled mode closed vertical drift in proportion and knew nothing of weight, so a centred stick sank at g over the hold, 2.5 m/s, from 42 m to the pad; the weight is now asked for outright in the body frame. Second playtest: level at 44-45 m. (3) Mouse axes arrive as tens of counts a frame and were taken as deflection; every stick input is now clamped to the stick's travel."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Third playtest, with the thrust corrected: the ship flies -- hovers level at 45-47 m, climbs on the lift axis -- and then flips. A held lift key had no ceiling (coupled switched its hold off while pushed), so 70% lift reached 93 m/s straight up; flat-bottomed at that speed the belly's air is ten times what it is at 28 m/s, the wings' pitching moment beat the now-real manoeuvring thrusters, the ship pitched about 75 degrees in a second and dived from 560 m into the ground at 78 m/s. Coupled is now a velocity command across the nose -- full strafe or lift asks for 40 m/s, centred closes drift, within the manoeuvring limit -- and the throttle stops adding at its fraction of 300 m/s along it (nothing pushes backwards, so it cannot brake). The playtest now fails on meeting the ground above 15 m/s; the 78 m/s impact had scored a pass with the hull untouched, which is its own gap (no crash damage). Rerun queued."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Fifth playtest: all twelve legs flown, no crash, no ensure, tests green. The wings' lift is no longer cancelled twice (the feed-forward subtracts the air across the nose), and the new per-second record -- nose above the horizon, and whether the nozzles made what the assist asked -- shows what is left: (1) the rate hold holds a rate, not an attitude, so the nose keeps whatever the air leaves it at (11 deg up in the climb, 7 deg in forward flight); (2) yawing at 150-170 m/s the nozzles run SHORT and the ship slews at 75-84 deg/s, recovering (worst 111 deg/s against a 180 limit); (3) the ship cannot slow down. The courier's fifteen nozzles are one main engine pushing forward and fourteen pushing across it -- nothing pushes back, so S (throttle -1) asks for a force no nozzle makes, and after the pitch legs the ship coasted at 90-95 m/s in a 50-degree dive from 2 km to 650 m with the stick centred. Next: a retro pair on both ships and S as a brake/reverse command in coupled."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Correction to the entry above: the ships do have a retro pair -- the courier's two RCS nozzles at the nose (x = 4.5 m) and the hauler's (x = 8.0 m) push -X at 174 kN and 349 kN each, about 26 m/s^2 of braking on the courier; the listing that said otherwise was cut at twelve nozzles. S therefore has something to brake with, and the playtest never pressed it. The 50-degree dive was the script's: its pitch-up leg asked for 137 degrees, a half loop, and the ship came out of it nose down and then coasted as it was told. The script now pitches and rolls by equal amounts each way, brakes on S, and ends in a level hover."
     }
    ],
    "evidence": [],
@@ -8722,7 +8737,13 @@
    "status": "todo",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] What depends on the default launch today: the packaged-build check (docs/comparisons/packaged, T427) and the PSO recording in tools/pipeline_cache.py both start Ledger.exe -useFixedTimeStep -fps=60 with no flag naming the flight -- they rely on the plain launch flying the scripted reentry to its end and exiting, which is also what flushes the PSO recording. Making the player's start the default therefore means the scripted flight gets its own opt-in flag, and both of those launch lines (and the chains' Run helper, if it relies on it) add it in the same change, or the packaged check and the recording start over the town and never finish."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 315.5,
    "plannedEndDay": 316.5,
@@ -15628,5 +15649,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T21:08:33.676Z"
+ "updatedAt": "2026-09-11T21:28:02.024Z"
 }

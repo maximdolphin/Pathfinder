@@ -90,6 +90,11 @@ void ALedgerShip::BeginPlay()
 	// called it blurry. A pilot switches the demister off, not on; the visor
 	// fixture still sets it per step.
 	Canopy.bHeater = true;
+	// And the glass at the cabin's temperature, not whatever is outside. The
+	// canopy model starts the glass at the outside air, which for a ship that
+	// spawns in orbit is space: it fogged solid in the first second and took
+	// fifty to clear, and that was the grey blur in the owner's first screenshot.
+	Canopy.GlassKelvin = 295.0;
 
 	if (const UWorld* World = GetWorld())
 	{
@@ -381,7 +386,14 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 		const FVector3d Radial = FVector3d(GetActorLocation()) - FVector3d(Planet->GetActorLocation());
 		const double Distance = FMath::Max(Radial.Length(), 1.0);
 		const double GravityHere = SurfaceGravity / 100.0 * FMath::Square(Planet->Radius / Distance);
-		Command.Force += Flight.Spin.Orientation.UnrotateVector(Radial / Distance * GravityHere) * Mass.MassKg;
+		FVector3d Feed = Flight.Spin.Orientation.UnrotateVector(Radial / Distance * GravityHere) * Mass.MassKg;
+		// Less what the air already holds up across the nose. At 150 m/s the
+		// wings carry about the weight themselves, and cancelling it twice had
+		// the fourth playtest climbing from 260 m to 655 m with the hold fighting
+		// both. Along the nose the air is drag, and that stays the pilot's.
+		Feed.Y -= Air.Force.Y;
+		Feed.Z -= Air.Force.Z;
+		Command.Force += Feed;
 	}
 
 	// Each nozzle limited by what its thruster can give -- power, wear, fuel.

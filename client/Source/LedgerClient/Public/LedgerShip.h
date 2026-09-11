@@ -97,7 +97,8 @@ public:
 	/// Throttle applied on top of player input, in [0,1]. The scripted ascent
 	/// uses this so the climb to orbit runs through the *same* flight model the
 	/// player flies — gravity, drag and all — rather than being animated.
-	void SetAutoThrottle(float Fraction) { AutoThrottle = FMath::Clamp(Fraction, 0.0f, 1.0f); }
+	/// Down to minus one, as the S key goes: the retro pair brakes on it (M5P).
+	void SetAutoThrottle(float Fraction) { AutoThrottle = FMath::Clamp(Fraction, -1.0f, 1.0f); }
 
 	/// Lift and strafe on top of player input, in [-1,1]. T098's fixture flies
 	/// through these, so its corrections go through the thrusters a pilot's

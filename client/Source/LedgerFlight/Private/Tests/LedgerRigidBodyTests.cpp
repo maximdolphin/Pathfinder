@@ -296,7 +296,10 @@ bool FLedgerFlightModes::RunTest(const FString&)
 	}
 	const FLedgerHandling Handling = FLedgerHandling::From(Ship.Flight);
 	constexpr double Step = 1.0 / 60.0;
-	constexpr int32 Steps = 180;
+	// Four seconds hands off, not two: the yaw is now made whole even while the
+	// side nozzles are short, so the velocity has a full 45 degrees to catch up
+	// on 26 m/s^2 (M5P).
+	constexpr int32 Steps = 300;
 	const TCHAR* Names[] = { TEXT("assist off"), TEXT("decoupled"), TEXT("coupled") };
 	FLedgerMotion Ends[3];
 	double MomentumAtRelease[3] = { 0.0, 0.0, 0.0 };
@@ -305,7 +308,7 @@ bool FLedgerFlightModes::RunTest(const FString&)
 		const ELedgerFlightMode Mode = static_cast<ELedgerFlightMode>(ModeIndex);
 
 		// Flying forward at 100 m/s: a full yaw for one second, then hands
-		// off for two.
+		// off for four.
 		FLedgerMotion Start;
 		Start.Velocity = FVector3d(100.0, 0.0, 0.0);
 		FLedgerMotion Live = Start;
@@ -348,7 +351,7 @@ bool FLedgerFlightModes::RunTest(const FString&)
 	};
 	for (int32 ModeIndex = 0; ModeIndex < 3; ++ModeIndex)
 	{
-		AddInfo(FString::Printf(TEXT("%s: after a one-second yaw and two seconds hands off, turning at %.3f rad/s, %.2f m/s across the nose, %.2f m/s in all"),
+		AddInfo(FString::Printf(TEXT("%s: after a one-second yaw and four seconds hands off, turning at %.3f rad/s, %.2f m/s across the nose, %.2f m/s in all"),
 			Names[ModeIndex], Ends[ModeIndex].Spin.AngularVelocity.Length(), Across(Ends[ModeIndex]), Ends[ModeIndex].Velocity.Length()));
 	}
 	const double MomentumAfter = LedgerFlight::AngularMomentum(Mass.Inertia, Ends[0].Spin.AngularVelocity).Length();

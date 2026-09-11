@@ -33,6 +33,9 @@ private:
 	double Clock = 0.0;
 	double LegClock = 0.0;
 	double SinceSample = 0.0;
+	double LastSpeed = 0.0;
+	double LastHeight = 0.0;
+	double PulledSeconds = 0.0;
 	double WorstSpin = 0.0;
 	double WorstSpeed = 0.0;
 	double WorstFrameMs = 0.0;

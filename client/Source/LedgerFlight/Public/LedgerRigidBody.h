@@ -72,6 +72,13 @@ struct LEDGERFLIGHT_API FLedgerHandling
 	/// How fast the assisted modes close on what is asked, per second.
 	double RateHoldPerSecond = 8.0;
 	double DriftHoldPerSecond = 4.0;
+	/// Coupled mode's velocity command, m/s (M5P): full strafe or lift asks for
+	/// this across the nose (and full reverse astern), and full throttle for the
+	/// second along it; centred asks for rest. Without
+	/// them a held key accelerated for as long as it was held, and a flat climb
+	/// at 90 m/s put enough air on the belly to flip the ship.
+	double CoupledSideSpeed = 40.0;
+	double CoupledForwardSpeed = 300.0;
 
 	static FLedgerHandling From(const FLedgerShipFlight& Flight)
 	{

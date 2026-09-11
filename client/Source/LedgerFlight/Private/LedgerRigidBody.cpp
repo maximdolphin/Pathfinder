@@ -89,7 +89,7 @@ namespace LedgerFlight
 		return 0.5 * FVector3d::DotProduct(AngularVelocity, RigidTimes(Inertia, AngularVelocity));
 	}
 
-	FLedgerAllocation Allocate(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
+	static FLedgerAllocation Solve(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
 		const FVector3d& CentreMetres, const FVector3d& ForceNewtons, const FVector3d& TorqueNewtonMetres)
 	{
 		// Torque counts four times what force does, per unit of each scaled below.
@@ -198,6 +198,64 @@ namespace LedgerFlight
 		return Out;
 	}
 
+	FLedgerAllocation Allocate(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
+		const FVector3d& CentreMetres, const FVector3d& ForceNewtons, const FVector3d& TorqueNewtonMetres)
+	{
+		const FLedgerAllocation Whole = Solve(Nozzles, LimitNewtons, CentreMetres, ForceNewtons, TorqueNewtonMetres);
+		if (Whole.bMet)
+		{
+			return Whole;
+		}
+		// **Short, the turn comes first (M5P).** One least-squares answer shared
+		// the shortfall, so a coupled turn at speed -- asking the side nozzles
+		// for more sideways push than they have -- gave up the yaw they also
+		// make, and the ship lurched at up to 73 deg/s. Now the torque is made
+		// whole, then force an axis at a time -- along the nose, up, sideways --
+		// each as much as still fits. (A heavier torque weight would do it in one
+		// solve, but leaves the fore and aft pairs near opposite and coordinate
+		// descent crawling.) ponytail: up to 21 solves, only while short; an
+		// active-set solver with priorities if it ever shows in the frame.
+		FLedgerAllocation Held = Solve(Nozzles, LimitNewtons, CentreMetres, FVector3d::ZeroVector, TorqueNewtonMetres);
+		if (!Held.bMet)
+		{
+			return Whole;
+		}
+		FVector3d Given = FVector3d::ZeroVector;
+		for (const int32 Axis : { 0, 2, 1 })
+		{
+			const double Asked = ForceNewtons[Axis];
+			if (Asked == 0.0)
+			{
+				continue;
+			}
+			double Low = 0.0;
+			double High = 1.0;
+			for (int32 Halving = 0; Halving < 7; ++Halving)
+			{
+				const double Try = Halving == 0 ? 1.0 : 0.5 * (Low + High);
+				FVector3d Force = Given;
+				Force[Axis] = Asked * Try;
+				const FLedgerAllocation Attempt = Solve(Nozzles, LimitNewtons, CentreMetres, Force, TorqueNewtonMetres);
+				if (Attempt.bMet)
+				{
+					Low = Try;
+					Held = Attempt;
+					if (Try == 1.0)
+					{
+						break;
+					}
+				}
+				else
+				{
+					High = Try;
+				}
+			}
+			Given[Axis] = Asked * Low;
+		}
+		Held.bMet = false;
+		return Held;
+	}
+
 	FLedgerCommand Control(ELedgerFlightMode Mode, const FLedgerStick& Stick, const FLedgerHandling& Handling,
 		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds,
 		const FVector3d& ExternalTorque)
@@ -210,8 +268,23 @@ namespace LedgerFlight
 		// The turn the stick asks for, body frame: a small rotator made a
 		// rotation vector, so the signs are the rotator signs.
 		constexpr double Probe = 1.0e-3;
-		const FVector3d Rate = FRotator3d(Stick.Turn.X * Handling.PitchRate * Probe, Stick.Turn.Y * Handling.YawRate * Probe,
+		FVector3d Rate = FRotator3d(Stick.Turn.X * Handling.PitchRate * Probe, Stick.Turn.Y * Handling.YawRate * Probe,
 			Stick.Turn.Z * Handling.RollRate * Probe).Quaternion().ToRotationVector() / Probe;
+		if (Mode == ELedgerFlightMode::Coupled)
+		{
+			// **Coupled, the nose turns no faster than the velocity can follow
+			// (M5P).** Swinging it at v takes v*omega of push across it; past what
+			// the manoeuvring thrusters give, the ship slid through the turn --
+			// 110 m/s sideways after 22 deg/s at 150 m/s. Four fifths of it, to
+			// leave room for holding the ship up. Roll turns no velocity.
+			const double Swing = FMath::Sqrt(Rate.Y * Rate.Y + Rate.Z * Rate.Z);
+			const double Most = 0.8 * Handling.ManoeuvringAcceleration / FMath::Max(State.Velocity.Length(), 1.0);
+			if (Swing > Most)
+			{
+				Rate.Y *= Most / Swing;
+				Rate.Z *= Most / Swing;
+			}
+		}
 		const FVector3d Omega = State.Spin.AngularVelocity;
 		if (Mode == ELedgerFlightMode::AssistOff)
 		{
@@ -233,18 +306,24 @@ namespace LedgerFlight
 			* FVector3d(Handling.MainAcceleration, Handling.ManoeuvringAcceleration, Handling.ManoeuvringAcceleration);
 		if (Mode == ELedgerFlightMode::Coupled)
 		{
-			// Drift across the nose, sideways and vertically, closed the same
-			// way -- unless the stick is asking for it.
+			// **Across the nose the stick is a velocity (M5P).** Centred, drift
+			// sideways and vertically is closed; deflected, the ship is brought
+			// to that fraction of CoupledSideSpeed and held there, within what
+			// the manoeuvring thrusters can give. It used to be an acceleration
+			// with the hold switched off while pushed, so a held key never
+			// stopped adding speed.
 			const FVector3d Body = State.Spin.Orientation.UnrotateVector(State.Velocity);
 			const double Hold = (1.0 - FMath::Exp(-Handling.DriftHoldPerSecond * DeltaSeconds)) / DeltaSeconds;
-			if (FMath::IsNearlyZero(Stick.Push.Y))
-			{
-				Acceleration.Y -= Body.Y * Hold;
-			}
-			if (FMath::IsNearlyZero(Stick.Push.Z))
-			{
-				Acceleration.Z -= Body.Z * Hold;
-			}
+			// Unclamped: the allocator gives what the nozzles can, and clamping
+			// here as well changed how it shared that out (the modes test saw it).
+			Acceleration.Y = (Stick.Push.Y * Handling.CoupledSideSpeed - Body.Y) * Hold;
+			Acceleration.Z = (Stick.Push.Z * Handling.CoupledSideSpeed - Body.Z) * Hold;
+			// Along it the throttle is a speed too: full forward CoupledForwardSpeed,
+			// full back CoupledSideSpeed astern, centred none -- so letting go stops
+			// the ship on the retro pair. It used to stop adding and coast, and a
+			// ship that slid backwards after a pitch-up was sped up by the brake.
+			const double Forward = Stick.Push.X * (Stick.Push.X >= 0.0 ? Handling.CoupledForwardSpeed : Handling.CoupledSideSpeed);
+			Acceleration.X = (Forward - Body.X) * Hold;
 		}
 		Out.Force = Acceleration * Mass.MassKg;
 		return Out;
