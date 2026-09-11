@@ -361,7 +361,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 17
+   "doneCount": 18
   },
   {
    "id": "M04",
@@ -5967,9 +5967,9 @@
    "dependsOn": [
     "T087"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -5995,6 +5995,16 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "The machinery for the second clause exists: SwitchToBody tears the world down and BuildWorldFor builds it again around another body, one frame apart. The crossing runs -- watch, departure, cruise, arrival, with the world genuinely changing bodies mid-session -- and then the process takes an access violation on the render thread about fourteen seconds later, during the landed step. Four real defects were found and fixed on the way there and none of them was the cause: a failed asset load retried every frame (147 ms stalls, in T093's wind subsystem, affecting every run); the ship caching a planet pointer and re-fetching only when null rather than when invalid; the sky renderer keeping the old body's sphere set; and the planet being spawned non-deferred, so on a rebuild it woke before its surface material was assigned and fell back to an engine vertex-colour debug material. Ruled out as the cause: the destination being airless (same crash to a body with air), the teardown and rebuild sharing a frame (split, no change), the view target being destroyed (kept alive, no change), and a level-of-detail jump from orbit to the ground (graded descent, no change). The same body is completely stable when built at startup with -body=."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "unblock",
+     "text": "unblocked"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Both clauses, in one session. The crash was a function-static TMap of raw UTexture2D* in LedgerBiomeSurfaces.cpp with nothing rooting it: the first world's materials died, the collector took the textures, and the second world built its palettes on freed memory. -forcelogflush is what found it -- the last line before the fault was 'LogUObjectBase: Warning: Object is not registered' right after a palette was created. Rooted with TStrongObjectPtr, with an IsValid check so a stale entry reloads and says so. Then three of the six frames came back black or blown out, and that was a second real defect rather than framing: SunFacing is the star's direction in the ACTIVE BODY's rotating frame and the switch never recomputed it, so the moon's landing site was chosen against the planet's sun vector -- sun.site 0.946 and solar altitude -80 degrees for the same place. The town was built in the dark. One line after SetActiveBody and they agree at 0.946 and 71.1 degrees. Also: the stand-off is measured in the radii of whichever body is underneath (the arrival is above a moon a third the size), the clock is clamped at arrival so the landing is minutes after it rather than five hours, and with no air the exposure meter moves to the 70th-96th percentile because a frame that is half sunlit ground and half pure black has no meaningful average. Terrain stats now print process memory: a saturated 3600-section pool costs 10.8 GB against 2.5 at startup, 2.3 MB a patch, and a warning fires when commit headroom drops under 2 GB. Landed in b00fe76. docs/comparisons/crossing/"
     }
    ],
    "evidence": [
@@ -6033,6 +6043,24 @@
      "caption": "Departure: leaving the home world on the route the map quoted",
      "source": "out/crossing-1-departure.png",
      "addedAt": "2026-09-10T21:48:50.002Z"
+    },
+    {
+     "file": "evidence/T088-2026-09-11T00-00-32-567.png",
+     "caption": "Arrival: the destination lit and whole, from eight of its own radii",
+     "source": "../out/crossing-3-arrival.png",
+     "addedAt": "2026-09-11T00:00:32.569Z"
+    },
+    {
+     "file": "evidence/T088-2026-09-11T00-00-32-645.png",
+     "caption": "Descent: the moon's surface from two hundred kilometres",
+     "source": "../out/crossing-4-descent.png",
+     "addedAt": "2026-09-11T00:00:32.647Z"
+    },
+    {
+     "file": "evidence/T088-2026-09-11T00-00-32-722.png",
+     "caption": "Landed on body 3 in the same session: black sky, stars, regolith and ice peaks",
+     "source": "../out/crossing-5-landed.png",
+     "addedAt": "2026-09-11T00:00:32.724Z"
     }
    ],
    "plannedStartDay": 214,
@@ -13976,5 +14004,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-10T21:48:50.005Z"
+ "updatedAt": "2026-09-11T00:00:42.484Z"
 }
