@@ -212,6 +212,72 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 				Lines += FString::Printf(
 					TEXT("  stones projecting into the column rectangle: %d, %d of them on ground not drawn last frame\n"),
 					InColumn.Num(), Undrawn);
+
+				// **Every instance at any range, by where its mesh is drawn.** No
+				// measured pivot projects above y 459, the column climbs to 415, and
+				// hiding the scatter removes it: so list what is drawn up there, from
+				// the components themselves, with no range cut and the mesh bounds.
+				int32 Upper = 0;
+				TSet<const UStaticMesh*> Described;
+				for (UHierarchicalInstancedStaticMeshComponent* Component : Scatter)
+				{
+					const UStaticMesh* Mesh = Component->GetStaticMesh();
+					const FBoxSphereBounds MeshBounds = Mesh != nullptr ? Mesh->GetBounds() : FBoxSphereBounds(ForceInit);
+					if (Mesh != nullptr && !Described.Contains(Mesh))
+					{
+						Described.Add(Mesh);
+						Lines += FString::Printf(TEXT("  mesh %s: bounds origin (%.0f, %.0f, %.0f) extent (%.0f, %.0f, %.0f) cm\n"),
+							*Mesh->GetName(), MeshBounds.Origin.X, MeshBounds.Origin.Y, MeshBounds.Origin.Z,
+							MeshBounds.BoxExtent.X, MeshBounds.BoxExtent.Y, MeshBounds.BoxExtent.Z);
+					}
+					for (int32 Index = 0; Index < Component->GetInstanceCount(); ++Index)
+					{
+						FTransform Transform;
+						Component->GetInstanceTransform(Index, Transform, true);
+						const FVector Drawn = Transform.TransformPosition(MeshBounds.Origin);
+						FVector2D Screen;
+						if (!Viewer->ProjectWorldLocationToScreen(Drawn, Screen, false)
+							|| Screen.X < 950.0 || Screen.X > 1180.0 || Screen.Y < 380.0 || Screen.Y > 455.0)
+						{
+							continue;
+						}
+						if (++Upper <= 24)
+						{
+							Lines += FString::Printf(
+								TEXT("  drawn in the upper column: screen (%.0f, %.0f), %.0f m away, scale %.2f, pivot %.2f m from the drawn centre, %s instance %d\n"),
+								Screen.X, Screen.Y,
+								Camera != nullptr ? FVector::Dist(Drawn, Camera->GetActorLocation()) / 100.0 : -1.0,
+								Transform.GetScale3D().X, FVector::Dist(Drawn, Transform.GetLocation()) / 100.0,
+								*Component->GetName(), Index);
+						}
+					}
+				}
+				Lines += FString::Printf(TEXT("  instances drawn in the upper column at any range: %d\n"), Upper);
+
+				// **And how far the ground is behind them, pixel by pixel.** The four
+				// column stones are a metre across, 32-37 m away, and traced onto a
+				// drawn section; the frame reads them as climbing a hill 250 m off. A
+				// view ray down the column says which: ground at ~35 m just under the
+				// stones is a near mound they sit on the ridge line of.
+				FCollisionQueryParams RayParams(SCENE_QUERY_STAT(LedgerColumnRay), true);
+				for (UHierarchicalInstancedStaticMeshComponent* Component : Scatter)
+				{
+					RayParams.AddIgnoredComponent(Component);
+				}
+				for (int32 Row = 400; Row <= 540; Row += 10)
+				{
+					FVector RayOrigin, RayDirection;
+					if (!Viewer->DeprojectScreenPositionToWorld(1045.0f, static_cast<float>(Row), RayOrigin, RayDirection))
+					{
+						continue;
+					}
+					FHitResult Hit;
+					const bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, RayOrigin,
+						RayOrigin + RayDirection * 5.0e6, ECC_Visibility, RayParams);
+					Lines += bHit
+						? FString::Printf(TEXT("  view ray at (1045, %d): ground %.1f m away\n"), Row, Hit.Distance / 100.0)
+						: FString::Printf(TEXT("  view ray at (1045, %d): nothing with collision within 50 km\n"), Row);
+				}
 			}
 			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
 			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
