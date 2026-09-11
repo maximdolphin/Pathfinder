@@ -667,3 +667,24 @@ void ALedgerPlanet::CornerLevelsFor(const FLedgerQuadNode& Node, uint8 Left, uin
 	OutCorners[2] = FMath::Max3(Left, Top, StitchLevelAt(Node, Low, Above));
 	OutCorners[3] = FMath::Max3(Right, Top, StitchLevelAt(Node, High, Above));
 }
+
+bool ALedgerPlanet::UpgradeCollision(int32 SectionIndex)
+{
+	UProceduralMeshComponent* Mesh = PooledProcedural(SectionIndex);
+	if (Mesh == nullptr || Mesh->GetCollisionEnabled() != ECollisionEnabled::NoCollision)
+	{
+		return false;
+	}
+	const FProcMeshSection* Land = Mesh->GetProcMeshSection(0);
+	if (Land == nullptr || Land->ProcVertexBuffer.Num() == 0)
+	{
+		return false;
+	}
+	// ponytail: the land section only; a cave section keeps what it was built
+	// with, and gains collision when the patch is next rebuilt.
+	FProcMeshSection WithCollision = *Land;
+	WithCollision.bEnableCollision = true;
+	Mesh->SetProcMeshSection(0, WithCollision);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	return true;
+}

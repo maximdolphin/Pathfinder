@@ -535,6 +535,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	Requests.Reserve(Leaves.Num());
 
 	int32 WithCollision = 0;
+	// ponytail: a fixed four a frame -- tie it to the streaming budget if the
+	// re-uploads ever show in the frame time.
+	constexpr int32 MaxCollisionUpgradesPerFrame = 4;
+	int32 CollisionUpgradesThisFrame = 0;
 	for (int32 Index = 0; Index < Leaves.Num(); ++Index)
 	{
 		const FLedgerQuadNode* Leaf = Leaves[Index];
@@ -542,7 +546,15 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 
 		const double NearNow = FVector3d::Distance(Leaf->Centre, CameraLocal);
 		const double NearSoon = FVector3d::Distance(Leaf->Centre, PredictedLocal);
-		const bool bWantsCollision = FMath::Min(NearNow, NearSoon) < CollisionRadius;
+		// From the patch's nearest edge, not its centre. At 900 m/s the ground
+		// drawn under the ship is a coarse ancestor still standing in for leaves
+		// that have not landed, kilometres across, so its centre is outside the
+		// radius while the ship is over it -- and nothing drawn there had asked.
+		// Not the resident shell: it never releases its sections, so collision it
+		// gained would stay under the finer ground for good. With it, every stone
+		// at the four-biome sites measured metres off the ground it sits on.
+		const double Reach = Leaf->Depth > ResidentDepth ? Leaf->WorldSize * 0.7071 : 0.0;
+		const bool bWantsCollision = FMath::Min(NearNow, NearSoon) - Reach < CollisionRadius;
 		if (bWantsCollision)
 		{
 			++WithCollision;
@@ -550,26 +562,26 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 
 		const uint64 Key = NodeKey(*Leaf);
 
-		// **An active section never gains collision, and that is a real defect
-		// this does not fix.**
-		//
-		// A patch built without collision is skipped here forever after. At
-		// 900 m/s the geometry lead builds ground several seconds before the
-		// ship is within the three kilometre collision radius, so nearly every
-		// patch the ship passes over was built while it was still far away --
-		// with collision correctly declined -- and is then never reconsidered.
-		// The 200 km transect measures the consequence: 1,569 of 2,804 visible
-		// nodes want collision and a downward trace misses on 89% of frames.
-		//
-		// Re-requesting those patches was tried and made it worse, 89% to
-		// 99.8%: every frame re-asks for more than the budget can serve, so
-		// sections churn instead of settling and the ground under the ship is
-		// rebuilt rather than kept. The fix is not to ask again -- it is either
-		// to cook collision for what the lead builds (paying for it on ground
-		// that may never be flown over) or to upgrade a section in place
-		// without a rebuild, which the procedural mesh path cannot do today.
-		// Written down rather than half-done. See docs/comparisons/transect/.
-		if (ActiveSections.Contains(Key) || InFlight.Contains(Key))
+		// **An active section gains collision in place.** A patch built without
+		// collision used to be skipped here forever: at 900 m/s the geometry
+		// lead builds ground seconds before the ship is within the 3 km radius,
+		// so nearly every patch it passed over had declined collision and was
+		// never reconsidered -- a downward trace missed on 89% of frames.
+		// Re-requesting a build made it worse (99.8%): every frame asked for
+		// more than the budget serves and the ground churned. The section
+		// already holds its geometry, so it is re-applied with collision on --
+		// a render re-upload and an async cook, no job, no queue -- a few a frame.
+		if (const int32* ActiveSection = ActiveSections.Find(Key))
+		{
+			if (bWantsCollision && CollisionUpgradesThisFrame < MaxCollisionUpgradesPerFrame
+				&& !InFlight.Contains(Key) && UpgradeCollision(*ActiveSection))
+			{
+				++CollisionUpgradesThisFrame;
+				++Stats.CollisionUpgrades;
+			}
+			continue;
+		}
+		if (InFlight.Contains(Key))
 		{
 			continue;
 		}

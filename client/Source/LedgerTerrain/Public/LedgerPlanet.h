@@ -351,6 +351,8 @@ struct FLedgerTerrainStats
 	/// built, which left their stitched edges describing the wrong neighbour.
 	UPROPERTY()
 	int32 Restitches = 0;
+	/// Sections that gained collision in place, without a rebuild. T068.
+	int32 CollisionUpgrades = 0;
 
 	/// The largest LOD transition among patches built this run, measured in
 	/// each patch's own quads.
@@ -878,6 +880,9 @@ private:
 
 	/// Levels coarser than Node the drawn neighbour at (U, V) is, 0 to 6.
 	uint8 StitchLevelAt(const FLedgerQuadNode& Node, double U, double V) const;
+
+	/// Re-applies a drawn section with collision on. T068.
+	bool UpgradeCollision(int32 SectionIndex);
 
 	/// The four corner levels for a patch with these edge levels.
 	void CornerLevelsFor(const FLedgerQuadNode& Node, uint8 Left, uint8 Right,
