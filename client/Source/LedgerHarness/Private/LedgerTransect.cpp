@@ -114,7 +114,26 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 
 	// The first frames are startup; the terrain has not streamed anything yet
 	// and counting misses there would be measuring the loading screen.
-	if (Warmup < 3.0)
+	//
+	// **`-transectsettle` waits for the queue to go quiet as well (T068).**
+	// Seven of the worst eight frames in chain169 were inside the first
+	// kilometre, with 85 to 160 patch jobs still in flight: the world's first
+	// load, which a player meets behind a loading screen and not at 900 m/s.
+	// This arm says how much of the count is that and how much is the flight
+	// the gate is actually about -- it reports the split rather than deciding
+	// where the criterion's edge belongs. Capped at a minute so a queue that
+	// never drains cannot hang the fixture.
+	// **Latched, and that is the whole of it.** Unlatched, this re-entered the
+	// moment the queue got busy again in flight -- which it does constantly --
+	// froze the ship, put it back at the start, and left the frame clock
+	// holding a stale timestamp across the gap: a 10,558 ms "frame" and a run
+	// that measured nothing.
+	static const bool bSettleFirst = FParse::Param(FCommandLine::Get(), TEXT("transectsettle"));
+	if (!bSettled && Planet->GetStats().JobsInFlight == 0 && Warmup >= 3.0)
+	{
+		bSettled = true;
+	}
+	if (Warmup < 3.0 || (bSettleFirst && !bSettled && Warmup < 60.0))
 	{
 		Warmup += DeltaSeconds;
 		Ship->SetFlightEnabled(false);

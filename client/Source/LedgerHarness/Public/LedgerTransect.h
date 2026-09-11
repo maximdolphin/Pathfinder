@@ -36,6 +36,9 @@ private:
 
 	bool bRunning = false;
 	double Warmup = 0.0;
+	/// Whether the streaming queue has gone quiet once, for -transectsettle.
+	/// Latched: unlatched it re-entered in flight and measured nothing.
+	bool bSettled = false;
 	double Travelled = 0.0;
 
 	int32 Frames = 0;
