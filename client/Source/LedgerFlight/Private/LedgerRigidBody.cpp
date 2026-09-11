@@ -197,4 +197,66 @@ namespace LedgerFlight
 			&& (Out.Torque - TorqueNewtonMetres).Length() <= 0.01 * TorqueNewtonMetres.Length() + 1.0e-4 * ForceScale * Lever;
 		return Out;
 	}
+
+	FLedgerCommand Control(ELedgerFlightMode Mode, const FLedgerStick& Stick, const FLedgerHandling& Handling,
+		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds)
+	{
+		FLedgerCommand Out;
+		if (Mass.MassKg <= 0.0 || DeltaSeconds <= 0.0)
+		{
+			return Out;
+		}
+		// The turn the stick asks for, body frame: a small rotator made a
+		// rotation vector, so the signs are the rotator signs.
+		constexpr double Probe = 1.0e-3;
+		const FVector3d Rate = FRotator3d(Stick.Turn.X * Handling.PitchRate * Probe, Stick.Turn.Y * Handling.YawRate * Probe,
+			Stick.Turn.Z * Handling.RollRate * Probe).Quaternion().ToRotationVector() / Probe;
+		const FVector3d Omega = State.Spin.AngularVelocity;
+		if (Mode == ELedgerFlightMode::AssistOff)
+		{
+			// The stick is torque: full deflection is the angular acceleration
+			// that would reach the full rate in one hold time, and nothing
+			// takes it away again.
+			Out.Torque = AngularMomentum(Mass.Inertia, Rate * Handling.RateHoldPerSecond);
+		}
+		else
+		{
+			// The rate held: most of the gap closed each step whatever the
+			// step, plus what the spin needs to keep itself (omega x I omega).
+			const double Close = 1.0 - FMath::Exp(-Handling.RateHoldPerSecond * DeltaSeconds);
+			Out.Torque = AngularMomentum(Mass.Inertia, (Rate - Omega) * (Close / DeltaSeconds))
+				+ FVector3d::CrossProduct(Omega, AngularMomentum(Mass.Inertia, Omega));
+		}
+		FVector3d Acceleration = Stick.Push
+			* FVector3d(Handling.MainAcceleration, Handling.ManoeuvringAcceleration, Handling.ManoeuvringAcceleration);
+		if (Mode == ELedgerFlightMode::Coupled)
+		{
+			// Drift across the nose, sideways and vertically, closed the same
+			// way -- unless the stick is asking for it.
+			const FVector3d Body = State.Spin.Orientation.UnrotateVector(State.Velocity);
+			const double Hold = (1.0 - FMath::Exp(-Handling.DriftHoldPerSecond * DeltaSeconds)) / DeltaSeconds;
+			if (FMath::IsNearlyZero(Stick.Push.Y))
+			{
+				Acceleration.Y -= Body.Y * Hold;
+			}
+			if (FMath::IsNearlyZero(Stick.Push.Z))
+			{
+				Acceleration.Z -= Body.Z * Hold;
+			}
+		}
+		Out.Force = Acceleration * Mass.MassKg;
+		return Out;
+	}
+
+	FLedgerAllocation Push(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
+		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds)
+	{
+		const FLedgerAllocation Given = Allocate(Nozzles, LimitNewtons, Mass.CentreMetres, Command.Force, Command.Torque);
+		if (Mass.MassKg > 0.0 && DeltaSeconds > 0.0)
+		{
+			Rotate(State.Spin, Mass.Inertia, Given.Torque, DeltaSeconds);
+			State.Velocity += State.Spin.Orientation.RotateVector(Given.Force / Mass.MassKg) * DeltaSeconds;
+		}
+		return Given;
+	}
 }

@@ -10,6 +10,7 @@
 
 #include "CoreMinimal.h"
 #include "LedgerShipDefinition.h"
+#include "LedgerShipSystems.h"
 
 struct LEDGERFLIGHT_API FLedgerSpin
 {
@@ -32,6 +33,71 @@ struct LEDGERFLIGHT_API FLedgerAllocation
 
 	/// Whether that is what was asked, to a hundredth.
 	bool bMet = false;
+};
+
+/// T134: how the stick is read. Each is a controller over the same allocator
+/// and the same rigid body; nothing below the command knows which is flying.
+enum class ELedgerFlightMode : uint8
+{
+	/// The stick is torque and thrust is force: nothing is held.
+	AssistOff,
+	/// The stick is a turn rate, held; thrust is force, and the ship keeps
+	/// whatever velocity it has.
+	Decoupled,
+	/// The stick is a turn rate, held; and the velocity is held along the
+	/// nose -- drift across it is thrusted away unless the stick asks for it.
+	Coupled,
+};
+
+/// What the pilot asks for: a turn as fractions of the ship rates (pitch,
+/// yaw, roll) and a push as fractions of its thrust (forward, right, up).
+struct LEDGERFLIGHT_API FLedgerStick
+{
+	FVector3d Turn = FVector3d::ZeroVector;
+	FVector3d Push = FVector3d::ZeroVector;
+};
+
+/// What the controllers are told a ship can do.
+struct LEDGERFLIGHT_API FLedgerHandling
+{
+	/// Turn rates at full stick, degrees per second, as the ship file gives them.
+	double PitchRate = 55.0;
+	double YawRate = 45.0;
+	double RollRate = 90.0;
+
+	/// Acceleration at full thrust, metres per second squared.
+	double MainAcceleration = 9000.0;
+	double ManoeuvringAcceleration = 2600.0;
+
+	/// How fast the assisted modes close on what is asked, per second.
+	double RateHoldPerSecond = 8.0;
+	double DriftHoldPerSecond = 4.0;
+
+	static FLedgerHandling From(const FLedgerShipFlight& Flight)
+	{
+		FLedgerHandling Out;
+		Out.PitchRate = Flight.PitchRate;
+		Out.YawRate = Flight.YawRate;
+		Out.RollRate = Flight.RollRate;
+		Out.MainAcceleration = Flight.MainThrust;
+		Out.ManoeuvringAcceleration = Flight.ManoeuvringThrust;
+		return Out;
+	}
+};
+
+/// A ship in flight: its rotation, and its velocity in the world frame,
+/// metres per second.
+struct LEDGERFLIGHT_API FLedgerMotion
+{
+	FLedgerSpin Spin;
+	FVector3d Velocity = FVector3d::ZeroVector;
+};
+
+/// The force and torque asked of the allocator, body frame.
+struct LEDGERFLIGHT_API FLedgerCommand
+{
+	FVector3d Force = FVector3d::ZeroVector;
+	FVector3d Torque = FVector3d::ZeroVector;
 };
 
 namespace LedgerFlight
@@ -64,4 +130,15 @@ namespace LedgerFlight
 	/// and the torque the ship can make moves with it.
 	LEDGERFLIGHT_API FLedgerAllocation Allocate(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
 		const FVector3d& CentreMetres, const FVector3d& ForceNewtons, const FVector3d& TorqueNewtonMetres);
+
+	/// T134, the controller: a mode reading the stick, as the force and
+	/// torque to ask for.
+	LEDGERFLIGHT_API FLedgerCommand Control(ELedgerFlightMode Mode, const FLedgerStick& Stick, const FLedgerHandling& Handling,
+		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds);
+
+	/// T134, the physics: the allocator gives what it can of a command, and
+	/// the body turns and speeds up by what that makes. It is not told the
+	/// mode, which is what makes switching modes change nothing below here.
+	LEDGERFLIGHT_API FLedgerAllocation Push(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
+		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds);
 }

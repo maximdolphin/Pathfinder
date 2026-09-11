@@ -279,4 +279,84 @@ bool FLedgerAllocationLayout::RunTest(const FString&)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerFlightModes,
+	"Ledger.Flight.ModesChangeOnlyTheController",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerFlightModes::RunTest(const FString&)
+{
+	FLedgerShipDefinition Ship;
+	FLedgerMassProperties Mass;
+	TArray<double> Limits;
+	if (!TestTrue(TEXT("the courier loads, with nozzles"), AllocationCourier(*this, Ship, Mass, Limits)))
+	{
+		return false;
+	}
+	const FLedgerHandling Handling = FLedgerHandling::From(Ship.Flight);
+	constexpr double Step = 1.0 / 60.0;
+	constexpr int32 Steps = 180;
+	const TCHAR* Names[] = { TEXT("assist off"), TEXT("decoupled"), TEXT("coupled") };
+	FLedgerMotion Ends[3];
+	double MomentumAtRelease[3] = { 0.0, 0.0, 0.0 };
+	for (int32 ModeIndex = 0; ModeIndex < 3; ++ModeIndex)
+	{
+		const ELedgerFlightMode Mode = static_cast<ELedgerFlightMode>(ModeIndex);
+
+		// Flying forward at 100 m/s: a full yaw for one second, then hands
+		// off for two.
+		FLedgerMotion Start;
+		Start.Velocity = FVector3d(100.0, 0.0, 0.0);
+		FLedgerMotion Live = Start;
+		TArray<FLedgerCommand> Asked;
+		TArray<FLedgerMotion> Track;
+		for (int32 Index = 0; Index < Steps; ++Index)
+		{
+			FLedgerStick Stick;
+			Stick.Turn.Y = Index < 60 ? 1.0 : 0.0;
+			const FLedgerCommand Command = LedgerFlight::Control(Mode, Stick, Handling, Mass, Live, Step);
+			LedgerFlight::Push(Ship.Nozzles, Limits, Mass, Command, Live, Step);
+			Asked.Add(Command);
+			Track.Add(Live);
+			if (Index == 59)
+			{
+				MomentumAtRelease[ModeIndex] = LedgerFlight::AngularMomentum(Mass.Inertia, Live.Spin.AngularVelocity).Length();
+			}
+		}
+
+		// The same commands again, through the physics alone. It takes no mode,
+		// so if the flight comes out the same to the bit, the mode changed the
+		// commands and nothing else.
+		FLedgerMotion Replay = Start;
+		int32 Differ = 0;
+		for (int32 Index = 0; Index < Steps; ++Index)
+		{
+			LedgerFlight::Push(Ship.Nozzles, Limits, Mass, Asked[Index], Replay, Step);
+			const FLedgerMotion& Was = Track[Index];
+			Differ += Replay.Velocity == Was.Velocity && Replay.Spin.AngularVelocity == Was.Spin.AngularVelocity
+				&& Replay.Spin.Orientation == Was.Spin.Orientation ? 0 : 1;
+		}
+		TestEqual(FString::Printf(TEXT("%s: its commands replayed through the physics alone fly the same, step for step"), Names[ModeIndex]), Differ, 0);
+		Ends[ModeIndex] = Live;
+	}
+
+	auto Across = [](const FLedgerMotion& State)
+	{
+		const FVector3d Body = State.Spin.Orientation.UnrotateVector(State.Velocity);
+		return FMath::Sqrt(Body.Y * Body.Y + Body.Z * Body.Z);
+	};
+	for (int32 ModeIndex = 0; ModeIndex < 3; ++ModeIndex)
+	{
+		AddInfo(FString::Printf(TEXT("%s: after a one-second yaw and two seconds hands off, turning at %.3f rad/s, %.2f m/s across the nose, %.2f m/s in all"),
+			Names[ModeIndex], Ends[ModeIndex].Spin.AngularVelocity.Length(), Across(Ends[ModeIndex]), Ends[ModeIndex].Velocity.Length()));
+	}
+	const double MomentumAfter = LedgerFlight::AngularMomentum(Mass.Inertia, Ends[0].Spin.AngularVelocity).Length();
+	TestTrue(TEXT("assist off, the turn goes on when the stick is let go"),
+		MomentumAtRelease[0] > 0.0 && FMath::Abs(MomentumAfter - MomentumAtRelease[0]) < 0.01 * MomentumAtRelease[0]);
+	TestTrue(TEXT("decoupled, the turn stops and the ship slides on the way it was going"),
+		Ends[1].Spin.AngularVelocity.Length() < 0.01 && Across(Ends[1]) > 30.0);
+	TestTrue(TEXT("coupled, the turn stops and the velocity follows the nose"),
+		Ends[2].Spin.AngularVelocity.Length() < 0.01 && Across(Ends[2]) < 1.0);
+	return true;
+}
+
 #endif

@@ -226,6 +226,7 @@ void ALedgerShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ALedgerShip::InputPitch);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ALedgerShip::InputYaw);
 	PlayerInputComponent->BindAxis(TEXT("Roll"), this, &ALedgerShip::InputRoll);
+	PlayerInputComponent->BindAction(TEXT("FlightMode"), IE_Pressed, this, &ALedgerShip::InputNextMode);
 }
 
 void ALedgerShip::SetCameraBoom(float ArmLength, float HeightOffset)
@@ -328,35 +329,24 @@ void ALedgerShip::ApplyInput(float DeltaSeconds)
 
 void ALedgerShip::ApplyThrust(float DeltaSeconds)
 {
-	// The pilot asks for a turn rate and a push. The rate becomes the torque
-	// that reaches it on this ship's inertia, the push a force on its mass, and
-	// the allocator finds what each nozzle does about both. What the ship then
-	// does is what those nozzles make -- not what was asked.
+	// T132 to T134. The mode reads the stick as a force and a torque; the
+	// allocator and the rigid body make what they can of it and are not told
+	// which mode asked. What the ship then does is what its nozzles made.
 	const FLedgerShipState& State = Systems->GetState();
 	const FLedgerMassProperties Mass = LedgerShipSystems::MassProperties(ShipDefinition, State);
 	if (Mass.MassKg <= 0.0 || DeltaSeconds <= 0.0f)
 	{
 		return;
 	}
-
-	// The turn asked for, body frame, read off the sticks the way the
-	// rate-based rotation read them: a small rotator made a rotation vector.
-	constexpr double Probe = 1.0e-3;
-	const FVector3d RateWanted = FRotator3d((PitchInput + AutoTurn.X) * PitchRate * Probe,
-		(YawInput + AutoTurn.Y) * YawRate * Probe, (RollInput + AutoTurn.Z) * RollRate * Probe).Quaternion().ToRotationVector() / Probe;
-
-	// Held by closing most of the gap each step however long the step is, plus
-	// what the spin needs to keep itself (omega x I omega). ponytail: one
-	// proportional rate hold -- T134 puts the control modes over it.
-	constexpr double RateHoldPerSecond = 8.0;
-	Spin.Orientation = GetActorQuat();
-	const FVector3d Omega = Spin.AngularVelocity;
-	const double Close = 1.0 - FMath::Exp(-RateHoldPerSecond * DeltaSeconds);
-	const FVector3d Turn = (RateWanted - Omega) * (Close / DeltaSeconds);
-	const FVector3d TorqueWanted = LedgerFlight::AngularMomentum(Mass.Inertia, Turn)
-		+ FVector3d::CrossProduct(Omega, LedgerFlight::AngularMomentum(Mass.Inertia, Omega));
-	const FVector3d ForceWanted = FVector3d(ThrottleInput + AutoThrottle, StrafeInput + AutoStrafe, LiftInput + AutoLift)
-		* FVector3d(MainThrust, ManoeuvringThrust, ManoeuvringThrust) / 100.0 * Mass.MassKg;
+	FLedgerMotion Flight;
+	Flight.Spin = Spin;
+	Flight.Spin.Orientation = GetActorQuat();
+	Flight.Velocity = FVector3d(Velocity) / 100.0;
+	FLedgerStick Stick;
+	Stick.Turn = FVector3d(PitchInput + AutoTurn.X, YawInput + AutoTurn.Y, RollInput + AutoTurn.Z);
+	Stick.Push = FVector3d(ThrottleInput + AutoThrottle, StrafeInput + AutoStrafe, LiftInput + AutoLift);
+	const FLedgerCommand Command = LedgerFlight::Control(FlightMode, Stick, FLedgerHandling::From(ShipDefinition.Flight),
+		Mass, Flight, DeltaSeconds);
 
 	// Each nozzle limited by what its thruster can give -- power, wear, fuel.
 	const int32 MainEngine = ShipDefinition.FindComponent(TEXT("main_engine"));
@@ -366,7 +356,7 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 		Limits.Add(Nozzle.ThrustNewtons * (Nozzle.Component == MainEngine
 			? Systems->MainThrustShare() : Systems->ManoeuvringThrustShare()));
 	}
-	LastAllocation = LedgerFlight::Allocate(ShipDefinition.Nozzles, Limits, Mass.CentreMetres, ForceWanted, TorqueWanted);
+	LastAllocation = LedgerFlight::Push(ShipDefinition.Nozzles, Limits, Mass, Command, Flight, DeltaSeconds);
 	double MainNewtons = 0.0;
 	double SideNewtons = 0.0;
 	for (int32 Index = 0; Index < ShipDefinition.Nozzles.Num(); ++Index)
@@ -375,9 +365,9 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 	}
 	Systems->Burned(MainNewtons, SideNewtons, DeltaSeconds);
 
-	LedgerFlight::Rotate(Spin, Mass.Inertia, LastAllocation.Torque, DeltaSeconds);
+	Spin = Flight.Spin;
 	SetActorRotation(FQuat(Spin.Orientation));
-	Velocity += FVector(Spin.Orientation.RotateVector(LastAllocation.Force / Mass.MassKg * 100.0)) * DeltaSeconds;
+	Velocity = FVector(Flight.Velocity * 100.0);
 }
 
 void ALedgerShip::Integrate(float DeltaSeconds)

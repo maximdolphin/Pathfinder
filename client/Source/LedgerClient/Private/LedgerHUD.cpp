@@ -3,6 +3,7 @@
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 #include "LedgerShip.h"
 #include "LedgerShipAudio.h"
 #include "LedgerShipSystems.h"
@@ -48,6 +49,13 @@ void ALedgerHUD::DrawHUD()
 		return;
 	}
 	const ALedgerShip* Ship = Cast<ALedgerShip>(GetOwningPawn());
+	// Over the pilot view, or when asked for: a fixture photographing the
+	// world through a camera of its own does not want the panel in it.
+	if (Ship == nullptr || ((PlayerOwner == nullptr || PlayerOwner->GetViewTarget() != Ship)
+		&& !FParse::Param(FCommandLine::Get(), TEXT("hud"))))
+	{
+		return;
+	}
 	const ULedgerShipSystemsComponent* Systems = Ship != nullptr ? Ship->GetSystems() : nullptr;
 	if (Systems == nullptr || !Systems->IsConfigured())
 	{
@@ -70,6 +78,8 @@ void ALedgerHUD::DrawHUD()
 	}
 	Rows.Emplace(FString::Printf(TEXT("thrust   main %.0f%%   manoeuvring %.0f%%"),
 		Systems->MainThrustShare() * 100.0, Systems->ManoeuvringThrustShare() * 100.0), HudText);
+	const TCHAR* Modes[] = { TEXT("assist off"), TEXT("decoupled"), TEXT("coupled") };
+	Rows.Emplace(FString::Printf(TEXT("flight   %s   (V to change)"), Modes[static_cast<uint8>(Ship->GetFlightMode()) % 3]), HudText);
 	int32 HoldIndex = INDEX_NONE;
 	for (int32 Index = 0; Index < Definition.Components.Num(); ++Index)
 	{

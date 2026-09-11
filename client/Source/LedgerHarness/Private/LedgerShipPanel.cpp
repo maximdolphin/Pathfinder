@@ -143,7 +143,12 @@ void ULedgerShipPanel::Tick(float DeltaSeconds)
 		if (!bPreviewShown && StageClock > 1.0)
 		{
 			bPreviewShown = true;
-			const int32 Reactor = Definition.FindComponent(TEXT("reactor"));
+			// The first plant, whatever the file calls it: the hauler has two.
+			int32 Reactor = INDEX_NONE;
+			for (int32 Index = 0; Index < Definition.Components.Num() && Reactor == INDEX_NONE; ++Index)
+			{
+				Reactor = Definition.Components[Index].Param(TEXT("outputKw")) > 0.0 ? Index : INDEX_NONE;
+			}
 			if (Reactor != INDEX_NONE)
 			{
 				FLedgerComponent Big = Definition.Components[Reactor];
@@ -151,8 +156,8 @@ void ULedgerShipPanel::Tick(float DeltaSeconds)
 				Big.MassKg = 1600.0;
 				Big.Params.Add(TEXT("outputKw"), 700.0);
 				Big.Params.Add(TEXT("slotClass"), 2.0);
-				const FLedgerOutfitPreview Preview = LedgerShips::PreviewSwap(Definition, TEXT("reactor"), Big);
-				Systems->ShowPreview(Preview, TEXT("reactor_large, 700 kW and 1600 kg, in place of the reactor"));
+				const FLedgerOutfitPreview Preview = LedgerShips::PreviewSwap(Definition, Definition.Components[Reactor].Id, Big);
+				Systems->ShowPreview(Preview, FString::Printf(TEXT("reactor_large, 700 kW and 1600 kg, in place of %s"), *Definition.Components[Reactor].Id));
 				bFitsAndCosts = Preview.bFits && Preview.MassDeltaKg > 0.0 && Preview.HeatDeltaKw > 0.0
 					&& Preview.AccelerationAfter < Preview.AccelerationBefore;
 				Lines.Add(FString::Printf(TEXT("a 700 kW plant offered for the reactor slot: fits %s; %+.0f kg, %+.0f kW of heat, %+.0f kW of margin; main thrust %.0f to %.0f m/s2; roll inertia %.0f to %.0f kg m2"),

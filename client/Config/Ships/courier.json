@@ -267,6 +267,11 @@
 					"kind": "power",
 					"dir": "in",
 					"required": true
+				},
+				{
+					"name": "coolant",
+					"kind": "coolant",
+					"dir": "in"
 				}
 			]
 		},
@@ -426,6 +431,10 @@
 		[
 			"coupling_aft.out",
 			"radiator.pump"
+		],
+		[
+			"radiator.coolant",
+			"shield.coolant"
 		]
 	],
 	"compartments": [

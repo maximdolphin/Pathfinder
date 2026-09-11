@@ -106,6 +106,11 @@ public:
 	void SetAutoStrafe(float Fraction) { AutoStrafe = FMath::Clamp(Fraction, -1.0f, 1.0f); }
 	/// Stick for a fixture: pitch, yaw and roll, each a fraction of the rate.
 	void SetAutoTurn(const FVector3f& Fractions) { AutoTurn = Fractions.BoundToCube(1.0f); }
+
+	/// T134: how the stick is read -- assist off, decoupled or coupled. Only
+	/// the controller changes; the ship underneath is the same one.
+	void SetFlightMode(ELedgerFlightMode Mode) { FlightMode = Mode; }
+	ELedgerFlightMode GetFlightMode() const { return FlightMode; }
 	FVector GetVelocity() const override { return Velocity; }
 
 	/// The wind the flight model was last handed, centimetres per second.
@@ -230,6 +235,7 @@ private:
 	float AutoLift = 0.0f;
 	float AutoStrafe = 0.0f;
 	FVector3f AutoTurn = FVector3f::ZeroVector;
+	ELedgerFlightMode FlightMode = ELedgerFlightMode::Decoupled;
 
 	void BuildHull();
 
@@ -258,4 +264,5 @@ private:
 	void InputPitch(float Value) { PitchInput = Value; }
 	void InputYaw(float Value) { YawInput = Value; }
 	void InputRoll(float Value) { RollInput = Value; }
+	void InputNextMode() { FlightMode = static_cast<ELedgerFlightMode>((static_cast<uint8>(FlightMode) + 1) % 3); }
 };
