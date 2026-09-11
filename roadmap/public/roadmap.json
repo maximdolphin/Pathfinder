@@ -3922,6 +3922,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Taken apart with the march traced (altitude and moisture every step). The rain-out works along every march: range 29's lee march carries 0.158 up to the 715 m peak and arrives at 0.101 (-36%); range 63's 0.135 -> 0.064 over its 1,374 m peak. What reads as 'lee wetter' is the comparison, not the physics: each point's moisture comes from its OWN march, which starts 300 km upwind at a fixed 0.5, and the lee point's march starts 30 km further downwind -- so passing the windward point it carries 0.16 where the windward point's own march arrives with 0.095. Two points on the same streamline do not agree about the air upstream of them, and the map shows it. Next: the full traces, to see what differs at the start (sea against land is the likely one)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The full forty-step traces say exactly what 'lee wetter' is. Range 29: the windward point's march starts 300 km upwind ON a 955 m ridge and loses 40% at its first step; the lee point's march starts 30 km downwind of that and begins at 0.494 on flat ground. Both then cross the same 546/804 m ridge and lose the same proportion (0.247 -> 0.136, 0.422 -> 0.230), and the lee march crosses the 715 m target peak losing a third (0.158 -> 0.103) -- and is still wetter than the windward point, whose own march carried the first ridge's loss the whole way. Range 50 the same, with a 998 m ridge at the window's edge. It is the hard edge of a sliding window: whether a ridge counts depends on which side of a 300 km line it sits. Now tapered -- events in the far 75 km count for less the further out they are -- so neighbouring points agree about the air upwind of them. Patch disk format 19; census queued."
     }
    ],
    "evidence": [
@@ -4858,6 +4863,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Detail scaled with speed moves it most of the way: fixed-step transect 34.7% missed (from 96-99%), longest gap 2,139 frames (from 5,000-13,000), the split threshold x6 at 900 m/s. The miss classifier is validated: on all 8,705 hits the terrain query found drawn ground under the ship. The misses now: 31 with no ground drawn, 4,477 drawn without collision, 121 drawn and not yet cooked -- and the drawn patch averages 6,700 km across, i.e. under the ship on those frames only the resident shell is drawn, which never takes collision (it stayed under finer ground for good when it did). Also found and fixed on the way: the first frame's camera placement read as 58,000 km/s, multiplied the threshold 387,179 times and left collapse flags that made the near-field harness load and release the same sections every frame until it ran out of memory. Next: a coarsening sweep (full detail to 75 and 40 m/s)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Coarsening sweep at 900 m/s: full detail to 150 m/s (x6) 34.7% missed; to 75 m/s (x12) 99.4%; to 40 m/s (x22.5) 99.4%. Past x6 the tree under the ship collapses to the resident shell -- the drawn patch on a miss averages 9,965 km, a whole cube face -- and the shell took no collision at all, by the rule that kept it from standing under finer ground. That rule is narrower than it needs to be: a resident node that is itself the leaf is the ground. Now a resident leaf takes collision like any other and drops it (the component flag, no re-cook) the moment it is covered; queued with the four-biome footing guard."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Resident-leaf collision (a resident node that is itself the leaf takes collision; covered, it drops it at the component): 50.2% missed, the four-biome footings clean at every site (0 of 298,000 stones off), tests green. Not comparable with the 34.7% yet: this was the first transect on patch-disk format 19 (the tapered climate march), so the 200 km streamed cold where the 34.7% run's cache was warm. Queued properly: a warm-up run, then resident-leaf collision against -noresidentcollision on the same build and the same warm cache."
     }
    ],
    "evidence": [
@@ -5016,6 +5031,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "At 8 cm (-parallaxdepth=8, after the near-field harness stopped running out of memory) the per-pixel round trip does not separate occlusion from the scene. Whole ground: flat 16.6%, one-step 17.6%, march 18.1% off by more than 1 px -- the order occlusion predicts. Near ground only (bottom 40%): flat 20.8%, one-step 18.3%, march 15.7% -- the reverse; and at 3 cm the same crop puts the one-step control highest of all (20.9%). An ordering that flips with the crop is the stones and the light, not parallax. So occlusion remains unevidenced at 3 and at 8 cm, and this measure on this scan cannot evidence it. What could: a controlled fixture -- a synthetic height map with sharp relief (a checker of steps) under raking light, where a pixel hidden behind a step can be predicted and checked -- rather than a natural scan whose relief is smooth and small."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "A controlled fixture: -pomchecker makes the relief a checker of sharp 8 cm steps (the texture seen is still the scan). The march frame on it shows what the gravel never did -- step walls, the raised blocks' sides drawn as short vertical streaks where the ray meets them, which is a near block hiding the ground behind it -- and the one-step frame does not. The round-trip flow measure is blind to it (march 22.1%, one-step 23.6%, flat 22.4%): dense flow smooths across a wall a few pixels thick. So a measure built for the fixture instead: -channel=pomheight shows which height each pixel ends up sampling, and at a raking view occlusion makes the raised tops cover more than their geometric half of the near ground, where an offset that cannot occlude leaves them at half. Queued for march, one-step and flat, both shots of the pair."
     }
    ],
    "evidence": [
@@ -6658,6 +6678,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Multiple scattering added (a VolumetricAdvancedMaterialOutput: two octaves, a forward 0.6 / back -0.3 phase, ground contribution). Inside the deck it helped -- cumulus now have bright tops and dark bases instead of a sepia murk -- and from orbit it did nothing: the brightest 1% of the disc is 144 against 170 without cloud. And not because of distance: from 4 km above the cumulus deck (above-middle) the clouds are charcoal, darker than the sand under them. Clouds are dark whenever seen from above and lit from the side, and the in-deck sepia says the sunlight reaching cloud samples is strongly reddened -- which reads as the per-sample atmospheric transmittance being evaluated in a frame that does not match the planet, not as a phase or scattering problem. That is next."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Per-sample atmospheric transmittance for the clouds changed nothing: above-middle 112.8 against 112.9, the orbit's brightest 1% 147 against 144. So it is not the one global sun transmittance, and the change is reverted. What is left to rule out first is the geometry of the shot: the air show fixes the sun's bearing relative to each camera, and charcoal clouds with lighter rims seen from above is also what backlit cloud looks like."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The dark clouds were the framing. The air show aims every view along the sun's bearing, on purpose -- so skies are compared at one sun angle -- which puts the sun in front of the camera: from above, the cloud faces in view are the shadowed anti-sun sides with bright rims, and the shadows fall towards the lens. Charcoal cloud over lit sand is what backlit cumulus looks like. The climb now looks away from the sun; queued with a matched cloud-free reference for the orbit and above-deck frames."
     }
    ],
    "evidence": [
@@ -14448,5 +14478,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T08:46:54.126Z"
+ "updatedAt": "2026-09-11T09:06:54.059Z"
 }
