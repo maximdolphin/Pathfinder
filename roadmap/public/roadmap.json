@@ -6772,6 +6772,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "From a low orbit (400 km, looking 20 degrees down at the limb) the decks do not read as layers: one flat, speckled, sepia veil over nearly the whole disc, the ground in a few dark gaps, no cumulus tops against the limb and no cirrus distinguishable from what is under it. So the orbit half is not met, and it is not a lighting setting -- framing, the global sun transmittance and the cloud shadow map are all ruled out. It is the shapes: every deck is the same fine noise cut at a coverage threshold, which is sub-kilometre speckle at any altitude, so three decks superimpose into one texture. Meeting it is a redesign of the cloud material's morphology -- cumulus as puffs with flat bases, cirrus as long streaks along the wind, each deck its own large-scale structure, and brightness from optical depth -- which is design work, not a parameter. The climb half stays met (b5128b6, 11087cc, f311b57)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "A shape per deck (committed): cumulus its own noise at 0.4x the frequency (separate masses, seen from above the middle deck), cirrus noise compressed along one axis (long streaks, seen from below it). The climb now shows three different kinds of cloud. From 400 km at the limb the decks are still one speckled veil: structure a few kilometres across is averaged away along the long slant path, and the cloud is as dim as the sand. What the orbit half needs is a look-development pass on the clouds rather than another single-variable test -- coherent structure an order of magnitude larger, clear gaps, and the brightness from above (framing, the global sun transmittance and the shadow map are ruled out; optical thickness and the phase are what remain). Left there."
     }
    ],
    "evidence": [
@@ -6822,6 +6827,18 @@
      "caption": "Same camera, r.VolumetricCloud.DistanceToSampleMaxCount=1: no arches, an even in-cloud murk.",
      "source": "../out/cliff-apron-arm-near.png",
      "addedAt": "2026-09-11T08:02:17.068Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T10-01-22-779.png",
+     "caption": "Below the cirrus deck with a shape per deck: long cirrus streaks instead of the shared speckle.",
+     "source": "../out/airshow-1-below-cirrus-morph.png",
+     "addedAt": "2026-09-11T10:01:22.782Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T10-01-22-904.png",
+     "caption": "From 400 km at the limb: still one speckled veil -- the orbit half is not met.",
+     "source": "../out/airshow-1-low-orbit-morph.png",
+     "addedAt": "2026-09-11T10:01:22.906Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -14562,5 +14579,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:54:39.677Z"
+ "updatedAt": "2026-09-11T10:01:23.026Z"
 }
