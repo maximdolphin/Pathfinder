@@ -28,6 +28,7 @@
 #include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
+#include "Materials/MaterialExpressionVolumetricAdvancedMaterialOutput.h"
 
 namespace LedgerSurface
 {
@@ -320,6 +321,28 @@ namespace LedgerSurface
 		// which is what a coverage number is supposed to mean.
 		Noise->bTurbulence = false;
 
+		// **Weather, not only cloud.** Seen from orbit an 800 m noise is a speckle
+		// laid evenly over the whole planet: the oceans came back brown with blue
+		// pinholes and no deck could be told from another. Real cloud gathers into
+		// systems hundreds of kilometres across with clear air between, so a second
+		// noise at that scale moves every deck's coverage threshold up and down --
+		// overcast where it is high, clear where it is low -- and the fine noise
+		// still decides the edges.
+		// ponytail: one weather field for all three decks; give cirrus its own
+		// when a front and the cirrus ahead of it need to part company.
+		UMaterialExpressionNoise* Weather = Graph.Make<UMaterialExpressionNoise>();
+		Weather->Position.Expression = Graph.Multiply(Flattened,
+			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f));
+		Weather->NoiseFunction = NOISEFUNCTION_GradientTex;
+		Weather->Scale = 1.0f;
+		Weather->Levels = 3;
+		Weather->OutputMin = 0.0f;
+		Weather->OutputMax = 1.0f;
+		Weather->bTurbulence = false;
+		UMaterialExpression* Clouds = Graph.Add(Noise, Graph.Multiply(
+			Graph.Subtract(Weather, Graph.Constant(0.5f)),
+			Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+
 		// Three decks, with defaults that are Earth's if nobody sets them.
 		// Centres are fractions of the layer: a layer from the cumulus base to
 		// the tropopause puts cumulus low, the middle deck in the middle and
@@ -327,11 +350,11 @@ namespace LedgerSurface
 		UMaterialExpressionScalarParameter* Softness =
 			Parameter(Graph, TEXT("EdgeSoftness"), 0.06f);
 
-		const FBand Cumulus = MakeBand(Graph, Altitude, Noise, Softness,
+		const FBand Cumulus = MakeBand(Graph, Altitude, Clouds, Softness,
 			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
-		const FBand Middle = MakeBand(Graph, Altitude, Noise, Softness,
+		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Softness,
 			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f);
-		const FBand Cirrus = MakeBand(Graph, Altitude, Noise, Softness,
+		const FBand Cirrus = MakeBand(Graph, Altitude, Clouds, Softness,
 			TEXT("Cirrus"), 0.86f, 0.12f, 0.35f, 0.18f);
 
 		UMaterialExpression* Total =
@@ -370,6 +393,23 @@ namespace LedgerSurface
 		EditorData->BaseColor.Expression = Graph.Constant3(
 			FLinearColor(0.98f, 0.98f, 0.99f));
 		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Total, Extinction);
+		// **Multiple scattering, and a phase with a back lobe.** Without this node
+		// the clouds are single-scattering: seen from orbit they were a grey veil
+		// that dulled the land -- the brightest 1% of the disc went from 170 to
+		// 157 with them -- and from inside they were sepia. A real cloud is bright
+		// because light bounces through it many times; two octaves of the engine's
+		// approximation stand in for that. The phase is two lobes, forward 0.6 and
+		// back -0.3, so tops seen from above with the sun behind stay lit.
+		UMaterialExpressionVolumetricAdvancedMaterialOutput* Scattering =
+			Graph.Make<UMaterialExpressionVolumetricAdvancedMaterialOutput>();
+		Scattering->ConstPhaseG = 0.6f;
+		Scattering->ConstPhaseG2 = -0.3f;
+		Scattering->ConstPhaseBlend = 0.5f;
+		Scattering->MultiScatteringApproximationOctaveCount = 2;
+		Scattering->ConstMultiScatteringContribution = 0.5f;
+		Scattering->ConstMultiScatteringOcclusion = 0.5f;
+		Scattering->ConstMultiScatteringEccentricity = 0.5f;
+		Scattering->bGroundContribution = true;
 		// **`-cloudprobe` makes the material show its own coordinate.**
 		//
 		// A uniform sky can mean the bands are everywhere or that the altitude
