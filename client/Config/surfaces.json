@@ -82,6 +82,33 @@
       ]
     },
     {
+      "name": "dry_river_pebbles_polyhaven",
+      "display": "dry_river_pebbles",
+      "source": "Poly Haven, asset dry_river_pebbles by Amal Kumar (https://polyhaven.com/a/dry_river_pebbles)",
+      "licence": "CC0 1.0 (Poly Haven). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "mean_albedo": [
+        0.48363,
+        0.40915,
+        0.31867
+      ],
+      "tags": [
+        "pebbles",
+        "rounded rocks",
+        "riverbed",
+        "loose stones",
+        "debris"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "dry_river_pebbles_polyhaven/albedo.png",
+        "normal": "dry_river_pebbles_polyhaven/normal.png",
+        "roughness": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png",
+        "ao": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png",
+        "height": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png"
+      }
+    },
+    {
       "name": "dry_sand_xfhsfao",
       "display": "Dry Sand",
       "source": "Quixel Megascans via Fab, asset id xfhsfao",
@@ -320,6 +347,34 @@
         0.35365,
         0.29581
       ]
+    },
+    {
+      "name": "gravel_stones_polyhaven",
+      "display": "gravel_stones",
+      "source": "Poly Haven, asset gravel_stones by Amal Kumar (https://polyhaven.com/a/gravel_stones)",
+      "licence": "CC0 1.0 (Poly Haven). See docs/asset-licensing.md.",
+      "tiling_metres": 2.0,
+      "mean_albedo": [
+        0.30941,
+        0.30715,
+        0.30014
+      ],
+      "tags": [
+        "gravel",
+        "stones",
+        "pebbles",
+        "coarse",
+        "grey",
+        "rocky"
+      ],
+      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
+      "maps": {
+        "albedo": "gravel_stones_polyhaven/albedo.png",
+        "normal": "gravel_stones_polyhaven/normal.png",
+        "roughness": "gravel_stones_polyhaven/packed_ao_rough_height.png",
+        "ao": "gravel_stones_polyhaven/packed_ao_rough_height.png",
+        "height": "gravel_stones_polyhaven/packed_ao_rough_height.png"
+      }
     },
     {
       "name": "icelandic_jagged_slate_rock_shfsaida",
@@ -831,61 +886,6 @@
         0.52663,
         0.49764,
         0.45852
-      ]
-    },
-    {
-      "name": "gravel_stones_polyhaven",
-      "display": "Gravel Stones",
-      "source": "Poly Haven, asset gravel_stones by Amal Kumar (https://polyhaven.com/a/gravel_stones)",
-      "licence": "CC0 1.0 (Poly Haven). See docs/asset-licensing.md.",
-      "tiling_metres": 2.0,
-      "tags": [
-        "gravel",
-        "stones",
-        "pebbles",
-        "coarse",
-        "grey",
-        "rocky"
-      ],
-      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
-      "maps": {
-        "albedo": "gravel_stones_polyhaven/albedo.png",
-        "normal": "gravel_stones_polyhaven/normal.png",
-        "roughness": "gravel_stones_polyhaven/packed_ao_rough_height.png",
-        "ao": "gravel_stones_polyhaven/packed_ao_rough_height.png",
-        "height": "gravel_stones_polyhaven/packed_ao_rough_height.png"
-      },
-      "mean_albedo": [
-        0.43045,
-        0.29162,
-        0.24076
-      ]
-    },
-    {
-      "name": "dry_river_pebbles_polyhaven",
-      "display": "Dry River Pebbles",
-      "source": "Poly Haven, asset dry_river_pebbles by Amal Kumar (https://polyhaven.com/a/dry_river_pebbles)",
-      "licence": "CC0 1.0 (Poly Haven). See docs/asset-licensing.md.",
-      "tiling_metres": 2.0,
-      "tags": [
-        "pebbles",
-        "rounded rocks",
-        "riverbed",
-        "loose stones",
-        "debris"
-      ],
-      "packing": "albedo sRGB; normal linear; packed = AO in red, roughness in green, height in blue, all linear",
-      "maps": {
-        "albedo": "dry_river_pebbles_polyhaven/albedo.png",
-        "normal": "dry_river_pebbles_polyhaven/normal.png",
-        "roughness": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png",
-        "ao": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png",
-        "height": "dry_river_pebbles_polyhaven/packed_ao_rough_height.png"
-      },
-      "mean_albedo": [
-        0.43045,
-        0.29162,
-        0.24076
       ]
     }
   ],
