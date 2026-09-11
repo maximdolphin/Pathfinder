@@ -46,7 +46,13 @@ namespace
 
 	/// The trace looks this far down. Generous: it is asking whether *any*
 	/// collision exists beneath, not measuring a height.
-	constexpr double TraceDepth = 40000.0;
+	// Five kilometres, not four hundred metres. The ship is held a fixed height
+	// above the exact surface; the ground drawn under a fast ship is often a
+	// coarse patch whose surface sits hundreds of metres from that, and a trace
+	// that stops 100 m below the exact ground called its collision absent.
+	// Whether collision is there is one question; how far it is from the true
+	// surface is another, and the report now answers both.
+	constexpr double TraceDepth = 500000.0;
 }
 
 bool ULedgerTransect::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -122,6 +128,9 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 	if (bHit)
 	{
 		CurrentMiss = 0;
+		const double BelowExactMetres = (Hit.Distance - TransectAltitude) / 100.0;
+		HitErrorSum += FMath::Abs(BelowExactMetres);
+		HitErrorWorst = FMath::Max(HitErrorWorst, FMath::Abs(BelowExactMetres));
 		FLedgerTerrainSample Under;
 		HitsSampled += Planet->SampleTerrain(FVector3d(From), Under) ? 1 : 0;
 	}
@@ -225,6 +234,8 @@ void ULedgerTransect::Finish()
 		MissesNoGround, MissesNoCollision, MissesUncooked,
 		DrawnMisses > 0 ? MissPatchSizeSum / DrawnMisses / 100.0 : 0.0);
 	UE_LOG(LogLedger, Log, TEXT("  hits: %d, of which the terrain query found drawn ground under %d"), Frames - Misses, HitsSampled);
+	UE_LOG(LogLedger, Log, TEXT("  the collision hit was %.1f m from the exact surface on average, %.1f m at worst"),
+		Frames > Misses ? HitErrorSum / (Frames - Misses) : 0.0, HitErrorWorst);
 
 	if (GEngine != nullptr && GetWorld() != nullptr)
 	{

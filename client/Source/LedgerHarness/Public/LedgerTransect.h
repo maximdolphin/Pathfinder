@@ -48,6 +48,9 @@ private:
 	double MissPatchSizeSum = 0.0;
 	/// Hits on which the query also found drawn ground: the check on the check.
 	int32 HitsSampled = 0;
+	/// How far the collision found lies from the exact surface, metres.
+	double HitErrorSum = 0.0;
+	double HitErrorWorst = 0.0;
 
 	/// Consecutive misses, and the worst run of them. One isolated miss and a
 	/// hundred in a row are the same number of misses and very different bugs.
