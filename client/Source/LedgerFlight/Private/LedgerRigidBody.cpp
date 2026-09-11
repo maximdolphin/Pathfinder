@@ -289,9 +289,10 @@ namespace LedgerFlight
 		if (Mode == ELedgerFlightMode::AssistOff)
 		{
 			// The stick is torque: full deflection is the angular acceleration
-			// that would reach the full rate in one hold time, and nothing
-			// takes it away again.
-			Out.Torque = AngularMomentum(Mass.Inertia, Rate * Handling.RateHoldPerSecond);
+			// that would reach the full rate in one second, and nothing takes it
+			// away again. It was one hold time, an eighth of a second, and a
+			// second's full yaw spun the ship at 360 deg/s (M5P).
+			Out.Torque = AngularMomentum(Mass.Inertia, Rate);
 		}
 		else
 		{
