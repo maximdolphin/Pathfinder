@@ -97,120 +97,68 @@ int32 ALedgerGroundFog::Configure(
 
 	FilledToMetres = ValleyFloorMetres + Fog.DepthMetres;
 
-	int32 Filled = 0;
-	for (int32 Index = 0; Index < Directions.Num(); ++Index)
+	// **One volume, with its top at the fill level.**
+	//
+	// A local fog volume has a rotation and ONE scale -- LocalFogVolumeCommon.ush
+	// unpacks a single UniformScale -- so the flat lenses this used to lay, 3.2 km
+	// across and 86 m tall, were each a sphere 3.2 km in radius, reaching three
+	// kilometres up through the lookout. That was the opaque orange frame every
+	// version of this produced with the height term on, and with it off the fog
+	// was a faint haze because the radial term is all that was left.
+	//
+	// A cold pool has a level top, and the component can give that directly:
+	// its height term is Extinction * exp(-Falloff * (z - Offset)) in the unit
+	// sphere's own up. So: radial term off, and the Offset put at the fill level.
+	// Below it, fog; above it, clear air; and the ground that stands above the
+	// level -- the ridge -- stands out of the fog on its own.
+	//
+	// **The top sits low in the sphere, because the bottom must stay a number.**
+	// The density grows as exp(Falloff * (Offset - z)) below the top and is
+	// largest at z = -1; a float stops at e^88, and e^120 was the NaN that
+	// poisoned the whole view. With the top at z = -0.8 the bottom is only 0.2 of
+	// the radius below it, so a falloff of 400 -- an e-fold every ~35 m, a sharp
+	// top -- puts e^80 there. The sphere is sized so the circle where it meets the
+	// level (0.6 of its radius) still covers the whole sampled square.
+	constexpr double TopInUnits = -0.8;
+	constexpr double Falloff = 400.0;
+	const double PoolRadiusMetres = GroundFogExtentMetres * 0.71 / FMath::Sqrt(1.0 - TopInUnits * TopInUnits);
+	const double PerMetre = Fog.ExtinctionPerMetre * Fog.Fraction;
+
+	ULocalFogVolumeComponent* Volume = NewObject<ULocalFogVolumeComponent>(this);
+	Volume->SetupAttachment(GetRootComponent());
+	Volume->SetMobility(EComponentMobility::Movable);
+	Volume->RegisterComponent();
+	Volume->SetWorldLocation(FVector(Centre
+		+ Up * ((FilledToMetres - TopInUnits * PoolRadiusMetres) * GroundFogCentimetresPerMetre)));
+	Volume->SetWorldRotation(FRotationMatrix::MakeFromZ(FVector(Up)).Rotator());
+	Volume->SetWorldScale3D(FVector(PoolRadiusMetres * GroundFogCentimetresPerMetre / GroundFogBaseSize));
+
+	// Per unit of the sphere's radius: the shader integrates optical depth in the
+	// unit sphere's own space, so a rate per metre becomes that rate times the
+	// radius in metres. It is packed as an 11-bit float, whose top is 65,024.
+	const float UnitExtinction = static_cast<float>(
+		FMath::Clamp(PerMetre * PoolRadiusMetres, 0.0, 60000.0));
+	Volume->SetRadialFogExtinction(0.0f);
+	Volume->SetHeightFogExtinction(UnitExtinction);
+	Volume->SetHeightFogFalloff(static_cast<float>(Falloff));
+	Volume->SetHeightFogOffset(static_cast<float>(TopInUnits));
+	Volume->SetFogPhaseG(0.35f);
+	Volume->SetFogAlbedo(FLinearColor(0.92f, 0.94f, 0.97f));
+	Volumes.Add(Volume);
+
+	int32 Below = 0;
+	for (const double Surface : Ground)
 	{
-		const double Surface = Ground[Index];
-		if (Surface >= FilledToMetres)
-		{
-			// This cell's ground is above the level. No fog, and that is the
-			// ridge in the acceptance.
-			continue;
-		}
-
-		const double Deep = FilledToMetres - Surface;
-		const double MiddleMetres = Surface + Deep * 0.5;
-
-		ULocalFogVolumeComponent* Volume = NewObject<ULocalFogVolumeComponent>(this);
-		Volume->SetupAttachment(GetRootComponent());
-		Volume->SetMobility(EComponentMobility::Movable);
-		Volume->RegisterComponent();
-
-		Volume->SetWorldLocation(FVector(
-			Centre + Directions[Index] * (MiddleMetres * GroundFogCentimetresPerMetre)));
-		// **Turned so its flat axis is this place's up.** The scale below is in
-		// the component's own axes, and without this those are the world's --
-		// so every "flat lens" was flattened along world Z, which at twenty
-		// degrees south is nowhere near vertical. Each cell was a slab tipped
-		// on its side: from the ridge the tops read as a row of domes, and
-		// widening them to close the gaps tilted one straight up through a
-		// lookout three kilometres above the pool.
-		Volume->SetWorldRotation(FRotationMatrix::MakeFromZ(FVector(Directions[Index])).Rotator());
-		// The sphere is squashed to the shape of the pool in this cell: a
-		// kilometre across and a hundred metres tall is a flat lens, which is
-		// what a fog bank is.
-		//
-		// **Overlapping, so the cells merge into one layer.** At 0.8 of the
-		// spacing each cell was its own lens with a gap around it, and a lens
-		// only reaches the fill level at its centre -- so the valley, seen from
-		// the ridge once it could be seen at all, was filled with a row of
-		// domes. 1.6 puts every cell's shoulder under its neighbour's, and the
-		// top reads as the level surface a cold pool actually has.
-		Volume->SetWorldScale3D(FVector(
-			Step * 1.6 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
-			Step * 1.6 * GroundFogCentimetresPerMetre / GroundFogBaseSize,
-			Deep * 0.5 * GroundFogCentimetresPerMetre / GroundFogBaseSize));
-
-		// **The component's density is per unit sphere, not per metre.** A local
-		// fog volume is a unit sphere scaled by the transform, and its
-		// extinction is quoted at the centre of that unit sphere -- so the
-		// number to hand it is the optical depth across the pool, tau = k * d,
-		// and not k itself. Handing it k (0.008) produced a fog nobody could
-		// photograph; the same scene with the fog switched off was
-		// indistinguishable, which is how the units error was found rather than
-		// argued about.
-		//
-		// Both terms get it. The radial one is what gives the bank a soft edge;
-		// setting it to zero, as the first version did, removes the volume's
-		// coverage almost entirely whatever the height term says.
-		const float OpticalDepth = static_cast<float>(
-			FMath::Clamp(Fog.ExtinctionPerMetre * Fog.Fraction * Deep, 0.0, 8.0));
-		Volume->SetRadialFogExtinction(OpticalDepth);
-		// `-fogradialonly` zeroes the height term: a control, because with the
-		// fog on the whole ridge view is one opaque orange -- peaks included --
-		// and with it off the valleys are a sea of cloud with the peaks
-		// standing out of it. The height term goes as exp(-falloff * z) inside
-		// the unit sphere, and at a falloff of 120 its bottom is e^120.
-		static const bool bRadialOnly = FParse::Param(FCommandLine::Get(), TEXT("fogradialonly"));
-		Volume->SetHeightFogExtinction(bRadialOnly ? 0.0f : OpticalDepth);
-		// **A sharp top, because the top is the visible thing about a fog bank.**
-		//
-		// The component's falloff runs backwards from what its name suggests: a
-		// large number is a *thin* transition. Flattening it to 4 to make the
-		// pool uniform -- which physically it nearly is -- turned the bank into
-		// a lit slab that occluded the sky from inside it. At 120 the density
-		// is concentrated in the bottom of each cell and the result reads as a
-		// fog bank both from above and from within it, which is what this is
-		// for. The physical profile of a cold pool is a thing T099 can model
-		// properly when there is a temperature field to hang it on.
-		// **Finite.** 120 put e^120 at the bottom of every cell -- past the
-		// largest float -- and the infinity poisoned the fog integration for the
-		// whole view: the ridge frame was one opaque orange, peaks and sky
-		// included, and zeroing only this term (-fogradialonly) gave back the
-		// valley, the cloud sea and the peaks. The falloff is per unit-sphere
-		// radius, so a five-metre transition at the top of a cell whose half
-		// height is H metres is H / 5; capped at 20, which keeps the bottom at
-		// e^20 -- dense, and representable.
-		Volume->SetHeightFogFalloff(static_cast<float>(FMath::Clamp(Deep * 0.5 / 5.0, 1.0, 20.0)));
-		Volume->SetHeightFogOffset(0.0f);
-		Volume->SetFogPhaseG(0.35f);
-		Volume->SetFogAlbedo(FLinearColor(0.92f, 0.94f, 0.97f));
-
-		// What the renderer was actually given, once: the fog's size is a
-		// claim about a component, and the component's bounds are the answer.
-		if (Filled == 0)
-		{
-			Volume->UpdateBounds();
-			const FBoxSphereBounds& Bounds = Volume->Bounds;
-			UE_LOG(LogLedger, Log,
-				TEXT("ground fog: first cell bounds %.0f x %.0f x %.0f m (sphere %.0f m), "
-					 "scale %s, up %s against the local %s, optical depth %.2f"),
-				Bounds.BoxExtent.X * 2.0 / 100.0, Bounds.BoxExtent.Y * 2.0 / 100.0,
-				Bounds.BoxExtent.Z * 2.0 / 100.0, Bounds.SphereRadius / 100.0,
-				*Volume->GetComponentScale().ToString(),
-				*Volume->GetUpVector().ToString(), *FVector(Directions[Index]).ToString(),
-				OpticalDepth);
-		}
-		Volumes.Add(Volume);
-		++Filled;
+		Below += Surface < FilledToMetres ? 1 : 0;
 	}
-
 	UE_LOG(LogLedger, Log,
-		TEXT("ground fog: valley floor %.0f m, filled to %.0f m (%.0f m deep), "
-			 "%d of %d cells, %.0f%% remaining, visibility %.0f m"),
+		TEXT("ground fog: valley floor %.0f m, filled to %.0f m (%.0f m deep); one volume %.1f km in "
+			 "radius, top %.0f m above its centre, %.0f per unit radius, an e-fold every %.0f m above "
+			 "the top; %d of %d sampled cells under the level, %.0f%% remaining, visibility %.0f m"),
 		ValleyFloorMetres - Planet->Radius / GroundFogCentimetresPerMetre,
 		FilledToMetres - Planet->Radius / GroundFogCentimetresPerMetre,
-		Fog.DepthMetres, Filled, Directions.Num(), Fog.Fraction * 100.0,
-		3.0 / FMath::Max(Fog.ExtinctionPerMetre * Fog.Fraction, 1e-9));
-	return Filled;
+		Fog.DepthMetres, PoolRadiusMetres / 1000.0, TopInUnits * PoolRadiusMetres, UnitExtinction,
+		PoolRadiusMetres / Falloff, Below, Ground.Num(), Fog.Fraction * 100.0,
+		3.0 / FMath::Max(PerMetre, 1e-9));
+	return Below;
 }

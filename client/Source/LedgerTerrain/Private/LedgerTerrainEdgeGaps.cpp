@@ -119,6 +119,7 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 	const FLedgerQuadNode* WorstNode = nullptr;
 	const FLedgerQuadNode* WorstAcross = nullptr;
 	double WorstRadialMetres = 0.0;
+	int32 WorstEdge = 0;
 	int32 DeepestGapLevels = 0;
 	int32 MeasuredAcrossLevels = 0;
 
@@ -199,6 +200,7 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 					WorstNeighbourDepth = Across->Depth;
 					WorstNode = &Node;
 					WorstAcross = Across;
+					WorstEdge = E;
 					// Up or sideways? A height mismatch is one kind of fault and a
 					// patch in the wrong place is another.
 					const FVector3d Centre = FVector3d(GetActorLocation());
@@ -236,6 +238,34 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 			static_cast<int32>(WorstNode->Face), WorstNode->U, WorstNode->V, WorstNode->Extent, WorstNode->Depth,
 			static_cast<int32>(WorstAcross->Face), WorstAcross->U, WorstAcross->V, WorstAcross->Extent,
 			WorstAcross->Depth, WorstRadialMetres);
+	}
+	// **Both sides of the worst edge, height by height.** A number for the
+	// worst gap says there is one; the two rows of heights say what it is -- a
+	// constant offset is a misplaced patch, a sawtooth is a stitch that did
+	// not happen, and a smooth disagreement is two surfaces that were never
+	// going to meet. Every eighth vertex, metres above the reference sphere.
+	if (WorstNode != nullptr && WorstAcross != nullptr)
+	{
+		const FDrawn* Near = Drawn.Find(WorstNode);
+		const FDrawn* Far = Drawn.Find(WorstAcross);
+		if (Near != nullptr && Far != nullptr)
+		{
+			const FVector3d PlanetCentre = FVector3d(GetActorLocation());
+			const EEdge Own = static_cast<EEdge>(WorstEdge);
+			const EEdge Theirs = Opposite(Own);
+			FString Mine;
+			FString Other;
+			for (int32 K = 0; K < Side; K += 8)
+			{
+				int32 X = 0, Y = 0;
+				EdgeVertex(Own, K, X, Y);
+				Mine += FString::Printf(TEXT(" %.1f"), ((World(*Near, X, Y) - PlanetCentre).Length() - Radius) / 100.0);
+				EdgeVertex(Theirs, K, X, Y);
+				Other += FString::Printf(TEXT(" %.1f"), ((World(*Far, X, Y) - PlanetCentre).Length() - Radius) / 100.0);
+			}
+			OutReport += FString::Printf(TEXT("edge heights, this side (every 8th):%s\n"), *Mine);
+			OutReport += FString::Printf(TEXT("edge heights, facing side (every 8th):%s\n"), *Other);
+		}
 	}
 	return Worst;
 }
