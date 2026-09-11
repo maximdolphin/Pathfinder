@@ -1,0 +1,7 @@
+A 300 m/s descent, counted for holes every frame (T027).
+
+from 20000 m to 100 m at 300 m/s: 66.4 s, 6508 frames
+frames with an unfilled node   0
+most unfilled in one frame     0
+
+VERDICT: PASS

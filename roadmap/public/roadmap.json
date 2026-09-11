@@ -45,7 +45,7 @@
    "status": "done",
    "gatePassedAt": "2026-09-07",
    "evidence": [],
-   "doneCount": 26
+   "doneCount": 27
   },
   {
    "id": "M01",
@@ -2425,9 +2425,9 @@
    "dependsOn": [
     "T026"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-08",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-08",
@@ -2443,9 +2443,21 @@
      "at": "2026-09-08",
      "kind": "block",
      "text": "Ascent-path regression, see notes. Carrying into the reworked roadmap."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Met against its acceptance with a fixture that measures it. The descent holes were fixed on 2026-09-08 (collapse waited for the parent's patch; pool 3600) and the ascent regression that kept this open was T028's, fixed the same day -- but nothing had flown the acceptance's own case since. -descent300 parks the ship 20 km over the site until the streamer is idle, then flies it straight down to 100 m at 300 m/s, moving the ship every frame and setting its velocity so the streamer's lead along it is exercised, and reads the planet's own count of unfilled nodes on every frame: 6,508 frames over 66.4 s, zero with an unfilled node. LedgerDescent.cpp."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T027-2026-09-11T04-21-11-913.txt",
+     "caption": "20 km to 100 m at 300 m/s, the ship carrying the velocity: 6,508 frames, 0 with an unfilled node",
+     "source": "../out/T027-descent-300.txt",
+     "addedAt": "2026-09-11T04:21:11.914Z"
+    }
+   ],
    "plannedStartDay": 33.5,
    "plannedEndDay": 34,
    "plannedStart": "2026-10-22",
@@ -14173,5 +14185,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T04:16:20.497Z"
+ "updatedAt": "2026-09-11T04:21:12.003Z"
 }
