@@ -7,6 +7,8 @@
 
 #include "LedgerBiomeSurfaces.h"
 
+#include "UObject/StrongObjectPtr.h"
+
 #include "LedgerBiome.h"
 #include "LedgerLog.h"
 #include "LedgerSurfaceSets.h"
@@ -20,14 +22,60 @@ namespace
 	/// dozen of them on a planet, but the sets behind them repeat: savanna and
 	/// grassland share a scan, and every palette containing either loads it
 	/// again without this.
+	/// Everything the cache holds, kept alive.
+	///
+	/// **A static cache of raw UObject pointers is a static cache of dangling
+	/// pointers waiting for a collection.** Nothing else referenced these
+	/// textures except the materials made from them, so when a world was torn
+	/// down and its materials went, the collector took the textures too and
+	/// left this map pointing at freed memory. The next world's palettes were
+	/// then built on them, and the render thread dereferenced null a few
+	/// seconds later -- which is as far from the cause as a symptom usually
+	/// gets. A strong pointer is what says "this map is a referencer".
+	TArray<TStrongObjectPtr<UTexture2D>>& CacheRoots()
+	{
+		static TArray<TStrongObjectPtr<UTexture2D>> Roots;
+		return Roots;
+	}
+
+	void RootSet(const LedgerSurface::FSurfaceSet& Set)
+	{
+		for (UTexture2D* Texture : { Set.Albedo, Set.Normal, Set.Packed })
+		{
+			if (Texture != nullptr)
+			{
+				CacheRoots().Add(TStrongObjectPtr<UTexture2D>(Texture));
+			}
+		}
+	}
+
 	LedgerSurface::FSurfaceSet& CachedSet(const FString& Name)
 	{
 		static TMap<FString, LedgerSurface::FSurfaceSet> Cache;
 		if (LedgerSurface::FSurfaceSet* Existing = Cache.Find(Name))
 		{
-			return *Existing;
+			// **And a check that says so out loud if it ever happens again.**
+			// A cached texture that has stopped being valid is a bug somewhere
+			// upstream, not a thing to paper over silently -- and it is
+			// invisible from the crash it eventually causes.
+			const bool bStale =
+				(Existing->Albedo != nullptr && !IsValid(Existing->Albedo))
+				|| (Existing->Normal != nullptr && !IsValid(Existing->Normal))
+				|| (Existing->Packed != nullptr && !IsValid(Existing->Packed));
+			if (!bStale)
+			{
+				return *Existing;
+			}
+			UE_LOG(LogLedger, Error,
+				TEXT("surface set %s went stale in the cache: a texture was "
+					 "collected while the cache still held it. Reloading."),
+				*Name);
+			Cache.Remove(Name);
 		}
-		return Cache.Add(Name, LedgerSurface::LoadSurfaceSet(Name));
+		LedgerSurface::FSurfaceSet& Added =
+			Cache.Add(Name, LedgerSurface::LoadSurfaceSet(Name));
+		RootSet(Added);
+		return Added;
 	}
 
 	FString SlotParameter(int32 Slot, const TCHAR* Suffix)

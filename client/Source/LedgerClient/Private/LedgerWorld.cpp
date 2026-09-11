@@ -234,7 +234,20 @@ void ULedgerWorldBuilder::Tick(float DeltaSeconds)
 		const int32 Body = PendingBody;
 		PendingBody = INDEX_NONE;
 		SetActiveBody(Body);
-		ChooseSite();
+
+		// **The sun has to change bodies too.** SunFacing is the star's
+		// direction in the *active body's* rotating frame, so it means
+		// something different the moment the active body changes. Leaving it
+		// alone here left the moon's landing site being chosen against the
+		// planet's sun vector: the picker duly found a place with the sun
+		// nearly overhead by that measure and the sky, asked properly,
+		// reported it eighty degrees below the horizon. The town was built in
+		// the dark and three fixtures photographed it there.
+		//
+		// The ChooseSite() that used to be on this line did nothing at all --
+		// the planet has just been destroyed, and it returns early without one.
+		// BuildWorldFor calls it again once there is a planet to choose on.
+		SunFacing = SunDirectionAt(System, WhenSeconds);
 		if (UWorld* World = GetWorld())
 		{
 			BuildWorldFor(*World);
@@ -775,11 +788,46 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 		Settings.AutoExposureSpeedDown = 0.8f;
 		Settings.bOverride_BloomIntensity = true;
 		Settings.BloomIntensity = 0.35f;
+
+		// **Where in the histogram to meter, which is a question only an
+		// airless world forces you to answer.**
+		//
+		// Under air, the sky lights the shadows and the whole frame sits within
+		// a few stops, so metering the middle of the histogram -- the default
+		// tenth to ninetieth percentile -- is metering the scene. Without air a
+		// shadow receives nothing at all: the frame is sunlit ground and pure
+		// black in roughly equal parts, the middle of that histogram is the
+		// black, and exposing for it puts every lit surface two stops over the
+		// top. Landing on the moon produced exactly that -- white rectangles
+		// where the buildings were.
+		//
+		// So on an airless body the meter is moved onto the lit part. This is
+		// what a photographer does there too: sunny sixteen is a highlight
+		// rule, not an average one, because on a world with no sky there is
+		// nothing meaningful to average.
+		if (!bAtmosphere)
+		{
+			Settings.bOverride_AutoExposureLowPercent = true;
+			Settings.AutoExposureLowPercent = 70.0f;
+			Settings.bOverride_AutoExposureHighPercent = true;
+			Settings.AutoExposureHighPercent = 96.0f;
+		}
 	}
 
 	// The site has to be chosen before the town can be built on it, and both
 	// before the descent aims anywhere.
 	ChooseSite();
+
+	// **What the site got, in the two frames that argue about it.** The site is
+	// picked for daylight, so these two must agree: the dot product against the
+	// sun vector the picker used, and the solar altitude the sky reports for
+	// the same direction. When a fixture insists a freshly chosen site is in
+	// the dark, one of these is lying and this says which.
+	UE_LOG(LogLedger, Log,
+		TEXT("site: body %d, sun.site %.3f, solar altitude %.1f deg"),
+		HomeBody(), FVector3d::DotProduct(SiteDirection.GetSafeNormal(), SunFacing),
+		FMath::RadiansToDegrees(LedgerSky::SolarAltitude(
+			System, HomeBody(), SiteDirection.GetSafeNormal(), WhenSeconds)));
 
 	Settlement = InWorld.SpawnActor<ALedgerSettlement>(
 		ALedgerSettlement::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);

@@ -25,6 +25,14 @@ namespace
 	constexpr double CrossingFirstSettle = 25.0;
 	constexpr double CrossingStepSettle = 14.0;
 
+	/// **The landing gets longer, because adaptation is not symmetric.**
+	/// The world darkens by a stop and a quarter a second and brightens by
+	/// eight tenths of one, and the last step is the one that goes from the
+	/// unlit side of a descent to sunlight on bare regolith -- about twenty
+	/// stops, downward, at the slow rate. Fourteen seconds photographs a frame
+	/// still on its way there, which is a white rectangle. Thirty-two arrives.
+	constexpr double CrossingLandedSettle = 32.0;
+
 	/// A gravity of thrust, the same ship T087 priced the trip for.
 	constexpr double CrossingAcceleration = 9.81;
 
@@ -43,11 +51,19 @@ namespace
 		{ TEXT("departure"), 0.02 },
 		{ TEXT("cruise"),    0.50 },
 		{ TEXT("arrival"),   1.00 },
-		// **A descent, not a teleport.** Dropping the camera from forty radii
+		// **A descent, not a teleport.** Dropping the camera from eight radii
 		// straight onto the ground asks the streamer to build every level of
 		// detail between them in one frame. A stop on the way down is what a
 		// landing is anyway.
-		{ TEXT("descent"),   1.50 },
+		//
+		// 1.98 and not 1.5, because this number is the clock as well as the
+		// altitude. Half a trip is two and three quarter hours, and the moon
+		// turns in that time: the descent was photographing a landing site
+		// that would not be in daylight for another two hours, so the frame
+		// came back black while the one taken from the ground beneath it was
+		// lit. Six minutes above the landing is a descent; a night apart from
+		// it is a different photograph.
+		{ TEXT("descent"),   1.98 },
 		{ TEXT("landed"),    2.00 },
 	};
 }
@@ -147,7 +163,16 @@ void ULedgerCrossing::Place()
 	// **The clock runs at the rate the trip takes.** T085's point: a crossing
 	// is hours of simulated time and the ephemeris does not care how it is
 	// asked, so the fixture moves the clock and everything else follows.
-	const double Elapsed = FMath::Max(Now.Fraction, 0.0)
+	// **The clock stops when the ship arrives.** Fractions past one are
+	// altitude, not more travelling: the descent and the landing happen at the
+	// far end, minutes apart, not another whole crossing later.
+	//
+	// It used to multiply straight through, which put the landing five and a
+	// half hours after the arrival. The site is chosen for daylight at the
+	// moment the world is built, and five and a half hours is most of a night
+	// on a small fast moon -- so the fixture picked a sunlit place to land and
+	// then photographed it after dark, twice.
+	const double Elapsed = FMath::Clamp(Now.Fraction, 0.0, 1.0)
 		* FMath::Min(QuotedSeconds, 1.0e6);
 	Builder->SetWhenSeconds(DepartureSeconds + Elapsed);
 
@@ -212,8 +237,21 @@ void ULedgerCrossing::Place()
 		// **Out along the route, looking back.** The ship climbs away from the
 		// stand-off on the line the map quoted; the planet shrinking behind it
 		// is the crossing happening.
-		const double Height = System.Bodies[Home].RadiusMetres
-			* (0.2 + 40.0 * Now.Fraction);
+		//
+		// In radii of *whichever body is underneath*, which is not always the
+		// home one: the last of these steps is taken after the switch, above a
+		// moon a third the size. Measuring its distance in home radii put the
+		// camera four times too far out and photographed the arrival as a
+		// two-pixel crescent -- a picture of nothing, of the right thing.
+		const int32 Under = Builder->GetHomeBodyIndex();
+		const double UnderRadius = System.Bodies.IsValidIndex(Under)
+			? System.Bodies[Under].RadiusMetres
+			: System.Bodies[Home].RadiusMetres;
+		// Eight radii at the far end rather than forty. The stand-off used to
+		// be chosen so the whole disc cleared the frame; what it actually did
+		// was make every one of these pictures a dot on a black field, which
+		// is a photograph of the right thing that shows nothing.
+		const double Height = UnderRadius * (0.2 + 8.0 * Now.Fraction);
 		Eye = FVector(Centre + Up * (Ground + Height * 100.0));
 		Toward = -Up;
 		FieldOfView = 55.0f;
@@ -222,21 +260,44 @@ void ULedgerCrossing::Place()
 	{
 		// On the way down: high enough that the whole disc is still a horizon,
 		// low enough that the streamer has seen the ground it is about to need.
+		//
+		// Tilted away from the sun for the same reason the landing is. Two
+		// hundred kilometres up over an airless world, with the sun ahead and
+		// low, every slope in the frame is presenting its unlit face and the
+		// photograph is black -- which is what this step returned until it was
+		// turned around.
 		Eye = FVector(Centre + Up * (Ground + 2.0e7));
 		const FVector3d Sun = LedgerSky::SunDirectionInSurface(
 			System, Moon, Up, Builder->GetWhenSeconds());
+		const FVector2D DescentAway = FVector2D(-Sun.X, -Sun.Y).GetSafeNormal();
 		Toward = LedgerFrames::ToBody(
-			{ Moon, Up, FVector3d(Sun.X, Sun.Y, -1.2) }).Metres.GetSafeNormal();
+			{ Moon, Up, FVector3d(DescentAway.X, DescentAway.Y, -1.2) })
+			.Metres.GetSafeNormal();
 		FieldOfView = 65.0f;
 	}
 	else
 	{
-		// Landed. Standing on the moon, looking along its ground.
+		// **Landed, with the sun behind the camera and the ground in front.**
+		//
+		// Two things about a world with no air, both learned by photographing
+		// the wrong one. A small body's horizon is close and flat -- at thirty
+		// metres up on a moon of two thousand kilometres it is eleven
+		// kilometres away and a third of a degree below level -- so anything
+		// aimed level or above is mostly sky. And there is no sky light: a
+		// slope facing away from the sun receives nothing at all, so a camera
+		// pointed *at* the sun photographs the unlit side of everything and
+		// returns a black frame with a few rocks in it.
+		//
+		// So: away from the sun, tilted down. That is where the lit faces are,
+		// and it is also the direction anyone standing on an airless surface
+		// would look if they wanted to see where they were.
 		Eye = FVector(Centre + Up * (Ground + 3000.0));
 		const FVector3d Sun = LedgerSky::SunDirectionInSurface(
 			System, Moon, Up, Builder->GetWhenSeconds());
+		const FVector2D Away =
+			FVector2D(-Sun.X, -Sun.Y).GetSafeNormal();
 		Toward = LedgerFrames::ToBody(
-			{ Moon, Up, FVector3d(Sun.X, Sun.Y, 0.08) }).Metres.GetSafeNormal();
+			{ Moon, Up, FVector3d(Away.X, Away.Y, -0.18) }).Metres.GetSafeNormal();
 		FieldOfView = 70.0f;
 	}
 
@@ -288,7 +349,11 @@ void ULedgerCrossing::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < (Step == 0 && !bAimed ? CrossingFirstSettle : CrossingStepSettle))
+	const bool bLanding = bAimed && Step == UE_ARRAY_COUNT(CrossingSteps);
+	const double Wanted = Step == 0 && !bAimed
+		? CrossingFirstSettle
+		: (bLanding ? CrossingLandedSettle : CrossingStepSettle);
+	if (Settle < Wanted)
 	{
 		return;
 	}
@@ -311,6 +376,23 @@ void ULedgerCrossing::Tick(float DeltaSeconds)
 		Report();
 		FPlatformMisc::RequestExit(false);
 		return;
+	}
+
+	// **Where the sun is, said out loud at every step.** Three of these frames
+	// came back black in a row and each one was argued about as a streaming
+	// problem, a camera-aim problem and an exposure problem before anybody
+	// asked the only question that mattered: whether the ground being
+	// photographed was in daylight. It costs one line to never ask again.
+	if (ULedgerWorldBuilder* Where = GetWorld()->GetSubsystem<ULedgerWorldBuilder>())
+	{
+		const int32 Under = Where->GetHomeBodyIndex();
+		const FVector3d Local = bSwitched
+			? Where->GetSiteDirection().GetSafeNormal() : Anchor;
+		UE_LOG(LogLedger, Log,
+			TEXT("crossing: on body %d the sun is %.1f degrees above the "
+				 "local horizon"),
+			Under, FMath::RadiansToDegrees(LedgerSky::SolarAltitude(
+				System, Under, Local, Where->GetWhenSeconds())));
 	}
 
 	UE_LOG(LogLedger, Log, TEXT("crossing %d/%d: %s"),

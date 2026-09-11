@@ -1,16 +1,17 @@
 # Crossing to another body in one session
 
-T088's second clause. **The machinery exists and the last frame is missing.**
+T088's second clause. Watch a moon from the ground, fly to it, land on it,
+**without restarting the process**.
 
-Run it: `UnrealEditor.exe client/Ledger.uproject -game -crossing`
+Run it: `UnrealEditor.exe client/Ledger.uproject -game -crossing -RenderOffScreen`
 (`-crossto=<n>` picks a different destination.)
 
 ## What the world had to learn
 
-A world was built once, during `OnWorldBeginPlay`, around one body — its terrain,
-its sky and its town are all functions of which body that is. The only way to
-stand on a different one was to start a new process with `-body=`, which is not
-what "in one session" means.
+A world was built once, during `OnWorldBeginPlay`, around one body — its
+terrain, its sky and its town are all functions of which body that is. The only
+way to stand on a different one was to start a new process with `-body=`, which
+is not what "in one session" means.
 
 So the tail of `OnWorldBeginPlay` became `BuildWorldFor(UWorld&)` — 457 lines
 moved, nothing changed — and `SwitchToBody(int32)` destroys the planet, the
@@ -21,17 +22,88 @@ asks for it.
 ```
 crossing: Home to Companion, 361622 km, quoted 5.48 hours at a gravity;
 the far end pulls 1.28 m/s2 and holds no air
-crossing 1/6: watch
-crossing 2/6: departure
-crossing 3/6: cruise
+site: body 1, sun.site 0.865, solar altitude 59.8 deg
+crossing 1/6: watch        2/6: departure        3/6: cruise
 switching from body 1 (Home) to 3 (Companion)
-crossing 4/6: arrival
+site: body 3, sun.site 0.946, solar altitude 71.1 deg
+crossing 4/6: arrival      5/6: descent          6/6: landed
+exit: 0
 ```
+
+| | |
+|---|---|
+| from | Home |
+| to | Companion |
+| distance | 361,622 km |
+| quoted | 5.48 hours at a gravity |
+| world switched | yes |
+| standing on | body 3, radius 1976 km |
+| gravity there | 1.28 m/s² (0.130 g) |
+| atmosphere | none |
 
 The trip is quoted by T087's map before anything moves, the clock is run forward
 by T085's accelerator, and the world changes bodies underneath a running game.
-Then, about fourteen seconds later, the process takes an access violation on the
-render thread.
+
+## The crash, and how it was finally seen
+
+For a dozen runs the process took an access violation on the render thread about
+fourteen seconds after the switch, with a breadcrumb saying nothing more
+specific than `SceneRender / ViewFamilies`. Guessing at it produced four real
+fixes and no answer (below). What produced the answer was `-forcelogflush`: with
+it, the last line written before the fault was
+
+```
+LogUObjectBase: Warning: Object is not registered
+```
+
+immediately after a biome palette was created. That named the culprit.
+`LedgerBiomeSurfaces.cpp` kept a function-static `TMap<FString, FSurfaceSet>` of
+**raw `UTexture2D*`**, and nothing rooted them. The first world's materials died
+with it, the collector took the textures the cache was still pointing at, and
+the second world built its palettes on freed memory.
+
+The cache now holds `TStrongObjectPtr` roots, and checks `IsValid` on the way
+out so a stale entry is reloaded and logged rather than returned.
+
+**A static cache of raw UObject pointers is a dangling pointer waiting for a
+collection.** It survived every run that only ever built one world.
+
+## The town built in the dark
+
+With the crash gone, three of the six frames came back black or blown out, and
+each was argued about as a streaming problem, an aim problem and an exposure
+problem before anyone asked whether the ground being photographed was in
+daylight. One log line settled it:
+
+```
+site: body 3, sun.site 0.946, solar altitude -80.0 deg
+```
+
+Those two numbers describe the same place and cannot both be right. `SunFacing`
+is the star's direction **in the active body's rotating frame**, so it means
+something different the moment the active body changes — and the switch was not
+recomputing it. The moon's landing site was being chosen against the *planet's*
+sun vector: the picker found somewhere with the sun nearly overhead by that
+measure, and the sky, asked properly, put it eighty degrees below the horizon.
+The town was built in the dark, and the light was correct all along.
+
+One line after `SetActiveBody`, and the two agree: `0.946` and `71.1 deg`.
+
+Three smaller things fell out of the same investigation:
+
+- **The stand-off was measured in the wrong body's radii.** The arrival is taken
+  after the switch, above a moon a third the size, so forty home-radii put the
+  camera four times too far out — a photograph of the right thing showing
+  nothing. Eight radii of whichever body is underneath.
+- **Fractions past 1.0 are altitude, not more travelling.** The clock was
+  multiplying straight through, so the landing happened five and a half hours
+  after the arrival — most of a night on a small fast moon.
+- **On an airless body the meter has to follow the highlights.** With no sky
+  light a shadow receives nothing, the frame is half sunlit ground and half pure
+  black, and metering the middle of that histogram exposes for the black. The
+  post-process now moves the metering window to the 70th–96th percentile when
+  the body has no air, which is the same thing sunny-sixteen does and for the
+  same reason.
 
 ## Four defects found on the way, none of them the cause
 
@@ -63,23 +135,44 @@ material for visualising vertex colours — and painted a procedural planet with
 it. It is spawned deferred now, with `FinishSpawning` after the last thing that
 has to be true first.
 
-That last one looked exactly like the cause. It was not.
+## What a full pool costs
 
-## What has been ruled out
+The terrain stats now end with a line saying what the process is holding, next
+to the counters that explain it:
 
-| suspicion | test | result |
-|---|---|---|
-| the destination is airless | `-crossto=4`, a body with air | same crash |
-| teardown and rebuild share a frame | split across two ticks | same crash |
-| the view target is destroyed | camera kept alive across the switch | same crash |
-| a level-of-detail jump from orbit to ground | graded descent step added | same crash |
-| the body itself is broken | `-body=3` at startup | **completely stable** |
+```
+sections           3600 active, 0 in flight, 0 free of 3600
+memory             10806 MB used, 10806 MB peak, 15135 MB virtual, 5285 MB available
+```
 
-The last row is the useful one: the destination world is fine when it is built at
-startup and not fine when it is built as a replacement, so what is wrong is
-something the first world leaves behind rather than anything about the second.
+Ten point eight gigabytes at a saturated pool, against 2.5 at startup: about
+2.3 MB per patch, which is a 65×65 mesh plus cooked collision plus a
+ray-tracing acceleration structure — Lumen's hardware path is on, so every
+section builds one. It is a cost, not a leak: it tracks `sections active`
+exactly and comes back down when the view pulls away.
 
-The crash arrives about fourteen seconds after the switch, on the render thread,
-with a breadcrumb no more specific than `SceneRender / ViewFamilies`, and a null
-dereference. Whoever picks this up should start there: a render resource
-belonging to the first world that outlives it.
+It is worth knowing because running out of **commit** does not arrive as a
+diagnosis. It arrives as an access violation in whichever allocation happened to
+be next, which on one occasion was `SetProcMeshSection` inside `UploadFromCache`
+and looked like a terrain bug. Two of these processes at once on a machine with
+a small page file is enough. A warning now fires ten seconds before the bang,
+when headroom drops under two gigabytes.
+
+## Still open
+
+The moon photographed from eight radii shows its quadtree: patch-sized tonal
+blocks where neighbouring palettes meet, and a scattering of black holes and
+white triangles at the coarsest level. That is a level-of-detail defect at
+planet scale, visible only from orbit, and it belongs to the terrain rather than
+to the crossing.
+
+## The frames
+
+| | |
+|---|---|
+| `crossing-0-watch.png` | the moon from the home ground, before anything moves |
+| `crossing-1-departure.png` | the home world from low altitude |
+| `crossing-2-cruise.png` | half-lit home planet against stars, mid-crossing |
+| `crossing-3-arrival.png` | the destination, lit, from eight of its own radii |
+| `crossing-4-descent.png` | its surface from two hundred kilometres |
+| `crossing-5-landed.png` | standing on it: black sky, stars, regolith, ice peaks |
