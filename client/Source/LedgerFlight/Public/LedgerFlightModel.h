@@ -51,6 +51,22 @@ struct LEDGERFLIGHT_API FLedgerGravityField
 	/// tell you they do not. It costs one subtraction.
 	FVector3d WindCmPerSecond = FVector3d::ZeroVector;
 
+	/// Mass over drag area, kilograms per square metre: the ballistic
+	/// coefficient. T100. Zero leaves it out, which is what every test that
+	/// predates it wants.
+	///
+	/// **The drag that matters at orbital speed.** AtmosphericDrag is a
+	/// fraction of the speed per second, which flies well at a few hundred
+	/// metres a second and is nothing at seven kilometres a second: a ship
+	/// entering on it alone reaches the dense air still at orbital speed, and
+	/// every entry burns whatever its angle. Real drag goes as rho v squared,
+	/// so an entry sheds its speed high up, where the air is thin -- and how
+	/// high depends on how steeply it comes in.
+	double BallisticKgPerM2 = 0.0;
+
+	/// Air density at the datum, kilograms per cubic metre, for the drag above.
+	double SeaLevelDensity = 1.225;
+
 	/// Ground radius under a unit direction. Defaults to the reference sphere;
 	/// the game replaces it with the terrain's height function.
 	TFunction<double(const FVector3d&)> SurfaceRadiusAt;
@@ -76,6 +92,44 @@ struct LEDGERFLIGHT_API FLedgerFlightState
 
 	/// Speed retained per contact with the ground.
 	double GroundFriction = 0.86;
+};
+
+/// What the hull is made to take. T100.
+struct LEDGERFLIGHT_API FLedgerHeatShield
+{
+	/// Nose radius, metres. Blunter is cooler: the shock stands further off.
+	double NoseRadiusMetres = 2.0;
+
+	/// Heat the skin holds per square metre per kelvin. Thin, so it follows
+	/// the flux within seconds rather than averaging a whole entry away.
+	double HeatCapacity = 5000.0;
+
+	/// For radiating the heat back out, which is most of how a hull survives.
+	double Emissivity = 0.85;
+
+	/// Skin temperature past which the hull starts to fail, kelvin.
+	double FailKelvin = 2150.0;
+
+	/// Hull lost per second for every hundred kelvin over the limit.
+	double DamagePerSecondPer100K = 0.02;
+};
+
+/// The skin through an entry.
+struct LEDGERFLIGHT_API FLedgerHeatState
+{
+	/// Zero until the first step, which starts it at the ambient temperature.
+	double SkinKelvin = 0.0;
+	double FluxWattsPerM2 = 0.0;
+	double PeakFluxWattsPerM2 = 0.0;
+	double PeakKelvin = 0.0;
+
+	/// The heat taken in and the heat radiated away, joules per square metre.
+	/// Their difference is what the skin is holding.
+	double LoadJoulesPerM2 = 0.0;
+	double RadiatedJoulesPerM2 = 0.0;
+
+	/// Hull lost to heat, 0 to 1.
+	double Damage = 0.0;
 };
 
 namespace LedgerFlight
@@ -112,6 +166,18 @@ namespace LedgerFlight
 		double& Accumulator);
 
 	/// Height above the ground beneath, in centimetres.
+	/// Stagnation-point heat flux, watts per square metre: Sutton and Graves,
+	/// k sqrt(rho / r) v cubed. A function of the density and the speed, and of
+	/// nothing else about where the ship is -- in particular not its altitude.
+	LEDGERFLIGHT_API double HeatFlux(
+		double DensityKgPerM3, double SpeedMetresPerSecond, double NoseRadiusMetres);
+
+	/// One step of the skin: heated by the flux, cooled by radiating, and
+	/// failing while it is over the shield's limit.
+	LEDGERFLIGHT_API void Heat(FLedgerHeatState& State, const FLedgerHeatShield& Shield,
+		double DensityKgPerM3, double AirspeedMetresPerSecond, double AmbientKelvin,
+		double DeltaSeconds);
+
 	LEDGERFLIGHT_API double AltitudeAbove(
 		const FLedgerFlightState& State,
 		const FLedgerGravityField& Field);

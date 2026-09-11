@@ -49,6 +49,49 @@ struct FLedgerPressureCell
 	int32 Index = INDEX_NONE;
 };
 
+/// The extreme tail of the weather at a place. T097.
+struct FLedgerStorm
+{
+	/// 0 for ordinary weather, 1 at the deepest lows the schedule makes.
+	double Severity = 0.0;
+
+	/// Flashes a minute within ten kilometres. None on a world with no
+	/// condensable water: lightning needs ice and water colliding in a cloud.
+	double FlashesPerMinute = 0.0;
+
+	/// Root-mean-square gust on top of the mean wind, metres per second.
+	double GustMetresPerSecond = 0.0;
+
+	/// A dry world's storm: dust carried by the wind, not rain from a cloud.
+	bool bDust = false;
+
+	bool IsSevere() const { return Severity > 0.0; }
+};
+
+/// What the weather will be at a place and a time, as known at another. T104.
+struct FLedgerForecast
+{
+	/// Pressure anomaly expected, pascals: the systems alive when the forecast
+	/// was issued, carried forward, plus what the ones not yet born are
+	/// expected to add.
+	double AnomalyPascals = 0.0;
+
+	/// One standard deviation of what the unborn systems might add. Zero when
+	/// every system that will matter already exists.
+	double UncertaintyPascals = 0.0;
+
+	/// Sea-level pressure expected, pascals.
+	double PressurePascals = 0.0;
+
+	/// Chance the low is deep enough to rain, 0 to 1.
+	double RainChance = 0.0;
+
+	/// Systems at the valid time that were known when it was issued, and ones
+	/// that had not formed yet.
+	int32 KnownCells = 0;
+	int32 UnbornCells = 0;
+};
+
 namespace LedgerWeather
 {
 	/// How far the tropical cell reaches from the equator, radians.
@@ -163,4 +206,46 @@ namespace LedgerWeather
 	/// profile says the wind is zero. Open country is a few centimetres, a
 	/// forest is a metre, open water is a fraction of a millimetre.
 	LEDGERCORE_API double RoughnessMetres();
+
+	/// How severe the weather is at a place and a time. T097.
+	///
+	/// **The tail of the same pressure field the rain comes from**, not a
+	/// second system: a storm is a low deep enough, or on a dry world a wind
+	/// hard enough, to be dangerous.
+	LEDGERCORE_API FLedgerStorm StormAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch);
+
+	/// A storm's gusts at a place, metres per second, as (east, north, up).
+	///
+	/// Deterministic in space and time, so a gust is part of the weather and
+	/// the same for everything that asks. Zero outside a storm.
+	/// A forecast for a place at ValidSeconds, issued at IssuedSeconds. T104.
+	///
+	/// **What a forecaster could know, and no more.** A system alive at the
+	/// issue time is a birth time, a place and a size, so where it will be is
+	/// arithmetic and the forecast has it exactly. A system born after the
+	/// issue time is known only as a slot in the schedule -- when it forms and
+	/// how strong it will be by then are the slot's, but where it forms and how
+	/// deep are drawn at its birth -- so it enters as an expectation and a
+	/// spread over everything it could be. Flight planning, settlement shutters
+	/// and missions ask this; anything that reads the weather itself is looking
+	/// at the answer.
+	/// The deepest lows alive at a time, deepest first. T097 and T106.
+	///
+	/// **The list the clouds are drawn from**, here rather than in the
+	/// renderer so that a test can ask whether the storm a ship flies into is
+	/// one the sky is showing, without a renderer.
+	LEDGERCORE_API void DeepestLows(const FLedgerSystem& System, int32 BodyIndex,
+		double SecondsFromEpoch, int32 Count, TArray<FLedgerPressureCell>& Out);
+
+	LEDGERCORE_API FLedgerForecast ForecastAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians,
+		double IssuedSeconds, double ValidSeconds);
+
+	LEDGERCORE_API FVector3d GustAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double AltitudeMetres,
+		double SecondsFromEpoch);
 }

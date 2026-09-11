@@ -1,5 +1,7 @@
 #include "LedgerAudio.h"
 
+#include "LedgerStorm.h"
+
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "LedgerAir.h"
@@ -204,7 +206,11 @@ void ULedgerAudio::Tick(float DeltaSeconds)
 	// **One wind, asked for the same way everything else asks.** T093's whole
 	// point: the flight model, the grass and this are reading the same
 	// subsystem, so they cannot disagree about what the weather is doing.
-	const double Speed = Wind->SpeedAt(Eye);
+	// T107: and the storm's gusts, which the ship already feels: a storm is
+	// loud because the air in it is moving harder, not because it was told to be.
+	const ULedgerStorm* Storms = World->GetSubsystem<ULedgerStorm>();
+	const double Speed = (Wind->WindAtMetres(Eye)
+		+ (Storms != nullptr ? FVector3d(Storms->GustAt(Eye)) / AudioCentimetresPerMetre : FVector3d::ZeroVector)).Length();
 
 	FHeard Now;
 	Now.AltitudeMetres = Altitude;

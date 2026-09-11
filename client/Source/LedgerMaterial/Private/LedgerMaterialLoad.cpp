@@ -101,6 +101,34 @@ namespace LedgerSurface
 #endif
 	}
 
+	UMaterialInterface* CreateVisorMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Visor")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning, TEXT("visor material built in memory: no baked asset."));
+		return BuildVisorMaterial(Outer);
+#else
+		return Fallback(TEXT("M_Visor"));
+#endif
+	}
+
+	UMaterialInterface* CreateAuroraMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Aurora")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning, TEXT("aurora material built in memory: no baked asset."));
+		return BuildAuroraMaterial(Outer);
+#else
+		return Fallback(TEXT("M_Aurora"));
+#endif
+	}
+
 	UMaterialInterface* CreateStarMaterial(UObject* Outer)
 	{
 		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Star")))

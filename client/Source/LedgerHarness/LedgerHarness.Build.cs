@@ -15,6 +15,7 @@ public class LedgerHarness : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
+			"LedgerFlight",
 			"Core",
 			"CoreUObject",
 			"Engine",

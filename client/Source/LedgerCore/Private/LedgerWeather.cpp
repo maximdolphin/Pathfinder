@@ -2,6 +2,8 @@
 
 #include "LedgerMath.h"
 
+#include <cmath>
+
 namespace
 {
 	/// How many pressure cells the schedule holds at once. Earth's northern
@@ -424,5 +426,246 @@ namespace LedgerWeather
 		return FVector2D(
 			static_cast<float>((Free.X * Cos - Free.Y * Sin) * Fraction),
 			static_cast<float>((Free.X * Sin + Free.Y * Cos) * Fraction));
+	}
+}
+
+namespace
+{
+	/// A low this deep is a storm, and at StormFullPascals it is the worst the
+	/// schedule makes. Lows peak between 1500 and 4000 Pa (CellAt), so this is
+	/// the deepest few near the height of their lives.
+	constexpr double StormOnsetPascals = 2500.0;
+	constexpr double StormFullPascals = 4000.0;
+
+	/// **A front, not a gradient.** The first flight into a storm met a
+	/// severity that crept up from nothing across hundreds of kilometres, so
+	/// nothing changed on entry because there was no entry. A storm has an
+	/// edge -- the squall line along its front -- and this is how sharp it is:
+	/// half the severity within two kilometres of the onset, and the rest of
+	/// the way to the core after it. A distance, not pascals: a hundred pascals
+	/// past the onset was thirty-five kilometres at the edge of a deep low, and
+	/// the second flight in met a front that took three minutes to cross.
+	constexpr double StormFrontMetres = 2000.0;
+
+	/// A dry world's equivalent: wind over the dust threshold, and how far over
+	/// it the dust storm is as bad as it gets.
+	constexpr double StormDustOnsetMetresPerSecond = 17.0;
+	constexpr double StormDustSpanMetresPerSecond = 15.0;
+
+	/// A severe thunderstorm flashes several times a minute within ten
+	/// kilometres; this is the worst of them.
+	constexpr double StormFlashesPerMinute = 8.0;
+
+	/// RMS gust at full severity, metres per second. Severe convective
+	/// turbulence is gusts of twenty metres a second and more.
+	constexpr double StormGustMetresPerSecond = 18.0;
+}
+
+namespace LedgerWeather
+{
+	FLedgerStorm StormAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch)
+	{
+		FLedgerStorm Out;
+		if (!System.Bodies.IsValidIndex(BodyIndex) || !Air.HasAir())
+		{
+			return Out;
+		}
+		if (!Air.bHasClouds)
+		{
+			const double Speed = WindAt(System, BodyIndex, Air,
+				LatitudeRadians, LongitudeRadians, SecondsFromEpoch).Size();
+			Out.bDust = true;
+			Out.Severity = FMath::Clamp((Speed - StormDustOnsetMetresPerSecond)
+				/ StormDustSpanMetresPerSecond, 0.0, 1.0);
+		}
+		else
+		{
+			const double Depth = -CellAnomalyPascals(System, BodyIndex,
+				LatitudeRadians, LongitudeRadians, SecondsFromEpoch);
+			const double Over = Depth - StormOnsetPascals;
+			if (Over > 0.0)
+			{
+				// How far inside the edge this is: the depth past the onset over the
+				// local gradient, found a kilometre either way.
+				const double Step = 1000.0 / System.Bodies[BodyIndex].RadiusMetres;
+				const double CosLat = FMath::Max(FMath::Cos(LatitudeRadians), 1.0e-3);
+				const double North = CellAnomalyPascals(System, BodyIndex, LatitudeRadians + Step, LongitudeRadians, SecondsFromEpoch)
+					- CellAnomalyPascals(System, BodyIndex, LatitudeRadians - Step, LongitudeRadians, SecondsFromEpoch);
+				const double East = CellAnomalyPascals(System, BodyIndex, LatitudeRadians, LongitudeRadians + Step / CosLat, SecondsFromEpoch)
+					- CellAnomalyPascals(System, BodyIndex, LatitudeRadians, LongitudeRadians - Step / CosLat, SecondsFromEpoch);
+				const double Inside = Over / FMath::Max(FMath::Sqrt(North * North + East * East) / 2000.0, 1.0e-9);
+				Out.Severity = 0.5 * FMath::Min(Inside / StormFrontMetres, 1.0)
+					+ 0.5 * FMath::Min(Over / (StormFullPascals - StormOnsetPascals), 1.0);
+			}
+			// As the square: charge separation takes both the updraught and
+			// the depth of cloud, and both grow with how deep the low is.
+			Out.FlashesPerMinute = StormFlashesPerMinute * Out.Severity * Out.Severity;
+		}
+		Out.GustMetresPerSecond = StormGustMetresPerSecond * Out.Severity;
+		return Out;
+	}
+
+	FVector3d GustAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double AltitudeMetres,
+		double SecondsFromEpoch)
+	{
+		const FLedgerStorm Storm = StormAt(System, BodyIndex, Air,
+			LatitudeRadians, LongitudeRadians, SecondsFromEpoch);
+		if (!(Storm.GustMetresPerSecond > 0.0))
+		{
+			return FVector3d::ZeroVector;
+		}
+		const double Radius = System.Bodies[BodyIndex].RadiusMetres;
+		const double East = LongitudeRadians * Radius * FMath::Cos(LatitudeRadians);
+		const double North = LatitudeRadians * Radius;
+
+		// ponytail: four seeded plane waves, not a turbulence spectrum. Enough
+		// to be felt and the same every time; a von Karman spectrum when T098
+		// wants the shape of real turbulence. The seam at the antimeridian is
+		// a jump in phase nobody will fly a storm across.
+		FVector3d Gust = FVector3d::ZeroVector;
+		for (int32 Wave = 0; Wave < 4; ++Wave)
+		{
+			const int32 Index = 1000 + BodyIndex * 16 + Wave;
+			const double Heading = WeatherBetween(System.Seed, Index, 0, 0.0, LedgerTwoPi);
+			const double Wavelength = WeatherBetween(System.Seed, Index, 1, 150.0, 900.0);
+			const double Period = WeatherBetween(System.Seed, Index, 2, 4.0, 20.0);
+			const double Along = East * FMath::Cos(Heading) + North * FMath::Sin(Heading)
+				+ AltitudeMetres * WeatherBetween(System.Seed, Index, 3, -0.5, 0.5);
+			const double Phase = LedgerTwoPi * (Along / Wavelength + SecondsFromEpoch / Period)
+				+ WeatherBetween(System.Seed, Index, 4, 0.0, LedgerTwoPi);
+			// Each wave pushes its own way, with a vertical part: the
+			// updraughts and downdraughts are most of what a storm does to an
+			// aircraft.
+			const FVector3d Push = FVector3d(
+				FMath::Cos(Heading + 1.3 * Wave), FMath::Sin(Heading + 1.3 * Wave),
+				WeatherBetween(System.Seed, Index, 5, -0.8, 0.8)).GetSafeNormal();
+			Gust += Push * FMath::Sin(Phase);
+		}
+		// Four unit waves at unrelated phases have a mean square of two.
+		return Gust * (Storm.GustMetresPerSecond / FMath::Sqrt(2.0));
+	}
+}
+
+namespace LedgerWeather
+{
+	FLedgerForecast ForecastAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians,
+		double IssuedSeconds, double ValidSeconds)
+	{
+		FLedgerForecast Out;
+		if (!System.Bodies.IsValidIndex(BodyIndex))
+		{
+			return Out;
+		}
+		const FLedgerBody& Body = System.Bodies[BodyIndex];
+		const int32 Cells = CirculationCells(Body);
+		const double Edge = (LedgerPi * 0.5) / Cells;
+
+		double Mean = 0.0;
+		double Variance = 0.0;
+		for (int32 Index = 0; Index < WeatherCellCount; ++Index)
+		{
+			int32 Issued = 0;
+			int32 Valid = 0;
+			double Age = 0.0;
+			double Lifetime = 0.0;
+			double Born = 0.0;
+			WeatherGeneration(System.Seed, Index, IssuedSeconds, Issued, Age, Lifetime, Born);
+			WeatherGeneration(System.Seed, Index, ValidSeconds, Valid, Age, Lifetime, Born);
+
+			if (Valid == Issued)
+			{
+				// Alive when the forecast was issued: where it will be is known.
+				const FLedgerPressureCell Cell = CellAt(System, BodyIndex, Index, ValidSeconds);
+				const double Scaled = WeatherDistance(Body.RadiusMetres, LatitudeRadians,
+					LongitudeRadians, Cell.LatitudeRadians, Cell.LongitudeRadians)
+					/ FMath::Max(Cell.RadiusMetres, 1.0);
+				Mean += Cell.AnomalyPascals * FMath::Exp(-Scaled * Scaled);
+				++Out.KnownCells;
+				continue;
+			}
+
+			// Not yet born. Its strength at the valid time is the slot's; where
+			// it forms, how big and how deep are drawn the way CellAt draws
+			// them, from a stream no cell uses -- so this is an expectation over
+			// what it could be, not a peek at what it will be.
+			++Out.UnbornCells;
+			const double Strength = FMath::Sin(Age * LedgerPi);
+			const double Elapsed = ValidSeconds - Born;
+			constexpr int32 Draws = 256;
+			const uint32 Seed = System.Seed ^ 0xA5A5A5A5u;
+			double Sum = 0.0;
+			double Squares = 0.0;
+			for (int32 Draw = 0; Draw < Draws; ++Draw)
+			{
+				const int32 Stream = Draw * 16;
+				const int32 Boundary = Cells > 1
+					? 1 + static_cast<int32>(WeatherRandom(Seed, Index, Stream) * (Cells - 1)) : 1;
+				const double Hemisphere = WeatherRandom(Seed, Index, Stream + 1) < 0.5 ? -1.0 : 1.0;
+				const double BirthLatitude = Hemisphere * FMath::Min(Boundary * Edge
+					+ WeatherBetween(Seed, Index, Stream + 2, -Edge * 0.25, Edge * 0.25), LedgerPi * 0.48);
+				const double Circumference = LedgerTwoPi * Body.RadiusMetres
+					* FMath::Max(FMath::Cos(BirthLatitude), 0.05);
+				const double Longitude = WeatherBetween(Seed, Index, Stream + 3, -LedgerPi, LedgerPi)
+					+ LedgerTwoPi * ZonalWindAt(Body, BirthLatitude) * Elapsed / Circumference;
+				const double Latitude = BirthLatitude + Hemisphere * 3.0 * Elapsed / Body.RadiusMetres;
+				const bool bLow = WeatherRandom(Seed, Index, Stream + 4) < 0.6;
+				const double Peak = bLow
+					? -WeatherBetween(Seed, Index, Stream + 5, 1500.0, 4000.0)
+					: WeatherBetween(Seed, Index, Stream + 6, 800.0, 2000.0);
+				const double Radius = WeatherBetween(Seed, Index, Stream + 7, 0.10, 0.22) * Body.RadiusMetres;
+				const double Scaled = WeatherDistance(Body.RadiusMetres, LatitudeRadians,
+					LongitudeRadians, Latitude, Longitude) / Radius;
+				const double Anomaly = Peak * Strength * FMath::Exp(-Scaled * Scaled);
+				Sum += Anomaly;
+				Squares += Anomaly * Anomaly;
+			}
+			const double DrawMean = Sum / Draws;
+			Mean += DrawMean;
+			Variance += FMath::Max(Squares / Draws - DrawMean * DrawMean, 0.0);
+		}
+
+		Out.AnomalyPascals = Mean;
+		Out.UncertaintyPascals = FMath::Sqrt(Variance);
+		// The background is climate and is known exactly: the pressure less the
+		// cells, which cancels whatever the cells actually do.
+		Out.PressurePascals = PressureAt(System, BodyIndex, Air, LatitudeRadians, LongitudeRadians, ValidSeconds)
+			- CellAnomalyPascals(System, BodyIndex, LatitudeRadians, LongitudeRadians, ValidSeconds)
+			+ Mean;
+
+		// ponytail: the precipitation model rains under a low deeper than
+		// 300 Pa, repeated here; and the spread is taken as normal, which the
+		// tail of a newborn storm is not quite.
+		constexpr double RainOnsetPascals = 300.0;
+		if (Air.bHasClouds)
+		{
+			Out.RainChance = Out.UncertaintyPascals > 0.0
+				? 0.5 * std::erfc((Mean + RainOnsetPascals) / (Out.UncertaintyPascals * FMath::Sqrt(2.0)))
+				: (Mean < -RainOnsetPascals ? 1.0 : 0.0);
+		}
+		return Out;
+	}
+}
+
+namespace LedgerWeather
+{
+	void DeepestLows(const FLedgerSystem& System, int32 BodyIndex,
+		double SecondsFromEpoch, int32 Count, TArray<FLedgerPressureCell>& Out)
+	{
+		CellsAt(System, BodyIndex, SecondsFromEpoch, Out);
+		Out.RemoveAll([](const FLedgerPressureCell& Cell) { return !Cell.bLow; });
+		Out.Sort([](const FLedgerPressureCell& A, const FLedgerPressureCell& B)
+		{
+			return A.AnomalyPascals < B.AnomalyPascals;
+		});
+		if (Out.Num() > Count)
+		{
+			Out.SetNum(Count);
+		}
 	}
 }

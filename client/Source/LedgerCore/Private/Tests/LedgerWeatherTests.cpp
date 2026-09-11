@@ -4,6 +4,7 @@
 #include "LedgerAir.h"
 #include "LedgerBody.h"
 #include "LedgerMath.h"
+#include "Math/RandomStream.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -357,6 +358,197 @@ bool FLedgerWeatherWind::RunTest(const FString&)
 		TestTrue(TEXT("a high turns the opposite way to a low"),
 			(HighF > 0.0) != (HighCirculation > 0.0));
 	}
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerWeatherStorms,
+	"Ledger.Weather.StormsAreTheDeepestLowsAndTheirGustsRepeat",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerWeatherStorms::RunTest(const FString&)
+{
+	const FLedgerSystem System = LedgerBodies::Generate(20260910u);
+	const int32 Home = LedgerBodies::HomeIndex(System);
+	const FLedgerAirProfile Air = LedgerAir::For(System, Home, 0.0);
+
+	// The deepest low in ten days, hourly. T097.
+	FLedgerPressureCell Worst;
+	double WorstWhen = 0.0;
+	for (double When = 0.0; When <= 10.0 * 86400.0; When += 3600.0)
+	{
+		for (int32 Index = 0; Index < LedgerWeather::CellCount(); ++Index)
+		{
+			const FLedgerPressureCell Cell = LedgerWeather::CellAt(System, Home, Index, When);
+			if (Cell.bLow && Cell.AnomalyPascals < Worst.AnomalyPascals)
+			{
+				Worst = Cell;
+				WorstWhen = When;
+			}
+		}
+	}
+	const FLedgerStorm Core = LedgerWeather::StormAt(System, Home, Air,
+		Worst.LatitudeRadians, Worst.LongitudeRadians, WorstWhen);
+	AddInfo(FString::Printf(TEXT("deepest low %.0f Pa: severity %.2f, %.1f flashes a minute, gusts %.1f m/s"),
+		Worst.AnomalyPascals, Core.Severity, Core.FlashesPerMinute, Core.GustMetresPerSecond));
+	TestTrue(TEXT("the deepest low in ten days is a storm"), Core.IsSevere());
+	TestTrue(TEXT("and on a world with cloud it flashes"),
+		!Air.bHasClouds || Core.FlashesPerMinute > 0.0);
+
+	// Ordinary weather at the same moment is not a storm and has no gusts.
+	bool bFoundCalm = false;
+	for (int32 Degrees = 30; Degrees < 360 && !bFoundCalm; Degrees += 10)
+	{
+		const double Longitude = Worst.LongitudeRadians + FMath::DegreesToRadians(static_cast<double>(Degrees));
+		if (LedgerWeather::CellAnomalyPascals(System, Home, Worst.LatitudeRadians, Longitude, WorstWhen) > -1000.0)
+		{
+			bFoundCalm = true;
+			TestTrue(TEXT("ordinary weather is not a storm"), !LedgerWeather::StormAt(
+				System, Home, Air, Worst.LatitudeRadians, Longitude, WorstWhen).IsSevere());
+			TestTrue(TEXT("and has no storm gusts"), LedgerWeather::GustAt(
+				System, Home, Air, Worst.LatitudeRadians, Longitude, 3000.0, WorstWhen).IsZero());
+		}
+	}
+	TestTrue(TEXT("somewhere at that latitude is calm"), bFoundCalm);
+
+	// The same place and moment is the same gust, and a line of them through
+	// the core has the stated size.
+	const FVector3d Once = LedgerWeather::GustAt(System, Home, Air,
+		Worst.LatitudeRadians, Worst.LongitudeRadians, 3000.0, WorstWhen);
+	const FVector3d Again = LedgerWeather::GustAt(System, Home, Air,
+		Worst.LatitudeRadians, Worst.LongitudeRadians, 3000.0, WorstWhen);
+	TestTrue(TEXT("a gust is the same every time it is asked for"), Once == Again);
+	double Squares = 0.0;
+	constexpr int32 Samples = 2000;
+	const double Step = 50.0 / (System.Bodies[Home].RadiusMetres * FMath::Cos(Worst.LatitudeRadians));
+	for (int32 Sample = 0; Sample < Samples; ++Sample)
+	{
+		Squares += LedgerWeather::GustAt(System, Home, Air, Worst.LatitudeRadians,
+			Worst.LongitudeRadians + Sample * Step, 3000.0, WorstWhen).SizeSquared();
+	}
+	const double Rms = FMath::Sqrt(Squares / Samples);
+	AddInfo(FString::Printf(TEXT("gusts along 100 km of the core: %.1f m/s rms against %.1f stated"),
+		Rms, Core.GustMetresPerSecond));
+	TestTrue(TEXT("the gusts are the size the severity says"),
+		Rms > 0.6 * Core.GustMetresPerSecond && Rms < 1.4 * Core.GustMetresPerSecond);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerWeatherForecast,
+	"Ledger.Weather.ASixHourForecastLandsInsideItsOwnConfidence",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerWeatherForecast::RunTest(const FString&)
+{
+	const FLedgerSystem System = LedgerBodies::Generate(20260910u);
+	const int32 Home = LedgerBodies::HomeIndex(System);
+	const FLedgerAirProfile Air = LedgerAir::For(System, Home, 0.0);
+
+	// A hundred places and times, each forecast six hours ahead. T104.
+	FRandomStream Pick(20260911);
+	constexpr int32 Samples = 100;
+	int32 Inside = 0;
+	int32 RainRight = 0;
+	int32 Rained = 0;
+	int32 Unsure = 0;
+	double Worst = 0.0;
+	for (int32 Sample = 0; Sample < Samples; ++Sample)
+	{
+		const double Latitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-65.0f, 65.0f)));
+		const double Longitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-180.0f, 180.0f)));
+		const double Valid = 86400.0 * static_cast<double>(Pick.FRandRange(1.0f, 30.0f));
+		const FLedgerForecast Forecast = LedgerWeather::ForecastAt(
+			System, Home, Air, Latitude, Longitude, Valid - 6.0 * 3600.0, Valid);
+		const double Actual = LedgerWeather::CellAnomalyPascals(System, Home, Latitude, Longitude, Valid);
+		const double Error = FMath::Abs(Actual - Forecast.AnomalyPascals);
+		Worst = FMath::Max(Worst, Error);
+		Inside += Error <= 2.0 * Forecast.UncertaintyPascals + 1.0 ? 1 : 0;
+		Unsure += Forecast.UncertaintyPascals > 1.0 ? 1 : 0;
+		const bool bRained = Actual < -300.0;
+		Rained += bRained ? 1 : 0;
+		RainRight += bRained == (Forecast.RainChance > 0.5) ? 1 : 0;
+	}
+	AddInfo(FString::Printf(TEXT("%d of %d inside two sigma, worst miss %.0f Pa, %d forecasts carried uncertainty; rain %d times, called right %d of %d"),
+		Inside, Samples, Worst, Unsure, Rained, RainRight, Samples));
+	TestTrue(TEXT("at least 90 of 100 six-hour forecasts land inside two sigma"), Inside >= 90);
+	TestTrue(TEXT("and rain is called right at least 90 times in 100"), RainRight >= 90);
+
+	// Issued at the moment it is for, a forecast is the weather.
+	const double Now = 5.0 * 86400.0;
+	const FLedgerForecast Nowcast = LedgerWeather::ForecastAt(System, Home, Air, 0.7, 1.1, Now, Now);
+	TestTrue(TEXT("a forecast for now knows every system and is exact"),
+		Nowcast.UnbornCells == 0 && FMath::Abs(Nowcast.AnomalyPascals
+			- LedgerWeather::CellAnomalyPascals(System, Home, 0.7, 1.1, Now)) < 1.0e-6);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerWeatherAgreement,
+	"Ledger.Weather.TheSameSeedIsTheSameWeatherAndTheSkyShowsTheStorm",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerWeatherAgreement::RunTest(const FString&)
+{
+	// Two systems generated apart from the same seed: nothing shared but it. T106.
+	const FLedgerSystem One = LedgerBodies::Generate(20260910u);
+	const FLedgerSystem Two = LedgerBodies::Generate(20260910u);
+	const int32 Home = LedgerBodies::HomeIndex(One);
+	const FLedgerAirProfile AirOne = LedgerAir::For(One, Home, 0.0);
+	const FLedgerAirProfile AirTwo = LedgerAir::For(Two, Home, 0.0);
+
+	FRandomStream Pick(20260912);
+	int32 Same = 0;
+	int32 Storms = 0;
+	int32 Shown = 0;
+	int32 Tries = 0;
+	for (int32 Sample = 0; Sample < 100; ++Sample)
+	{
+		const double Latitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-70.0f, 70.0f)));
+		const double Longitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-180.0f, 180.0f)));
+		const double When = 86400.0 * static_cast<double>(Pick.FRandRange(0.0f, 60.0f));
+		const FVector2D WindOne = LedgerWeather::WindAtAltitude(One, Home, AirOne, Latitude, Longitude, 500.0, When);
+		const FVector2D WindTwo = LedgerWeather::WindAtAltitude(Two, Home, AirTwo, Latitude, Longitude, 500.0, When);
+		const FLedgerStorm StormOne = LedgerWeather::StormAt(One, Home, AirOne, Latitude, Longitude, When);
+		const FLedgerStorm StormTwo = LedgerWeather::StormAt(Two, Home, AirTwo, Latitude, Longitude, When);
+		const FVector3d GustOne = LedgerWeather::GustAt(One, Home, AirOne, Latitude, Longitude, 3000.0, When);
+		const FVector3d GustTwo = LedgerWeather::GustAt(Two, Home, AirTwo, Latitude, Longitude, 3000.0, When);
+		Same += WindOne == WindTwo && StormOne.Severity == StormTwo.Severity && GustOne == GustTwo
+			&& LedgerWeather::PressureAt(One, Home, AirOne, Latitude, Longitude, When)
+				== LedgerWeather::PressureAt(Two, Home, AirTwo, Latitude, Longitude, When) ? 1 : 0;
+	}
+	TestEqual(TEXT("the same seed and time is the same weather, a hundred times in a hundred"), Same, 100);
+
+	// A hundred severe places, and whether the sky draws a storm over each:
+	// inside one of the lows the clouds are given, within its radius.
+	while (Storms < 100 && Tries < 200000)
+	{
+		++Tries;
+		const double Latitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-70.0f, 70.0f)));
+		const double Longitude = FMath::DegreesToRadians(static_cast<double>(Pick.FRandRange(-180.0f, 180.0f)));
+		const double When = 86400.0 * static_cast<double>(Pick.FRandRange(0.0f, 60.0f));
+		if (!LedgerWeather::StormAt(One, Home, AirOne, Latitude, Longitude, When).IsSevere())
+		{
+			continue;
+		}
+		++Storms;
+		TArray<FLedgerPressureCell> Lows;
+		LedgerWeather::DeepestLows(One, Home, When, 12, Lows);
+		const FVector3d Here(FMath::Cos(Latitude) * FMath::Cos(Longitude),
+			FMath::Cos(Latitude) * FMath::Sin(Longitude), FMath::Sin(Latitude));
+		for (const FLedgerPressureCell& Low : Lows)
+		{
+			const FVector3d Centre(FMath::Cos(Low.LatitudeRadians) * FMath::Cos(Low.LongitudeRadians),
+				FMath::Cos(Low.LatitudeRadians) * FMath::Sin(Low.LongitudeRadians), FMath::Sin(Low.LatitudeRadians));
+			const double Angle = FMath::Acos(FMath::Clamp(FVector3d::DotProduct(Here, Centre), -1.0, 1.0));
+			if (Angle < 1.5 * Low.RadiusMetres / One.Bodies[Home].RadiusMetres)
+			{
+				++Shown;
+				break;
+			}
+		}
+	}
+	AddInfo(FString::Printf(TEXT("%d severe places found in %d tries; %d under a low the clouds are drawn from"),
+		Storms, Tries, Shown));
+	TestEqual(TEXT("a hundred storms found"), Storms, 100);
+	TestEqual(TEXT("every storm flown into is one the sky shows"), Shown, Storms);
 	return true;
 }
 

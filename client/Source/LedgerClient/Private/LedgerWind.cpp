@@ -7,6 +7,7 @@
 #include "LedgerLog.h"
 #include "LedgerMath.h"
 #include "LedgerPlanet.h"
+#include "LedgerSky.h"
 #include "LedgerWeather.h"
 #include "LedgerWorld.h"
 #include "Materials/MaterialParameterCollection.h"
@@ -16,6 +17,19 @@ namespace
 {
 	constexpr double WindCentimetresPerMetre = 100.0;
 
+	/// How far either side the ground's slope is measured, metres. Finer than
+	/// a ridge and coarser than a boulder.
+	constexpr double WindSlopeHalfMetres = 150.0;
+
+	/// How deep the air a slope pushes around is, metres: the forced lift
+	/// falls off by e over this above the ground. About a ridge's height.
+	constexpr double WindTerrainDepthMetres = 1000.0;
+
+	/// Thermals: columns this far apart over sunlit ground, this strong with
+	/// the sun overhead, and gone above the top of the mixed layer.
+	constexpr double WindThermalSpacingMetres = 1500.0;
+	constexpr double WindThermalMetresPerSecond = 2.5;
+	constexpr double WindThermalTopMetres = 1500.0;
 	/// The collection every material reads the wind from. One asset, four
 	/// numbers, and the grass and the dust cannot disagree because there is
 	/// nothing for them to disagree about.
@@ -102,8 +116,46 @@ FVector3d ULedgerWind::WindAtMetres(const FVector& WorldPosition) const
 		LedgerFrames::ToBody({ Home, Up, FVector3d(1.0, 0.0, 0.0) });
 	const FLedgerBodyPoint North =
 		LedgerFrames::ToBody({ Home, Up, FVector3d(0.0, 1.0, 0.0) });
-	return (East.Metres.GetSafeNormal() * Flat.X
-		+ North.Metres.GetSafeNormal() * Flat.Y)
+	const FVector3d EastDirection = East.Metres.GetSafeNormal();
+	const FVector3d NorthDirection = North.Metres.GetSafeNormal();
+
+	// **T098: the ground and the sun move the air up and down.** Air blowing
+	// against a slope has to go over it, so the flow at the ground is forced
+	// along the surface -- w = u . grad h -- rising on the windward face and
+	// sinking in the lee, and dying away above the terrain. A ship crossing a
+	// ridge in a gale is lifted and then dropped by the same field that bends
+	// the grass, not by a number drawn for the occasion.
+	auto GroundMetres = [Planet, &Up](const FVector3d& Along, double Metres)
+	{
+		return Planet->SurfaceRadiusAt(
+			(Up + Along * (Metres * WindCentimetresPerMetre / Planet->Radius)).GetSafeNormal())
+			/ WindCentimetresPerMetre;
+	};
+	const double SlopeEast = (GroundMetres(EastDirection, WindSlopeHalfMetres)
+		- GroundMetres(EastDirection, -WindSlopeHalfMetres)) / (2.0 * WindSlopeHalfMetres);
+	const double SlopeNorth = (GroundMetres(NorthDirection, WindSlopeHalfMetres)
+		- GroundMetres(NorthDirection, -WindSlopeHalfMetres)) / (2.0 * WindSlopeHalfMetres);
+	const double Forced = (Flat.X * SlopeEast + Flat.Y * SlopeNorth)
+		* FMath::Exp(-AltitudeMetres / WindTerrainDepthMetres);
+
+	// Thermals: sunlit ground warms the air over it and the air rises in
+	// columns, as strongly as the sun is high, up to the top of the mixed
+	// layer. ponytail: a fixed grid of columns that do not drift or sink back
+	// between them; a thermal that moves with the wind when a glider needs to
+	// find one twice.
+	double Thermal = 0.0;
+	const double Sun = LedgerSky::SolarAltitude(System, Home, Up, Builder->GetWhenSeconds());
+	if (Sun > 0.0 && AltitudeMetres < WindThermalTopMetres)
+	{
+		const double BodyRadius = System.Bodies[Home].RadiusMetres;
+		const double X = Longitude * BodyRadius * FMath::Cos(Latitude) / WindThermalSpacingMetres;
+		const double Y = Latitude * BodyRadius / WindThermalSpacingMetres;
+		Thermal = WindThermalMetresPerSecond * FMath::Sin(Sun)
+			* FMath::Max(FMath::Cos(LedgerTwoPi * X) * FMath::Cos(LedgerTwoPi * Y), 0.0)
+			* (1.0 - AltitudeMetres / WindThermalTopMetres);
+	}
+
+	return (EastDirection * Flat.X + NorthDirection * Flat.Y + Up * (Forced + Thermal))
 		* static_cast<double>(CVarLedgerWindScale.GetValueOnGameThread());
 }
 
@@ -158,14 +210,17 @@ void ULedgerWind::Publish()
 	// Direction as a world vector and speed separately, because a material that
 	// wants to bend grass needs the direction and one that wants to pick a
 	// rustle needs the speed, and normalising in a shader is a waste.
-	const FVector3d Direction = LastViewerWind.GetSafeNormal();
+	// The horizontal part: a cloud deck drifts and grass leans with the wind
+	// across the ground, and a ridge lifting the viewer is not that.
+	const FVector3d Across = LastViewerWind - LastViewerUp * FVector3d::DotProduct(LastViewerWind, LastViewerUp);
+	const FVector3d Direction = Across.GetSafeNormal();
 	Instance->SetVectorParameterValue(TEXT("WindDirection"),
 		FLinearColor(
 			static_cast<float>(Direction.X),
 			static_cast<float>(Direction.Y),
 			static_cast<float>(Direction.Z), 0.0f));
 	Instance->SetScalarParameterValue(TEXT("WindSpeed"),
-		static_cast<float>(LastViewerWind.Length()));
+		static_cast<float>(Across.Length()));
 }
 
 void ULedgerWind::Tick(float DeltaSeconds)
@@ -190,6 +245,13 @@ void ULedgerWind::Tick(float DeltaSeconds)
 	// coordinate with. A threshold on how much it had changed would be a second
 	// thing to get wrong for no measured saving.
 	LastViewerWind = WindAtMetres(Eye);
+	if (const ULedgerWorldBuilder* Builder = World->GetSubsystem<ULedgerWorldBuilder>())
+	{
+		if (const ALedgerPlanet* Planet = Builder->GetPlanet())
+		{
+			LastViewerUp = (FVector3d(Eye) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
+		}
+	}
 	Publish();
 
 	const double Speed = LastViewerWind.Length();

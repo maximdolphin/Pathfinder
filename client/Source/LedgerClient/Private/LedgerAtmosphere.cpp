@@ -432,6 +432,17 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 						static_cast<float>(Vertical.X),
 						static_cast<float>(Vertical.Y),
 						static_cast<float>(Vertical.Z), 0.0f));
+
+				// T097: where the planet's centre is from the camera, so a cloud
+				// sample can tell which way is up and the storms can be placed.
+				// Relative, because the absolute is six hundred million
+				// centimetres and a float keeps metres of it at best.
+				const FVector3d PlanetFromCamera = FVector3d(GetActorLocation()) - FVector3d(Eye);
+				CloudMaterial->SetVectorParameterValue(TEXT("PlanetFromCamera"),
+					FLinearColor(
+						static_cast<float>(PlanetFromCamera.X),
+						static_cast<float>(PlanetFromCamera.Y),
+						static_cast<float>(PlanetFromCamera.Z), 0.0f));
 			}
 		}
 
@@ -470,4 +481,16 @@ void ALedgerAtmosphere::SetSunElevationFloorDegrees(double Degrees)
 	{
 		Atmosphere->SetTransmittanceMinLightElevationAngle(Floor);
 	}
+}
+
+void ALedgerAtmosphere::SetCloudQuality(float ViewSampleScale, float ShadowSampleScale)
+{
+	if (Clouds == nullptr || (Clouds->ViewSampleCountScale == ViewSampleScale
+		&& Clouds->ShadowViewSampleCountScale == ShadowSampleScale))
+	{
+		return;
+	}
+	Clouds->ViewSampleCountScale = ViewSampleScale;
+	Clouds->ShadowViewSampleCountScale = ShadowSampleScale;
+	Clouds->MarkRenderStateDirty();
 }

@@ -159,6 +159,20 @@ namespace LedgerSurface
 				Parameter.DefaultValue = 0.0f;
 				Collection->ScalarParameters.Add(Parameter);
 			}
+			// T097's storms: the four deepest lows, each a direction from the
+			// planet's centre and an angular radius, and their depths together.
+			for (const TCHAR* Storm : { TEXT("Storm0"), TEXT("Storm1"), TEXT("Storm2"), TEXT("Storm3"),
+				TEXT("Storm4"), TEXT("Storm5"), TEXT("Storm6"), TEXT("Storm7"), TEXT("Storm8"), TEXT("Storm9"),
+				TEXT("Storm10"), TEXT("Storm11"), TEXT("StormDepths"), TEXT("StormDepths1"), TEXT("StormDepths2") })
+			{
+				FCollectionVectorParameter Parameter;
+				Parameter.ParameterName = Storm;
+				Parameter.Id = FGuid::NewDeterministicGuid(FString(TEXT("MPC_LedgerWind.")) + Storm);
+				// A radius even when empty: the material divides by it.
+				Parameter.DefaultValue = FCString::Strncmp(Storm, TEXT("StormDepths"), 11) == 0
+					? FLinearColor(0.0f, 0.0f, 0.0f, 0.0f) : FLinearColor(0.0f, 0.0f, 1.0f, 0.01f);
+				Collection->VectorParameters.Add(Parameter);
+			}
 			Collection->PostEditChange();
 
 			FMetaData& MetaData = Package->GetMetaData();
@@ -217,6 +231,8 @@ namespace LedgerSurface
 		Record(TEXT("M_Terrain"), [](UObject* Outer) { return BuildTerrainMaterial(Outer, 0u); });
 		Record(TEXT("M_Water"), [](UObject* Outer) { return BuildWaterMaterial(Outer); });
 		Record(TEXT("M_Underwater"), [](UObject* Outer) { return BuildUnderwaterMaterial(Outer); });
+		Record(TEXT("M_Visor"), [](UObject* Outer) { return BuildVisorMaterial(Outer); });
+		Record(TEXT("M_Aurora"), [](UObject* Outer) { return BuildAuroraMaterial(Outer); });
 
 		// M_Flat is baked now that its colour and roughness are parameters,
 		// so one asset serves every building, tree and hull through a dynamic

@@ -65,6 +65,7 @@ public:
 
 	ALedgerPlanet* GetPlanet() const { return Planet; }
 	ALedgerSettlement* GetSettlement() const { return Settlement; }
+	ALedgerAtmosphere* GetAtmosphere() const { return Atmosphere; }
 
 	/// Direction from the planet's centre to the town. The reentry aims here.
 	FVector3d GetSiteDirection() const { return SiteDirection; }

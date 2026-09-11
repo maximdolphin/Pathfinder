@@ -192,7 +192,7 @@ void ULedgerSurfaceStudy::Place()
 	// `-studyat=lat,lon` (degrees) stands the study somewhere chosen instead:
 	// the sites the four-biome and cliff fixtures find, for T435's surfaces.
 	FString At;
-	if (FParse::Value(FCommandLine::Get(), TEXT("studyat="), At))
+	if (FParse::Value(FCommandLine::Get(), TEXT("studyat="), At, false))
 	{
 		FString LatText, LonText;
 		if (At.Split(TEXT(","), &LatText, &LonText))
@@ -200,6 +200,65 @@ void ULedgerSurfaceStudy::Place()
 			const double Lat = FMath::DegreesToRadians(FCString::Atod(*LatText));
 			const double Lon = FMath::DegreesToRadians(FCString::Atod(*LonText));
 			Up = FVector3d(FMath::Cos(Lat) * FMath::Cos(Lon), FMath::Cos(Lat) * FMath::Sin(Lon), FMath::Sin(Lat));
+
+			// **The flattest dry ground within two kilometres.** A photograph of
+			// a surface is taken standing on it, not on the side of a hill: the
+			// first rainforest frame was a rock face, because the site the
+			// biome fixture found was a slope steep enough to shed its soil.
+			// Found once and kept, because Place runs every frame.
+			static FString FoundFor;
+			static FVector3d Found = FVector3d::UnitZ();
+			// Not for scree, which lies on the slope under a face by definition: the
+			// first search walked the cliff apron off onto flat sand. -studyasis keeps
+			// the point it was given.
+			static const bool bAsIs = FParse::Param(FCommandLine::Get(), TEXT("studyasis"));
+			if (bAsIs)
+			{
+				FoundFor = At;
+				Found = Up;
+			}
+			if (FoundFor != At)
+			{
+				const double Step = 1000.0 / Planet->Radius;
+				auto Slope = [Planet, Step](const FVector3d& Point)
+				{
+					const FVector3d E = FVector3d::CrossProduct(FVector3d::UnitZ(), Point).GetSafeNormal();
+					const FVector3d N = FVector3d::CrossProduct(Point, E);
+					const double Dx = Planet->SurfaceRadiusAt((Point + E * Step).GetSafeNormal())
+						- Planet->SurfaceRadiusAt((Point - E * Step).GetSafeNormal());
+					const double Dy = Planet->SurfaceRadiusAt((Point + N * Step).GetSafeNormal())
+						- Planet->SurfaceRadiusAt((Point - N * Step).GetSafeNormal());
+					return FMath::Sqrt(Dx * Dx + Dy * Dy) / 2000.0;
+				};
+				const FVector3d E = FVector3d::CrossProduct(FVector3d::UnitZ(), Up).GetSafeNormal();
+				const FVector3d N = FVector3d::CrossProduct(Up, E);
+				Found = Up;
+				double Flattest = Slope(Up);
+				for (int32 Ring = 1; Ring <= 8; ++Ring)
+				{
+					for (int32 Bearing = 0; Bearing < 12; ++Bearing)
+					{
+						const double Angle = Bearing * UE_TWO_PI / 12.0;
+						const FVector3d Point = (Up + (E * FMath::Cos(Angle) + N * FMath::Sin(Angle))
+							* (Ring * 25000.0 / Planet->Radius)).GetSafeNormal();
+						if (Planet->SurfaceRadiusAt(Point) <= Planet->Radius)
+						{
+							continue;
+						}
+						const double Here = Slope(Point);
+						if (Here < Flattest)
+						{
+							Flattest = Here;
+							Found = Point;
+						}
+					}
+				}
+				FoundFor = At;
+				UE_LOG(LogLedger, Log, TEXT("surface study: flattest ground within 2 km at %.4f,%.4f, %.1f degrees"),
+					FMath::RadiansToDegrees(FMath::Asin(Found.Z)), FMath::RadiansToDegrees(FMath::Atan2(Found.Y, Found.X)),
+					FMath::RadiansToDegrees(FMath::Atan(Flattest)));
+			}
+			Up = Found;
 		}
 	}
 	const double Ground = Planet->SurfaceRadiusAt(Up);

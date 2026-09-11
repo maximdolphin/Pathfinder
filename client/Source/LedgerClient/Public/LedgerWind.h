@@ -59,6 +59,7 @@ private:
 	TObjectPtr<UMaterialParameterCollection> Collection;
 
 	FVector3d LastViewerWind = FVector3d::ZeroVector;
+	FVector3d LastViewerUp = FVector3d::UnitZ();
 	double LastPublishedSpeed = -1.0;
 
 	/// Whether the collection has been looked for. **Looked for, not found.**

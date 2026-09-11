@@ -3,10 +3,12 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
 #include "LedgerAir.h"
 #include "LedgerClimate.h"
+#include "LedgerEnvironment.h"
 #include "LedgerLog.h"
 #include "LedgerMath.h"
 #include "LedgerPlanet.h"
@@ -20,6 +22,11 @@
 namespace
 {
 	constexpr double PrecipCentimetresPerMetre = 100.0;
+
+	TAutoConsoleVariable<float> CVarLedgerPrecipDropScale(
+		TEXT("Ledger.Precip.DropScale"), 1.0f,
+		TEXT("Fraction of the drops drawn. T105: the volumetric budget turns it down before the frame rate goes."),
+		ECVF_Default);
 
 	/// Half the side of the box the particles live in, centimetres. Twenty
 	/// metres each way: far enough that the near edge is out of frame and close
@@ -144,9 +151,10 @@ void ULedgerPrecipitationView::Tick(float DeltaSeconds)
 	// the latitude model is the terrain's, so it is fetched rather than
 	// reinvented. This is the difference between snow at the ground here and
 	// snow at the ground everywhere.
-	const FLedgerClimate Climate = LedgerClimate::At(
-		Up, Planet->TerrainParams(), Planet->SeasonPhase());
-	const double SurfaceKelvin = Climate.TemperatureC + 273.15;
+	// T099: from the one environment field, the number the settlement and
+	// everything else read for this column.
+	const double SurfaceKelvin = LedgerEnvironment::At(World, Eye).GroundKelvin;
+	LastGroundKelvin = SurfaceKelvin;
 
 	Last = LedgerPrecip::At(System, Home, Air, Latitude, Longitude,
 		Altitude, Builder->GetWhenSeconds(), SurfaceKelvin);
@@ -178,7 +186,7 @@ void ULedgerPrecipitationView::Tick(float DeltaSeconds)
 	}
 
 	const int32 Wanted = Last.IsFalling()
-		? FMath::RoundToInt(PrecipMaxDrops * FMath::Min(
+		? FMath::RoundToInt(PrecipMaxDrops * CVarLedgerPrecipDropScale.GetValueOnGameThread() * FMath::Min(
 			Last.RateMillimetresPerHour / PrecipFullScaleRate, 1.0))
 		: 0;
 

@@ -24,6 +24,7 @@
 #include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialParameterCollection.h"
 #include "Materials/MaterialExpressionNoise.h"
+#include "Materials/MaterialExpressionNormalize.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionTime.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
@@ -382,6 +383,66 @@ namespace LedgerSurface
 			DeckNoise(Graph.Multiply(Stretched, Parameter(Graph, TEXT("CirrusScale"), 0.000008f)), 3),
 			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
 
+		UMaterialExpression* StormThick = Graph.Constant(1.0f);
+		// **The storms, where the weather says they are.** T097. The four
+		// deepest lows come through the wind collection as a direction from the
+		// planet's centre and an angular radius, and each lifts every deck's
+		// field by its depth -- so the overcast seen from orbit is the low that
+		// rains and gusts under it, not a second pattern that happens to agree.
+		if (UMaterialParameterCollection* StormCollection = LoadObject<UMaterialParameterCollection>(
+				nullptr, TEXT("/Game/Materials/MPC_LedgerWind")))
+		{
+			if (StormCollection->GetParameterId(FName(TEXT("StormDepths"))).IsValid())
+			{
+				UMaterialExpressionVectorParameter* PlanetFromCamera =
+					Graph.Make<UMaterialExpressionVectorParameter>();
+				PlanetFromCamera->ParameterName = TEXT("PlanetFromCamera");
+				PlanetFromCamera->DefaultValue = FLinearColor(0.0f, 0.0f, -1.0e8f, 0.0f);
+				UMaterialExpressionNormalize* Outward = Graph.Make<UMaterialExpressionNormalize>();
+				Outward->VectorInput.Expression =
+					Graph.Subtract(Position, CloudRGB(Graph, PlanetFromCamera));
+				UMaterialExpression* DepthVectors[3] =
+				{
+					Graph.CollectionParameter(StormCollection, TEXT("StormDepths")),
+					Graph.CollectionParameter(StormCollection, TEXT("StormDepths1")),
+					Graph.CollectionParameter(StormCollection, TEXT("StormDepths2")),
+				};
+				UMaterialExpression* Lift = Graph.Constant(0.0f);
+				for (int32 Index = 0; Index < 12; ++Index)
+				{
+					UMaterialExpression* Storm =
+						Graph.CollectionParameter(StormCollection, *FString::Printf(TEXT("Storm%d"), Index));
+					UMaterialExpressionDotProduct* Cos = Graph.Make<UMaterialExpressionDotProduct>();
+					Cos->A.Expression = Outward;
+					Cos->B.Expression = CloudRGB(Graph, Storm);
+					UMaterialExpression* Radius = Graph.Mask(Storm, false, false, false, true);
+					// One minus the cosine is half the angle squared, so this is
+					// (angle / radius) squared, and the lift a squared parabola
+					// out to the radius. ponytail: not the Gaussian the pressure
+					// falls off on -- the same width, without an exp node.
+					UMaterialExpression* Reach = Graph.Divide(
+						Graph.Multiply(Graph.OneMinus(Cos), Graph.Constant(2.0f)),
+						Graph.Multiply(Graph.Multiply(Radius, Radius), Graph.Constant(2.25f)));
+					UMaterialExpression* Core = Graph.Saturate(Graph.OneMinus(Reach));
+					Lift = Graph.Add(Lift, Graph.Multiply(
+						Graph.Mask(DepthVectors[Index / 4], Index % 4 == 0, Index % 4 == 1, Index % 4 == 2, Index % 4 == 3),
+						Graph.Multiply(Core, Core)));
+				}
+				UMaterialExpression* StormLift =
+					Graph.Multiply(Lift, Parameter(Graph, TEXT("StormCoverage"), 0.9f));
+				CumulusField = Graph.Add(CumulusField, StormLift);
+				Clouds = Graph.Add(Clouds, StormLift);
+				CirrusField = Graph.Add(CirrusField, StormLift);
+				// **And thicker, not only wider.** From orbit the three decks already
+				// cover nearly everything, so a storm drawn as more coverage was the same
+				// brown veil as the calm air beside it. A storm is a deep deck: the same
+				// lift raises the extinction, which is what makes it the bright white
+				// mass a satellite sees rather than a thin layer with ground behind it.
+				StormThick = Graph.Add(Graph.Constant(1.0f),
+					Graph.Multiply(Lift, Parameter(Graph, TEXT("StormThickening"), 6.0f)));
+			}
+		}
+
 		const FBand Cumulus = MakeBand(Graph, Altitude, CumulusField, Softness,
 			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
 		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Softness,
@@ -424,7 +485,7 @@ namespace LedgerSurface
 		// it. So this stays high and the renderer does the greying.
 		EditorData->BaseColor.Expression = Graph.Constant3(
 			FLinearColor(0.98f, 0.98f, 0.99f));
-		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Total, Extinction);
+		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Graph.Multiply(Total, Extinction), StormThick);
 		// **Multiple scattering, and a phase with a back lobe.** Without this node
 		// the clouds are single-scattering: seen from orbit they were a grey veil
 		// that dulled the land -- the brightest 1% of the disc went from 170 to

@@ -12,6 +12,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "LedgerEnvironment.h"
 #include "LedgerSettlement.generated.h"
 
 struct FLedgerMeshBuilder;
@@ -53,6 +54,12 @@ public:
 	/// Where the vane points, degrees clockwise from north: the way the air
 	/// is going. T093's settlement consumer.
 	double VaneBearingDegrees() const { return VaneBearing; }
+
+	/// The air at the vane, from the one environment field. T099: the number
+	/// life support and the buildings would be sized against, and the same one
+	/// the renderer decides rain or snow by.
+	const FLedgerAirHere& AirAtVane() const { return VaneAir; }
+	FVector VaneTopLocation() const { return VaneTop; }
 
 	/// The wind the vane last read, metres per second in world space, and
 	/// where it read it. The proof compares this against the field.
@@ -136,6 +143,7 @@ private:
 	FVector3d VaneEast = FVector3d::UnitX();
 	FVector VaneTop = FVector::ZeroVector;
 	double VaneBearing = 0.0;
+	FLedgerAirHere VaneAir;
 	FVector3d LastVaneWind = FVector3d::ZeroVector;
 
 	/// Where buildings go, gathered during layout and handed over in one call.

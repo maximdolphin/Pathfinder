@@ -79,6 +79,12 @@ namespace LedgerSurface
 	/// material there is no reason left for the volume.
 	LEDGERMATERIAL_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
 
+	/// The canopy seen from inside: water, ice, fog and dust over the view. T101.
+	LEDGERMATERIAL_API UMaterialInterface* CreateVisorMaterial(UObject* Outer);
+
+	/// The aurora shell: an additive oval around the magnetic pole. T103.
+	LEDGERMATERIAL_API UMaterialInterface* CreateAuroraMaterial(UObject* Outer);
+
 	/// The volumetric cloud material: three decks in one layer. T094.
 	///
 	/// Unreal draws one volumetric cloud per scene, so three decks cannot be

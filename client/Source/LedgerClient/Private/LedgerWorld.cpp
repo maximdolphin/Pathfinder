@@ -26,6 +26,7 @@
 #include "LedgerPlanet.h"
 #include "LedgerSettlement.h"
 #include "LedgerRock.h"
+#include "LedgerHUD.h"
 #include "LedgerShip.h"
 #include "LedgerSimSubsystem.h"
 #include "LedgerTerrainMath.h"
@@ -154,6 +155,7 @@ namespace
 ALedgerGameMode::ALedgerGameMode()
 {
 	DefaultPawnClass = ALedgerShip::StaticClass();
+	HUDClass = ALedgerHUD::StaticClass();
 }
 
 AActor* ALedgerGameMode::ChoosePlayerStart_Implementation(AController* Player)

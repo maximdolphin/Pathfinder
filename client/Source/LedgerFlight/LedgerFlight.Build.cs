@@ -17,7 +17,8 @@ public class LedgerFlight : ModuleRules
 		{
 			"Core",
 			"CoreUObject",
-			"Engine"
+			"Engine",
+			"Json"
 		});
 	}
 }

@@ -16,6 +16,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "LedgerCanopy.h"
+#include "LedgerFlightModel.h"
+#include "LedgerRigidBody.h"
+#include "LedgerShipDefinition.h"
 #include "LedgerShip.generated.h"
 
 struct FLedgerMeshBuilder;
@@ -25,6 +29,7 @@ class UCameraComponent;
 class UMaterialInterface;
 class UProceduralMeshComponent;
 class USpringArmComponent;
+class ULedgerShipSystemsComponent;
 
 UCLASS()
 class LEDGERCLIENT_API ALedgerShip : public APawn
@@ -69,9 +74,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
 	float DragScaleHeight = 800000.0f;
 
+	/// Mass over drag area, kg/m^2. T100: the drag an entry sheds its speed
+	/// by, as rho v squared. A capsule is a few hundred.
+	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
+	float BallisticCoefficient = 300.0f;
+
 	/// While true the ship does not integrate — something else is placing it.
 	/// Used by the scripted reentry so the two do not fight over the transform.
-	void SetFlightEnabled(bool bEnabled) { bFlightEnabled = bEnabled; }
+	void SetFlightEnabled(bool bEnabled)
+	{
+		bFlightEnabled = bEnabled;
+		// Held by hand, a ship is not spinning when it is let go.
+		if (!bEnabled)
+		{
+			Spin.AngularVelocity = FVector3d::ZeroVector;
+		}
+	}
 	bool IsFlightEnabled() const { return bFlightEnabled; }
 
 	void SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }
@@ -80,12 +98,60 @@ public:
 	/// uses this so the climb to orbit runs through the *same* flight model the
 	/// player flies — gravity, drag and all — rather than being animated.
 	void SetAutoThrottle(float Fraction) { AutoThrottle = FMath::Clamp(Fraction, 0.0f, 1.0f); }
+
+	/// Lift and strafe on top of player input, in [-1,1]. T098's fixture flies
+	/// through these, so its corrections go through the thrusters a pilot's
+	/// would and nowhere else.
+	void SetAutoLift(float Fraction) { AutoLift = FMath::Clamp(Fraction, -1.0f, 1.0f); }
+	void SetAutoStrafe(float Fraction) { AutoStrafe = FMath::Clamp(Fraction, -1.0f, 1.0f); }
+	/// Stick for a fixture: pitch, yaw and roll, each a fraction of the rate.
+	void SetAutoTurn(const FVector3f& Fractions) { AutoTurn = Fractions.BoundToCube(1.0f); }
 	FVector GetVelocity() const override { return Velocity; }
 
 	/// The wind the flight model was last handed, centimetres per second.
 	/// T093's proof reads it to show the ship flies in the same air as
 	/// everything else.
 	FVector3d LastWindCmPerSecond() const { return LastWind; }
+
+	/// What is left of the hull, 1 whole to 0 gone. T097: a severe storm wears
+	/// it down inside the cloud, and a lightning strike takes a piece at once.
+	double HullIntegrity() const { return Integrity; }
+	int32 StrikesTaken() const { return Strikes; }
+	void RepairHull() { Integrity = 1.0; Strikes = 0; }
+
+	/// The skin through an entry, T100: the flux, the temperature, the heat
+	/// taken in and radiated, and what it has cost the hull.
+	const FLedgerHeatState& EntryHeat() const { return Heat; }
+	void ResetEntryHeat() { Heat = FLedgerHeatState(); LastHeatDamage = 0.0; }
+
+	/// The canopy, T101: what the weather has put on it, and the heater and
+	/// wipers that take it off again.
+	const FLedgerCanopy& CanopyState() const { return Canopy; }
+
+	/// What this ship is, from Config/Ships (T108): -ship=name, the courier
+	/// when nothing is named. The flight numbers and the hull size come from it.
+	const FLedgerShipDefinition& Definition() const { return ShipDefinition; }
+
+	/// T132 and T133: how fast it is turning, body frame, and what its nozzles
+	/// were last told to do.
+	FVector3d AngularVelocity() const { return Spin.AngularVelocity; }
+	const FLedgerAllocation& Allocation() const { return LastAllocation; }
+
+	/// Its systems, running. T131.
+	ULedgerShipSystemsComponent* GetSystems() const { return Systems; }
+
+	/// What the pilot and the autopilot are asking of the main engine, 0 to 1:
+	/// the engine note is pitched from it. T126.
+	float CurrentThrottle() const { return FMath::Clamp(ThrottleInput + AutoThrottle, 0.0f, 1.0f); }
+
+	/// The hull, for the damage view to paint. T127.
+	UProceduralMeshComponent* GetHullMesh() const { return Hull; }
+	void SetCanopyHeater(bool bOn) { Canopy.bHeater = bOn; }
+	void SetWipers(bool bOn) { Canopy.bWipers = bOn; }
+
+	/// The cabin air's dew point, kelvin: glass colder than this fogs.
+	UPROPERTY(EditAnywhere, Category = "Ledger|Flight")
+	float CabinDewPointKelvin = 288.0f;
 
 	/// Moves the chase camera. A negative arm length puts it ahead of the nose.
 	///
@@ -112,6 +178,18 @@ private:
 	UPROPERTY()
 	TObjectPtr<UCameraComponent> Camera;
 
+	/// The glow of the air the hull is heating. T100.
+	UPROPERTY()
+	TObjectPtr<class UPointLightComponent> EntryGlow;
+
+	/// The ship's systems, running on its component graph. T131.
+	UPROPERTY()
+	TObjectPtr<ULedgerShipSystemsComponent> Systems;
+
+	/// The canopy over the view. T101.
+	UPROPERTY()
+	TObjectPtr<class UMaterialInstanceDynamic> Visor;
+
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;
 
@@ -130,6 +208,16 @@ private:
 	FVector3d LastWind = FVector3d::ZeroVector;
 	bool bFlightEnabled = true;
 	bool bLanded = false;
+	double Integrity = 1.0;
+	int32 Strikes = 0;
+	FRandomStream StrikeDice{ 20260911 };
+	FLedgerHeatState Heat;
+	FLedgerHeatShield Shield;
+	double LastHeatDamage = 0.0;
+	FLedgerCanopy Canopy;
+	FLedgerShipDefinition ShipDefinition;
+	FLedgerSpin Spin;
+	FLedgerAllocation LastAllocation;
 
 	// Input state, sampled each frame.
 	float ThrottleInput = 0.0f;
@@ -139,6 +227,9 @@ private:
 	float YawInput = 0.0f;
 	float RollInput = 0.0f;
 	float AutoThrottle = 0.0f;
+	float AutoLift = 0.0f;
+	float AutoStrafe = 0.0f;
+	FVector3f AutoTurn = FVector3f::ZeroVector;
 
 	void BuildHull();
 
@@ -151,7 +242,15 @@ public:
 private:
 	void UpdateSubmersion(float DeltaSeconds);
 	void ApplyInput(float DeltaSeconds);
+
+	/// A ship whose file lays out its nozzles: a rigid body pushed by what
+	/// the allocator gives each one. T132, T133.
+	void ApplyThrust(float DeltaSeconds);
 	void Integrate(float DeltaSeconds);
+	void SufferWeather(float DeltaSeconds);
+	void SufferHeat(float DeltaSeconds);
+	void UpdateCanopy(float DeltaSeconds);
+	void LoadDefinition();
 
 	void InputThrottle(float Value) { ThrottleInput = Value; }
 	void InputStrafe(float Value) { StrafeInput = Value; }

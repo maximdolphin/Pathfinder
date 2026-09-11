@@ -180,6 +180,9 @@ void ALedgerSettlement::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	const UWorld* World = GetWorld();
+	// T099: the air the town stands in, read where the vane reads the wind.
+	VaneAir = LedgerEnvironment::At(World, VaneTop);
+
 	const ULedgerWind* Wind = World != nullptr ? World->GetSubsystem<ULedgerWind>() : nullptr;
 	if (Wind == nullptr || Vane == nullptr || Vane->GetStaticMesh() == nullptr)
 	{

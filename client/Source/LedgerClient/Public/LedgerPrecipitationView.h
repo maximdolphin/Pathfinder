@@ -50,6 +50,9 @@ public:
 	/// materials. T096.
 	FLedgerSurfaceWater SurfaceWater() const { return Water; }
 
+	/// The ground temperature the rain-or-snow decision last used, kelvin. T099.
+	double GroundKelvin() const { return LastGroundKelvin; }
+
 private:
 	void Rebuild(int32 Wanted);
 
@@ -75,4 +78,5 @@ private:
 	FLedgerSurfaceWater Water;
 	double WaterWhen = -1.0e300;
 	FVector3d WaterUp = FVector3d::ZeroVector;
+	double LastGroundKelvin = 0.0;
 };

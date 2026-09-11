@@ -82,6 +82,10 @@ public:
 	/// And off again: the height fog hidden, as ConfigureForAir leaves it.
 	void StopVolumetricFog();
 
+	/// How many samples the clouds take, for the view and for their shadows.
+	/// T105: the volumetric budget turns these down before the frame rate goes.
+	void SetCloudQuality(float ViewSampleScale, float ShadowSampleScale);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;

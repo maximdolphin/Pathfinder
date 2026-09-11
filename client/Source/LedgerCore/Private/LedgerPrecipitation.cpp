@@ -35,6 +35,11 @@ namespace
 	/// this is the free-stream speed that corresponds to.
 	constexpr double PrecipDustWindMetresPerSecond = 17.0;
 
+	/// What a severe storm adds on top, millimetres an hour at full severity.
+	/// A thunderstorm downpour is tens of millimetres an hour; frontal rain is
+	/// a few, and the difference is what a pilot flying into one sees first.
+	constexpr double PrecipConvectiveRate = 20.0;
+
 	/// Water the ground holds as a film before it reads as soaked, millimetres.
 	/// A third of a millimetre darkens soil and wets a road all over.
 	constexpr double SurfaceFilmMillimetres = 0.3;
@@ -187,6 +192,10 @@ namespace LedgerPrecip
 			PrecipDeepLowRate * (Depth - PrecipThresholdPascals)
 				/ PrecipDeepLowPascals,
 			PrecipDeepLowRate * 2.0);
+		// T107: and the storm, if this is one. The same severity the gusts and the
+		// lightning come from, so the downpour starts at the squall line with them.
+		Out.RateMillimetresPerHour += PrecipConvectiveRate * LedgerWeather::StormAt(
+			System, BodyIndex, Air, LatitudeRadians, LongitudeRadians, SecondsFromEpoch).Severity;
 		Out.FallSpeedMetresPerSecond = FallSpeedMetresPerSecond(Out.Kind);
 		return Out;
 	}

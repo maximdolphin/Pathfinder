@@ -72,6 +72,23 @@ namespace LedgerFlight
 			State.Velocity = Field.WindCmPerSecond + Through * Damping;
 		}
 
+		// T100: rho v squared over twice the ballistic coefficient, on the
+		// speed through the air. Up to twelve scale heights, where an entry
+		// starts to feel it.
+		if (Field.BallisticKgPerM2 > 0.0 && Altitude < Field.DragScaleHeight * 12.0)
+		{
+			const FVector3d Through = State.Velocity - Field.WindCmPerSecond;
+			const double Speed = Through.Length() / 100.0;
+			if (Speed > 0.0)
+			{
+				const double Rho = Field.SeaLevelDensity
+					* FMath::Exp(-FMath::Max(Altitude, 0.0) / Field.DragScaleHeight);
+				const double Slowing = Rho * Speed * Speed / (2.0 * Field.BallisticKgPerM2);
+				const double Keep = FMath::Max(0.0, 1.0 - Slowing * DeltaSeconds / Speed);
+				State.Velocity = Field.WindCmPerSecond + Through * Keep;
+			}
+		}
+
 		FVector3d NewPosition = State.Position + State.Velocity * DeltaSeconds;
 
 		// Ground contact against the *surface height function*, not a trace.
@@ -108,5 +125,47 @@ namespace LedgerFlight
 		}
 
 		State.Position = NewPosition;
+	}
+
+	double HeatFlux(double DensityKgPerM3, double SpeedMetresPerSecond, double NoseRadiusMetres)
+	{
+		// ponytail: the constant is air's. Carbon dioxide's is nine per cent
+		// higher; pass it in when an entry on the other kind of world matters.
+		constexpr double SuttonGraves = 1.7415e-4;
+		if (!(DensityKgPerM3 > 0.0) || !(NoseRadiusMetres > 0.0))
+		{
+			return 0.0;
+		}
+		return SuttonGraves * FMath::Sqrt(DensityKgPerM3 / NoseRadiusMetres)
+			* SpeedMetresPerSecond * SpeedMetresPerSecond * SpeedMetresPerSecond;
+	}
+
+	void Heat(FLedgerHeatState& State, const FLedgerHeatShield& Shield,
+		double DensityKgPerM3, double AirspeedMetresPerSecond, double AmbientKelvin,
+		double DeltaSeconds)
+	{
+		if (DeltaSeconds <= 0.0)
+		{
+			return;
+		}
+		if (State.SkinKelvin <= 0.0)
+		{
+			State.SkinKelvin = AmbientKelvin;
+		}
+		constexpr double StefanBoltzmann = 5.670374419e-8;
+		const double Flux = HeatFlux(DensityKgPerM3, AirspeedMetresPerSecond, Shield.NoseRadiusMetres);
+		const double Radiated = Shield.Emissivity * StefanBoltzmann
+			* (FMath::Pow(State.SkinKelvin, 4.0) - FMath::Pow(AmbientKelvin, 4.0));
+		State.FluxWattsPerM2 = Flux;
+		State.LoadJoulesPerM2 += Flux * DeltaSeconds;
+		State.RadiatedJoulesPerM2 += Radiated * DeltaSeconds;
+		State.SkinKelvin += (Flux - Radiated) / Shield.HeatCapacity * DeltaSeconds;
+		State.PeakFluxWattsPerM2 = FMath::Max(State.PeakFluxWattsPerM2, Flux);
+		State.PeakKelvin = FMath::Max(State.PeakKelvin, State.SkinKelvin);
+		if (State.SkinKelvin > Shield.FailKelvin)
+		{
+			State.Damage = FMath::Min(1.0, State.Damage + Shield.DamagePerSecondPer100K
+				* (State.SkinKelvin - Shield.FailKelvin) / 100.0 * DeltaSeconds);
+		}
 	}
 }

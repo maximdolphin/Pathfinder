@@ -1,0 +1,753 @@
+{
+	"name": "courier",
+	"hull": {
+		"kit": "courier",
+		"lengthMetres": 9.0,
+		"widthMetres": 1.9,
+		"heightMetres": 1.5,
+		"massKg": 8000,
+		"sparesKg": 40,
+		"crew": 1
+	},
+	"flight": {
+		"mainThrust": 9000,
+		"manoeuvringThrust": 2600,
+		"pitchRate": 55,
+		"yawRate": 45,
+		"rollRate": 90,
+		"drag": 0.55,
+		"ballistic": 300
+	},
+	"components": [
+		{
+			"id": "reactor_fuel",
+			"type": "FuelTank",
+			"massKg": 60,
+			"position": [
+				-0.8,
+				0,
+				-0.3
+			],
+			"params": {
+				"capacityKg": 40,
+				"kind": 1
+			},
+			"ports": [
+				{
+					"name": "fuel",
+					"kind": "fuel",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "tank",
+			"type": "FuelTank",
+			"massKg": 400,
+			"position": [
+				-1.5,
+				0,
+				0
+			],
+			"params": {
+				"capacityKg": 2400,
+				"kind": 0
+			},
+			"ports": [
+				{
+					"name": "fuel",
+					"kind": "fuel",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "reactor",
+			"type": "PowerPlant",
+			"massKg": 900,
+			"position": [
+				-0.5,
+				0,
+				0
+			],
+			"params": {
+				"outputKw": 400,
+				"fuelKgPerHour": 0.4,
+				"slotSize": 2
+			},
+			"ports": [
+				{
+					"name": "fuel",
+					"kind": "fuel",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "coolant",
+					"kind": "coolant",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "radiator",
+			"type": "Radiator",
+			"massKg": 120,
+			"position": [
+				-1.0,
+				0,
+				0.7
+			],
+			"params": {
+				"rejectKw": 300,
+				"areaM2": 6,
+				"drawKw": 15,
+				"priority": 0.5
+			},
+			"ports": [
+				{
+					"name": "coolant",
+					"kind": "coolant",
+					"dir": "out"
+				},
+				{
+					"name": "pump",
+					"kind": "power",
+					"dir": "in"
+				}
+			]
+		},
+		{
+			"id": "bus",
+			"type": "Bus",
+			"massKg": 40,
+			"position": [
+				0,
+				0,
+				0
+			],
+			"ports": [
+				{
+					"name": "in",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "out",
+					"kind": "power",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "coupling_aft",
+			"type": "Coupling",
+			"massKg": 25,
+			"position": [
+				-2.0,
+				0,
+				0
+			],
+			"ports": [
+				{
+					"name": "in",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "out",
+					"kind": "power",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "computer",
+			"type": "Computer",
+			"massKg": 30,
+			"position": [
+				2.0,
+				0,
+				0.3
+			],
+			"params": {
+				"drawKw": 5,
+				"priority": 0
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "data",
+					"kind": "data",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "reactor_sensor",
+			"type": "Sensor",
+			"massKg": 2,
+			"position": [
+				-0.5,
+				0.3,
+				0.2
+			],
+			"params": {
+				"drawKw": 0.5,
+				"priority": 0
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "data",
+					"kind": "data",
+					"dir": "out"
+				}
+			]
+		},
+		{
+			"id": "life_support",
+			"type": "LifeSupport",
+			"massKg": 150,
+			"position": [
+				1.5,
+				0,
+				0
+			],
+			"params": {
+				"drawKw": 20,
+				"priority": 1,
+				"crewCapacity": 2,
+				"reserveO2Kg": 12
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				}
+			]
+		},
+		{
+			"id": "shield",
+			"type": "Shield",
+			"massKg": 250,
+			"position": [
+				0.5,
+				0,
+				0.4
+			],
+			"params": {
+				"drawKw": 120,
+				"priority": 1.5,
+				"capacityKj": 3000
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				}
+			]
+		},
+		{
+			"id": "landing_gear",
+			"type": "Actuator",
+			"massKg": 120,
+			"position": [
+				0.5,
+				0,
+				-0.8
+			],
+			"params": {
+				"drawKw": 8,
+				"priority": 1.2,
+				"travelSeconds": 4
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				}
+			]
+		},
+		{
+			"id": "main_engine",
+			"type": "Thruster",
+			"massKg": 700,
+			"position": [
+				-3.5,
+				0,
+				0
+			],
+			"params": {
+				"drawKw": 150,
+				"priority": 2,
+				"ispSeconds": 2000000
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "fuel",
+					"kind": "fuel",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "control",
+					"kind": "data",
+					"dir": "in"
+				}
+			]
+		},
+		{
+			"id": "rcs",
+			"type": "Thruster",
+			"massKg": 160,
+			"position": [
+				0,
+				0,
+				0
+			],
+			"params": {
+				"drawKw": 40,
+				"priority": 3,
+				"ispSeconds": 2000000
+			},
+			"ports": [
+				{
+					"name": "power",
+					"kind": "power",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "fuel",
+					"kind": "fuel",
+					"dir": "in",
+					"required": true
+				},
+				{
+					"name": "control",
+					"kind": "data",
+					"dir": "in"
+				}
+			]
+		}
+	],
+	"connections": [
+		[
+			"reactor_fuel.fuel",
+			"reactor.fuel"
+		],
+		[
+			"radiator.coolant",
+			"reactor.coolant"
+		],
+		[
+			"reactor.power",
+			"bus.in"
+		],
+		[
+			"bus.out",
+			"computer.power"
+		],
+		[
+			"bus.out",
+			"life_support.power"
+		],
+		[
+			"tank.fuel",
+			"main_engine.fuel"
+		],
+		[
+			"tank.fuel",
+			"rcs.fuel"
+		],
+		[
+			"computer.data",
+			"main_engine.control"
+		],
+		[
+			"computer.data",
+			"rcs.control"
+		],
+		[
+			"bus.out",
+			"coupling_aft.in"
+		],
+		[
+			"coupling_aft.out",
+			"main_engine.power"
+		],
+		[
+			"coupling_aft.out",
+			"rcs.power"
+		],
+		[
+			"bus.out",
+			"shield.power"
+		],
+		[
+			"bus.out",
+			"landing_gear.power"
+		],
+		[
+			"bus.out",
+			"reactor_sensor.power"
+		],
+		[
+			"coupling_aft.out",
+			"radiator.pump"
+		]
+	],
+	"compartments": [
+		{
+			"id": "cockpit",
+			"min": [
+				2.5,
+				-0.9,
+				-0.7
+			],
+			"max": [
+				4.5,
+				0.9,
+				0.8
+			]
+		},
+		{
+			"id": "cabin",
+			"min": [
+				-1.0,
+				-0.9,
+				-0.7
+			],
+			"max": [
+				2.5,
+				0.9,
+				0.8
+			]
+		},
+		{
+			"id": "engineering",
+			"min": [
+				-4.5,
+				-0.9,
+				-0.7
+			],
+			"max": [
+				-1.0,
+				0.9,
+				0.8
+			]
+		}
+	],
+	"hardpoints": [
+		{
+			"id": "hp_nose",
+			"class": 1,
+			"position": [
+				4.4,
+				0,
+				0
+			]
+		},
+		{
+			"id": "hp_dorsal",
+			"class": 2,
+			"position": [
+				0.5,
+				0,
+				0.9
+			]
+		}
+	],
+	"instruments": [
+		{
+			"id": "reactor_temperature",
+			"component": "reactor",
+			"reading": "temperatureK",
+			"sensor": "reactor_sensor"
+		},
+		{
+			"id": "reactor_output",
+			"component": "reactor",
+			"reading": "powerKw",
+			"sensor": "computer"
+		},
+		{
+			"id": "propellant",
+			"component": "tank",
+			"reading": "contentsKg",
+			"sensor": "computer"
+		},
+		{
+			"id": "main_engine",
+			"component": "main_engine",
+			"reading": "condition",
+			"sensor": "computer"
+		},
+		{
+			"id": "gear",
+			"component": "landing_gear",
+			"reading": "deployment",
+			"sensor": "computer"
+		},
+		{
+			"id": "cabin_pressure",
+			"compartment": "cockpit",
+			"reading": "pressurePa",
+			"sensor": "computer"
+		},
+		{
+			"id": "cabin_oxygen",
+			"compartment": "cockpit",
+			"reading": "oxygenPa",
+			"sensor": "computer"
+		},
+		{
+			"id": "hull",
+			"reading": "hullIntegrity",
+			"sensor": "computer"
+		}
+	],
+	"nozzles": [
+		{
+			"component": "main_engine",
+			"position": [
+				-4.5,
+				0,
+				0
+			],
+			"push": [
+				1,
+				0,
+				0
+			],
+			"thrustN": 120573000
+		},
+		{
+			"component": "rcs",
+			"position": [
+				3.51,
+				0,
+				-0.75
+			],
+			"push": [
+				0,
+				0,
+				1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				3.51,
+				0,
+				0.75
+			],
+			"push": [
+				0,
+				0,
+				-1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				3.51,
+				-0.95,
+				0
+			],
+			"push": [
+				0,
+				1,
+				0
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				3.51,
+				0.95,
+				0
+			],
+			"push": [
+				0,
+				-1,
+				0
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				-3.51,
+				0,
+				-0.75
+			],
+			"push": [
+				0,
+				0,
+				1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				-3.51,
+				0,
+				0.75
+			],
+			"push": [
+				0,
+				0,
+				-1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				-3.51,
+				-0.95,
+				0
+			],
+			"push": [
+				0,
+				1,
+				0
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				-3.51,
+				0.95,
+				0
+			],
+			"push": [
+				0,
+				-1,
+				0
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				0,
+				0.95,
+				0
+			],
+			"push": [
+				0,
+				0,
+				1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				0,
+				0.95,
+				0
+			],
+			"push": [
+				0,
+				0,
+				-1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				0,
+				-0.95,
+				0
+			],
+			"push": [
+				0,
+				0,
+				1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				0,
+				-0.95,
+				0
+			],
+			"push": [
+				0,
+				0,
+				-1
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				4.5,
+				0.475,
+				0
+			],
+			"push": [
+				-1,
+				0,
+				0
+			],
+			"thrustN": 17416100
+		},
+		{
+			"component": "rcs",
+			"position": [
+				4.5,
+				-0.475,
+				0
+			],
+			"push": [
+				-1,
+				0,
+				0
+			],
+			"thrustN": 17416100
+		}
+	]
+}
