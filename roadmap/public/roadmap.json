@@ -6349,6 +6349,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "The model is right and the renderer only shows it close up. Delivered: a nocturnal cooling model from surface thermal inertia (2 F sqrt(t) / (I sqrt(pi))) calibrated against Earth 18.0 K, Venus 0.00 K and Mars 73.5 K against a measured ~70; a cold pool depth from turbulent diffusion, 86 m by dawn; a dew-point threshold that makes fog appear in the second half of the night; and a grid of local fog volumes filled to a LEVEL, so 21 of 36 cells fill and the ridge stands 3096 m clear by arithmetic. Invisible from orbit. Not delivered: from a ridge 12 km away the frame is indistinguishable from the -fogoff control -- the pale field filling the valleys there is T089's aerial perspective, not this fog, and only running the control revealed that. Ruled out: a per-view volume budget (144 one-km cells vs 36 two-km ones changed nothing) and density (the component's extinction is per unit sphere, so it wants tau = k*d; corrected, it is visible from inside and still not at 12 km). A bank that reads across a landscape wants the volumetric cloud system with a low layer -- T094. docs/comparisons/ground-fog/"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Correction: the fog is not visible from the ridge either. The grey sheet over the valley in the ridge frame is there with -fogoff too -- it is shadowed low ground -- and the ridge frame differs from its control by 35% of pixels for other reasons. Diagnosed with switches on the one volume: a hundredfold height density (visibility 4 m by the model) changes nothing in any view (valley 1.0 of 255 from the control); the radial term at 100 per unit radius changes every pixel in the valley and ridge frames (72 and 65 of 255) and nothing from orbit. So the volume draws and the tile culling assigns it everywhere (r.LocalFogVolume.TileDebug), and it is the height term alone that contributes nothing. Also found: the engine scales HeightFogFalloff by 0.01 before packing, so 400 was 4 in the shader and the sharp top this was designed around never existed. Running: the engine's own height defaults with and without the rotation, to say whether the height term renders at all here and whether the rotation breaks it."
     }
    ],
    "evidence": [
@@ -14248,5 +14253,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T05:49:37.896Z"
+ "updatedAt": "2026-09-11T05:59:25.787Z"
 }
