@@ -59,6 +59,12 @@ private:
 
 	// Wall-clock frame time over the run, for the budget the gate names.
 	double LastWallSeconds = 0.0;
+	/// The engine's counters for the frame before, so a spike can be checked
+	/// against both and the classifier's alignment shown rather than assumed.
+	double LastGameMs = 0.0;
+	double LastRenderMs = 0.0;
+	double LastGpuMs = 0.0;
+	double LastRhiMs = 0.0;
 	double WorstFrameMs = 0.0;
 	double FrameMsSum = 0.0;
 	int32 FramesOverBudget = 0;

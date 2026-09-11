@@ -131,17 +131,24 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 			WorstFrameMs = FMath::Max(WorstFrameMs, FrameMs);
 			FramesOverBudget += FrameMs > 16.7 ? 1 : 0;
 			FrameMsSum += FrameMs;
+			// **Read every frame, not only the slow ones (T068).** These are the
+			// engine's counters for the frame just finished, and the classifier
+			// trusts that they describe the wall-clock interval just measured.
+			// That trust is what "a wait" rests on -- 90 of 118 frames over
+			// budget with nothing busy -- and the same kilometre reported every
+			// counter low in one run and a 51.5 ms render thread in the next,
+			// which is what an off-by-one looks like. So the frame before a
+			// spike is carried and printed beside it: if the cost shows up
+			// there, the classifier is reading the wrong frame.
+			const double GameMs = FPlatformTime::ToMilliseconds(GGameThreadTime);
+			const double RenderMs = FPlatformTime::ToMilliseconds(GRenderThreadTime);
+			const double GpuMs = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
+			const double RhiMs = FPlatformTime::ToMilliseconds(GRHIThreadTime);
 			if (FrameMs > 16.7)
 			{
-				// The engine's own timings for the frame just finished, which is
-				// the one this wall-clock interval spans.
-				const double GameMs = FPlatformTime::ToMilliseconds(GGameThreadTime);
-				const double RenderMs = FPlatformTime::ToMilliseconds(GRenderThreadTime);
-				const double GpuMs = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles());
-				// And the three a frame can be spent waiting in without any thread above
+				// The three a frame can be spent waiting in without any thread above
 				// being busy: the RHI thread, the game thread's own wait for the render
 				// thread, and the present.
-				const double RhiMs = FPlatformTime::ToMilliseconds(GRHIThreadTime);
 				const double WaitMs = FPlatformTime::ToMilliseconds(GGameThreadWaitTime);
 				const double SwapMs = FPlatformTime::ToMilliseconds(GSwapBufferTime);
 				// And the two a frame can pass in with nothing working: the render
@@ -171,9 +178,10 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				OverWithGC += bGC ? 1 : 0;
 				OverWithShaders += bShaders ? 1 : 0;
 				WorstFrames.Add({ FrameMs, FString::Printf(
-					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, %.0f m above sea level%s%s"),
+					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, the frame before: game %.1f, render %.1f, GPU %.1f, RHI %.1f, %.0f m above sea level%s%s"),
 					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, RenderWaitMs, IdleMs, UploadMs, Planet->ProxyBuildMs,
 					Planet->GetStats().SectionsFree, Planet->GetStats().JobsInFlight,
+					LastGameMs, LastRenderMs, LastGpuMs, LastRhiMs,
 					(FVector3d(Ship->GetActorLocation()) - FVector3d(Planet->GetActorLocation())).Length() / 100.0 - Planet->Radius / 100.0,
 					bGC ? TEXT(", a GC") : TEXT(""), bShaders ? TEXT(", shaders compiling") : TEXT("")) });
 				WorstFrames.Sort([](const TPair<double, FString>& A, const TPair<double, FString>& B) { return A.Key > B.Key; });
@@ -182,6 +190,10 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 					WorstFrames.SetNum(12);
 				}
 			}
+			LastGameMs = GameMs;
+			LastRenderMs = RenderMs;
+			LastGpuMs = GpuMs;
+			LastRhiMs = RhiMs;
 		}
 		LastWallSeconds = Now;
 		GCsAtLastFrame = GCsSeen;
