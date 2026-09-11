@@ -36,6 +36,14 @@ GATE_CHECKS = {
     ("The flight model's tests pass with no world, actor or frame involved.", "auto"),
 ],
 
+"M5P": [
+    ("The offscreen playtest flies its session with no divergence: spin under 180 deg/s, speed inside the envelope, nothing NaN.", "auto"),
+    ("The playtest's log carries no ensure and no crash, and no hitch over 250 ms after its first minute.", "auto"),
+    ("Frames during the playtest hold M02's criterion: 99.9% under 16.7 ms and none over 33 ms.", "measured"),
+    ("Playtest captures are crisp -- edge contrast within 10% of a static control frame -- and space is black.", "capture"),
+    ("At full throttle most of the engine voice's energy is below 400 Hz, with no stepped gain changes.", "measured"),
+    ("The owner flies the build for ten minutes and signs it off.", "observed"),
+],
 "M2S": [
     ("Twelve side-by-side pairs against real photographs at 2 m, 20 m and 200 m, each with a written verdict.", "capture"),
     ("At least three of those verdicts name a specific remaining deficiency.", "observed"),

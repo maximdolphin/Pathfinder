@@ -355,6 +355,15 @@ M11 = [
          acceptance="Every post effect has a measured cost and a documented reason, and the "
                     "chain costs no more than its budget.",
          days=3, refs=["SS6.8"]),
+    dict(title="Runtime Virtual Texture for surface composition",
+         detail="Compose the blended surface into an RVT so the expensive blend happens "
+                "once per texel rather than once per pixel, and so decals and roads have "
+                "something to write into. Moved here from M02 (2026-09-11): the terrain material "
+                "measured at most 0.7 ms, so the saving was never there; decals "
+                "and roads are the reason, and they arrive with this work.",
+         acceptance="Terrain material cost falls measurably against the direct-blend "
+                    "version with no visual difference.",
+         days=2, refs=["SS6.8"]),
     dict(title="Reference comparison harness",
          detail="Fixed shots against reference footage at set distances and lighting "
                 "conditions, reviewed each time the renderer changes.",

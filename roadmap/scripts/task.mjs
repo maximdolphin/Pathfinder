@@ -307,7 +307,7 @@ const commands = {
       addedAt: new Date().toISOString(),
     };
 
-    const target = /^M\d+$/i.test(id) ? findMilestone(roadmap, id) : findTask(roadmap, id);
+    const target = /^M\w+$/i.test(id) ? findMilestone(roadmap, id) : findTask(roadmap, id);
     target.evidence = target.evidence || [];
     target.evidence.push(record);
     console.log(`evidence attached to ${target.id}: ${record.file}`);

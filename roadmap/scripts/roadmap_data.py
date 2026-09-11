@@ -136,6 +136,22 @@ MILESTONES = [
         refs=["SS6.9"],
     ),
     dict(
+        # Added 2026-09-11 after the owner's first playtest: the ship could not be
+        # flown, the picture was blurred, the engine hissed, and the session ended
+        # in a divergence. See roadmap_data_play.py.
+        id="M5P", title="Playability: a build you can fly", week_start=55, week_end=57,
+        goal="A build a person can sit down and fly for ten minutes without it falling "
+             "apart: a crisp picture, a ship that answers the stick and stays in one "
+             "piece near the ground, an engine that sounds like one, and no freeze -- "
+             "checked every time by an offscreen playtest that flies the ship the way a "
+             "player does.",
+        gate="A scripted offscreen playtest -- off the pad, out over the town and back, "
+             "down to a hover -- runs with no divergence, no ensure and no crash, holds "
+             "the frame budget, and captures a crisp picture; and the owner flies the same "
+             "build and signs it off.",
+        refs=["SS6.9", "ARCH Rule 6"],
+    ),
+    dict(
         id="M06", title="Flight model in vacuum and in air", week_start=55, week_end=63,
         goal="Flight worth doing. Six-degree thruster allocation solved rather than "
              "faked, aerodynamic lift and drag in atmosphere, control surfaces, landing "

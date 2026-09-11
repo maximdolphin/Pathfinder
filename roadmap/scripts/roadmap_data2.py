@@ -58,14 +58,6 @@ M02 = [
                     "beside the noise version and beside reference photography, with the "
                     "frame cost measured rather than assumed.",
          days=2.5, refs=["SS6.8"]),
-    dict(title="Runtime Virtual Texture for surface composition",
-         detail="Compose the blended surface into an RVT so the expensive blend happens "
-                "once per texel rather than once per pixel, and so decals and roads have "
-                "something to write into. Moved up beside the material work: it is what "
-                "makes layered authored sets affordable at all.",
-         acceptance="Terrain material cost falls measurably against the direct-blend "
-                    "version with no visual difference.",
-         days=2, refs=["SS6.8"]),
     dict(title="Geomorphing across LOD transitions",
          detail="Vertices interpolate toward their coarser position as the transition "
                 "approaches, so a split is a blend rather than a jump. The current pop is "

@@ -61,7 +61,6 @@
   "M02:hydrology: flow accumulation and river networks": "T055",
   "M02:playable proof: the 200 km transect": "T068",
   "M02:real surface sets in the triplanar material": "T046",
-  "M02:runtime virtual texture for surface composition": "T047",
   "M02:scatter framework: rocks, vegetation, debris": "T057",
   "M02:shadow-specific terrain lod": "T064",
   "M02:snow, ice and seasonal cover": "T060",
@@ -237,6 +236,7 @@
   "M11:post-processing chain": "T230",
   "M11:reference comparison harness": "T231",
   "M11:reflection framework": "T222",
+  "M11:runtime virtual texture for surface composition": "T047",
   "M11:shadow quality across scales": "T221",
   "M11:volumetric lighting and atmospherics in interiors": "T226",
   "M11:wear, dirt and weathering framework": "T218",
@@ -440,6 +440,13 @@
   "M2W:shader compilation and pso caching": "T424",
   "M2W:static mesh output with nanite, lods and collision": "T420",
   "M2W:terrain component type, measured rather than assumed": "T423",
-  "M2W:write down the asset creation strategy": "T426"
+  "M2W:write down the asset creation strategy": "T426",
+  "M5P:a crisp picture": "T441",
+  "M5P:an engine that sounds like an engine": "T442",
+  "M5P:no freeze or crash in a play session": "T440",
+  "M5P:offscreen playtest harness": "T438",
+  "M5P:play from the pad by default": "T443",
+  "M5P:playable proof: the owner's ten minutes": "T444",
+  "M5P:stable flight near the ground": "T439"
  }
 }
