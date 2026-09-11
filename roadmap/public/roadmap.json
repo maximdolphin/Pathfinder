@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 20
+   "doneCount": 21
   },
   {
    "id": "M2S",
@@ -4453,9 +4453,9 @@
    "dependsOn": [
     "T059"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -4491,6 +4491,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Same location, two seasons (-fourbiomes -seasonsite picks the lit land where winter lays the most snow and summer none: 52 S, cover 1.00 in its winter, 0.00 in its summer). Snow is now on by default (-nosnow the control). The site's winter against its summer: ground mean 78.5 against 72.2, brighter by more than 20 on 17.3% of it, and cooler (blue minus red +1.0 against -8.0); scatter changes with the season as well, because it is placed from the seasonal climate. The summer run with and without the overlay is identical, as it must be at zero cover. The labels in the chain were northern (the site is southern), so its 'summer' file is the winter. Still to come: the winter without the overlay, to separate the overlay from the season's biome and scatter change. The snow line's movement with altitude is what LedgerSnowTests checks and they pass."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "The same location has snow in winter and not in summer: the season site at 52 S (winter cover 1.00, summer 0.00 by the climate model) photographed at both seasons -- ground 78.0 in its winter against 73.0 in its summer, brighter by more than 20 on 14.9% of it, cooler in colour, and the scatter changes too because it is placed from the seasonal climate. The no-overlay control at the same winter (77.0, 0.2% different) shows the winter white at this site is mostly the biome -- winter makes the ground ice cap and tundra, whose surface set is the same snow scan -- and the overlay adds snow where the ground stays a warmer biome: at the ice-cap-first site at -10 C it lit 56.7% of the ground brighter by more than 20. The snow line moves with altitude: LedgerSnowTests (the line by latitude and season, and altitude against it) pass. Snow is on by default (-nosnow the control) since the material compiles."
     }
    ],
    "evidence": [
@@ -14537,5 +14542,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:29:48.624Z"
+ "updatedAt": "2026-09-11T09:30:47.490Z"
 }
