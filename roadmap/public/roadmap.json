@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 19
+   "doneCount": 20
   },
   {
    "id": "M2S",
@@ -4055,9 +4055,9 @@
    "dependsOn": [
     "T053"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -4098,6 +4098,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Why every cliff read as snow, found and fixed in three layers. (1) Weigh normalised slope-survivors up to one however implausible, so the ice cap -- the only biome allowing 90 degrees -- took every cliff on the planet (d886910). (2) The material faded rock's tint to 1.0 while dividing the rock scan by its own mean, drawing rock at an albedo of about one (this commit). (3) Disk-cached patches had their biome colours overwritten by the elevation ramp on every warm-cache run (this commit). The 61.9-degree face at 1,899 m (17.7 C by the climate model, no snow) now draws as brown rock. Also: the in-deck camera frames (the concentric bands) were the cloud deck; T054 shots now run -noclouds. Remaining: the apron reframed to the foot (debris), shots gated on streaming so re-stitching finishes (the apron's edge-gap probe found 19,770 same-depth edge vertices off, worst 17 m, before settling), and pale patches in hollows on the gentler flank, not yet explained."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "All three criteria evidenced: a face above 60 degrees (70.3, and the 61.9 face here), reading as rock with bedding (the close-up at 23 m, and the brown rock after the tint and cache fixes), and debris at its foot not placed by hand (this frame: stones from the procedural scatter on the apron at the base). The debris is sparse pebbles and single stones rather than a scree fan at the angle of repose; the scree band is the material's, along the base of slopes."
     }
    ],
    "evidence": [
@@ -4142,6 +4147,12 @@
      "caption": "61.9-degree face at 1,899 m, 2.4 S: rock, after the tint and cache fixes",
      "source": "../out/T054-rock-face.png",
      "addedAt": "2026-09-11T06:46:05.106Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-11T07-46-26-515.png",
+     "caption": "The 61.9-degree face at 1,899 m from the flat at its foot, clouds off: rock rising out of a sand apron with loose stones scattered on it by the procedural scatter -- sparse debris, not a scree fan.",
+     "source": "../out/cliff-apron-hash.png",
+     "addedAt": "2026-09-11T07:46:26.517Z"
     }
    ],
    "plannedStartDay": 103,
@@ -4970,6 +4981,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Raking view measured (40 degrees down from 2 m, 25 cm step, terrain held, textures world-locked, exposure settled: frames 96-105 of 255, 312 tiles matched). Same camera, march against flat: tiles correlate at a median NCC of 0.956 -- the offset does distort the gravel, about 5% -- but the one-step control correlates at 0.954, so the 16-step march adds nothing measurable. That follows from the code: the march returns the height where the ray goes under, the one-step the height at the pixel, and on a smooth gravel height map at 3 cm depth those agree except where one pebble hides another. Per-texel parallax at this step is ~0.8 px, and tile averages cancel it because the height is centred. Evidenced: offset mapping. Not evidenced: occlusion -- needs a rougher height map or a larger depth, and a per-texel measure rather than tile shifts."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Measured per pixel (tools/occlusion_fb.py): dense flow forward and back between the two raking captures 25 cm apart, counting pixels whose round trip fails -- which is what disocclusion does and a smooth offset does not (self-test: plain shift 0.00%, moving occluder 1.62%). On the world-locked pair: march 7.7% off by more than 1 px, one-step 8.3%, flat ground 8.6%. The ~8% floor is the scattered stones and the light; the march adds nothing above it. So occlusion is not there at a 3 cm depth on a smooth gravel height map, now measured rather than argued. Next: deepen or sharpen the gravel's height and re-measure the same way."
     }
    ],
    "evidence": [
@@ -6564,6 +6580,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The in-deck arches are not aerial perspective: the same in-deck cliff camera (1,283 m in a 1,237-1,737 m deck) with r.VolumetricCloud.EnableAerialPerspectiveSampling=0 keeps every arch, sharper and noisier, and cloud then covers the near ground. The view sample count is not starved by our settings (ViewSampleCountScale 1.2 against the engine's 768 over 15 km, ~16-33 m steps), while the arches are ~900 m apart and have staircase edges -- which points at the reduced-resolution trace and its reconstruction. Queued: r.VolumetricRenderTarget=0, ViewRaySampleMaxCount=4096, DistanceToSampleMaxCount=1, each on the same camera."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The climb half is met: from 1,094 m ground (the lowest within 200 km of the 2,365 m site) the ten views pass under, through and over cumulus (1,237-1,732 m), middle (1,732-3,733) and cirrus (6,058-8,538), each at the profile's altitude, and cirrus is thin now (opacity 0.03). The orbit half is not: from orbit the cloud is a fine speckle over everything -- the oceans read as brown with blue pinholes -- and no deck can be told from another. The noise has no structure at the scale of weather systems; that is next."
     }
    ],
    "evidence": [
@@ -6590,6 +6611,18 @@
      "caption": "same camera, 2.1 km up: inside the deck (left), deck off (right)",
      "source": "../out/T094-inside-deck.png",
      "addedAt": "2026-09-11T06:16:37.990Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T07-49-16-534.png",
+     "caption": "Inside the cumulus deck at 1,484 m, climbing from 1,094 m ground: cloud wall, sky breaking through, ground below.",
+     "source": "../out/airshow-1-in-cumulus.png",
+     "addedAt": "2026-09-11T07:49:16.537Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T07-49-16-652.png",
+     "caption": "Inside the cirrus deck at 7.3 km after the opacity fix: thin, the ground and a lake visible through it.",
+     "source": "../out/airshow-1-in-cirrus.png",
+     "addedAt": "2026-09-11T07:49:16.655Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -14330,5 +14363,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T07:43:20.779Z"
+ "updatedAt": "2026-09-11T07:49:16.795Z"
 }
