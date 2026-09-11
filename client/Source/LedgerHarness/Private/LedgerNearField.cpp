@@ -369,7 +369,13 @@ void ULedgerNearField::Park()
 	// photographed the far side of a valley: looking down, the frame is the two
 	// metres of ground under the camera wherever the camera is.
 	const FRotator Look = bPom
-		? FRotationMatrix::MakeFromXZ(FVector(-PomEye3d), FVector(Ahead)).Rotator()
+		// Forty degrees below level along the step, not straight down: the
+		// offset parallax makes goes as the tangent of the view angle, so the
+		// straight-down pair was the one framing that shows the least of it --
+		// same-view march against flat moved the ground 0.5-0.9 px there.
+		? FRotationMatrix::MakeFromXZ(
+			FVector(Ahead * FMath::Cos(FMath::DegreesToRadians(40.0)) - PomEye3d * FMath::Sin(FMath::DegreesToRadians(40.0))),
+			FVector(PomEye3d)).Rotator()
 		: bDown
 		? FRotationMatrix::MakeFromXZ(
 			FVector(-Eye3d), FVector(ProfileDirection(Eye3d))).Rotator()

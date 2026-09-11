@@ -42,5 +42,9 @@ private:
 	FVector3d Downhill = FVector3d::ZeroVector;
 	double SlopeDegrees = 0.0;
 	double DropMetres = 0.0;
+	/// Snow the terrain draws on the chosen face (LedgerClimate::SnowCover),
+	/// and how many better faces were passed over for carrying any.
+	double FaceSnow = 0.0;
+	int32 SnowRejected = 0;
 	double AltitudeMetres = 0.0;
 };

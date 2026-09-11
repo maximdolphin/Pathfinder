@@ -317,6 +317,19 @@ bool ULedgerCliffSite::FindFace()
 				continue;
 			}
 
+			// **The snow the terrain will draw, not the inline estimate.** The
+			// band-and-lapse-rate gate above passed a 61.9-degree face at 1,899 m
+			// that rendered as a snowfield, face and foot. The full climate call
+			// marches forty steps upwind, so it runs only on a candidate about to
+			// become the best -- a few dozen, not a hundred and sixty thousand.
+			const double Snow = LedgerClimate::SnowCover(LedgerClimate::At(Point, Params));
+			if (Snow > 0.05)
+			{
+				++SnowRejected;
+				continue;
+			}
+			FaceSnow = Snow;
+
 			Steepest = Fell;
 			SlopeDegrees = Degrees;
 			Face = Point;
@@ -358,6 +371,8 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		bFound = true;
 		UE_LOG(LogLedger, Log, TEXT("cliff site: %.1f degrees, %.0f m drop, at %.0f m"),
 			SlopeDegrees, DropMetres, AltitudeMetres);
+		UE_LOG(LogLedger, Log, TEXT("cliff site: snow cover %.2f on the face; %d taller faces passed over for snow"),
+			FaceSnow, SnowRejected);
 	}
 
 	if (Shot >= UE_ARRAY_COUNT(CliffShots))
@@ -371,6 +386,8 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		Body += FString::Printf(TEXT("%.2f lat, %.2f lon\n\n"),
 			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Face.Z, -1.0, 1.0))),
 			FMath::RadiansToDegrees(FMath::Atan2(Face.Y, Face.X)));
+		Body += FString::Printf(TEXT("snow cover on the face %.2f; %d taller faces passed over for snow\n\n"),
+			FaceSnow, SnowRejected);
 		Body += TEXT("cliff-face.png is the face, cliff-foot.png the ground under it,\n"
 			"cliff-apron.png the debris at its foot seen from out on the flat,\n"
 			"cliff-wide.png both in context.\n");
