@@ -484,7 +484,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 19
+   "doneCount": 23
   },
   {
    "id": "M06",
@@ -553,7 +553,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 2
+   "doneCount": 3
   },
   {
    "id": "M07",
@@ -7637,10 +7637,16 @@
    "dependsOn": [
     "T118"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Directional shields: four sectors charged from the power the shield draws, which competes on the bus like anything else. Ledger.Ships.RaisingShieldsTakesPowerFromThrust: 360 kW left for thrust with the shield down, 240 with it up; at 70 percent reactor raising it sheds the main engine; a megajoule from ahead leaves the fore sector empty and passes 250 kJ. On the instruments: the ship panel (ALedgerHUD) shows it -- -shippanel, courier 359 kW with the shield down and 239 kW up; hauler 928 and 708. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 279,
    "plannedEndDay": 281,
@@ -7722,10 +7728,16 @@
    "dependsOn": [
     "T121"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Cargo is items with mass, volume and a place in a hold; Stow refuses by whichever binds first and says which. Ledger.Ships.AHoldFillsByVolumeOrMassWhicheverBindsFirst: lead stops at 2 crates, too heavy; foam at 60, no room. The contents are visible: the ship panel draws the hold as a grid of cubic metres filled in stowing order with a mass bar under it -- -shippanel on the hauler took 30 crates of ore (800 kg, 2 m3 each) and stopped at no room, 60 of 60 m3 and 24000 of 30000 kg, and the frame shows the grid full. And the hauler loaded to one side handles as predicted (T113)."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 285,
    "plannedEndDay": 287,
@@ -7866,10 +7878,16 @@
    "dependsOn": [
     "T126"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Damage is read off the ship state, not played: scorch and roughness on the hull from its integrity and how battered its components are, a flame, a smoke column and a flickering light on the hull over every destroyed component, and venting plumes from holed compartments with air left in them. The first pass put the fire at the component itself, inside the hull, where it lit nothing visible; it now stands on the skin above it. -couplingproof: the hit frame shows the column over the aft coupling and the panel reads coupling_aft destroyed."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 295,
    "plannedEndDay": 297,
@@ -7890,10 +7908,16 @@
    "dependsOn": [
     "T127"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "PreviewSwap computes a fitting before it is made -- slot class, ports, and the consequences -- without touching the ship. Ledger.Ships.AnOversizedPlantShowsItsMassHeatAndHandlingBeforeFitting: a class 3 plant is refused; the 700 kW one adds 700 kg and 150 kW of heat flat out, 300 kW of margin, and takes main thrust from 9000 to 8553 m/s2. The configuration screen shows all three: -shippanel photographs the panel with the fitting offered (FITTING: mass +700 kg, heat +150 kW flat out, power +300 kW of margin, handling 9000 to 8553 m/s2). PASS on the courier."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 297,
    "plannedEndDay": 299,
@@ -8058,10 +8082,16 @@
    "dependsOn": [
     "T133"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "LedgerFlight::Control reads the stick three ways -- assist off (stick is torque), decoupled (rate held, velocity kept), coupled (rate held, drift across the nose thrusted away) -- and LedgerFlight::Push is the physics: allocate, rotate, accelerate. Push takes no mode, so switching modes cannot reach below the command. Ledger.Flight.ModesChangeOnlyTheController flies each mode, then replays its commands through Push alone and gets the same flight to the bit, step for step. After a one-second yaw and two seconds hands off at 100 m/s: assist off still turning at 6.282 rad/s with its momentum kept; decoupled stopped and sliding 70.72 m/s across the nose; coupled stopped with 0.01 m/s across it. The ship flies decoupled by default; V cycles the mode and the panel shows which."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 310,
    "plannedEndDay": 312,
@@ -14801,5 +14831,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T12:54:06.086Z"
+ "updatedAt": "2026-09-11T13:00:03.972Z"
 }
