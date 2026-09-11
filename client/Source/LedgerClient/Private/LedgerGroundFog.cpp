@@ -4,6 +4,7 @@
 #include "LedgerFrames.h"
 #include "LedgerLog.h"
 #include "LedgerPlanet.h"
+#include "Misc/CommandLine.h"
 
 namespace
 {
@@ -155,7 +156,13 @@ int32 ALedgerGroundFog::Configure(
 		const float OpticalDepth = static_cast<float>(
 			FMath::Clamp(Fog.ExtinctionPerMetre * Fog.Fraction * Deep, 0.0, 8.0));
 		Volume->SetRadialFogExtinction(OpticalDepth);
-		Volume->SetHeightFogExtinction(OpticalDepth);
+		// `-fogradialonly` zeroes the height term: a control, because with the
+		// fog on the whole ridge view is one opaque orange -- peaks included --
+		// and with it off the valleys are a sea of cloud with the peaks
+		// standing out of it. The height term goes as exp(-falloff * z) inside
+		// the unit sphere, and at a falloff of 120 its bottom is e^120.
+		static const bool bRadialOnly = FParse::Param(FCommandLine::Get(), TEXT("fogradialonly"));
+		Volume->SetHeightFogExtinction(bRadialOnly ? 0.0f : OpticalDepth);
 		// **A sharp top, because the top is the visible thing about a fog bank.**
 		//
 		// The component's falloff runs backwards from what its name suggests: a
@@ -171,6 +178,21 @@ int32 ALedgerGroundFog::Configure(
 		Volume->SetFogPhaseG(0.35f);
 		Volume->SetFogAlbedo(FLinearColor(0.92f, 0.94f, 0.97f));
 
+		// What the renderer was actually given, once: the fog's size is a
+		// claim about a component, and the component's bounds are the answer.
+		if (Filled == 0)
+		{
+			Volume->UpdateBounds();
+			const FBoxSphereBounds& Bounds = Volume->Bounds;
+			UE_LOG(LogLedger, Log,
+				TEXT("ground fog: first cell bounds %.0f x %.0f x %.0f m (sphere %.0f m), "
+					 "scale %s, up %s against the local %s, optical depth %.2f"),
+				Bounds.BoxExtent.X * 2.0 / 100.0, Bounds.BoxExtent.Y * 2.0 / 100.0,
+				Bounds.BoxExtent.Z * 2.0 / 100.0, Bounds.SphereRadius / 100.0,
+				*Volume->GetComponentScale().ToString(),
+				*Volume->GetUpVector().ToString(), *FVector(Directions[Index]).ToString(),
+				OpticalDepth);
+		}
 		Volumes.Add(Volume);
 		++Filled;
 	}

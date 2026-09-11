@@ -142,3 +142,11 @@ metres — while the stone lands on the *mesh*, whose quads can be much steeper
 than that average. Seen side-on across a hillside, stones on faces of 45-60°
 stack up in the frame as a column. Placement now rejects on the steeper of the
 two: the function a cell away, and the drawn mesh a quad away.
+
+The first run after that change measured exactly the old stones, to the unit —
+125,669 in the rainforest, 11,676 of them on 30-45°. Every patch it drew came
+off the patch disk cache, and a patch loaded from disk carries its scatter with
+it; `ScatterPatch` never ran. The cache is keyed on the inputs and on a format
+version, not on the code, so `LedgerPatchDisk::FormatVersion` goes to 11. A
+change to what the generator *produces* is a change to that number, or the
+measurement after it is a measurement of the one before.

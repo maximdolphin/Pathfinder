@@ -320,6 +320,11 @@ struct FLedgerTerrainStats
 	/// it found one, because every one of them was a crack on screen.
 	int32 StitchRejects = 0;
 
+	/// Drawn patches rebuilt because a neighbour changed depth after they were
+	/// built, which left their stitched edges describing the wrong neighbour.
+	UPROPERTY()
+	int32 Restitches = 0;
+
 	/// The largest LOD transition among patches built this run, measured in
 	/// each patch's own quads.
 	///

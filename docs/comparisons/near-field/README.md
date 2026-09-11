@@ -219,3 +219,31 @@ the hillside.
 | `client/Source/LedgerTerrain/Public/LedgerPlanet.h` | `MaxDepth` |
 | `client/Source/LedgerTerrain/Private/LedgerPatchGenerator.cpp` | where the spacing comes from |
 | `client/Source/LedgerHarness/Private/LedgerNearField.cpp` | the fixture |
+
+## Cracks at the shared edges (T049)
+
+`ALedgerPlanet::MeasureEdgeGaps` walks every drawn patch, steps just past each
+edge vertex, finds the patch drawn on the other side, and measures the vertex's
+distance to that patch's facing edge. Two faults in the probe came first — it
+counted a parent still drawn behind its streaming children as a "neighbour"
+4,855 km away, and it placed vertices by component location without the
+rotation — and then the number that is real:
+
+| run (-forcedepth=16, 2.6 km profile) | measured edge vertices | > 1 cm off | of those, same depth | worst |
+|---|---:|---:|---:|---|
+| after the probe fixes | 503,979 | 29,101 | 1,216 | 906 m, depth 7 against depth 7, 804 m of it height |
+
+Two patches of the *same* depth sharing an edge should meet exactly: the same
+positions, the same height function. They did not, and the reason is in
+`LaunchPatch`: stitch flags — which edge collapses its odd vertices onto a
+coarser neighbour's — are decided **once, when the patch is launched**, and
+checked again only when a patch comes back out of the cache. A patch drawn
+beside a coarser neighbour kept its collapsed edge after that neighbour split;
+one drawn beside an equal neighbour kept every vertex after the neighbour
+collapsed. Either way the edge describes a neighbour that is no longer there.
+
+The planet's tick now compares each drawn patch's recorded flags with its
+current neighbours and relaunches the ones that disagree, eight a frame, the old
+geometry staying on screen until the new lands (the landing releases the section
+it replaces). The count is in the stats as `re-stitched`. `-breakstitching`
+still breaks stitching on purpose, and is left alone by this.

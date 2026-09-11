@@ -604,6 +604,13 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	PhaseStarted = FPlatformTime::Seconds();
 	Stats.ImbalancedEdges = 0;
 	Stats.WorstDepthDifference = 0;
+	// Re-stitches are budgeted: each is a patch rebuilt, and a turn that
+	// changes a hundred neighbours at once should not rebuild a hundred patches
+	// in one frame. `-breakstitching` declares every edge un-stitched on
+	// purpose, so it would disagree with this forever; it is left alone.
+	constexpr int32 MaxRestitchesPerFrame = 8;
+	int32 RestitchedThisFrame = 0;
+	static const bool bNoRestitch = FParse::Param(FCommandLine::Get(), TEXT("breakstitching"));
 	for (const FLedgerQuadNode* Leaf : Leaves)
 	{
 		// Only nodes that are actually drawn. The collected set contains a split
@@ -614,6 +621,35 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		if (!ActiveSections.Contains(NodeKey(*Leaf)))
 		{
 			continue;
+		}
+
+		// **Re-stitched when a neighbour changes.** Stitch flags are decided at
+		// launch and were never revisited, so a patch drawn beside a coarser
+		// neighbour kept its collapsed edge after that neighbour split, and one
+		// drawn beside an equal one kept every vertex after the neighbour
+		// collapsed. Either way the shared edge stops matching: T049 measured
+		// 1,216 same-depth edge vertices more than a centimetre apart, the worst
+		// 906 m, 804 of it height. A drawn patch whose flags no longer match
+		// its neighbours is rebuilt; the old geometry stays until the new lands.
+		if (!bNoRestitch && RestitchedThisFrame < MaxRestitchesPerFrame && !InFlight.Contains(NodeKey(*Leaf)))
+		{
+			const int32 Section = ActiveSections.FindChecked(NodeKey(*Leaf));
+			const FLedgerSectionMeta& Meta = SectionMeta[Section];
+			const bool bLeft = LeafDepthAtFace(Leaf->Face, Leaf->U - 0.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent) < Leaf->Depth;
+			const bool bRight = LeafDepthAtFace(Leaf->Face, Leaf->U + 1.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent) < Leaf->Depth;
+			const bool bBottom = LeafDepthAtFace(Leaf->Face, Leaf->U + 0.5 * Leaf->Extent, Leaf->V - 0.02 * Leaf->Extent) < Leaf->Depth;
+			const bool bTop = LeafDepthAtFace(Leaf->Face, Leaf->U + 0.5 * Leaf->Extent, Leaf->V + 1.02 * Leaf->Extent) < Leaf->Depth;
+			if (bLeft != Meta.bStitchLeft || bRight != Meta.bStitchRight
+				|| bBottom != Meta.bStitchBottom || bTop != Meta.bStitchTop)
+			{
+				const bool bCollision = MeshPool.IsValidIndex(Section) && MeshPool[Section] != nullptr
+					&& MeshPool[Section]->GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+				if (LaunchPatch(*Leaf, bCollision))
+				{
+					++RestitchedThisFrame;
+					++Stats.Restitches;
+				}
+			}
 		}
 
 		const double Probes[4][2] = { {-0.02, 0.5}, {1.02, 0.5}, {0.5, -0.02}, {0.5, 1.02} };

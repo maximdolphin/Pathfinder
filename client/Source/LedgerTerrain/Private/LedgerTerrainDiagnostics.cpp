@@ -62,6 +62,7 @@ void ALedgerPlanet::LogStats() const
 	UE_LOG(LogLedger, Log, TEXT("  imbalanced edges   %d  (worst depth gap %d)"),
 		Stats.ImbalancedEdges, Stats.WorstDepthDifference);
 	UE_LOG(LogLedger, Log, TEXT("  water sections     %d uploaded"), Stats.WaterSections);
+	UE_LOG(LogLedger, Log, TEXT("  re-stitched       %d patches (a neighbour changed depth after they were built)"), Stats.Restitches);
 	UE_LOG(LogLedger, Log, TEXT("  patch cache        %lld hit / %lld generated (%.0f%% reused)"),
 		Stats.CacheHits, Stats.CacheMisses,
 		(Stats.CacheHits + Stats.CacheMisses) > 0

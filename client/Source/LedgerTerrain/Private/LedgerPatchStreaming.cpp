@@ -127,6 +127,15 @@ void ALedgerPlanet::HarvestCompletedPatches()
 			: ECollisionEnabled::NoCollision);
 		Mesh->SetVisibility(true);
 
+		// A re-stitch lands over the patch it replaces. Release that one first,
+		// or the pool leaks its section and both stay on screen.
+		if (const int32* Old = ActiveSections.Find(Job->Key))
+		{
+			if (*Old != Job->SectionIndex)
+			{
+				ReleaseSection(Job->Key);
+			}
+		}
 		ActiveSections.Add(Job->Key, Job->SectionIndex);
 		if (Job->Scatter.Num() > 0)
 		{

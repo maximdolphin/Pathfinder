@@ -67,7 +67,11 @@ namespace LedgerPatchDisk
 	/// 10: T078's airless bodies. The climate now returns zero moisture without
 	/// marching when a body holds no atmosphere, which changes the vertex
 	/// colours and the scatter on every patch of one.
-	constexpr uint32 FormatVersion = 10;
+	/// 11: T437. Scatter now also rejects on the drawn mesh's slope a quad
+	/// away, which removes stones from every steep patch -- and the first run
+	/// after that change measured exactly the old stones, to the unit, because
+	/// every patch it drew came off the disk with its scatter already in it.
+	constexpr uint32 FormatVersion = 11;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

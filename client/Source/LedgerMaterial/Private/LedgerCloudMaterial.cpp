@@ -294,8 +294,12 @@ namespace LedgerSurface
 			Graph.Make<UMaterialExpressionDotProduct>();
 		Along->A.Expression = Drift;
 		Along->B.Expression = UpRGB;
+		// **0.6, not 0.92.** With 92 per cent of the vertical taken out, each cloud
+		// was a column through its whole band, and the first frames with the
+		// density on the right pin showed exactly that: radial streaks at the
+		// zenith and curtains hanging from the deck seen from the ground.
 		UMaterialExpression* Flattened = Graph.Subtract(Drift,
-			Graph.Multiply(UpRGB, Graph.Scale(Along, 0.92f)));
+			Graph.Multiply(UpRGB, Graph.Scale(Along, 0.6f)));
 
 		// **Cloud-sized, not gravel-sized.** A quarter-kilometre feature reads
 		// as noise; a cumulus field is spaced in kilometres.
