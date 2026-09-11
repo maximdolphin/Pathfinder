@@ -5170,7 +5170,7 @@
    "dependsOn": [
     "T436"
    ],
-   "status": "blocked",
+   "status": "active",
    "startedAt": "2026-09-09",
    "completedAt": null,
    "notes": [
@@ -5183,6 +5183,21 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Blocked on T434: the stones are on a visible lattice and are white. Re-run when they are fixed."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "unblock",
+     "text": "unblocked"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Re-run now that T434 is fixed and the sun actually lights surfaces. The measurable half passes again and more clearly: the four grounds differ pairwise by a mean of 24.7 to 73.9 of 255 (closest pair desert/savanna). The two defects T434 was reopened for are gone -- the stones are brown and there is no lattice. The half that matters still fails, on new and specific defects rather than on the old ones: (1) the boulders are visibly faceted, because T434 flat-shaded a 320-face hull and at 3-10 m that reads as low-poly; (2) crisp-edged white patches sit on the ground in the desert and grassland frames -- a surface blend with a hard edge; (3) the savanna frame has a vertical column of stacked boulders in the middle distance, a scatter placement defect, probably a slope test at cell spacing that cannot see a face narrower than a cell on a coarse patch; (4) the daytime skies are nearly black overhead. No longer blocked -- open work with named defects."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Two of the three defects fixed and one narrowed. Faceted rocks: normals blended 45/55 between the face and the direction to the face centre, baked, and the stones now read as rounded boulders. White patches: the terrain material's blend depth 0.2 -> 0.5, and scree/rock exposures now meet the ground with a gritty edge instead of a cut-out. The savanna boulder column is still in frame, but it is not floating: ALedgerPlanet::MeasureScatterFootings traced every stone within 400 m of all four cameras against the drawn ground -- 59,489 + 5,175 + 52,631 + 41,003 stones, none more than 1.5 m off it. So the column stands on real ground, most likely a face steeper than the placement's slope limit, which is measured on the height function a cell away rather than on the surface the stone lands on. The next run records the drawn slope under every stone out to 1.5 km."
     }
    ],
    "evidence": [
@@ -5209,6 +5224,36 @@
      "caption": "savanna, eye height, same framing as the other three.",
      "source": "../out/four-biomes-4-savanna.png",
      "addedAt": "2026-09-09T23:19:29.002Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T03-14-29-267.png",
+     "caption": "Rainforest after T434's fixes: brown stones, no lattice",
+     "source": "../out/four-biomes-1-tropical-rainforest.png",
+     "addedAt": "2026-09-11T03:14:29.275Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T03-14-29-346.png",
+     "caption": "Savanna: the stacked column of boulders mid-distance is a scatter defect",
+     "source": "../out/four-biomes-4-savanna.png",
+     "addedAt": "2026-09-11T03:14:29.353Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T03-53-28-008.png",
+     "caption": "Grassland after the rock-normal and scree-blend fixes: shaded boulders, a gravel patch with a soft edge",
+     "source": "../out/four-biomes-3-temperate-grassland.png",
+     "addedAt": "2026-09-11T03:53:28.015Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T03-53-28-182.png",
+     "caption": "Rainforest: rounded stones on the drawn ground, under the engine's own broken cloud",
+     "source": "../out/four-biomes-1-tropical-rainforest.png",
+     "addedAt": "2026-09-11T03:53:28.184Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T03-53-28-252.png",
+     "caption": "Savanna: the column of boulders on the hillside is still there -- and every stone within 400 m measures on the ground",
+     "source": "../out/four-biomes-4-savanna.png",
+     "addedAt": "2026-09-11T03:53:28.254Z"
     }
    ],
    "plannedStartDay": 172.5,
@@ -6163,6 +6208,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "Half delivered, half not expressible. The butterscotch sky is there from composition alone: CO2 scatters blue 2.86x harder than air, so a clean CO2 sky would be DEEPER blue than Earth's, and what turns it is the dust -- iron oxide with a single-scattering albedo of 0.63 blue against 0.94 red. Predicted before rendering (Mars R 1.000 G 0.928 B 0.681; the same air with the dust removed R 0.176 B 1.000) and confirmed by capture. The blue sunset is not: it is a diffraction effect needing a per-channel phase function, because the forward lobe narrows as wavelength over particle size. Unreal's Sky Atmosphere has one MieAnisotropy for all three channels, so the aureole takes the colour of MieScattering, which for dust is red. Needs a custom sky shader or a separate aureole element -- M11. docs/comparisons/sky-colour/"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Blocker found while fixing the black town: the engine's sun transmittance for fog, forward, Lumen and RT lighting is ONE global value computed as if the viewer stood at the planet top along world +Z (FAtmosphereSetup::GetTransmittanceAtGroundLevel, engine TODO). Per-pixel transmittance fixes deferred opaque only; the elevation floor is now driven each tick from the viewer's true solar elevation (SetTransmittanceMinLightElevationAngle), which fixes the colour at and above the true angle but cannot redden below it. A true blue sunset needs a world frame whose +Z is the viewer's up (rotate the world, not the sun)."
     }
    ],
    "evidence": [
@@ -6341,6 +6391,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Sharpening the coverage cut did not do it either. The ramp was made a sixteenth of the noise range wide rather than proportional to coverage, on the reasoning that a band at full density is twenty optical depths thick so anything above a twentieth of the ramp is already opaque -- correct arithmetic, no visible change. Nor did flattening the noise into columns by removing 92 per cent of the local vertical. Four faults found in this material, three fixed and it draws; the shaping is not converging at roughly two minutes an iteration with no way to inspect an intermediate shader value except by rewiring the output. Parking it there rather than grinding: the state is recorded, the default path is unaffected, and the next person to pick it up starts from a material that compiles, draws, and has its precision problem solved."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Re-examined after the sun-transmittance fix (d65cfcc and the elevation floor), because a deck lit only by ambient sky would also read as a uniform fog. It was not that. With the sun genuinely reaching the scene, -airshow -threedecks still shows the zenith as a uniform lit haze with no cloud shapes and no sky between them, and nothing of the decks from orbit. The remaining fault is exactly what was recorded: the coverage threshold is not cutting holes in the density, which is a shaping problem in BuildCloudMaterial, not lighting. Still blocked on its render."
     }
    ],
    "evidence": [],
@@ -14082,5 +14137,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T02:58:07.387Z"
+ "updatedAt": "2026-09-11T03:53:28.327Z"
 }
