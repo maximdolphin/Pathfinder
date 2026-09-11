@@ -5063,6 +5063,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "A controlled fixture: -pomchecker makes the relief a checker of sharp 8 cm steps (the texture seen is still the scan). The march frame on it shows what the gravel never did -- step walls, the raised blocks' sides drawn as short vertical streaks where the ray meets them, which is a near block hiding the ground behind it -- and the one-step frame does not. The round-trip flow measure is blind to it (march 22.1%, one-step 23.6%, flat 22.4%): dense flow smooths across a wall a few pixels thick. So a measure built for the fixture instead: -channel=pomheight shows which height each pixel ends up sampling, and at a raking view occlusion makes the raised tops cover more than their geometric half of the near ground, where an offset that cannot occlude leaves them at half. Queued for march, one-step and flat, both shots of the pair."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The checker fixture, measured three ways. Frames (attached): the march draws coherent raised squares with hatched side walls where the ray meets a block -- a near block hiding the ground behind it -- and the one-step offset tears the same squares into slivers at every step edge. That is the mechanism, evidenced. No scalar separates them robustly: the shown-height fraction with an Otsu threshold is flat 59.2%, one-step 56.7%, march 54.7% (the channel is unlit, hazed and graded, not two-tone); fragment counts are flat ~160 pieces (median 180 px), one-step ~310 (40 px), march ~310 (5 px, the wall hatching). The acceptance asks for gravel occluding gravel, and the gravel scan's own relief is too smooth and shallow to occlude anything at 3 or at 8 cm -- the march on it reads the same as the offset. What would meet it: a gravel height map with sharp relief (a different free scan with real pebble heights; ADR-0005 rules out purchased ones). That is a content choice and is left open."
     }
    ],
    "evidence": [
@@ -5071,6 +5076,18 @@
      "caption": "Parallax offset in, measured by difference-by-row against a -noparallax control: 0.66/255 at the far edge rising monotonically to 3.33 at the near one.",
      "source": "../out/parallax-on.png",
      "addedAt": "2026-09-09T22:42:41.021Z"
+    },
+    {
+     "file": "evidence/T430-2026-09-11T09-13-14-082.png",
+     "caption": "Checker relief (8 cm steps), shown height, the march: coherent raised squares with hatched side walls where the ray meets the side of a block -- a block hiding the ground behind it.",
+     "source": "../out/pomtop-march-0.png",
+     "addedAt": "2026-09-11T09:13:14.085Z"
+    },
+    {
+     "file": "evidence/T430-2026-09-11T09-13-14-195.png",
+     "caption": "Same camera, the one-step offset: the raised squares slide as flat sheets and tear into slivers at every step edge -- what an offset that cannot occlude does.",
+     "source": "../out/pomtop-onestep-0.png",
+     "addedAt": "2026-09-11T09:13:14.199Z"
     }
    ],
    "plannedStartDay": 145,
@@ -14505,5 +14522,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:10:52.305Z"
+ "updatedAt": "2026-09-11T09:13:32.036Z"
 }
