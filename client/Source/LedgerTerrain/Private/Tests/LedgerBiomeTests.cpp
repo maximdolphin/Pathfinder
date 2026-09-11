@@ -164,20 +164,26 @@ bool FLedgerBiomeSteepGroundYields::RunTest(const FString&)
 	const TArray<FLedgerBiome> Biomes = LedgerBiomes::Load(LedgerBiomes::DefaultDirectory(), Errors);
 
 	int32 Rainforest = INDEX_NONE;
+	int32 IceCap = INDEX_NONE;
+	int32 Tundra = INDEX_NONE;
 	for (int32 Index = 0; Index < Biomes.Num(); ++Index)
 	{
-		if (Biomes[Index].Name == TEXT("Tropical rainforest"))
-		{
-			Rainforest = Index;
-		}
+		Rainforest = Biomes[Index].Name == TEXT("Tropical rainforest") ? Index : Rainforest;
+		IceCap = Biomes[Index].Name == TEXT("Ice cap") ? Index : IceCap;
+		Tundra = Biomes[Index].Name == TEXT("Tundra") ? Index : Tundra;
 	}
-	if (Rainforest == INDEX_NONE)
+	if (Rainforest == INDEX_NONE || IceCap == INDEX_NONE || Tundra == INDEX_NONE)
 	{
-		AddError(TEXT("the shipped set has no tropical rainforest"));
+		AddError(TEXT("the shipped set lacks tropical rainforest, ice cap or tundra"));
 		return false;
 	}
 
-	// Flat jungle is jungle. The same climate on a cliff is not.
+	// Flat jungle is jungle, and a jungle cliff is still jungle ground: every
+	// biome that is plausible here refuses eighty degrees, so it falls to the
+	// nearest in climate and the material's slope blend draws it as rock.
+	// What it must not be is ice. The ice cap allows ninety degrees, and
+	// normalising its trace of a weight up to one put snow on every cliff on
+	// the planet -- which this test used to require.
 	TArray<double> Flat;
 	TArray<double> Cliff;
 	const FLedgerClimate Jungle = Weather(27.0, 0.88);
@@ -185,7 +191,15 @@ bool FLedgerBiomeSteepGroundYields::RunTest(const FString&)
 	LedgerBiomes::Weigh(Biomes, Jungle, 80.0, Cliff);
 
 	TestTrue(TEXT("flat ground is rainforest"), Flat[Rainforest] > 0.5);
-	TestTrue(TEXT("a cliff is not"), Cliff[Rainforest] < 0.01);
+	TestTrue(TEXT("a jungle cliff is not ice"), Cliff[IceCap] < 0.01);
+	TestTrue(TEXT("a jungle cliff falls back to the jungle"), Cliff[Rainforest] > 0.99);
+
+	// Where a biome that allows the slope is plausible, steep ground does
+	// leave the ones that refuse it: a polar cliff is ice, not tundra.
+	TArray<double> Polar;
+	LedgerBiomes::Weigh(Biomes, Weather(-20.0, 0.45), 80.0, Polar);
+	TestTrue(TEXT("a polar cliff is ice"), Polar[IceCap] > 0.5);
+	TestTrue(TEXT("tundra refuses it"), Polar[Tundra] < 0.01);
 	return true;
 }
 

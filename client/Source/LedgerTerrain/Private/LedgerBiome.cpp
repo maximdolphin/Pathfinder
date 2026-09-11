@@ -129,6 +129,7 @@ namespace LedgerBiomes
 		}
 
 		double Total = 0.0;
+		double ClimateTotal = 0.0;
 		double NearestDistance = TNumericLimits<double>::Max();
 		int32 Nearest = 0;
 
@@ -155,6 +156,28 @@ namespace LedgerBiomes
 			const double Weight = FMath::Exp(-DistanceSquared) * Slope;
 			OutWeights.Add(Weight);
 			Total += Weight;
+			ClimateTotal += FMath::Exp(-DistanceSquared);
+		}
+
+		// **Slope can refuse a biome; it cannot promote an implausible one.**
+		//
+		// Normalising after the slope cut hands the ground to whatever survived
+		// it, however poor its climate match -- and the ice cap, the one biome
+		// that allows ninety degrees, survived every cliff on the planet with a
+		// weight of 0.005 at +10 C and was scaled up to one: snow on a 62-degree
+		// face that the climate says carries none. A survivor now has to hold a
+		// quarter of what the climate alone would give; below that the ground
+		// falls to the biome its climate is nearest, and the material's slope
+		// blend is what draws the face as rock. A polar cliff still goes to the
+		// ice cap, because there its climate weight is most of the total.
+		if (Total < 0.25 * ClimateTotal)
+		{
+			for (double& Weight : OutWeights)
+			{
+				Weight = 0.0;
+			}
+			OutWeights[Nearest] = 1.0;
+			return;
 		}
 
 		// ---- truncate to three, continuously ------------------------------

@@ -78,7 +78,11 @@ namespace LedgerPatchDisk
 	/// 13: T437 again. The drawn-slope test takes the steeper of the quads either
 	/// side of a stone on each axis, not a one-sided difference.
 	/// 14: T049. Stitched-edge vertices are sampled at the neighbour's spacing.
-	constexpr uint32 FormatVersion = 14;
+	/// 15: steep ground no longer goes to the ice cap. Weigh normalised the
+	/// slope-survivors up to one however poor their climate match, and the ice
+	/// cap (90 degrees) survived every cliff -- snow on a 62-degree face at
+	/// +10 C. The key does not cover the biome weighting, so this is a bump.
+	constexpr uint32 FormatVersion = 15;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

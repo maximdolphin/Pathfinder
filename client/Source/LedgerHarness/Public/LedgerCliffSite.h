@@ -46,5 +46,9 @@ private:
 	/// and how many better faces were passed over for carrying any.
 	double FaceSnow = 0.0;
 	int32 SnowRejected = 0;
+	/// The full climate model's temperature on the chosen face, and how many
+	/// taller faces it passed over for being too cold to draw as rock.
+	double FaceTemperatureC = 0.0;
+	int32 ColdRejected = 0;
 	double AltitudeMetres = 0.0;
 };

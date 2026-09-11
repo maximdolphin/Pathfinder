@@ -322,13 +322,26 @@ bool ULedgerCliffSite::FindFace()
 			// that rendered as a snowfield, face and foot. The full climate call
 			// marches forty steps upwind, so it runs only on a candidate about to
 			// become the best -- a few dozen, not a hundred and sixty thousand.
-			const double Snow = LedgerClimate::SnowCover(LedgerClimate::At(Point, Params));
+			//
+			// **And warm by that model, not by the inline one.** With the snow
+			// check passing (0.00) the face still drew white: cold and dry, so
+			// nothing falls, but the biome nearest its climate is the ice cap
+			// and its ground is a snow scan. Below 5 C the nearest biome is ice
+			// cap or tundra, which is not rock with bedding.
+			const FLedgerClimate Climate = LedgerClimate::At(Point, Params);
+			const double Snow = LedgerClimate::SnowCover(Climate);
 			if (Snow > 0.05)
 			{
 				++SnowRejected;
 				continue;
 			}
+			if (Climate.TemperatureC < 5.0)
+			{
+				++ColdRejected;
+				continue;
+			}
 			FaceSnow = Snow;
+			FaceTemperatureC = Climate.TemperatureC;
 
 			Steepest = Fell;
 			SlopeDegrees = Degrees;
@@ -371,8 +384,8 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		bFound = true;
 		UE_LOG(LogLedger, Log, TEXT("cliff site: %.1f degrees, %.0f m drop, at %.0f m"),
 			SlopeDegrees, DropMetres, AltitudeMetres);
-		UE_LOG(LogLedger, Log, TEXT("cliff site: snow cover %.2f on the face; %d taller faces passed over for snow"),
-			FaceSnow, SnowRejected);
+		UE_LOG(LogLedger, Log, TEXT("cliff site: snow cover %.2f and %.1f C on the face; taller faces passed over: %d for snow, %d for cold"),
+			FaceSnow, FaceTemperatureC, SnowRejected, ColdRejected);
 	}
 
 	if (Shot >= UE_ARRAY_COUNT(CliffShots))
@@ -386,8 +399,8 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		Body += FString::Printf(TEXT("%.2f lat, %.2f lon\n\n"),
 			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Face.Z, -1.0, 1.0))),
 			FMath::RadiansToDegrees(FMath::Atan2(Face.Y, Face.X)));
-		Body += FString::Printf(TEXT("snow cover on the face %.2f; %d taller faces passed over for snow\n\n"),
-			FaceSnow, SnowRejected);
+		Body += FString::Printf(TEXT("snow cover on the face %.2f, %.1f C by the climate model; taller faces passed over: %d for snow, %d for cold\n\n"),
+			FaceSnow, FaceTemperatureC, SnowRejected, ColdRejected);
 		Body += TEXT("cliff-face.png is the face, cliff-foot.png the ground under it,\n"
 			"cliff-apron.png the debris at its foot seen from out on the flat,\n"
 			"cliff-wide.png both in context.\n");
