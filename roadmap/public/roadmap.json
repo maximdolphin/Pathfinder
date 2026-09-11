@@ -3886,6 +3886,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "No longer blocked on terrain relief -- that was T428 -- and still short of its literal acceptance. Three changes, each argued: (1) the background drying over land was 0.97 per step over a forty-step march, costing 70% of the moisture before any mountain was involved, which is backwards for a model whose acceptance is about mountains; 0.99 costs 33%, and desert went 50.6% -> 32.9% of land. (2) The per-range criterion was an ABSOLUTE moisture difference of 0.02 on a quantity spanning two orders of magnitude, so it systematically missed dry regions -- a range at 0.041 windward and 0.021 lee is half as wet on its lee side and failed by a thousandth. Absolute OR relative now; both are real in different regimes. (3) The major-range search never checked that the wind crosses the range, only that ground rises between north and south neighbours. Fixed, and it was mostly the WRONG hypothesis: it removed 32 of 609 ranges and barely moved the rate, which is worth recording as a wrong guess. Where it stands: 478 of 577 wind-crossing major ranges shadow (83%), and the population statistic reads 87% against its 75% bar. The literal 'every major range' is not met and 99 ranges genuinely do not shadow. Also fixed on the way: the fixture ran in OnWorldBeginPlay and reported 'no planet' every time, because the world builder spawns the planet in its own begin play and subsystem order is not orderable; it runs on the first tick now."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Every range without a rain shadow now carries its reason, and the population statistic is unchanged (577 wind-crossing major ranges, 479 shadowed, 83%; every wind-crossing ridge 87% against 75). Of the 98 without one: 17 sit at a wind-band boundary (25-35 or 55-65 degrees, where the prevailing wind turns through zero and the upwind march has no fetch); 20 are dry on both sides (nothing to shadow -- both below 0.03); 38 are wetter on the LEE, which says the air arrives from the other side -- 29 of those 40 lie poleward of 60 degrees, in the polar easterlies, where 'east' turns fast and the march curls round the pole; 23 other. The literal 'every major range' is not met, and at least the first two groups are the physics rather than a fault: a range in air with no moisture cannot cast a shadow, and neither can one the wind does not cross. The lee-wetter polar group is the model's to fix -- the prevailing wind near the poles."
     }
    ],
    "evidence": [
@@ -4388,6 +4393,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "The blend now exists and is off by default, and the reason is a measurement rather than a doubt. It is a lerp whose alpha is multiplied by cover, so at zero cover it is provably the identity -- unlike the first attempt, which height-blended and therefore competed whether or not it was wanted. It still changes every biome: ice cap 61.4, rainforest 52.1, desert 40.7, savanna 36.4 of 255. A desert changing by forty levels is not a blend competing; the COVER is that high. -channel=snow over grassland at season zero reads 131 of 255, and the four-biome desert comes back grey and half-snowed. That also reframes the original revert, whose reasoning was 'at season zero the climate is identical and nothing should have moved' -- which assumed cover is zero at season zero. It is not; season zero is a season. Next, in order: (1) the fallback colour path SurfaceColour returns alpha 255 through Blend, which is full snow, and it runs whenever a patch has no biomes; (2) T051 raised the drying rate 0.97 -> 0.99 in the same session and nobody has looked at what that did to cover; (3) only then judge the overlay's own shaping. Behind -snow until those are answered."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Step (1) of the three named: the fallback colour path (patches with no biomes) wrote FColor's default alpha, 255, which this project reads as full snow cover. It writes 0 now; the ramp carries its own white at the top. Steps (2) -- what T051's drying-rate change did to cover -- and (3) the overlay's own shaping remain, and are measurements that need the four-biome captures with -snow."
     }
    ],
    "evidence": [
@@ -4883,6 +4893,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Half delivered and committed: parallax offset mapping, measured. The remaining half is the per-pixel ray march the acceptance asks for, and its cost lands on every ground pixel -- priced in T436 before it is taken, not after."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The per-pixel march is in: 16 steps through the scan's height field along the view ray, three triplanar samples each at mip 0, inside the 15 m parallax fade, interpolated between the last two samples -- a Custom node over the same camera-relative coordinate the triplanar sampling uses, with -nopom (and -livematerials) as the control. Measured the way the acceptance asks, by differencing captures a metre apart, against a control build with parallax off so perspective and relief cancel (tools/parallax_spread.py): the march moves the ground 28.6 px RMS more than the control, the one-step offset 12.3 px. The first pair was aimed at a point on the height function and looked at the horizon on this relief; it is re-aimed by direction, 45 degrees down, and the raking-light half of the acceptance is still to be framed."
     }
    ],
    "evidence": [
@@ -6445,6 +6460,12 @@
      "caption": "From orbit, for the first time: cloud with gaps over the continents",
      "source": "../out/clouds-decks5-orbit.png",
      "addedAt": "2026-09-11T04:15:18.162Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T04-26-26-449.png",
+     "caption": "With 0.6 of the vertical taken out rather than 0.92: separate cloud masses with sky between, not radial columns",
+     "source": "../out/clouds-decks6-zenith.png",
+     "addedAt": "2026-09-11T04:26:26.455Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -14185,5 +14206,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T04:21:12.003Z"
+ "updatedAt": "2026-09-11T04:50:22.056Z"
 }

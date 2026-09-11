@@ -110,3 +110,35 @@ The valley camera is placed at the tenth percentile of the sampled ground rather
 than at its minimum — the single lowest sample is the bottom of the deepest
 crack, where that disagreement is largest, and it is not what anyone means by a
 valley either.
+
+## A sphere is all a local fog volume can be
+
+Every version of the fog with its height term on produced the same frame from
+the ridge: one opaque orange, the peaks included. Three controls, one each:
+
+| arm | ridge frame |
+|---|---|
+| fog on (height falloff 120) | opaque orange, peaks gone |
+| `-noclouds` | the same — it was not the cloud deck |
+| sun directly behind the lookout | the same — it was not forward-scattered glare |
+| `-fogoff` | a sea of cloud with snow peaks standing out of it |
+| `-fogradialonly` (height term zeroed) | the same as fog off; the fog a faint haze |
+| height falloff finite (≤ 20) | opaque orange again |
+
+The engine's own shader says why. `LocalFogVolumeCommon.ush` unpacks each
+volume as a translation, two basis vectors and **one `UniformScale`**: a local fog
+volume can be turned but not squashed. The "flat lenses" — 3.2 km across and
+86 m tall by their scale — were spheres 3.2 km in radius, and at twenty degrees
+south with the lookout 3 km above the pool, the lookout was inside one. With
+the radial term alone the sphere was a faint haze; with the height term,
+whose density grows as `exp(falloff · (offset − z))` towards the bottom of the
+sphere, it was solid. (At a falloff of 120 the bottom was also `e^120`, past
+the largest float, which is a second fault, not the first.)
+
+So the pool is now **one** sphere, turned to the local up, with the radial term
+off and the height term's offset at the fill level: fog below the level, clear
+air above it, and the ground that rises above the level — the ridge — out of
+the fog on its own. The level sits at `z = -0.8` of the sphere rather than at
+its centre, so that a falloff of 400 (an e-fold every ~35 m above the top)
+leaves the bottom at `e^80` rather than past what a float can hold; the sphere
+is sized so the circle where it meets the level covers the sampled square.
