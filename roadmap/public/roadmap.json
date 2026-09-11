@@ -5269,6 +5269,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Savanna column isolated (b7f4848): hiding every scatter component removes it, and taking every instance out and putting it back leaves it pixel-identical -- so it is scatter, and the renderer draws what the components hold. But 3,074 stones project into the column rectangle, all traced onto live, drawn terrain within centimetres, and none projects above y 459 while the drawn column climbs to 415. Next: every instance at any range by where its mesh is drawn, plus the mesh bounds."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The savanna column is not a defect. The four stones in it are ~1 m boulders 32-37 m from the camera (scale 0.89-0.97, pivots 0.4 m under their drawn centres, meshes 1 m with base at z=0), each traced onto drawn, live terrain within 1 cm. View rays down the column (x 1045) hit ground at 31-35 m from y 440 downward and find nothing nearer above y 430: a mound 35 m off, and the stones sit on its crest. The frame reads them as climbing the hill 250 m behind because the mound's grass matches that hill and nothing in the image separates 35 m from 250 m. The acceptance -- that someone shown these without context would not call them a game heightfield -- is a human judgement and is left for review."
     }
    ],
    "evidence": [
@@ -5325,6 +5330,12 @@
      "caption": "Savanna: the column of boulders on the hillside is still there -- and every stone within 400 m measures on the ground",
      "source": "../out/four-biomes-4-savanna.png",
      "addedAt": "2026-09-11T03:53:28.254Z"
+    },
+    {
+     "file": "evidence/T437-2026-09-11T05-35-37-630.png",
+     "caption": "savanna column: as shot, scatter hidden, every instance put back",
+     "source": "../out/T437-column-3way.png",
+     "addedAt": "2026-09-11T05:35:37.638Z"
     }
    ],
    "plannedStartDay": 172.5,
@@ -14232,5 +14243,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T05:29:09.269Z"
+ "updatedAt": "2026-09-11T05:35:37.741Z"
 }
