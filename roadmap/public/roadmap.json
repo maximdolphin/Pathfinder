@@ -4935,6 +4935,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Counting a child cooked only once its body setup has been swapped (stale pooled geometry excluded) changed nothing: 942 missed (7.1%), 621 over drawn ground with collision enabled and nothing to hit; reverted. So it is timing, not a false 'cooked': the parent a fast ship is over usually has no collision of its own (built far away), so the hold does not apply, and the leaves that replace it cook asynchronously while the ship arrives. Next: cook synchronously for the patch landing under the ship -- a few milliseconds on that frame, collision there on the frame it is drawn."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Synchronous cooking for the patch landing under the camera: 923 missed (6.9%) -- no change -- with 'drawn with collision, not cooked' 502 (from 621) and 'drawn without collision' 421 (from 315), and frame stalls unchanged (180, longest 60 ms, against 181 and 52.6 ms). Reverted. So after the cook-hold, the setup-swap check and a synchronous cook, the last ~7% is not cook timing. What is left looks structural: each time the leaf under the ship is replaced by finer ones -- every few hundred metres at 900 m/s -- there are frames with the new section's collision not yet registered in the physics scene and the old one already gone. The collision the gate asks for is tied to the render LOD and its churn."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "block",
+     "text": "7% of frames at 300 m / 900 m/s still miss (98.9% at the start of this work; committed: detail scaled by speed, cook-aware parent release, a deeper trace that reports accuracy). The remaining misses follow the render LOD's replacement of the patch under the ship. Recommended next step, a design decision: a collision proxy decoupled from rendering -- a small collision surface generated around the ship directly from the terrain function each frame, never released by LOD churn -- rather than more tuning of the streamed patches."
     }
    ],
    "evidence": [
@@ -14589,5 +14599,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T10:09:03.110Z"
+ "updatedAt": "2026-09-11T10:14:02.794Z"
 }
