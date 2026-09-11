@@ -4088,6 +4088,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Third framing attempt. 23 m back, 6.2 m up, aiming 8 m ahead: the shot is now a close-up of the rock surface with layering and mineral detail legible, which serves 'reads as rock with bedding' better than the wide face shot did. It still does not show ground with debris on it, because at 23 m a seventy-degree face fills the frame from any forward aim. Two of three criteria are now evidenced -- a 60-degree face (70.3), and that it reads as rock with bedding. The third needs the camera out on the flat away from the base looking back and down, which is a different position rather than a different aim, and it is the remaining work. Stopping here rather than spending a fourth iteration on one camera."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Why every cliff read as snow, found and fixed in three layers. (1) Weigh normalised slope-survivors up to one however implausible, so the ice cap -- the only biome allowing 90 degrees -- took every cliff on the planet (d886910). (2) The material faded rock's tint to 1.0 while dividing the rock scan by its own mean, drawing rock at an albedo of about one (this commit). (3) Disk-cached patches had their biome colours overwritten by the elevation ramp on every warm-cache run (this commit). The 61.9-degree face at 1,899 m (17.7 C by the climate model, no snow) now draws as brown rock. Also: the in-deck camera frames (the concentric bands) were the cloud deck; T054 shots now run -noclouds. Remaining: the apron reframed to the foot (debris), shots gated on streaming so re-stitching finishes (the apron's edge-gap probe found 19,770 same-depth edge vertices off, worst 17 m, before settling), and pale patches in hollows on the gentler flank, not yet explained."
     }
    ],
    "evidence": [
@@ -4126,6 +4131,12 @@
      "caption": "Close on the face at 23 m: layering and mineral speckle legible, which is the 'reads as rock with bedding' half.",
      "source": "../out/cliff-foot.png",
      "addedAt": "2026-09-10T05:47:25.605Z"
+    },
+    {
+     "file": "evidence/T054-2026-09-11T06-46-05-099.png",
+     "caption": "61.9-degree face at 1,899 m, 2.4 S: rock, after the tint and cache fixes",
+     "source": "../out/T054-rock-face.png",
+     "addedAt": "2026-09-11T06:46:05.106Z"
     }
    ],
    "plannedStartDay": 103,
@@ -14274,5 +14285,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T06:16:38.086Z"
+ "updatedAt": "2026-09-11T06:46:05.195Z"
 }
