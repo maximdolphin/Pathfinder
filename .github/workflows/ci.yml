@@ -90,7 +90,7 @@ jobs:
         run: >
           & "$env:UE_ROOT\Engine\Binaries\Win64\UnrealEditor.exe"
           "$PWD\client\Ledger.uproject" -game -windowed -ResX=1600 -ResY=900
-          -useFixedTimeStep -fps=60
+          -useFixedTimeStep -fps=60 -scriptedflight
       - name: Captures match the reference
         run: python tools/compare_captures.py
       - name: Frame budget

@@ -680,10 +680,10 @@
    "estimateDays": 14.5,
    "plannedStart": "2027-11-04",
    "plannedEnd": "2027-11-24",
-   "status": "todo",
+   "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 0
+   "doneCount": 2
   },
   {
    "id": "M06",
@@ -8581,10 +8581,16 @@
    "dependsOn": [
     "T131"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "The -playtest fixture: a tickable world subsystem that places the ship where a plain launch does, flies fourteen scripted legs through all six axes and then twenty seeded random-stick sequences, samples every second (height, speed, speed along the nose, spin, hull, frame ms, fog, ice, nose above the horizon, whether the nozzles met the command), captures the legs worth looking at, and writes out/playtest.txt with a verdict. One command: play2.ps1 = build, run offscreen, run the tests. It has earned its keep by failing: run 6 FAIL (spin 181 deg/s braking), run 7 FAIL (flew into rising ground at 302 m/s), runs 8 and 9 PASS on the same build with the flight fixed."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 303,
    "plannedEndDay": 305.5,
@@ -8628,6 +8634,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Correction to the entry above: the ships do have a retro pair -- the courier's two RCS nozzles at the nose (x = 4.5 m) and the hauler's (x = 8.0 m) push -X at 174 kN and 349 kN each, about 26 m/s^2 of braking on the courier; the listing that said otherwise was cut at twelve nozzles. S therefore has something to brake with, and the playtest never pressed it. The 50-degree dive was the script's: its pitch-up leg asked for 137 degrees, a half loop, and the ship came out of it nose down and then coasted as it was told. The script now pitches and rolls by equal amounts each way, brakes on S, and ends in a level hover."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Playtests 6-9 (offscreen, -playtest). Found from the record: (1) the allocator shared a shortfall by least squares, so a coupled turn at 150 m/s (59 m/s^2 asked across the nose, 26 available) gave up yaw and lurched at 73 deg/s, and a pitch-up tumbled at 181 deg/s; now torque is made whole first, then force axis by axis by bisection. (2) Coupled throttle only stopped adding, so a ship sliding backwards after a pitch-up was sped up by the brake; throttle is now a speed along the nose, centred = rest. (3) Turn rate in coupled capped at 0.8*a/v so the velocity follows the nose (8 deg/s at 150 m/s, no slip; 22 deg/s left 110 m/s sideways). Playtest 8 and 9: all 14 legs, worst spin 45.7 deg/s (the commanded roll), let-go stops from 73 m/s in 3 s and holds 0.0, reverse -40, descend 20, hover 0. Acceptance still wants the twenty randomised sequences: added to the playtest (seeded, 25 s each), run 10 in progress."
     }
    ],
    "evidence": [],
@@ -8653,7 +8664,13 @@
    "status": "todo",
    "startedAt": null,
    "completedAt": null,
-   "notes": [],
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Evicted ray-tracing geometry: the terrain's hidden pooled patches were evicted past the 400 MB resident pool and a patch shown again handed the renderer an evicted geometry (ensure + skipped instance, seen in a -play session and the cave walk). r.RayTracing.UseReferenceBasedResidency=0 (commit 39a48ae); playtest 9: CVar set, no eviction line, no ensure, 586 frames over 16.7 ms against 697. Still to show: the ten-minute session (run 10) with no ensure and no hitch over 250 ms after the first minute."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 309.5,
    "plannedEndDay": 312,
@@ -8682,6 +8699,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The blur and grey veil were the canopy: the heater defaulted off, a 272 K day fogged the glass from the cabin's own moisture, and the visor draws fog and ice as a five-tap cross blur (the doubled trees and buildings in the playtest's first capture) washed towards white. The demister is now on from the ship's first frame; the visor fixture still sets it per step. Playtest captures to confirm."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Playtest 8 captures, edge contrast (tools: scratchpad sharpness.py, mean Sobel below the HUD): hover 32.8, forward 25.0, cruise 15.2, pitch-down 21.3, let-go 25.6, reverse 25.1, descend 24.3, hover-end 25.9 -- against 5.2 when the canopy fogged (heater on, glass starting at 295 K fixed that). Fog and ice 0.00 through every leg. Acceptance still needs a static control frame from the same place, and space black. Seen in the captures and not yet fixed: at 300 m/s the clouds break into blocky rectangles."
     }
    ],
    "evidence": [],
@@ -8734,14 +8756,19 @@
    "dependsOn": [
     "T442"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] What depends on the default launch today: the packaged-build check (docs/comparisons/packaged, T427) and the PSO recording in tools/pipeline_cache.py both start Ledger.exe -useFixedTimeStep -fps=60 with no flag naming the flight -- they rely on the plain launch flying the scripted reentry to its end and exiting, which is also what flushes the PSO recording. Making the player's start the default therefore means the scripted flight gets its own opt-in flag, and both of those launch lines (and the chains' Run helper, if it relies on it) add it in the same change, or the packaged check and the recording start over the town and never finish."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "A launch with no flags is now the player's start; the scripted reentry needs -scriptedflight. The harness checks fixture flags first, then the flag, then places the ship. Verified offscreen: a plain -game launch logs 'flight harness standing down: the player's start, the ship goes over the town' and, two seconds later, 'play: the ship is 40 m over the pad, coupled', with no orbit capture and no descent. The three callers that relied on the old default now ask for it: CI's scripted flight step, the packaged-build check (docs/comparisons/packaged) and the PSO recording line in tools/pipeline_cache.py -- that one matters, because the recording is flushed on shutdown and the player's start never ends. -play still works and changes nothing."
     }
    ],
    "evidence": [],
@@ -15649,5 +15676,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T21:28:02.024Z"
+ "updatedAt": "2026-09-11T21:54:24.869Z"
 }

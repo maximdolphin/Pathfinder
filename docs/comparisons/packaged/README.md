@@ -16,6 +16,10 @@ on the packaged build. See `../repeatability/`. `-useFixedTimeStep -fps=60`
 fixes it, and the phase frame counts then come out at exactly duration × 60 in
 both builds.
 
+Since M5P (T443) the flight also needs `-scriptedflight`: launched with no
+flags, the packaged build is the player's start over the town and never ends.
+So the check is `Ledger.exe -useFixedTimeStep -fps=60 -scriptedflight`.
+
 ## Two: the packaged build had no clouds
 
 With the fixture pinned, four shots still failed, and the same four — the ones

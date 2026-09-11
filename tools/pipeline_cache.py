@@ -16,10 +16,11 @@ That took the packaged run from 34 `PSOPrecacheState: Missed` to 0.
 
 Recording a new one, when the shaders change enough that the old cache misses:
 
-    Ledger.exe -useFixedTimeStep -fps=60 \\
+    Ledger.exe -useFixedTimeStep -fps=60 -scriptedflight \\
         -dpcvars="r.ShaderPipelineCache.SaveBoundPSOLog=1,r.ShaderPipelineCache.LogPSO=1"
 
-The flight has to reach its end and exit -- the recording is flushed on
+-scriptedflight since M5P: a plain launch is now the player's start over the
+town, which never ends and so never flushes. The flight has to reach its end and exit -- the recording is flushed on
 shutdown, which is why it produced nothing at all until the harness learned to
 stop. Then Expand the `.rec.upipelinecache` against the cook's `.shk` files
 into `client/Build/Windows/PipelineCaches/Ledger_SM6.spc`, which is committed.

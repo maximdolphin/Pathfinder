@@ -64,7 +64,8 @@ simulation step does not pin down.
 ## What this changes
 
 - The scripted flight runs with `-useFixedTimeStep -fps=60` whenever its images
-  are going to be compared. CI does this.
+  are going to be compared. CI does this. Since M5P it also needs
+  `-scriptedflight`: a plain launch is the player's start over the town.
 - The frame-time report no longer measures `DeltaSeconds`, which under a fixed
   step is the constant 16.7 whatever the machine actually did. It measures the
   wall clock, which is the same number in a free-running run and an honest one

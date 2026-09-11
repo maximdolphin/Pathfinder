@@ -62,14 +62,32 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
-	// **`-play`: nothing scripted.** The default launch flies the scripted
-	// reentry below, from a start two planet radii out, which is a test and not
-	// a game: the first playtest could barely move the ship because the harness
-	// was flying it. Here the ship is put in the air over the town once the town
-	// exists -- level, coupled, the sun behind it -- and left to the keyboard.
-	if (FParse::Param(FCommandLine::Get(), TEXT("play")))
+	// Whichever fixture is running owns the ship. Two of them placing the same
+	// pawn is two fixtures measuring neither.
+	for (const TCHAR* Fixture :
+		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate"),
+		  TEXT("daysweep"), TEXT("moonshot"), TEXT("eclipse"), TEXT("passage"), TEXT("airshow"), TEXT("cloudclimb"), TEXT("fogwatch"), TEXT("crossing"),
+		  TEXT("windheard"), TEXT("front"), TEXT("wetwatch"), TEXT("stormwatch"), TEXT("airprobe"), TEXT("ridgeflight"), TEXT("entryburn"), TEXT("visorwatch"), TEXT("aurorawatch"), TEXT("volumebudget"), TEXT("stormfront"), TEXT("shiptrial"), TEXT("couplingproof"), TEXT("shippanel"), TEXT("glidetrial"), TEXT("stalltrial"),
+		  TEXT("windprobe"), TEXT("nearfield"), TEXT("descent300"), TEXT("playtest") })
 	{
-		UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -play, the ship goes over the town"));
+		if (FParse::Param(FCommandLine::Get(), Fixture))
+		{
+			UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -%s"), Fixture);
+			return;
+		}
+	}
+
+	// **The player's start is the default (M5P, T443).** The scripted reentry
+	// below, from two planet radii out, is a test and not a game, and it used to
+	// be what a plain launch did: the first playtest could barely move the ship
+	// because the harness was flying it. It now runs only with -scriptedflight
+	// (CI, the packaged-build check and the PSO recording ask for it). Otherwise
+	// the ship is put in the air over the town once the town exists -- level,
+	// coupled, the sun behind it -- and left to the keyboard. -play is accepted
+	// and changes nothing.
+	if (!FParse::Param(FCommandLine::Get(), TEXT("scriptedflight")))
+	{
+		UE_LOG(LogLedger, Log, TEXT("flight harness standing down: the player's start, the ship goes over the town"));
 		FTimerHandle PlayTimer;
 		InWorld.GetTimerManager().SetTimer(PlayTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
 		{
@@ -95,21 +113,6 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 			UE_LOG(LogLedger, Log, TEXT("play: the ship is 40 m over the pad, coupled"));
 		}), 2.0f, false);
 		return;
-	}
-
-	// Whichever fixture is running owns the ship. Two of them placing the same
-	// pawn is two fixtures measuring neither.
-	for (const TCHAR* Fixture :
-		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate"),
-		  TEXT("daysweep"), TEXT("moonshot"), TEXT("eclipse"), TEXT("passage"), TEXT("airshow"), TEXT("cloudclimb"), TEXT("fogwatch"), TEXT("crossing"),
-		  TEXT("windheard"), TEXT("front"), TEXT("wetwatch"), TEXT("stormwatch"), TEXT("airprobe"), TEXT("ridgeflight"), TEXT("entryburn"), TEXT("visorwatch"), TEXT("aurorawatch"), TEXT("volumebudget"), TEXT("stormfront"), TEXT("shiptrial"), TEXT("couplingproof"), TEXT("shippanel"), TEXT("glidetrial"), TEXT("stalltrial"),
-		  TEXT("windprobe"), TEXT("nearfield"), TEXT("descent300"), TEXT("playtest") })
-	{
-		if (FParse::Param(FCommandLine::Get(), Fixture))
-		{
-			UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -%s"), Fixture);
-			return;
-		}
 	}
 
 	// A scripted reentry: settle in orbit, fly down to the town, and capture
