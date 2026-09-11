@@ -154,7 +154,16 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				const bool bGC = GCsSeen != GCsAtLastFrame;
 				const bool bShaders = GShaderCompilingManager != nullptr && GShaderCompilingManager->GetNumRemainingJobs() > 0;
 				const double Longest = FMath::Max3(GameMs, RenderMs, GpuMs);
-				OverWaiting += Longest <= 16.7 ? 1 : 0;
+				// **The RHI thread is a class of its own (T068).** The rank above
+				// is game, render and GPU, so a frame the RHI thread spent 47 ms
+				// in counted as nobody being busy -- and "a wait" is 159 of the
+				// 188 frames over budget in the best clean run. The worst frames'
+				// RHI column reaches that, and their render-thread trace grows
+				// CreateRHIBuffer and vertex-buffer InitRHI, so this splits the
+				// ones with a busy RHI thread out of the unexplained pile.
+				const bool bRhiBound = Longest <= 16.7 && RhiMs > 16.7;
+				OverRhi += bRhiBound ? 1 : 0;
+				OverWaiting += Longest <= 16.7 && !bRhiBound ? 1 : 0;
 				OverGame += Longest > 16.7 && Longest == GameMs ? 1 : 0;
 				OverRender += Longest > 16.7 && Longest == RenderMs && Longest != GameMs ? 1 : 0;
 				OverGpu += Longest > 16.7 && Longest == GpuMs && Longest != GameMs && Longest != RenderMs ? 1 : 0;
@@ -311,8 +320,8 @@ void ULedgerTransect::Finish()
 	Body += FString::Printf(TEXT("  frames        %d\n"), Frames);
 	Body += FString::Printf(TEXT("  frame time    %.2f ms mean, %.2f ms worst, %d over 16.7 ms\n"),
 		Frames > 1 ? FrameMsSum / (Frames - 1) : 0.0, WorstFrameMs, FramesOverBudget);
-	Body += FString::Printf(TEXT("    over budget, by the longest of the three: game thread %d, render thread %d, GPU %d, none over budget (a wait) %d\n"),
-		OverGame, OverRender, OverGpu, OverWaiting);
+	Body += FString::Printf(TEXT("    over budget, by the longest: game thread %d, render thread %d, GPU %d, RHI thread %d, none of those (a wait) %d\n"),
+		OverGame, OverRender, OverGpu, OverRhi, OverWaiting);
 	Body += FString::Printf(TEXT("    over budget with a patch upload over 4 ms %d, a GC %d, shaders compiling %d\n"),
 		OverWithUpload, OverWithGC, OverWithShaders);
 	Body += TEXT("  seams (edge-gap probe, every 20 km):\n");

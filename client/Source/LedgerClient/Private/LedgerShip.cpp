@@ -127,7 +127,18 @@ void ALedgerShip::BeginPlay()
 
 	// T101: the canopy, at full weight from the start. Its own parameters say
 	// how much of it shows, and at zero it passes the scene straight through.
-	if (UMaterialInterface* VisorMaterial = LedgerSurface::CreateVisorMaterial(this))
+	//
+	// `-novisor` leaves it out of the post chain altogether: the control frame
+	// T441 measures against. The acceptance asks for the playtest's captures to
+	// hold their edge contrast within 10% of a static frame from the same place,
+	// and "the same place with the canopy gone" is the only version of that
+	// which attributes the difference to the canopy rather than to the weather,
+	// the hour or where the ship happened to be (M5P).
+	if (FParse::Param(FCommandLine::Get(), TEXT("novisor")))
+	{
+		UE_LOG(LogLedger, Log, TEXT("canopy: the visor is out of the post chain (-novisor)"));
+	}
+	else if (UMaterialInterface* VisorMaterial = LedgerSurface::CreateVisorMaterial(this))
 	{
 		Visor = UMaterialInstanceDynamic::Create(VisorMaterial, this);
 		if (Visor != nullptr && Camera != nullptr)

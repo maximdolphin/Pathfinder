@@ -69,6 +69,7 @@ private:
 	int32 OverGame = 0;
 	int32 OverRender = 0;
 	int32 OverGpu = 0;
+	int32 OverRhi = 0;
 	int32 OverWaiting = 0;
 	int32 OverWithUpload = 0;
 	int32 OverWithGC = 0;
