@@ -8795,6 +8795,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The engine voice rebuilt: a sine with softer 2nd and 3rd harmonics over a two-pole rumble near 90 Hz (was a raw saw), pumps as noise rolled off twice at 250 Hz (was one pole near 1 kHz, rising with reactor heat), pitch 45-115 Hz (was 55-165), and every level and the pitch glided per sample over ~30 ms, the alarm gate over 5 ms (they stepped once a frame). New tests: Ledger.ShipAudio.FullThrottleIsARumbleNotAHiss -- 96.5% of the energy below 400 Hz at full throttle with the reactor hot; Ledger.ShipAudio.LevelsGlideRatherThanStep -- worst sample-to-sample change 0.0055 when the engine comes on between blocks. Waiting on the owner's ear."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The measurable half is done and holds in every run: at full throttle 96.5% of the generator's energy is below 400 Hz (the acceptance asks for most of it), and the worst sample-to-sample change when the throttle opens between two blocks is 0.0055, so no gain lands in a step. What replaced the static: a sine with 0.35 second and 0.15 third harmonics over a two-pole rumble at 90 Hz, a two-pole noise pump at 250 Hz instead of the 1 kHz white hiss, and per-sample glides of 30 ms on the levels. The remaining clause is the owner hearing it, which no test can stand in for, so out/engine-voice.wav is now written by Ledger.ShipAudio.WritesASampleToListenTo on every test run: six seconds, idle to full and back, at the ship's own 45 + 70 x throttle pitch mapping, peak 0.63. Sent to the owner 2026-09-11 with the question asked plainly."
     }
    ],
    "evidence": [],
@@ -15737,5 +15742,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T22:46:43.603Z"
+ "updatedAt": "2026-09-11T22:49:23.506Z"
 }
