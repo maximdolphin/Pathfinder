@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M05",
@@ -3067,7 +3067,20 @@
      "text": "Finished what ADR-0006's third tier asked for: the level now holds the planet, the atmosphere and the settlement as well as the sun, sky light and post-process -- six actors, read back from disk. The builder finds and configures them before they begin play, and a body switch rebuilds the same planet in place rather than destroying and respawning three actors. tools/make_level.py was never idempotent despite saying so: it had only run once, with no map present. Re-run, does_asset_exist answered False for the map so the delete never happened, new_level refused, the save was refused, and the report said PASS from the list of actors it had asked for. It now opens an existing map and replaces only the actors it owns, and the verdict comes from loading the saved file again. docs/comparisons/proper-world/"
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T417-2026-09-11T02-57-33-467.png",
+     "caption": "The placed world, lit: baked buildings and pad, snowfields and sea, under a sun 44.6 degrees up -- after per-pixel atmosphere transmittance",
+     "source": "../out/perpixel-rain.png",
+     "addedAt": "2026-09-11T02:57:33.471Z"
+    },
+    {
+     "file": "evidence/T417-2026-09-11T02-57-33-539.txt",
+     "caption": "The level read back from disk: six actors, each once",
+     "source": "../build/make-level.txt",
+     "addedAt": "2026-09-11T02:57:33.541Z"
+    }
+   ],
    "plannedStartDay": 55.5,
    "plannedEndDay": 57.5,
    "plannedStart": "2026-11-23",
@@ -6258,17 +6271,34 @@
    "dependsOn": [
     "T092"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
      "kind": "block",
      "text": "The field is done and three of the five consumers do not exist yet, which is a roadmap ordering note rather than a shortfall. Delivered: wind at any point and any altitude, with the log profile (17.2 m/s free becomes 8.6 at ten metres and 6.0 at two) and the friction backing (16.3 degrees at the surface, zero above the layer, opposite signs in the two hemispheres), behind one subsystem so there is only one wind. Wired: the flight model, whose drag now acts on the speed through the AIR -- a ship left alone in a 10 m/s wind ends up within 0.309 m/s of the air itself, and with no wind the trajectory is bit-for-bit what it was; and vegetation, via a material parameter collection published each tick. Not wired because they do not exist: particles (T095), audio (T102, SpeedAt is there for it) and the settlement layer, which has nothing wind-driven on it yet. Unblocks when T095 and T102 land. docs/comparisons/wind-field/"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "unblock",
+     "text": "unblocked"
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "All five consumers read the one wind and follow a change in a single frame. -windprobe picks the moment in the next three days when the wind at the site differs most from now, as a vector -- 9.5 m/s with a 26 degree turn -- switches the clock to it, and times each consumer against the field at its own position: flight, vegetation, particles, audio and the town's new wind vane each agreed after 0.005 s, one frame. And every consumer's reading from before the change was at least three tolerances from the field after it, so agreeing could not have happened by standing still; the first version of the probe lacked that condition and passed a ship parked two radii away, where the change barely reached it. The vegetation consumer had been fiction until this pass: MPC_LedgerWind had never been created, and M_Foliage's first bake compiled silently into the default material because a collection node binds by parameter GUID. The fifth consumer is a wind vane at the pad, a pole and a streamer from the baked building box, turned each tick to stream downwind. Landed in d65cfcc. docs/comparisons/wind-field/"
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T093-2026-09-11T02-57-21-648.txt",
+     "caption": "Five consumers follow a 9.5 m/s wind change in one frame each; every old reading at least 3 tolerances from the new field",
+     "source": "../out/wind-probe.txt",
+     "addedAt": "2026-09-11T02:57:21.649Z"
+    }
+   ],
    "plannedStartDay": 226,
    "plannedEndDay": 227.5,
    "plannedStart": "2027-07-20",
@@ -14052,5 +14082,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T02:00:29.129Z"
+ "updatedAt": "2026-09-11T02:58:07.387Z"
 }

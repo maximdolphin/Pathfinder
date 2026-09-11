@@ -1,0 +1,10 @@
+Level: /Game/Maps/Ledger
+In the saved level, read back from disk:
+  Atmosphere (LedgerAtmosphere)
+  Planet (LedgerPlanet)
+  Settlement (LedgerSettlement)
+  SkyLight (SkyLight)
+  Sun (DirectionalLight)
+  WorldPostProcess (PostProcessVolume)
+Generator: tools/make_level.py
+VERDICT: PASS
