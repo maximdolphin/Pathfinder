@@ -279,6 +279,15 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 						: FString::Printf(TEXT("  view ray at (1045, %d): nothing with collision within 50 km\n"), Row);
 				}
 			}
+			// **What the climate model says here, beside what the frame shows.** T060:
+			// the snow channel read about half cover over a 13 C grassland, and
+			// SnowCover is exactly zero above 0 C. Logged per site, the field and the
+			// pixels can be told apart.
+			const FLedgerClimate Here = LedgerClimate::At(
+				Sites[Shot].GetSafeNormal(), Planet->TerrainParams(), Planet->SeasonPhase());
+			Lines += FString::Printf(
+				TEXT("climate at the site (season %.2f): %.1f C, moisture %.2f, snow cover %.2f\n"),
+				Planet->SeasonPhase(), Here.TemperatureC, Here.Moisture, LedgerClimate::SnowCover(Here));
 			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
 			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
 				*Names[Shot], Off) + Lines;

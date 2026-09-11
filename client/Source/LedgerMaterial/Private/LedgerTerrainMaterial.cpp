@@ -609,7 +609,11 @@ namespace LedgerSurface
 		{
 			UMaterialExpressionVertexColor* SnowCover =
 				Graph.Make<UMaterialExpressionVertexColor>();
-			UMaterialExpression* Cover = Graph.Mask(SnowCover, false, false, false, true);
+			// Output 4 is the alpha on its own. The default output is RGB only, and
+			// masking A off a float3 does not compile -- which it did not, from the
+			// day this was written: every `-snow` run drew the default material.
+			UMaterialExpression* Cover = Graph.Mask(SnowCover, true, false, false);
+			static_cast<UMaterialExpressionComponentMask*>(Cover)->Input.OutputIndex = 4;
 
 			const FSampled Lying =
 				SampleSet(Graph, Snowfall, ParallaxPosition, WeightX, WeightY, WeightZ);
