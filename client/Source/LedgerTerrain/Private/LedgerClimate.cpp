@@ -197,9 +197,11 @@ namespace LedgerClimate
 			// window was outside its neighbour's: range 29's windward march
 			// started on a 955 m ridge and lost 40% there, its lee march started
 			// 30 km downwind of it and did not -- and arrived wetter after its own
-			// peak had taken a third. Whatever happens in the far 75 km now counts
-			// for less the further out it is, so neighbours agree about the air.
-			const double Weight = FMath::Min(1.0, (UpwindSteps - Step) / 10.0);
+			// peak had taken a third. Whatever happens in the far 150 km now counts
+			// for less the further out it is, so neighbours agree about the air --
+			// quadratically: over 75 km and linearly, a 1,799 m ridge three steps
+			// from the far end still took a third at weight 0.3 (range 45).
+			const double Weight = FMath::Square(FMath::Min(1.0, (UpwindSteps - Step) / 20.0));
 			const double Altitude = AltitudeMetres(Sample, Params);
 
 			if (Altitude <= 0.0)
