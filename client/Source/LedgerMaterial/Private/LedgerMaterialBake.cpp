@@ -243,6 +243,7 @@ namespace LedgerSurface
 		Record(TEXT("M_GroundFog"), [](UObject* Outer) { return BuildGroundFogMaterial(Outer); });
 		Record(TEXT("M_Star"), [](UObject* Outer) { return BuildStarMaterial(Outer); });
 		Record(TEXT("M_Foliage"), [](UObject* Outer) { return BuildFoliageMaterial(Outer); });
+		Record(TEXT("M_Scatter"), [](UObject* Outer) { return BuildScatterMaterial(Outer); });
 
 		Report = TEXT("Baked materials.\n\n");
 		for (const FString& Line : Lines)

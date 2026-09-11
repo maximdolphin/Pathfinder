@@ -708,7 +708,8 @@ public:
 	/// entry, drawn at their own size out to LedgerScatter::PlantCullMetres.
 	void SetScatterMeshes(
 		const TArray<UStaticMesh*>& Meshes, class UMaterialInterface* Material = nullptr,
-		const TArray<TArray<UStaticMesh*>>& Plants = TArray<TArray<UStaticMesh*>>());
+		const TArray<TArray<UStaticMesh*>>& Plants = TArray<TArray<UStaticMesh*>>(),
+		TFunction<class UMaterialInterface*(UStaticMesh*, int32)> MaterialFor = nullptr);
 
 	/// Throw the terrain away and grow it again from whatever the properties
 	/// now say. ADR-0006 and T088.

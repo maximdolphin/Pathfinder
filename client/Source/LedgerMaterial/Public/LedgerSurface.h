@@ -58,6 +58,11 @@ namespace LedgerSurface
 	/// audio are also being told.
 	LEDGERMATERIAL_API UMaterialInterface* CreateFoliageMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
 
+	/// A scanned rock or plant drawn with the textures it came with: M_Scatter,
+	/// filled from the imported material's BaseColorTexture and NormalTexture.
+	/// Null when the source has no base colour texture to give it.
+	LEDGERMATERIAL_API UMaterialInterface* CreateScatterMaterial(UObject* Outer, UMaterialInterface* Source);
+
 	/// The sea. Depth-tinted from vertex alpha, Fresnel toward a sky-facing
 	/// tint at grazing angles, and smooth enough that screen-space reflections
 	/// have something to work with.

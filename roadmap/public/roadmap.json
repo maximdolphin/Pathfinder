@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 24
+   "doneCount": 25
   },
   {
    "id": "M2S",
@@ -4351,9 +4351,9 @@
    "dependsOn": [
     "T055"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -4384,6 +4384,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The windows are back faces, found by two control arms on the 90% frame (chain151). -cavedoubled (every cave triangle drawn from both sides): the wedges are gone. -cavenoland (the cave patches' whole land surface removed): the wedges are unchanged, so the land plays no part -- everything in that frame is cave mesh. Per-triangle winding (chain149) had not moved them either: the fold at the rim defeats the towards-the-air test for some faces whichever way it is asked. So the cave section is now two-sided, the back a copy of the vertices with the normals flipped so it lights as the side it is; the walk still passes both arms (456 of 456 m, 0 blocked, 0 without a floor). Photographs of the two-sided mesh queued."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Walked end to end with collision and lighting correct throughout (chain155): 456 of 456 m, 0 blocked, 0 without a floor, and the photographs at 10, 50 and 90 per cent show the walls whole and lit as the sun falls. The last defect -- slits of sky along the shadowed wall top -- was cave faces wound away from the camera where the fold at the rim defeats the towards-the-air winding test (-cavedoubled removed them, -cavenoland did not); the section is two-sided now, the back a flipped-normal copy. The walk is a capsule sweep rather than a pawn with legs, which arrives in M09."
     }
    ],
    "evidence": [
@@ -4422,6 +4427,30 @@
      "caption": "The same frame at 64 cells across: more windows, evenly spaced along the wall top -- they follow the lattice, not the rock.",
      "source": "../out/cave-walk-3.png",
      "addedAt": "2026-09-11T18:23:40.386Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T19-37-42-989.txt",
+     "caption": "The walk with the two-sided cave section (chain155): a 40 cm x 1.8 m capsule swept on the floor from one mouth to the other, 456 of 456 m, 0 steps blocked, 0 without a floor.",
+     "source": "../out/cave-walk.txt",
+     "addedAt": "2026-09-11T19:37:42.996Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T19-37-43-088.png",
+     "caption": "10% of the way, two-sided: sunlit wall on one side, the shadowed wall solid, the floor in its shade.",
+     "source": "../out/cave-walk-1-twosided.png",
+     "addedAt": "2026-09-11T19:37:43.095Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T19-37-43-169.png",
+     "caption": "50%: deep in the passage, lit rim above, both walls whole.",
+     "source": "../out/cave-walk-2-twosided.png",
+     "addedAt": "2026-09-11T19:37:43.175Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T19-37-43-249.png",
+     "caption": "90%, the frame that had the row of wedge-shaped windows along the shadowed wall top: gone -- they were faces wound away from the camera, and the section is now two-sided.",
+     "source": "../out/cave-walk-3-twosided.png",
+     "addedAt": "2026-09-11T19:37:43.256Z"
     }
    ],
    "plannedStartDay": 109.5,
@@ -5167,6 +5196,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] With plants in the scatter (chain154, format 32 after one warm-up pass, quiet): 248 over 16.7 ms against 188 without them, mean 8.55 ms (8.96 before), worst 63.3 ms, traces missed 0. Of the 248: 211 with no thread over budget, 29 game, 8 render; 93 with a patch upload over 4 ms. The plants add spikes rather than steady cost -- the likely cause is the instanced buckets rebuilding as patches arrive, now that nearly every instance is a plant. Next measurement: a -noplants arm of the same run, and the rebuild cost per bucket."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Regression, not yet explained: chain156 (new plant densities, one warm-up) measured 18.52 ms mean and 8,940 frames over 16.7 ms with plants, and 20.74 ms and 9,990 over with -noplants -- both render-thread bound (7,992 and 9,295), against chain154's 8.55 ms and 248 half an hour earlier. So it is not the plants. The runtime difference between the two is the baked cloud material (bake155, decks domed at both ends); queued: the same transect with and without clouds after the next bake."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Correction to the entry above: chain156 is void, not a regression. Another game (a UE shipping build) started on this machine at 15:38:40, the minute chain156 began; chain154 finished before it on a quiet machine. Both chain156 arms measured the machine, not the code. Timing chains now wait until no other game is running."
     }
    ],
    "evidence": [
@@ -15237,5 +15276,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T19:27:28.455Z"
+ "updatedAt": "2026-09-11T19:56:12.078Z"
 }

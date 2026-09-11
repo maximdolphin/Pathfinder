@@ -12,6 +12,6 @@
     0.14
   ],
   "scatterDensity": 0.35,
-  "plantDensity": 0.6,
+  "plantDensity": 0.25,
   "plants": ["grass", "grass", "shrub", "succulent"]
 }

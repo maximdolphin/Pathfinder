@@ -489,7 +489,8 @@ void ALedgerPlanet::AbandonJob(uint64 Key)
 
 void ALedgerPlanet::SetScatterMeshes(
 	const TArray<UStaticMesh*>& Meshes, UMaterialInterface* Material,
-	const TArray<TArray<UStaticMesh*>>& Plants)
+	const TArray<TArray<UStaticMesh*>>& Plants,
+	TFunction<UMaterialInterface*(UStaticMesh*, int32)> MaterialFor)
 {
 	for (UHierarchicalInstancedStaticMeshComponent* Component : ScatterComponents)
 	{
@@ -532,11 +533,24 @@ void ALedgerPlanet::SetScatterMeshes(
 		{
 			KindFirst[Kind] = Variant;
 		}
+		// One material per slot per variant, shared by its buckets.
+		TArray<UMaterialInterface*> SlotMaterials;
+		for (int32 Slot = 0; MaterialFor && Slot < Mesh->GetStaticMaterials().Num(); ++Slot)
+		{
+			SlotMaterials.Add(MaterialFor(Mesh, Slot));
+		}
 		for (int32 Bucket = 0; Bucket < ScatterBuckets; ++Bucket)
 		{
 			UHierarchicalInstancedStaticMeshComponent* Component =
 				NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
 			Component->SetStaticMesh(Mesh);
+			for (int32 Slot = 0; Slot < SlotMaterials.Num(); ++Slot)
+			{
+				if (SlotMaterials[Slot] != nullptr)
+				{
+					Component->SetMaterial(Slot, SlotMaterials[Slot]);
+				}
+			}
 			Component->SetupAttachment(GetRootComponent());
 			// No collision on the instances. Tens of thousands of them with
 			// collision is that many more shapes for the physics scene to

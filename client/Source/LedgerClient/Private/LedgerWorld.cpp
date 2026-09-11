@@ -710,7 +710,21 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 						}
 					}
 					UE_LOG(LogLedger, Log, TEXT("scatter: %d plant meshes"), PlantMeshCount);
-					Planet->SetScatterMeshes(ScannedMeshes, nullptr, Plants);
+					// Each scanned mesh on M_Scatter with its own textures, not the
+					// importer's material: Interchange's glTF parent turns textures on
+					// through static switches, and its instances drew untextured here --
+					// grey boulders, grey opaque fern cards. `-meshmaterials` keeps the
+					// imported ones, as the control.
+					TFunction<UMaterialInterface*(UStaticMesh*, int32)> MaterialFor;
+					if (!FParse::Param(FCommandLine::Get(), TEXT("meshmaterials")))
+					{
+						ALedgerPlanet* Owner = Planet;
+						MaterialFor = [Owner](UStaticMesh* Mesh, int32 Slot)
+						{
+							return LedgerSurface::CreateScatterMaterial(Owner, Mesh->GetMaterial(Slot));
+						};
+					}
+					Planet->SetScatterMeshes(ScannedMeshes, nullptr, Plants, MaterialFor);
 				}
 				else
 				{

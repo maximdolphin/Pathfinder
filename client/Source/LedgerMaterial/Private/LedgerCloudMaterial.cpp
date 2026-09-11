@@ -136,12 +136,15 @@ namespace LedgerSurface
 			// sky.
 			UMaterialExpression* Threshold =
 				Graph.Subtract(Graph.Constant(1.0f), Band.Coverage);
-			// **Domed** (T094): the threshold rises by Dome towards the band's top
-			// and bottom, so a column of noise rounds off inside the band instead
-			// of being cut flat at both ends -- which drew every cumulus as a box.
-			// Zero keeps the flat cut.
+			// **Domed** (T094): above the band's centre the threshold rises by up to
+			// Dome, so a column of noise rounds off at the top instead of being cut
+			// flat -- which drew every cumulus as a box. Only above: rounding both
+			// ends (chain155) made thin lenses, flying saucers, where a cumulus has
+			// a flat base. Zero keeps the flat cut.
+			UMaterialExpression* AboveCentre = Saturate(Graph,
+				Graph.Divide(Graph.Subtract(Altitude, Band.Centre), Band.Width));
 			UMaterialExpression* Raised = Graph.Add(Threshold,
-				Graph.Multiply(Graph.Subtract(Graph.Constant(1.0f), Inside), Graph.Constant(Dome)));
+				Graph.Multiply(AboveCentre, Graph.Constant(Dome)));
 			UMaterialExpression* Shaped = Saturate(Graph,
 				Graph.Divide(
 					Graph.Subtract(Noise, Raised), Softness));

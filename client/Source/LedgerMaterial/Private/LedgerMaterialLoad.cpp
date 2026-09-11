@@ -261,4 +261,43 @@ namespace LedgerSurface
 		Instance->SetScalarParameterValue(TEXT("Roughness"), Roughness);
 		return Instance;
 	}
+
+	UMaterialInterface* CreateScatterMaterial(UObject* Outer, UMaterialInterface* Source)
+	{
+		UTexture* BaseColour = nullptr;
+		if (Source == nullptr
+			|| !Source->GetTextureParameterValue(FMaterialParameterInfo(FName(TEXT("BaseColorTexture"))), BaseColour)
+			|| BaseColour == nullptr)
+		{
+			return nullptr;
+		}
+
+		UMaterialInterface* Parent = LoadBaked(TEXT("M_Scatter"));
+#if WITH_EDITOR
+		if (Parent == nullptr)
+		{
+			UE_LOG(LogLedger, Warning,
+				TEXT("scatter material built in memory: no baked asset. It will "
+				     "not exist in a packaged build until the bake is run."));
+			Parent = BuildScatterMaterial(Outer);
+		}
+#endif
+		if (Parent == nullptr)
+		{
+			return Fallback(TEXT("M_Scatter"));
+		}
+
+		UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Parent, Outer);
+		if (Instance == nullptr)
+		{
+			return nullptr;
+		}
+		Instance->SetTextureParameterValue(TEXT("BaseColorTexture"), BaseColour);
+		UTexture* Normal = nullptr;
+		if (Source->GetTextureParameterValue(FMaterialParameterInfo(FName(TEXT("NormalTexture"))), Normal) && Normal != nullptr)
+		{
+			Instance->SetTextureParameterValue(TEXT("NormalTexture"), Normal);
+		}
+		return Instance;
+	}
 }
