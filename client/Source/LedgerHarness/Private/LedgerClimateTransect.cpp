@@ -421,6 +421,27 @@ bool ULedgerClimateTransect::WriteTransect()
 				Body += FString::Printf(
 					TEXT("  %5d  %5.1f  %6.0f m   %6.3f  %6.3f   NO SHADOW  %s\n"),
 					Longitude, Latitude, Peak, Windward, Lee, Why);
+				// Taken apart (T051): the last steps of each march, altitude and
+				// moisture, so a wetter lee says whether it was sea, a missed peak or
+				// air that never crossed the range.
+				if (Lee > Windward)
+				{
+					for (int32 Side = 0; Side < 2; ++Side)
+					{
+						TArray<FVector2d> Trace;
+						LedgerClimate::MoistureAlong(Side == 0 ? WindwardPoint : LeePoint, Params, &Trace);
+						FString Steps;
+						// All forty for the first three, the last six after that.
+						static int32 FullTraces = 0;
+						const int32 Shown = (Side == 1 ? FullTraces++ : FullTraces) < 3 ? Trace.Num() : 6;
+						for (int32 Taken = FMath::Max(0, Trace.Num() - Shown); Taken < Trace.Num(); ++Taken)
+						{
+							Steps += FString::Printf(TEXT(" %.0f/%.3f"), Trace[Taken].X, Trace[Taken].Y);
+						}
+						Body += FString::Printf(TEXT("         %s march, last steps (m/moisture):%s\n"),
+							Side == 0 ? TEXT("windward") : TEXT("lee     "), *Steps);
+					}
+				}
 			}
 		}
 	}
@@ -532,6 +553,11 @@ bool ULedgerClimateTransect::WriteTransect()
 		// was a statement about the grid rather than about the planet.
 		TArray<double> Area;
 		Area.SetNumZeroed(Biomes.Num());
+		// Snow at the world's own season, by latitude band (T060): what the snow
+		// overlay is given to draw, so a capture from orbit can be read against it.
+		double SnowArea[3] = { 0.0, 0.0, 0.0 };
+		double SnowCoverSum[3] = { 0.0, 0.0, 0.0 };
+		double BandArea[3] = { 0.0, 0.0, 0.0 };
 		double LandArea = 0.0;
 		int32 LandPoints = 0;
 		double Blended = 0.0;
@@ -585,6 +611,14 @@ bool ULedgerClimateTransect::WriteTransect()
 					Blended += Cell;
 				}
 				++LandPoints;
+				{
+					const double AbsLat = FMath::Abs(FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Point.Z, -1.0, 1.0))));
+					const int32 Band = AbsLat < 30.0 ? 0 : (AbsLat < 60.0 ? 1 : 2);
+					const double Cover = LedgerClimate::SnowCover(LedgerClimate::At(Point, Params, Planet->SeasonPhase()));
+					BandArea[Band] += Cell;
+					SnowCoverSum[Band] += Cover * Cell;
+					SnowArea[Band] += Cover > 0.0 ? Cell : 0.0;
+				}
 			}
 		}
 
@@ -599,6 +633,14 @@ bool ULedgerClimateTransect::WriteTransect()
 		Body += FString::Printf(
 			TEXT("  in a transition (no biome above 75%% weight): %.1f%%\n\n"),
 			LandArea > 0.0 ? 100.0 * Blended / LandArea : 0.0);
+		Body += FString::Printf(TEXT("snow on land at season %.3f:\n"), Planet->SeasonPhase());
+		for (int32 Band = 0; Band < 3; ++Band)
+		{
+			Body += FString::Printf(TEXT("  %-8s %5.1f%% of land with any snow, mean cover %.2f\n"),
+				Band == 0 ? TEXT("0-30") : (Band == 1 ? TEXT("30-60") : TEXT("60-90")),
+				BandArea[Band] > 0.0 ? 100.0 * SnowArea[Band] / BandArea[Band] : 0.0,
+				BandArea[Band] > 0.0 ? SnowCoverSum[Band] / BandArea[Band] : 0.0);
+		}
 	}
 
 	// ---- how steep does this planet get? ---------------------------------

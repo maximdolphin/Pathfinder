@@ -150,37 +150,12 @@ namespace LedgerClimate
 		return Cold * Wet;
 	}
 
-	FLedgerClimate At(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
-		double SeasonPhase)
+	/// The upwind march on its own, so a fixture can take one apart. At calls
+	/// this; OutTrace, when given, gets altitude and moisture at every step on
+	/// the way back in, the last entry being the point itself.
+	double MoistureAlong(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		TArray<FVector2d>* OutTrace)
 	{
-		FLedgerClimate Climate;
-
-		const double SinLat = SinLatitude(UnitSphere);
-		// sin^2 rather than |sin|: it is monotonic in |latitude| either way, and
-		// the square puts the steep part of the gradient in the mid latitudes
-		// where the real one is, instead of spreading it evenly.
-		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat)
-			+ SeasonalOffsetC(UnitSphere, SeasonPhase, Params.AxialTiltRadians);
-
-		// An airless body has no water cycle at all: no ocean to evaporate
-		// from, no wind to carry it, no snow to fall. Answered before the
-		// upwind march rather than after it, because marching forty steps to
-		// arrive at zero is forty steps wasted on every climate sample.
-		if (!Params.bHasAtmosphere)
-		{
-			Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
-			const double AboveDatum = FMath::Max(0.0, Climate.AltitudeMetres);
-			Climate.TemperatureC = Climate.SeaLevelTemperatureC
-				- LapseRateCPerKm * (AboveDatum / 1000.0);
-			Climate.Moisture = 0.0;
-			return Climate;
-		}
-
-		Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
-		const double AboveWater = FMath::Max(0.0, Climate.AltitudeMetres);
-		Climate.TemperatureC = Climate.SeaLevelTemperatureC
-			- LapseRateCPerKm * (AboveWater / 1000.0);
-
 		// ---- moisture, marched upwind ------------------------------------
 		//
 		// Start at the far end of the fetch and walk downwind to the point,
@@ -217,13 +192,21 @@ namespace LedgerClimate
 		for (int32 Step = UpwindSteps - 1; Step >= 0; --Step)
 		{
 			const FVector3d& Sample = Path[Step];
+			// **A tapered window, not a hard edge.** Every point marches its own
+			// 300 km from a fixed 0.5, so a ridge at the far edge of one point's
+			// window was outside its neighbour's: range 29's windward march
+			// started on a 955 m ridge and lost 40% there, its lee march started
+			// 30 km downwind of it and did not -- and arrived wetter after its own
+			// peak had taken a third. Whatever happens in the far 75 km now counts
+			// for less the further out it is, so neighbours agree about the air.
+			const double Weight = FMath::Min(1.0, (UpwindSteps - Step) / 10.0);
 			const double Altitude = AltitudeMetres(Sample, Params);
 
 			if (Altitude <= 0.0)
 			{
 				// Over water. Evaporation refills the air toward saturation,
 				// and a long enough fetch saturates it completely.
-				Moisture = FMath::Lerp(Moisture, 1.0, 0.35);
+				Moisture = FMath::Lerp(Moisture, 1.0, 0.35 * Weight);
 			}
 			else
 			{
@@ -242,7 +225,7 @@ namespace LedgerClimate
 				// Continental interiors being drier than coasts is real. Being
 				// uniformly at zero is not, and it is what hid the effect this
 				// task exists to demonstrate.
-				Moisture *= 0.99;
+				Moisture *= FMath::Pow(0.99, Weight);
 
 				// Orographic lift. Rising ground condenses what it lifts, and
 				// the loss is exponential in the rise so a 2,000 m range takes
@@ -250,14 +233,52 @@ namespace LedgerClimate
 				const double Rise = Altitude - PreviousAltitude;
 				if (Rise > 0.0)
 				{
-					Moisture *= FMath::Exp(-Rise / 900.0);
+					Moisture *= FMath::Exp(-Rise / 900.0 * Weight);
 				}
 			}
 
+			if (OutTrace != nullptr)
+			{
+				OutTrace->Add(FVector2d(Altitude, Moisture));
+			}
 			PreviousAltitude = Altitude;
 		}
 
-		Climate.Moisture = FMath::Clamp(Moisture, 0.0, 1.0);
+		return FMath::Clamp(Moisture, 0.0, 1.0);
+	}
+
+	FLedgerClimate At(const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		double SeasonPhase)
+	{
+		FLedgerClimate Climate;
+
+		const double SinLat = SinLatitude(UnitSphere);
+		// sin^2 rather than |sin|: it is monotonic in |latitude| either way, and
+		// the square puts the steep part of the gradient in the mid latitudes
+		// where the real one is, instead of spreading it evenly.
+		Climate.SeaLevelTemperatureC = FMath::Lerp(EquatorC, PoleC, SinLat * SinLat)
+			+ SeasonalOffsetC(UnitSphere, SeasonPhase, Params.AxialTiltRadians);
+
+		// An airless body has no water cycle at all: no ocean to evaporate
+		// from, no wind to carry it, no snow to fall. Answered before the
+		// upwind march rather than after it, because marching forty steps to
+		// arrive at zero is forty steps wasted on every climate sample.
+		if (!Params.bHasAtmosphere)
+		{
+			Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
+			const double AboveDatum = FMath::Max(0.0, Climate.AltitudeMetres);
+			Climate.TemperatureC = Climate.SeaLevelTemperatureC
+				- LapseRateCPerKm * (AboveDatum / 1000.0);
+			Climate.Moisture = 0.0;
+			return Climate;
+		}
+
+		Climate.AltitudeMetres = AltitudeMetres(UnitSphere, Params);
+		const double AboveWater = FMath::Max(0.0, Climate.AltitudeMetres);
+		Climate.TemperatureC = Climate.SeaLevelTemperatureC
+			- LapseRateCPerKm * (AboveWater / 1000.0);
+
+		Climate.Moisture = MoistureAlong(UnitSphere, Params, nullptr);
 		return Climate;
 	}
 }

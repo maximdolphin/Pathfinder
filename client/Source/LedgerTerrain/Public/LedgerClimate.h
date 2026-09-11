@@ -108,6 +108,12 @@ namespace LedgerClimate
 		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
 		double SeasonPhase = 0.0);
 
+	/// The moisture half of At: the upwind march, optionally traced as
+	/// (altitude m, moisture) per step, ending at the point. T051.
+	LEDGERTERRAIN_API double MoistureAlong(
+		const FVector3d& UnitSphere, const FLedgerTerrainParams& Params,
+		TArray<FVector2d>* OutTrace = nullptr);
+
 	/// How much snow is lying, 0 to 1.
 	///
 	/// **The snow line is not a parameter.** It is where this crosses zero, and

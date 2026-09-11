@@ -87,7 +87,8 @@ namespace LedgerPatchDisk
 	/// biome weights and vertex colours move with it.
 	/// 18: the march comes back along the path it went out on, so the
 	/// moisture it reports is this point's and not wherever it drifted to.
-	constexpr uint32 FormatVersion = 18;
+	/// 19: the march's window is tapered over its far 75 km.
+	constexpr uint32 FormatVersion = 19;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.
