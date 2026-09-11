@@ -19,6 +19,10 @@ namespace
 {
 	constexpr double CliffSettleSeconds = 6.0;
 
+	/// How long to wait for the streaming queue -- re-stitches included -- to
+	/// drain before shooting anyway.
+	constexpr double CliffGiveUpSeconds = 90.0;
+
 	/// The spacing slope is measured at: the finest the mesh resolves, a node
 	/// edge of 305 m over 64 quads. A slope finer than that is a slope no
 	/// vertex has, and reporting one would be reporting the height function
@@ -65,7 +69,12 @@ namespace
 
 	const FCliffShot CliffShots[] =
 	{
-		{ TEXT("cliff-apron.png"),  1.00,  0.35,   0.0, false, 0.10 },
+		// Out on the flat below the foot, low, looking back at it: 0.75 drops
+		// back and 0.06 up (490 m and 39 m on a 652 m face), aimed 0.45 drops
+		// downhill of the top, which is the foot. The old apron stood 652 m back
+		// and 228 m up and aimed near the top of the face, so the foot was under
+		// the frame and a metre stone under a pixel.
+		{ TEXT("cliff-apron.png"),  0.75,  0.06,   0.0, false, 0.45 },
 		// Across the face from below, so the foot of it is in frame -- which is
 		// where the debris is, and the half of the acceptance a photograph of
 		// the face alone would miss.
@@ -404,6 +413,7 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		Body += TEXT("cliff-face.png is the face, cliff-foot.png the ground under it,\n"
 			"cliff-apron.png the debris at its foot seen from out on the flat,\n"
 			"cliff-wide.png both in context.\n");
+		Body += TEXT("\nedge gaps with the apron shot drawn:\n") + ApronGaps;
 		Body += FString::Printf(TEXT("\na sixty-degree face exists: %s\n"),
 			SlopeDegrees >= 60.0 ? TEXT("yes") : TEXT("NO"));
 		Body += FString::Printf(TEXT("\nVERDICT: %s\n"),
@@ -422,9 +432,25 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < CliffSettleSeconds)
+	// **Settled, not merely late.** At six seconds the apron's edge-gap probe
+	// found 24,015 edge vertices more than a centimetre off, 19,770 of them
+	// between patches of the same depth, the worst 17 m -- one side a straight
+	// chord, stitched to a neighbour that has since refined, which the
+	// re-stitch pass (eight a frame) had not reached. Those were the slits
+	// down the face with sky through them. Each re-stitch is a job, so the
+	// streaming queue is the gate, as it is for the near field.
+	const ULedgerWorldBuilder* SettleBuilder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>();
+	const ALedgerPlanet* SettlePlanet = SettleBuilder != nullptr ? SettleBuilder->GetPlanet() : nullptr;
+	const bool bStreaming = SettlePlanet != nullptr
+		&& (SettlePlanet->GetStats().JobsInFlight > 0 || SettlePlanet->GetStats().PendingBuilds > 0);
+	if (Settle < CliffSettleSeconds || (bStreaming && Settle < CliffGiveUpSeconds))
 	{
 		return;
+	}
+	if (bStreaming && !bCaptured)
+	{
+		UE_LOG(LogLedger, Warning, TEXT("cliff site: %s still streaming after %.0f s (%d jobs, %d builds) -- shooting anyway"),
+			CliffShots[Shot].Name, Settle, SettlePlanet->GetStats().JobsInFlight, SettlePlanet->GetStats().PendingBuilds);
 	}
 
 	if (!bCaptured)
@@ -435,6 +461,19 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
 		bCaptured = true;
 		return;
+	}
+
+	// Gaps along patch edges, with the apron's patches still the drawn set.
+	if (Shot == 0)
+	{
+		if (const ULedgerWorldBuilder* Builder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>())
+		{
+			if (const ALedgerPlanet* Planet = Builder->GetPlanet())
+			{
+				const double WorstCm = Planet->MeasureEdgeGaps(ApronGaps);
+				UE_LOG(LogLedger, Log, TEXT("cliff site: edge gaps at the apron shot, worst %.2f cm\n%s"), WorstCm, *ApronGaps);
+			}
+		}
 	}
 
 	++Shot;

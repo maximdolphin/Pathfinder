@@ -50,5 +50,8 @@ private:
 	/// taller faces it passed over for being too cold to draw as rock.
 	double FaceTemperatureC = 0.0;
 	int32 ColdRejected = 0;
+	/// The edge-gap probe, run with the apron shot's patches drawn: that frame
+	/// showed long slits down the face with sky through them.
+	FString ApronGaps;
 	double AltitudeMetres = 0.0;
 };
