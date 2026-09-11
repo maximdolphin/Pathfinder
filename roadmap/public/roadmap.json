@@ -4925,6 +4925,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Parent held until its children's collision has cooked (the body setup's triangle mesh): at 300 m on the warm cache 6.6% missed (from 7.2%), longest gap 46; 'drawn with collision, not cooked' 550 (from 593). So that was not most of it. Two readings of those 550: a pooled component keeps the previous patch's body setup until the new cook swaps in, so the check can pass on stale geometry; or the collision is there and the trace cannot reach it -- the drawn patch on those frames averages ~3,000 km across, its surface can sit hundreds of metres off the exact one the ship is held above, and the trace stopped 100 m below the exact ground. The trace now reaches 5 km and each hit reports how far the collision was from the exact surface, so 'present' and 'accurate' are measured apart; queued."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The trace was not it: at 5 km instead of 400 m, 923 missed (6.9%) against 877 -- the same within noise -- and 604 of them still over drawn ground with collision enabled and nothing to hit. When collision is there it is right: the hit is 1.0 m from the exact surface on average, 194.8 m at worst (committed; the report now carries both). So those misses are collision not yet present. The likeliest reason the cook-hold passes early: a pooled component keeps its previous patch's body setup, triangle mesh and all, until the new asynchronous cook swaps a new one in, so 'has a triangle mesh' is true of stale geometry. Next: record the body setup each section had at upload and count it cooked only once that object has been replaced."
     }
    ],
    "evidence": [
@@ -14579,5 +14584,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T10:01:23.026Z"
+ "updatedAt": "2026-09-11T10:03:33.954Z"
 }
