@@ -467,25 +467,27 @@ int32 ALedgerPlanet::LeafDepthAtResolved(ELedgerCubeFace Face, double U, double 
 		return 0;
 	}
 
+	// The DEEPEST node along the path that is being drawn, not the first.
+	//
+	// A split node keeps its geometry until all four children have theirs, so
+	// during streaming the thing on screen at this direction is the parent, at
+	// the parent's resolution -- while the tree below it is already several
+	// levels deeper. This function's answer decides edge stitching, and
+	// returning the tree depth meant a patch stitched against a neighbour that
+	// was not the one it met, for as long as that neighbour was streaming.
+	//
+	// **But stopping at the FIRST node with geometry stopped at the resident
+	// shell**, which keeps its geometry at every depth down to ResidentDepth
+	// whether or not its children are drawn. Every deep patch was told its
+	// neighbour was the shell -- many levels coarser -- so under the old yes/no
+	// flags every edge of every patch collapsed (consistent between equal
+	// neighbours, a crack at every real LOD boundary: 37,608 edge vertices off),
+	// and under levels every edge was straightened onto a line up to 64 quads
+	// long, which stood up as white sliver walls along every patch edge. What is
+	// on screen at a point is the finest geometry there, so that is the depth.
+	int32 DrawnDepth = ActiveSections.Contains(NodeKey(*Node)) ? Node->Depth : 0;
 	while (Node->bHasChildren)
 	{
-		// Stop at whatever is actually being *drawn*, not at the tree's leaf.
-		//
-		// A split node keeps its geometry until all four children have theirs,
-		// so during streaming the thing on screen at this direction is the
-		// parent, at the parent's resolution — while the tree below it is
-		// already several levels deeper.
-		//
-		// This function's answer decides edge stitching. Returning the tree
-		// depth meant a patch stitched against a neighbour that was not the one
-		// it met, for as long as that neighbour was streaming: a crack that
-		// appears under load, closes when the load passes, and is therefore
-		// invisible in any still taken afterwards.
-		if (ActiveSections.Contains(NodeKey(*Node)))
-		{
-			break;
-		}
-
 		const double Half = Node->Extent * 0.5;
 		const int32 Index = (U >= Node->U + Half ? 1 : 0) | (V >= Node->V + Half ? 2 : 0);
 		const FLedgerQuadNode* Child = Node->Children[Index].Get();
@@ -494,8 +496,12 @@ int32 ALedgerPlanet::LeafDepthAtResolved(ELedgerCubeFace Face, double U, double 
 			break;
 		}
 		Node = Child;
+		if (ActiveSections.Contains(NodeKey(*Node)))
+		{
+			DrawnDepth = Node->Depth;
+		}
 	}
 
-	return Node->Depth;
+	return DrawnDepth;
 }
 
