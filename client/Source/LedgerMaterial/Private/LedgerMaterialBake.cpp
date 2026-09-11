@@ -148,6 +148,17 @@ namespace LedgerSurface
 			Speed.Id = FGuid::NewDeterministicGuid(TEXT("MPC_LedgerWind.WindSpeed"));
 			Speed.DefaultValue = 0.0f;
 			Collection->ScalarParameters.Add(Speed);
+			// T096's ground water, where the viewer is. In this collection rather
+			// than one of its own because it is weather too, and a second asset
+			// is a second thing that has to be saved before the materials.
+			for (const TCHAR* Water : { TEXT("SurfaceWetness"), TEXT("PuddleLevel") })
+			{
+				FCollectionScalarParameter Parameter;
+				Parameter.ParameterName = Water;
+				Parameter.Id = FGuid::NewDeterministicGuid(FString(TEXT("MPC_LedgerWind.")) + Water);
+				Parameter.DefaultValue = 0.0f;
+				Collection->ScalarParameters.Add(Parameter);
+			}
 			Collection->PostEditChange();
 
 			FMetaData& MetaData = Package->GetMetaData();

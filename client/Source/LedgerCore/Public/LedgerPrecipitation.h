@@ -62,6 +62,26 @@ struct FLedgerPrecipitation
 	}
 };
 
+/// Water lying on the ground. T096.
+///
+/// One depth, and two readings of it: how wet the ground looks, which saturates
+/// once there is a film over everything, and how far up the ground's own relief
+/// the puddles reach, which is what is left over after the film.
+struct FLedgerSurfaceWater
+{
+	/// Millimetres held on the surface, film and puddles together.
+	double Millimetres = 0.0;
+
+	/// 0 dry to 1 soaked: how dark and glossy the ground reads.
+	double Wetness = 0.0;
+
+	/// 0 none to 1 full: how far up the ground's hollows the water stands.
+	double PuddleLevel = 0.0;
+
+	/// How fast it is going at this temperature, millimetres an hour.
+	double DryingMillimetresPerHour = 0.0;
+};
+
 namespace LedgerPrecip
 {
 	/// Where the air is at freezing, metres above the datum.
@@ -98,4 +118,24 @@ namespace LedgerPrecip
 		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
 		double LatitudeRadians, double LongitudeRadians, double AltitudeMetres,
 		double SecondsFromEpoch, double SurfaceKelvin = 0.0);
+
+	/// How fast standing water goes at a temperature, millimetres an hour.
+	/// Zero at and below freezing: ice is not this model.
+	LEDGERCORE_API double DryingMillimetresPerHour(double Kelvin);
+
+	/// The two readings of a depth of water.
+	LEDGERCORE_API FLedgerSurfaceWater SurfaceWaterOf(double Millimetres, double Kelvin);
+
+	/// One step of the ground's water budget: rain in, evaporation out, and
+	/// whatever the ground cannot hold runs off.
+	LEDGERCORE_API double StepSurfaceWater(double Millimetres,
+		double RainMillimetresPerHour, double Kelvin, double Seconds);
+
+	/// The water on the ground at a place and a time, from the rain that has
+	/// fallen there over the hours before -- summed from the weather rather
+	/// than kept, like everything else in this file.
+	LEDGERCORE_API FLedgerSurfaceWater SurfaceWaterAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch,
+		double SurfaceKelvin = 0.0);
 }

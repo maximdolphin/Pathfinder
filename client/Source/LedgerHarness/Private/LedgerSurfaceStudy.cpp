@@ -54,6 +54,25 @@ namespace
 		{ TEXT("surface-hill-low.png"),   140.0,  1400.0, 20.0 },
 		{ TEXT("surface-hill-high.png"),  140.0,  1400.0, 62.0 },
 	};
+
+	// `-reference` (T435): the distances the photograph comparison is made at --
+	// standing on the ground at 2 m, across it at 20 m, and out to 200 m -- all
+	// from eye height and under one sun, so a reference photograph can be matched
+	// to each by focal length, distance and sun angle alone.
+	const FStudyShot ReferenceShots[] =
+	{
+		{ TEXT("2m.png"),   1.7,   2.0, 35.0 },
+		{ TEXT("20m.png"),  1.7,  20.0, 35.0 },
+		{ TEXT("200m.png"), 1.7, 200.0, 35.0 },
+	};
+
+	bool UseReferenceShots()
+	{
+		static const bool bReference = FParse::Param(FCommandLine::Get(), TEXT("reference"));
+		return bReference;
+	}
+	const FStudyShot* StudyShotTable() { return UseReferenceShots() ? ReferenceShots : StudyShots; }
+	int32 StudyShotCount() { return UseReferenceShots() ? UE_ARRAY_COUNT(ReferenceShots) : UE_ARRAY_COUNT(StudyShots); }
 }
 
 bool ULedgerSurfaceStudy::DoesSupportWorldType(const EWorldType::Type WorldType) const
@@ -72,7 +91,7 @@ void ULedgerSurfaceStudy::OnWorldBeginPlay(UWorld& InWorld)
 
 	bRunning = true;
 	UE_LOG(LogLedger, Log, TEXT("surface study: %d shots, %.0f s settle each"),
-		UE_ARRAY_COUNT(StudyShots), StudySettleSeconds);
+		StudyShotCount(), StudySettleSeconds);
 }
 
 void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
@@ -93,7 +112,7 @@ void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
 		return;
 	}
 
-	if (Index >= UE_ARRAY_COUNT(StudyShots))
+	if (Index >= StudyShotCount())
 	{
 		UE_LOG(LogLedger, Log, TEXT("surface study: done"));
 		bRunning = false;
@@ -117,11 +136,18 @@ void ULedgerSurfaceStudy::Tick(float DeltaSeconds)
 		// The noise comparison writes alongside rather than over: the gate is a
 		// side-by-side, and a comparison that overwrites one of its two halves
 		// is not one.
-		const FString Prefix = FParse::Param(FCommandLine::Get(), TEXT("noisesurface"))
+		FString Prefix = FParse::Param(FCommandLine::Get(), TEXT("noisesurface"))
 			? TEXT("noise-") : TEXT("");
+		// `-studyname=` labels a reference run's files: reference-<name>-<distance>.
+		FString StudyName;
+		if (UseReferenceShots())
+		{
+			FParse::Value(FCommandLine::Get(), TEXT("studyname="), StudyName);
+			Prefix += TEXT("reference-") + (StudyName.IsEmpty() ? FString(TEXT("site")) : StudyName) + TEXT("-");
+		}
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
-				Prefix + FString(StudyShots[Index].Name)));
+				Prefix + FString(StudyShotTable()[Index].Name)));
 		FScreenshotRequest::RequestScreenshot(Path, false, false);
 		UE_LOG(LogLedger, Log, TEXT("surface study -> %s"), *Path);
 		bCaptured = true;
@@ -143,7 +169,7 @@ void ULedgerSurfaceStudy::Place()
 	APlayerController* Controller = World->GetFirstPlayerController();
 	APawn* Pawn = Controller->GetPawn();
 
-	const FStudyShot& Current = StudyShots[Index];
+	const FStudyShot& Current = StudyShotTable()[Index];
 
 	// Near the town site, because that is the ground the rest of the project's
 	// captures are of — but not *at* it. The site is the settlement, and a
@@ -162,7 +188,20 @@ void ULedgerSurfaceStudy::Place()
 	// Roughly a kilometre along the surface, which clears the settlement and
 	// its trees without leaving the biome the rest of the captures are of.
 	const double Offset = 100000.0 / Planet->Radius;
-	const FVector3d Up = (Site + Sideways * Offset).GetSafeNormal();
+	FVector3d Up = (Site + Sideways * Offset).GetSafeNormal();
+	// `-studyat=lat,lon` (degrees) stands the study somewhere chosen instead:
+	// the sites the four-biome and cliff fixtures find, for T435's surfaces.
+	FString At;
+	if (FParse::Value(FCommandLine::Get(), TEXT("studyat="), At))
+	{
+		FString LatText, LonText;
+		if (At.Split(TEXT(","), &LatText, &LonText))
+		{
+			const double Lat = FMath::DegreesToRadians(FCString::Atod(*LatText));
+			const double Lon = FMath::DegreesToRadians(FCString::Atod(*LonText));
+			Up = FVector3d(FMath::Cos(Lat) * FMath::Cos(Lon), FMath::Cos(Lat) * FMath::Sin(Lon), FMath::Sin(Lat));
+		}
+	}
 	const double Ground = Planet->SurfaceRadiusAt(Up);
 
 	FVector3d East = FVector3d::CrossProduct(Up, FVector3d::UpVector);
@@ -192,7 +231,10 @@ void ULedgerSurfaceStudy::Place()
 		Ship->SetActorLocation(Eye + FVector(Up * 400000.0));
 	}
 
-	const FRotator Look = (Target - Eye).Rotation();
+	// Rolled to the local vertical, not to world Z: at the equator world Z is
+	// north, and a camera levelled to it lies on its side -- as the first
+	// reference captures at 3 N did.
+	const FRotator Look = FRotationMatrix::MakeFromXZ(Target - Eye, FVector(Up)).Rotator();
 
 	if (Camera == nullptr)
 	{
@@ -208,7 +250,10 @@ void ULedgerSurfaceStudy::Place()
 			// brightness. Leave it on and the two lighting conditions come back
 			// looking equally bright, which is the one thing the comparison is
 			// supposed to show.
-			if (UCameraComponent* Component = Camera->GetCameraComponent())
+			// Not under -reference: a photograph is auto-exposed, and a brightness
+			// pinned at 1.0 against a sun quoted in lux is a white frame -- all twelve
+			// of the first reference captures were.
+			if (UCameraComponent* Component = UseReferenceShots() ? nullptr : Camera->GetCameraComponent())
 			{
 				FPostProcessSettings& Post = Component->PostProcessSettings;
 				Post.bOverride_AutoExposureMinBrightness = true;

@@ -153,4 +153,50 @@ bool FLedgerPrecipFollowsTheLows::RunTest(const FString&)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerPrecipGroundDries,
+	"Ledger.Precipitation.WetGroundDriesAtTheRateTheTemperatureSets",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerPrecipGroundDries::RunTest(const FString&)
+{
+	// Rain for a while and then none, a minute at a time. T096.
+	auto Soak = [](double Kelvin, double RainPerHour, int32 RainMinutes, int32 DryMinutes)
+	{
+		double Water = 0.0;
+		for (int32 Minute = 0; Minute < RainMinutes; ++Minute)
+		{
+			Water = LedgerPrecip::StepSurfaceWater(Water, RainPerHour, Kelvin, 60.0);
+		}
+		for (int32 Minute = 0; Minute < DryMinutes; ++Minute)
+		{
+			Water = LedgerPrecip::StepSurfaceWater(Water, 0.0, Kelvin, 60.0);
+		}
+		return LedgerPrecip::SurfaceWaterOf(Water, Kelvin);
+	};
+
+	const FLedgerSurfaceWater Soaked = Soak(293.15, 5.0, 60, 0);
+	TestTrue(TEXT("an hour of rain soaks the ground and fills the hollows"),
+		Soaked.Wetness == 1.0 && Soaked.PuddleLevel == 1.0);
+	const FLedgerSurfaceWater Going = Soak(293.15, 5.0, 60, 20);
+	TestTrue(TEXT("twenty minutes on at 20 C the puddles are going and the ground is still wet"),
+		Going.PuddleLevel > 0.0 && Going.PuddleLevel < 1.0 && Going.Wetness == 1.0);
+	const FLedgerSurfaceWater Warm = Soak(293.15, 5.0, 60, 60);
+	TestTrue(TEXT("an hour on at 20 C both have gone"),
+		Warm.Wetness == 0.0 && Warm.PuddleLevel == 0.0);
+	TestTrue(TEXT("forty minutes on, 20 C is dry and 10 C is still wet: the temperature decides"),
+		Soak(293.15, 5.0, 60, 40).Wetness == 0.0 && Soak(283.15, 5.0, 60, 40).Wetness > 0.0);
+	TestTrue(TEXT("an hour on at 10 C that has gone too"),
+		Soak(283.15, 5.0, 60, 60).Wetness == 0.0);
+	TestTrue(TEXT("a drizzle lighter than the drying rate still wets the ground"),
+		Soak(293.15, 0.3, 60, 0).Wetness > 0.9);
+	TestTrue(TEXT("nothing dries at freezing"),
+		LedgerPrecip::DryingMillimetresPerHour(273.15) == 0.0);
+
+	AddInfo(FString::Printf(TEXT("drying %.2f mm/h at 10 C, %.2f at 20 C, %.2f at 30 C"),
+		LedgerPrecip::DryingMillimetresPerHour(283.15),
+		LedgerPrecip::DryingMillimetresPerHour(293.15),
+		LedgerPrecip::DryingMillimetresPerHour(303.15)));
+	return true;
+}
+
 #endif

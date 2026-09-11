@@ -21,6 +21,7 @@
 
 class AActor;
 class UInstancedStaticMeshComponent;
+class UMaterialParameterCollection;
 
 UCLASS()
 class LEDGERCLIENT_API ULedgerPrecipitationView : public UTickableWorldSubsystem
@@ -45,6 +46,10 @@ public:
 	/// consumer is live in fair weather too.
 	FVector3d LastWindMetres() const { return LastWind; }
 
+	/// The water on the ground where the viewer is, as last published to the
+	/// materials. T096.
+	FLedgerSurfaceWater SurfaceWater() const { return Water; }
+
 private:
 	void Rebuild(int32 Wanted);
 
@@ -63,4 +68,11 @@ private:
 	int32 Drawn = 0;
 	FVector3d LastWind = FVector3d::ZeroVector;
 	double SinceLog = 0.0;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialParameterCollection> WaterCollection;
+	bool bLookedForWaterCollection = false;
+	FLedgerSurfaceWater Water;
+	double WaterWhen = -1.0e300;
+	FVector3d WaterUp = FVector3d::ZeroVector;
 };

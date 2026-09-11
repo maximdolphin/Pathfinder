@@ -14,6 +14,8 @@
 #include "LedgerWind.h"
 #include "LedgerWorld.h"
 #include "Materials/MaterialInterface.h"
+#include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialParameterCollectionInstance.h"
 
 namespace
 {
@@ -148,6 +150,32 @@ void ULedgerPrecipitationView::Tick(float DeltaSeconds)
 
 	Last = LedgerPrecip::At(System, Home, Air, Latitude, Longitude,
 		Altitude, Builder->GetWhenSeconds(), SurfaceKelvin);
+
+	// T096. Twelve hours of rain summed again when the clock has moved a minute
+	// or the viewer a few kilometres, not every frame: the ground changes on
+	// that scale and no faster.
+	const double When = Builder->GetWhenSeconds();
+	if (FMath::Abs(When - WaterWhen) >= 60.0 || (Up - WaterUp).SizeSquared() > 1.0e-6)
+	{
+		WaterWhen = When;
+		WaterUp = Up;
+		Water = LedgerPrecip::SurfaceWaterAt(
+			System, Home, Air, Latitude, Longitude, When, SurfaceKelvin);
+		if (!bLookedForWaterCollection)
+		{
+			bLookedForWaterCollection = true;
+			WaterCollection = LoadObject<UMaterialParameterCollection>(
+				nullptr, TEXT("/Game/Materials/MPC_LedgerWind"));
+		}
+		if (UMaterialParameterCollectionInstance* Instance = WaterCollection != nullptr
+			? World->GetParameterCollectionInstance(WaterCollection) : nullptr)
+		{
+			Instance->SetScalarParameterValue(TEXT("SurfaceWetness"),
+				static_cast<float>(Water.Wetness));
+			Instance->SetScalarParameterValue(TEXT("PuddleLevel"),
+				static_cast<float>(Water.PuddleLevel));
+		}
+	}
 
 	const int32 Wanted = Last.IsFalling()
 		? FMath::RoundToInt(PrecipMaxDrops * FMath::Min(

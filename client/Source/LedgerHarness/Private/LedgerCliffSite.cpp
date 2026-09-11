@@ -393,6 +393,10 @@ void ULedgerCliffSite::Tick(float DeltaSeconds)
 		bFound = true;
 		UE_LOG(LogLedger, Log, TEXT("cliff site: %.1f degrees, %.0f m drop, at %.0f m"),
 			SlopeDegrees, DropMetres, AltitudeMetres);
+		// Where the debris lands -- the apron shot's aim point -- for -studyat (T435).
+		const double ApronArc = (0.45 * FMath::Max(60.0, DropMetres) * 100.0) / World->GetSubsystem<ULedgerWorldBuilder>()->GetPlanet()->Radius;
+		const FVector3d Apron = (Face * FMath::Cos(ApronArc) + Downhill * FMath::Sin(ApronArc)).GetSafeNormal();
+		UE_LOG(LogLedger, Log, TEXT("cliff site: apron at %.4f,%.4f"), FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(Apron.Z, -1.0, 1.0))), FMath::RadiansToDegrees(FMath::Atan2(Apron.Y, Apron.X)));
 		UE_LOG(LogLedger, Log, TEXT("cliff site: snow cover %.2f and %.1f C on the face; taller faces passed over: %d for snow, %d for cold"),
 			FaceSnow, FaceTemperatureC, SnowRejected, ColdRejected);
 	}

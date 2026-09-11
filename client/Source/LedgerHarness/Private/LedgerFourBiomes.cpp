@@ -1,5 +1,6 @@
-#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "LedgerFourBiomes.h"
+
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 
 #include "Camera/CameraActor.h"
 #include "Engine/World.h"
@@ -403,8 +404,9 @@ bool ULedgerFourBiomes::FindSites()
 	{
 		Sites.Add(SeasonPoint);
 		Names.Add(TEXT("season"));
-		UE_LOG(LogLedger, Log, TEXT("four biomes: season site at %.1f N, winter snow cover %.2f, summer %.2f; photographed at season %.3f"),
-			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(SeasonPoint.Z, -1.0, 1.0))), SeasonWinter, SeasonSummer, Planet->SeasonPhase());
+		UE_LOG(LogLedger, Log, TEXT("four biomes: season site at %.1f N, winter snow cover %.2f, summer %.2f; photographed at season %.3f, at %.4f,%.4f"),
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(SeasonPoint.Z, -1.0, 1.0))), SeasonWinter, SeasonSummer, Planet->SeasonPhase(),
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(SeasonPoint.Z, -1.0, 1.0))), FMath::RadiansToDegrees(FMath::Atan2(SeasonPoint.Y, SeasonPoint.X)));
 		return BestSeason > 0.0;
 	}
 
@@ -441,8 +443,10 @@ bool ULedgerFourBiomes::FindSites()
 		const int32 Index = Order[Rank];
 		Sites.Add(BestPoint[Index]);
 		Names.Add(Biomes[Index].Name.Replace(TEXT(" "), TEXT("-")).ToLower());
-		UE_LOG(LogLedger, Log, TEXT("four biomes: %s at weight %.2f"),
-			*Biomes[Index].Name, BestWeight[Index]);
+		UE_LOG(LogLedger, Log, TEXT("four biomes: %s at weight %.2f, at %.4f,%.4f"),
+			*Biomes[Index].Name, BestWeight[Index],
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(BestPoint[Index].Z, -1.0, 1.0))),
+			FMath::RadiansToDegrees(FMath::Atan2(BestPoint[Index].Y, BestPoint[Index].X)));
 	}
 
 	if (Sites.Num() < Wanted)

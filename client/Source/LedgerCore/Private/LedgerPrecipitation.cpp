@@ -34,6 +34,34 @@ namespace
 	/// -- the air is thin, so it takes a lot of speed to move a grain -- and
 	/// this is the free-stream speed that corresponds to.
 	constexpr double PrecipDustWindMetresPerSecond = 17.0;
+
+	/// Water the ground holds as a film before it reads as soaked, millimetres.
+	/// A third of a millimetre darkens soil and wets a road all over.
+	constexpr double SurfaceFilmMillimetres = 0.3;
+
+	/// What it holds at all, film and puddles together. Past this the water
+	/// runs off, which is why an hour of rain and a day of it leave the same
+	/// puddles.
+	constexpr double SurfaceHoldMillimetres = 1.5;
+
+	/// How fast standing water goes at 20 C, millimetres an hour.
+	///
+	/// ponytail: a game rate, not a measured one. Open water in sun loses
+	/// nearer half a millimetre an hour; T096 wants a soaked street at 10 C
+	/// gone in about an hour, and this is the number that does it. The
+	/// temperature dependence is physical and the scale is not.
+	constexpr double SurfaceDryingAt20C = 3.0;
+
+	/// How far back the water budget looks, and in what steps. Twelve hours
+	/// is long enough for a full hold to dry at one degree above freezing.
+	constexpr double SurfaceHistorySeconds = 12.0 * 3600.0;
+	constexpr double SurfaceStepSeconds = 300.0;
+
+	/// Saturation vapour pressure over water, pascals. Magnus's fit.
+	double SaturationPascals(double Kelvin)
+	{
+		return 611.2 * FMath::Exp(17.67 * (Kelvin - 273.15) / (Kelvin - 29.65));
+	}
 }
 
 const TCHAR* LexToString(ELedgerPrecipitation Kind)
@@ -161,5 +189,67 @@ namespace LedgerPrecip
 			PrecipDeepLowRate * 2.0);
 		Out.FallSpeedMetresPerSecond = FallSpeedMetresPerSecond(Out.Kind);
 		return Out;
+	}
+
+	double DryingMillimetresPerHour(double Kelvin)
+	{
+		// Evaporation goes as how much more vapour the air could take, and that
+		// is the saturation pressure: it roughly doubles every ten degrees,
+		// which is why a puddle outlasts a cold afternoon and not a hot one.
+		if (!(Kelvin > PrecipFreezingKelvin))
+		{
+			return 0.0;
+		}
+		return SurfaceDryingAt20C * SaturationPascals(Kelvin) / SaturationPascals(293.15);
+	}
+
+	FLedgerSurfaceWater SurfaceWaterOf(double Millimetres, double Kelvin)
+	{
+		FLedgerSurfaceWater Out;
+		Out.Millimetres = Millimetres;
+		Out.Wetness = FMath::Clamp(Millimetres / SurfaceFilmMillimetres, 0.0, 1.0);
+		Out.PuddleLevel = FMath::Clamp(
+			(Millimetres - SurfaceFilmMillimetres)
+				/ (SurfaceHoldMillimetres - SurfaceFilmMillimetres), 0.0, 1.0);
+		Out.DryingMillimetresPerHour = DryingMillimetresPerHour(Kelvin);
+		return Out;
+	}
+
+	double StepSurfaceWater(double Millimetres, double RainMillimetresPerHour,
+		double Kelvin, double Seconds)
+	{
+		// Nothing dries while it rains: the air under a raincloud is saturated,
+		// and without this a drizzle lighter than the drying rate would never
+		// wet anything.
+		const double Rate = RainMillimetresPerHour > 0.0
+			? RainMillimetresPerHour : -DryingMillimetresPerHour(Kelvin);
+		return FMath::Clamp(Millimetres + Rate * Seconds / 3600.0,
+			0.0, SurfaceHoldMillimetres);
+	}
+
+	FLedgerSurfaceWater SurfaceWaterAt(
+		const FLedgerSystem& System, int32 BodyIndex, const FLedgerAirProfile& Air,
+		double LatitudeRadians, double LongitudeRadians, double SecondsFromEpoch,
+		double SurfaceKelvin)
+	{
+		// **Summed, not stored.** The budget starts dry twelve hours back and
+		// runs forward through the weather, so the same place at the same time
+		// is the same ground whoever asks and whatever they asked before.
+		const double Kelvin = SurfaceKelvin > 0.0
+			? SurfaceKelvin : Air.SurfaceTemperatureKelvin;
+		double Water = 0.0;
+		for (double Moment = SecondsFromEpoch - SurfaceHistorySeconds;
+			Moment < SecondsFromEpoch; Moment += SurfaceStepSeconds)
+		{
+			// At the ground, so it is the rain that reaches it: snow is the
+			// snow cover's business, not this one's.
+			const FLedgerPrecipitation Falling = At(System, BodyIndex, Air,
+				LatitudeRadians, LongitudeRadians, 0.0, Moment, SurfaceKelvin);
+			const double Rain = Falling.Kind == ELedgerPrecipitation::Rain
+				? Falling.RateMillimetresPerHour : 0.0;
+			Water = StepSurfaceWater(Water, Rain, Kelvin,
+				FMath::Min(SurfaceStepSeconds, SecondsFromEpoch - Moment));
+		}
+		return SurfaceWaterOf(Water, Kelvin);
 	}
 }

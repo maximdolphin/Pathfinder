@@ -32,6 +32,7 @@
 #include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
+#include "Materials/MaterialParameterCollection.h"
 
 namespace LedgerSurface
 {
@@ -802,6 +803,49 @@ namespace LedgerSurface
 		// only buys sparkle.
 		UMaterialExpression* FadedRough = Graph.Lerp(RoughMix, Graph.Constant(0.93f), Fade);
 		UMaterialExpression* FadedOcclusion = Graph.Lerp(OcclusionMix, Graph.Constant(1.0f), Fade);
+
+		// ---- surface water (T096) -------------------------------------------
+		//
+		// Two numbers from the weather, published by the precipitation view into
+		// the wind's collection: how wet the ground is, and how far up its
+		// hollows the water stands. Wet ground is darker because water fills the
+		// pores and stops light scattering back out of them, and glossier
+		// because the film is smooth; a puddle is a mirror.
+		//
+		// **The hollows are the soil's own height map**, the one the snow
+		// fills: the level rises from the lowest texels up, so water sits in
+		// the dips of the scan rather than in a pattern of its own.
+		// ponytail: texel-scale hollows only. Water gathering at the foot of a
+		// slope needs a drainage field per vertex, which nothing has yet.
+		if (UMaterialParameterCollection* Weather = LoadObject<UMaterialParameterCollection>(
+				nullptr, TEXT("/Game/Materials/MPC_LedgerWind")))
+		{
+			if (Weather->GetParameterId(FName(TEXT("SurfaceWetness"))).IsValid())
+			{
+				// Snow is not wet ground, and steep rock sheds what lands on it.
+				UMaterialExpression* Exposed = Graph.OneMinus(SnowWeight);
+				UMaterialExpression* Wet = Graph.Multiply(
+					Graph.CollectionParameter(Weather, TEXT("SurfaceWetness")), Exposed);
+				UMaterialExpression* Standing = Graph.Multiply(Graph.Multiply(
+					Graph.CollectionParameter(Weather, TEXT("PuddleLevel")), Exposed),
+					Graph.OneMinus(Blend));
+				// Up to half the height map at a full hold, sharp at the edge the
+				// way a waterline is, and gone with the texture detail. At a level
+				// of zero this is zero for every height, as the snow blend is.
+				UMaterialExpression* Puddle = Graph.Multiply(Graph.Saturate(Graph.Multiply(
+					Graph.Subtract(Graph.Multiply(Standing, Graph.Constant(0.5f)), Soil.Height),
+					Graph.Constant(12.0f))), Graph.OneMinus(Fade));
+
+				BaseColour = Graph.Multiply(BaseColour,
+					Graph.Lerp(Graph.Constant(1.0f), Graph.Constant(0.55f), Wet));
+				BaseColour = Graph.Lerp(BaseColour,
+					Graph.Multiply(BaseColour, Graph.Constant(0.5f)), Puddle);
+				FadedRough = Graph.Lerp(FadedRough,
+					Graph.Multiply(FadedRough, Graph.Constant(0.4f)), Wet);
+				FadedRough = Graph.Lerp(FadedRough, Graph.Constant(0.02f), Puddle);
+				FadedNormal = Graph.Lerp(FadedNormal, Normal, Puddle);
+			}
+		}
 
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
 		if (EditorData == nullptr)
