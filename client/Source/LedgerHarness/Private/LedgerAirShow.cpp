@@ -247,8 +247,12 @@ void ULedgerAirShow::Place()
 	// three sun angles.
 	const FVector3d Sun =
 		LedgerSky::SunDirectionInSurface(System, Home, Anchor, Builder->GetWhenSeconds());
+	// The climb looks the other way: with the sun behind the camera. Faced
+	// into the sun, cloud seen from above is its shadowed side with a bright
+	// rim, and its shadow falls towards the lens -- which read as charcoal
+	// cloud over lit sand and was the framing, not the lighting (T094).
 	const FVector3d Bearing =
-		FVector3d(Sun.X, Sun.Y, 0.0).GetSafeNormal();
+		FVector3d(Sun.X, Sun.Y, 0.0).GetSafeNormal() * (bClimb ? -1.0 : 1.0);
 
 	FVector3d Toward;
 	if (View.AltitudeInRadii > 0.0)
