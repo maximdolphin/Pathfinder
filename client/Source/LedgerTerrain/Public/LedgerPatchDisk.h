@@ -85,7 +85,9 @@ namespace LedgerPatchDisk
 	/// 16: the scatter's cell hash is a full mixer; every cached patch's stones move.
 	/// 17: the moisture march follows the local wind at every step; climate,
 	/// biome weights and vertex colours move with it.
-	constexpr uint32 FormatVersion = 17;
+	/// 18: the march comes back along the path it went out on, so the
+	/// moisture it reports is this point's and not wherever it drifted to.
+	constexpr uint32 FormatVersion = 18;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

@@ -197,18 +197,26 @@ namespace LedgerClimate
 		const double ArcPerStep =
 			(UpwindFetchMetres / static_cast<double>(UpwindSteps)) / (Params.Radius / 100.0);
 
-		// Walk out against the wind first, then come back with it.
-		FVector3d Sample = UnitSphere;
+		// Walk out against the wind, then come back along the SAME path.
+		//
+		// It used to come back by stepping with the wind at each sample, which
+		// retraces the way out only where the wind does not turn. Where it does --
+		// near the poles, where east swings round in a few steps, and at a band
+		// edge -- the walk back ended somewhere else, and the moisture reported
+		// for this point was the air arriving at another one. The ranges whose lee
+		// read wetter than their windward side sat at 80-88 and 18-26 degrees.
+		FVector3d Path[UpwindSteps + 1];
+		Path[0] = UnitSphere;
 		for (int32 Step = 0; Step < UpwindSteps; ++Step)
 		{
-			Sample = StepAlong(Sample, -PrevailingWind(Sample), ArcPerStep);
+			Path[Step + 1] = StepAlong(Path[Step], -PrevailingWind(Path[Step]), ArcPerStep);
 		}
 
 		double Moisture = 0.5;
-		double PreviousAltitude = AltitudeMetres(Sample, Params);
-		for (int32 Step = 0; Step < UpwindSteps; ++Step)
+		double PreviousAltitude = AltitudeMetres(Path[UpwindSteps], Params);
+		for (int32 Step = UpwindSteps - 1; Step >= 0; --Step)
 		{
-			Sample = StepAlong(Sample, PrevailingWind(Sample), ArcPerStep);
+			const FVector3d& Sample = Path[Step];
 			const double Altitude = AltitudeMetres(Sample, Params);
 
 			if (Altitude <= 0.0)
