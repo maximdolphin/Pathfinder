@@ -172,4 +172,36 @@ namespace LedgerSurface
 		Instance->SetScalarParameterValue(TEXT("Roughness"), Roughness);
 		return Instance;
 	}
+
+	UMaterialInterface* CreateFoliageMaterial(UObject* Outer, const FLinearColor& Colour,
+		float Roughness)
+	{
+		// The same arrangement as the flat material: one baked parent, a
+		// dynamic instance per colour.
+		UMaterialInterface* Parent = LoadBaked(TEXT("M_Foliage"));
+
+#if WITH_EDITOR
+		if (Parent == nullptr)
+		{
+			UE_LOG(LogLedger, Warning,
+				TEXT("foliage material built in memory: no baked asset. It will "
+				     "not exist in a packaged build until the bake is run."));
+			Parent = BuildFoliageMaterial(Outer);
+		}
+#endif
+
+		if (Parent == nullptr)
+		{
+			return Fallback(TEXT("M_Foliage"));
+		}
+
+		UMaterialInstanceDynamic* Instance = UMaterialInstanceDynamic::Create(Parent, Outer);
+		if (Instance == nullptr)
+		{
+			return Parent;
+		}
+		Instance->SetVectorParameterValue(TEXT("Tint"), Colour);
+		Instance->SetScalarParameterValue(TEXT("Roughness"), Roughness);
+		return Instance;
+	}
 }

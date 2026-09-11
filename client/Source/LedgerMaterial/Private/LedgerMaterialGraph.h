@@ -39,6 +39,8 @@
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionSign.h"
 #include "Materials/MaterialExpressionVertexNormalWS.h"
+#include "Materials/MaterialExpressionCollectionParameter.h"
+#include "Materials/MaterialParameterCollection.h"
 
 namespace LedgerSurface
 {
@@ -68,6 +70,7 @@ namespace LedgerSurface
 	UMaterialInterface* BuildFlatMaterial(UObject* Outer);
 	UMaterialInterface* BuildCloudMaterial(UObject* Outer);
 	UMaterialInterface* BuildStarMaterial(UObject* Outer);
+	UMaterialInterface* BuildFoliageMaterial(UObject* Outer);
 
 	struct FGraph
 	{
@@ -402,6 +405,27 @@ namespace LedgerSurface
 			UMaterialExpressionScalarParameter* Node = Make<UMaterialExpressionScalarParameter>();
 			Node->ParameterName = ParameterName;
 			Node->DefaultValue = Default;
+			return Node;
+		}
+
+		/// A value read from a material parameter collection.
+		///
+		/// **By id, not only by name.** The node finds its parameter by the
+		/// parameter's GUID; the name is for people. Picking a parameter in the
+		/// editor fills both in, and a builder that sets only the name gets a
+		/// node the compiler rejects -- "CollectionParameter has invalid
+		/// parameter WindDirection" -- and the whole material falls back to
+		/// the engine default. That is what M_Foliage did on its first bake:
+		/// every canopy in the forest drawn with the default material.
+		UMaterialExpression* CollectionParameter(
+			UMaterialParameterCollection* Collection, const TCHAR* ParameterName)
+		{
+			UMaterialExpressionCollectionParameter* Node =
+				Make<UMaterialExpressionCollectionParameter>();
+			Node->Collection = Collection;
+			Node->ParameterName = ParameterName;
+			Node->ParameterId = Collection != nullptr
+				? Collection->GetParameterId(FName(ParameterName)) : FGuid();
 			return Node;
 		}
 

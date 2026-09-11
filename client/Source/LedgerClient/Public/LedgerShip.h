@@ -82,6 +82,11 @@ public:
 	void SetAutoThrottle(float Fraction) { AutoThrottle = FMath::Clamp(Fraction, 0.0f, 1.0f); }
 	FVector GetVelocity() const override { return Velocity; }
 
+	/// The wind the flight model was last handed, centimetres per second.
+	/// T093's proof reads it to show the ship flies in the same air as
+	/// everything else.
+	FVector3d LastWindCmPerSecond() const { return LastWind; }
+
 	/// Moves the chase camera. A negative arm length puts it ahead of the nose.
 	///
 	/// The default boom holds the camera fifty metres back and fifteen up,
@@ -122,6 +127,7 @@ private:
 	/// fixed rate whatever the frame rate is; this is what carries the
 	/// remainder across frames.
 	double PhysicsRemainder = 0.0;
+	FVector3d LastWind = FVector3d::ZeroVector;
 	bool bFlightEnabled = true;
 	bool bLanded = false;
 

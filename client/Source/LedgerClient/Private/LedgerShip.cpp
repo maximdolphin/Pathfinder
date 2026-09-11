@@ -303,6 +303,7 @@ void ALedgerShip::Integrate(float DeltaSeconds)
 		if (const ULedgerWind* Wind = World->GetSubsystem<ULedgerWind>())
 		{
 			Field.WindCmPerSecond = FVector3d(Wind->WindAt(GetActorLocation()));
+			LastWind = Field.WindCmPerSecond;
 		}
 	}
 

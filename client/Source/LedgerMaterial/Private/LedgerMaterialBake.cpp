@@ -20,6 +20,7 @@
 #include "LedgerMaterialGraph.h"
 #include "LedgerLog.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialParameterCollection.h"
 #include "HAL/FileManager.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
@@ -100,6 +101,76 @@ namespace LedgerSurface
 		}
 	}
 
+	namespace
+	{
+		/// The wind collection. T093.
+		///
+		/// Not a material, but it lives with them and has to be saved before
+		/// any of them, because the cloud and foliage graphs reference it by
+		/// path at the moment they are built -- a material baked against a
+		/// collection that did not exist yet has no wind in it and never will.
+		/// It was never saved at all until this, and every run said so.
+		bool SaveWindCollection(FString& Line)
+		{
+			const TCHAR* Name = TEXT("MPC_LedgerWind");
+			const FString PackageName = PackagePathFor(Name);
+			const FString FileName = FPackageName::LongPackageNameToFilename(
+				PackageName, FPackageName::GetAssetPackageExtension());
+
+			UPackage* Package = CreatePackage(*PackageName);
+			UMaterialParameterCollection* Collection =
+				FindObject<UMaterialParameterCollection>(Package, Name);
+			if (Collection == nullptr)
+			{
+				Collection = NewObject<UMaterialParameterCollection>(
+					Package, FName(Name), RF_Public | RF_Standalone);
+			}
+
+			// What ULedgerWind::Publish writes, by the names it writes them
+			// under: a world-space unit vector and a speed in metres per
+			// second. Direction and speed apart because a material bending
+			// grass wants the one and a material choosing a rustle wants the
+			// other, and normalising in a shader is a waste.
+			Collection->VectorParameters.Reset();
+			Collection->ScalarParameters.Reset();
+			// **Ids from the names, not fresh ones.** A material's collection
+			// node is bound to the parameter's GUID, and a parameter
+			// constructed here gets a new random one -- so every re-bake of
+			// the collection would orphan every material baked against the
+			// last. Deterministic ids make a re-bake the same asset.
+			FCollectionVectorParameter Direction;
+			Direction.ParameterName = TEXT("WindDirection");
+			Direction.Id = FGuid::NewDeterministicGuid(TEXT("MPC_LedgerWind.WindDirection"));
+			Direction.DefaultValue = FLinearColor(1.0f, 0.0f, 0.0f, 0.0f);
+			Collection->VectorParameters.Add(Direction);
+			FCollectionScalarParameter Speed;
+			Speed.ParameterName = TEXT("WindSpeed");
+			Speed.Id = FGuid::NewDeterministicGuid(TEXT("MPC_LedgerWind.WindSpeed"));
+			Speed.DefaultValue = 0.0f;
+			Collection->ScalarParameters.Add(Speed);
+			Collection->PostEditChange();
+
+			FMetaData& MetaData = Package->GetMetaData();
+			MetaData.SetValue(Collection, TEXT("Ledger.Generator"),
+				TEXT("LedgerMaterial::BakeMaterials"));
+			MetaData.SetValue(Collection, TEXT("Ledger.Source"), Name);
+
+			FAssetRegistryModule::AssetCreated(Collection);
+			Package->MarkPackageDirty();
+			IFileManager::Get().Delete(*FileName, false, true, true);
+
+			FSavePackageArgs Args;
+			Args.TopLevelFlags = RF_Public | RF_Standalone;
+			const FSavePackageResultStruct Result =
+				UPackage::Save(Package, Collection, *FileName, Args);
+			Line = Result.IsSuccessful()
+				? FString::Printf(TEXT("  %-14s %s"), Name, *PackageName)
+				: FString::Printf(TEXT("  %-14s FAILED: save returned %d"),
+					Name, static_cast<int32>(Result.Result));
+			return Result.IsSuccessful();
+		}
+	}
+
 	bool BakeMaterials(FString& Report)
 	{
 		int32 Saved = 0;
@@ -118,6 +189,17 @@ namespace LedgerSurface
 			Lines.Add(Line);
 		};
 
+		// The collection before anything that reads it.
+		{
+			++Attempted;
+			FString Line;
+			if (SaveWindCollection(Line))
+			{
+				++Saved;
+			}
+			Lines.Add(Line);
+		}
+
 		// The seed only affects the generated detail textures, which the terrain
 		// material no longer uses -- it samples the imported scans. Passed for
 		// signature compatibility and pinned so a re-bake is reproducible.
@@ -131,6 +213,7 @@ namespace LedgerSurface
 		Record(TEXT("M_Flat"), [](UObject* Outer) { return BuildFlatMaterial(Outer); });
 		Record(TEXT("M_Clouds"), [](UObject* Outer) { return BuildCloudMaterial(Outer); });
 		Record(TEXT("M_Star"), [](UObject* Outer) { return BuildStarMaterial(Outer); });
+		Record(TEXT("M_Foliage"), [](UObject* Outer) { return BuildFoliageMaterial(Outer); });
 
 		Report = TEXT("Baked materials.\n\n");
 		for (const FString& Line : Lines)

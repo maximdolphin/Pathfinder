@@ -642,6 +642,18 @@ public:
 	void SetScatterMeshes(
 		const TArray<UStaticMesh*>& Meshes, class UMaterialInterface* Material = nullptr);
 
+	/// Throw the terrain away and grow it again from whatever the properties
+	/// now say. ADR-0006 and T088.
+	///
+	/// **The planet is placed in the level, so it is never destroyed.** A
+	/// crossing to another body used to destroy this actor and spawn a
+	/// replacement; with the planet a real actor in the map, that would be
+	/// deleting part of the level at runtime. So a body switch sets the new
+	/// radius, relief, seed and materials and calls this, and the same actor
+	/// becomes the new world. The section pool is kept -- three thousand six
+	/// hundred components are not re-created, only emptied.
+	void Rebuild();
+
 private:
 	UPROPERTY()
 	TObjectPtr<USceneComponent> Root;
@@ -785,6 +797,11 @@ private:
 	double NextTraceAt = 0.0;
 
 	void BuildRoots();
+
+	/// Everything BeginPlay did after the engine's part, so a rebuild can do it
+	/// again, and everything EndPlay undid, so a rebuild can undo it first.
+	void SetUp();
+	void TearDown();
 	void UpdateTree(FLedgerQuadNode& Node, const FVector3d& CameraLocal, const FVector3d& LeadLocal, double ViewportWidth, double FovRadians, bool bForceCollapse);
 	/// Collects the nodes that need geometry, and marks the urgent ones: leaves
 	/// with nothing standing in for them (holes), and the resident shell, which

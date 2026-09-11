@@ -2,6 +2,9 @@
 
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
+#include "Components/DirectionalLightComponent.h"
+#include "Engine/DirectionalLight.h"
+#include "EngineUtils.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "HAL/PlatformMisc.h"
@@ -205,6 +208,48 @@ void ULedgerFrontWatch::Tick(float DeltaSeconds)
 	if (bAimed)
 	{
 		const int32 Which = Step - 1;
+
+		// **Where the light is, measured at the moment the picture is taken.**
+		// A town that came back as black silhouettes under a white sky was
+		// argued about as materials, normals, distance fields and mobility in
+		// turn; this says what the frame was actually lit by. The camera is
+		// meant to face away from the sun, so the angle between its view and
+		// the sun should be near 180, and each directional light should point
+		// the way the ephemeris does.
+		if (ULedgerWorldBuilder* Builder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>())
+		{
+			const double When = Builder->GetWhenSeconds();
+			const FVector3d SunSurface =
+				LedgerSky::SunDirectionInSurface(System, Home, Anchor, When);
+			const FVector3d SunWorld =
+				LedgerFrames::ToBody({ Home, Anchor, SunSurface }).Metres.GetSafeNormal();
+			const FVector3d Forward = Camera != nullptr
+				? FVector3d(Camera->GetActorForwardVector()) : FVector3d::ZeroVector;
+			UE_LOG(LogLedger, Log,
+				TEXT("front light: sun %.1f deg above the horizon, %.0f deg from "
+					 "the camera's view (180 is behind it)"),
+				FMath::RadiansToDegrees(LedgerSky::SolarAltitude(System, Home, Anchor, When)),
+				FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(
+					FVector3d::DotProduct(Forward, SunWorld), -1.0, 1.0))));
+			for (TActorIterator<ADirectionalLight> It(GetWorld()); It; ++It)
+			{
+				const UDirectionalLightComponent* Light =
+					Cast<UDirectionalLightComponent>(It->GetLightComponent());
+				// A directional light shines along its forward vector, so the
+				// direction towards its source is the negative of that.
+				const FVector3d Towards = -FVector3d(It->GetActorForwardVector());
+				UE_LOG(LogLedger, Log,
+					TEXT("front light: %s points %.1f deg from the ephemeris sun, "
+						 "intensity %.0f, visible %d, affects world %d"),
+					*It->GetActorLabel(),
+					FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(
+						FVector3d::DotProduct(Towards, SunWorld), -1.0, 1.0))),
+					Light != nullptr ? Light->Intensity : -1.0f,
+					Light != nullptr ? static_cast<int32>(Light->IsVisible()) : -1,
+					Light != nullptr ? static_cast<int32>(Light->bAffectsWorld) : -1);
+			}
+		}
+
 		const FString Path = FPaths::ConvertRelativePathToFull(
 			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 				FString::Printf(TEXT("front-%d-%s.png"),

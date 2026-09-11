@@ -125,6 +125,7 @@ void ULedgerPrecipitationView::Tick(float DeltaSeconds)
 		return;
 	}
 	const FVector3d Up = Offset / DistanceCm;
+	LastWind = Wind->WindAtMetres(Eye);
 	const double Altitude = FMath::Max(
 		(DistanceCm - Planet->SurfaceRadiusAt(Up)) / PrecipCentimetresPerMetre, 0.0);
 

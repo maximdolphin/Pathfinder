@@ -17,7 +17,8 @@
 struct FLedgerMeshBuilder;
 
 class ALedgerPlanet;
-class UProceduralMeshComponent;
+class UHierarchicalInstancedStaticMeshComponent;
+class UStaticMeshComponent;
 
 UCLASS()
 class LEDGERCLIENT_API ALedgerSettlement : public AActor
@@ -47,6 +48,17 @@ public:
 
 	FVector GetPadLocation() const { return PadLocation; }
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	/// Where the vane points, degrees clockwise from north: the way the air
+	/// is going. T093's settlement consumer.
+	double VaneBearingDegrees() const { return VaneBearing; }
+
+	/// The wind the vane last read, metres per second in world space, and
+	/// where it read it. The proof compares this against the field.
+	FVector3d VaneWindMetres() const { return LastVaneWind; }
+	FVector VaneLocation() const;
+
 public:
 	/// One tree at the origin, unit scale, +Z up. Static, because the mesh bake
 	/// runs before any settlement exists. `bAltCanopy` picks the lower cone's
@@ -55,8 +67,28 @@ public:
 	/// can give the trunk and the canopy a material slot each.
 	static int32 DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCanopy);
 
+	/// One building at unit size: a hundred-centimetre box standing on the
+	/// origin, with a roof cap overhanging it by four per cent. Every building
+	/// in the town is this mesh, scaled per instance, so the walls are slot 0
+	/// and the roof slot 1 and the colour is the material's. Returns where the
+	/// roof starts, in triangles.
+	static int32 DescribeBuilding(FLedgerMeshBuilder& Builder);
+
+	/// The landing pad at its real size, centred on the origin with +Z up:
+	/// the slab in slot 0 and its two stripes in slot 1. Returns where the
+	/// stripes start, in triangles.
+	static int32 DescribePad(FLedgerMeshBuilder& Builder);
+
+	/// How many wall colours the town has, and so how many instanced building
+	/// components: an instance cannot carry its own colour through the flat
+	/// material, so a colour is a component.
+	static constexpr int32 WallVariants = 5;
+
 private:
 	void PlaceTrees();
+
+	/// Loads the baked building and pad meshes and hands them their instances.
+	void PlaceBuildings(const FTransform& PadTransform);
 
 	/// Where trees go, gathered during placement and handed to the instanced
 	/// components in one call. Split by canopy variant.
@@ -65,11 +97,44 @@ private:
 	UPROPERTY()
 	TObjectPtr<class UHierarchicalInstancedStaticMeshComponent> TreeInstances[2];
 
+	/// Where the town hangs. A plain scene component: nothing in the town is
+	/// generated geometry any more, so there is nothing for a root to draw.
 	UPROPERTY()
-	TObjectPtr<UProceduralMeshComponent> Structures;
+	TObjectPtr<USceneComponent> Root;
+
+	/// The buildings, one instanced component per wall colour, drawing the
+	/// baked SM_Building. ADR-0006: this was a procedural mesh rebuilt on the
+	/// game thread each launch, with no Nanite, no distance field for Lumen and
+	/// no instancing.
+	UPROPERTY()
+	TObjectPtr<UHierarchicalInstancedStaticMeshComponent> Buildings[WallVariants];
+
+	/// The landing pad, the baked SM_Pad. It carries collision, because the
+	/// ship lands on it.
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> Pad;
+
+	/// **A wind vane at the pad.** The one thing on the town the wind moves,
+	/// and so the settlement layer's reading of the one wind: a pole and a
+	/// streamer, both the baked building box scaled, turned each tick to
+	/// stream downwind from whatever ULedgerWind says is blowing where it
+	/// stands. The same number the ship's drag, the grass, the rain and the
+	/// audio are reading.
+	UPROPERTY()
+	TObjectPtr<UStaticMeshComponent> VanePole;
 
 	UPROPERTY()
-	TObjectPtr<UProceduralMeshComponent> Foliage;
+	TObjectPtr<UStaticMeshComponent> Vane;
+
+	FVector3d VaneUp = FVector3d::UnitZ();
+	FVector3d VaneNorth = FVector3d::UnitY();
+	FVector3d VaneEast = FVector3d::UnitX();
+	FVector VaneTop = FVector::ZeroVector;
+	double VaneBearing = 0.0;
+	FVector3d LastVaneWind = FVector3d::ZeroVector;
+
+	/// Where buildings go, gathered during layout and handed over in one call.
+	TArray<FTransform> BuildingTransforms[WallVariants];
 
 	UPROPERTY()
 	TObjectPtr<ALedgerPlanet> Planet;

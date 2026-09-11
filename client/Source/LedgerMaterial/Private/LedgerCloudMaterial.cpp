@@ -227,15 +227,12 @@ namespace LedgerSurface
 			LoadObject<UMaterialParameterCollection>(
 				nullptr, TEXT("/Game/Materials/MPC_LedgerWind")))
 		{
-			UMaterialExpressionCollectionParameter* WindDirection =
-				Graph.Make<UMaterialExpressionCollectionParameter>();
-			WindDirection->Collection = Collection;
-			WindDirection->ParameterName = TEXT("WindDirection");
-
-			UMaterialExpressionCollectionParameter* WindSpeed =
-				Graph.Make<UMaterialExpressionCollectionParameter>();
-			WindSpeed->Collection = Collection;
-			WindSpeed->ParameterName = TEXT("WindSpeed");
+			// Same fault as the foliage had, never seen here only because
+			// until the collection was baked this branch never ran.
+			UMaterialExpression* WindDirection =
+				Graph.CollectionParameter(Collection, TEXT("WindDirection"));
+			UMaterialExpression* WindSpeed =
+				Graph.CollectionParameter(Collection, TEXT("WindSpeed"));
 
 			// Metres per second into centimetres per second, which is the frame
 			// the position is in.

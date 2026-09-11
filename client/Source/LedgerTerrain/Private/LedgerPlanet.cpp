@@ -1,5 +1,7 @@
 #include "LedgerPlanet.h"
 
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
+
 #include "Async/Async.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -81,6 +83,19 @@ void ALedgerPlanet::InvalidateTerrain()
 void ALedgerPlanet::BeginPlay()
 {
 	Super::BeginPlay();
+	SetUp();
+}
+
+void ALedgerPlanet::Rebuild()
+{
+	TearDown();
+	SetUp();
+	UE_LOG(LogLedger, Log, TEXT("planet rebuilt in place: radius %.0f km, seed %d"),
+		Radius / 100000.0, Seed);
+}
+
+void ALedgerPlanet::SetUp()
+{
 
 	// Materials arrive from whoever spawned this actor rather than being built
 	// here. That is one line of wiring at the composition root against a module
@@ -157,12 +172,21 @@ void ALedgerPlanet::BeginPlay()
 	UE_LOG(LogLedger, Log, TEXT("terrain component type: %s (pool %d)"),
 		LedgerTerrain::PatchComponentName(ComponentKind), PoolSize);
 
-	MeshPool.Reserve(PoolSize);
-	FreeSections.Reserve(PoolSize);
-	for (int32 Index = 0; Index < PoolSize; ++Index)
+	// Made once for the life of the actor. A rebuild finds the pool already
+	// there and only hands every section back.
+	if (MeshPool.Num() == 0)
 	{
-		SectionMeta.AddDefaulted();
-		MeshPool.Add(LedgerTerrain::MakePatchComponent(*this, ComponentKind));
+		MeshPool.Reserve(PoolSize);
+		for (int32 Index = 0; Index < PoolSize; ++Index)
+		{
+			MeshPool.Add(LedgerTerrain::MakePatchComponent(*this, ComponentKind));
+		}
+	}
+	SectionMeta.Reset();
+	SectionMeta.SetNum(MeshPool.Num());
+	FreeSections.Reset(MeshPool.Num());
+	for (int32 Index = 0; Index < MeshPool.Num(); ++Index)
+	{
 		FreeSections.Add(Index);
 	}
 
@@ -196,6 +220,12 @@ void ALedgerPlanet::BeginPlay()
 
 void ALedgerPlanet::EndPlay(const EEndPlayReason::Type Reason)
 {
+	TearDown();
+	Super::EndPlay(Reason);
+}
+
+void ALedgerPlanet::TearDown()
+{
 	// Jobs hold a shared reference to their own state, so they finish harmlessly
 	// after teardown — but nothing should be waiting on them.
 	for (TPair<uint64, FLedgerPatchJobRef>& Entry : InFlight)
@@ -214,7 +244,34 @@ void ALedgerPlanet::EndPlay(const EEndPlayReason::Type Reason)
 	}
 	ConsoleCommands.Empty();
 
-	Super::EndPlay(Reason);
+	// **Every section empty and hidden, and the tree gone.** A section left
+	// holding the last body's geometry is a mountain from one world hanging in
+	// the sky of the next, until the streamer happens to reuse that slot.
+	for (UMeshComponent* Mesh : MeshPool)
+	{
+		if (UProceduralMeshComponent* Procedural = Cast<UProceduralMeshComponent>(Mesh))
+		{
+			Procedural->ClearAllMeshSections();
+		}
+		if (Mesh != nullptr)
+		{
+			Mesh->SetVisibility(false);
+			Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+	for (UHierarchicalInstancedStaticMeshComponent* Scatter : ScatterComponents)
+	{
+		if (Scatter != nullptr)
+		{
+			Scatter->ClearInstances();
+		}
+	}
+	Roots.Reset();
+	ActiveSections.Empty();
+	LiveScatter.Empty();
+	PaletteInstances.Empty();
+	SurfaceInstance = nullptr;
+	Stats = FLedgerTerrainStats();
 }
 
 void ALedgerPlanet::Tick(float DeltaSeconds)

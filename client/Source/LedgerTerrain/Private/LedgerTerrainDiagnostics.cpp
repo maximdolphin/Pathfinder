@@ -9,6 +9,34 @@
 
 #include "HAL/PlatformMemory.h"
 
+#if PLATFORM_WINDOWS
+#include "Windows/WindowsHWrapper.h"
+#endif
+
+namespace
+{
+	/// Bytes the system can still commit, which is what an allocation failure
+	/// is about. **Not the same as free physical memory**, and the first
+	/// version of this reported that one under this one's name: with a game
+	/// running alongside, physical memory ran under two gigabytes on every run
+	/// while twenty-seven gigabytes of commit were still free, and the warning
+	/// cried wolf nineteen times a run. Windows fails an allocation when commit
+	/// runs out -- "the paging file is too small" -- and pages happily until
+	/// then.
+	uint64 CommitHeadroomBytes(const FPlatformMemoryStats& Fallback)
+	{
+#if PLATFORM_WINDOWS
+		MEMORYSTATUSEX Status;
+		Status.dwLength = sizeof(Status);
+		if (::GlobalMemoryStatusEx(&Status))
+		{
+			return Status.ullAvailPageFile;
+		}
+#endif
+		return Fallback.AvailablePhysical;
+	}
+}
+
 void ALedgerPlanet::LogStats() const
 {
 	UE_LOG(LogLedger, Log, TEXT("=== TERRAIN (design §6.8 / §15.1 spike) ==="));
@@ -55,12 +83,13 @@ void ALedgerPlanet::LogStats() const
 	// reached, which can happen with gigabytes of physical memory still free,
 	// so that is the number worth watching.
 	const FPlatformMemoryStats Memory = FPlatformMemory::GetStats();
+	const uint64 Commit = CommitHeadroomBytes(Memory);
 	constexpr double ToMB = 1.0 / (1024.0 * 1024.0);
 	UE_LOG(LogLedger, Log,
 		TEXT("  memory             %.0f MB used, %.0f MB peak, %.0f MB virtual, "
-		     "%.0f MB available"),
+		     "%.0f MB commit free, %.0f MB physical free"),
 		Memory.UsedPhysical * ToMB, Memory.PeakUsedPhysical * ToMB,
-		Memory.UsedVirtual * ToMB, Memory.AvailablePhysical * ToMB);
+		Memory.UsedVirtual * ToMB, Commit * ToMB, Memory.AvailablePhysical * ToMB);
 
 	// **Say it before it is fatal.** Running out of commit does not arrive as a
 	// diagnosis: it arrives as an access violation in whichever allocation
@@ -71,12 +100,12 @@ void ALedgerPlanet::LogStats() const
 	// machine whose page file is not large. One line, ten seconds before the
 	// bang, is the difference between a mystery and a known cost.
 	constexpr uint64 LowWaterBytes = 2ull * 1024 * 1024 * 1024;
-	if (Memory.AvailablePhysical < LowWaterBytes)
+	if (Commit < LowWaterBytes)
 	{
 		UE_LOG(LogLedger, Warning,
-			TEXT("  memory             only %.0f MB left to allocate; an "
+			TEXT("  memory             only %.0f MB of commit left; an "
 			     "allocation failure now would surface as a crash somewhere "
 			     "unrelated"),
-			Memory.AvailablePhysical * ToMB);
+			Commit * ToMB);
 	}
 }

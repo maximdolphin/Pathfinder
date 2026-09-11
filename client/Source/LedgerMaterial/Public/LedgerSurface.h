@@ -52,6 +52,12 @@ namespace LedgerSurface
 	/// A plain lit material of a given colour, for the buildings and trees.
 	LEDGERMATERIAL_API UMaterialInterface* CreateFlatMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
 
+	/// The flat material, leaning with the wind. T093's vegetation consumer:
+	/// it reads /Game/Materials/MPC_LedgerWind, the collection ULedgerWind
+	/// publishes every tick, so a canopy bends by what the flight model and the
+	/// audio are also being told.
+	LEDGERMATERIAL_API UMaterialInterface* CreateFoliageMaterial(UObject* Outer, const FLinearColor& Colour, float Roughness);
+
 	/// The sea. Depth-tinted from vertex alpha, Fresnel toward a sky-facing
 	/// tint at grazing angles, and smooth enough that screen-space reflections
 	/// have something to work with.

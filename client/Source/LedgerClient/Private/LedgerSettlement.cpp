@@ -4,12 +4,14 @@
 #include "LedgerPlanet.h"
 #include "LedgerLog.h"
 #include "LedgerSurface.h"
+#include "LedgerWind.h"
+#include "Engine/World.h"
 #include "LedgerTerrainMath.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Rendering/StaticMeshVertexBuffer.h"
 #include "LedgerMeshBake.h"
-#include "ProceduralMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 namespace
 {
@@ -51,29 +53,47 @@ namespace
 
 ALedgerSettlement::ALedgerSettlement()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// Ticks for the vane and nothing else.
+	PrimaryActorTick.bCanEverTick = true;
 
-	Structures = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Structures"));
-	SetRootComponent(Structures);
-	// The town is small and static: one cook, at build time, is affordable and
-	// means the ship can actually land on the pad.
-	Structures->bUseAsyncCooking = true;
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	SetRootComponent(Root);
 
-	Foliage = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Foliage"));
-
-	// Two instanced components replace the merged foliage mesh above, which is
-	// kept only so an unbaked clone still shows nothing rather than crashing.
 	const TCHAR* InstanceNames[2] = { TEXT("TreesA"), TEXT("TreesB") };
 	for (int32 Variant = 0; Variant < 2; ++Variant)
 	{
 		TreeInstances[Variant] = CreateDefaultSubobject<
 			UHierarchicalInstancedStaticMeshComponent>(InstanceNames[Variant]);
-		TreeInstances[Variant]->SetupAttachment(Structures);
+		TreeInstances[Variant]->SetupAttachment(Root);
 		TreeInstances[Variant]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		TreeInstances[Variant]->SetCastShadow(true);
 	}
-	Foliage->SetupAttachment(Structures);
-	Foliage->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Buildings and the pad block, because a ship has to be able to land on
+	// the one and not fly through the other -- the procedural mesh these
+	// replace cooked its collision at build time for the same reason.
+	for (int32 Variant = 0; Variant < WallVariants; ++Variant)
+	{
+		Buildings[Variant] = CreateDefaultSubobject<
+			UHierarchicalInstancedStaticMeshComponent>(
+				*FString::Printf(TEXT("Buildings%d"), Variant));
+		Buildings[Variant]->SetupAttachment(Root);
+		Buildings[Variant]->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+		Buildings[Variant]->SetCastShadow(true);
+	}
+	Pad = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pad"));
+	Pad->SetupAttachment(Root);
+	Pad->SetMobility(EComponentMobility::Movable);
+	Pad->SetCollisionProfileName(UCollisionProfile::BlockAll_ProfileName);
+
+	for (TObjectPtr<UStaticMeshComponent>* Part : { &VanePole, &Vane })
+	{
+		*Part = CreateDefaultSubobject<UStaticMeshComponent>(
+			Part == &VanePole ? TEXT("VanePole") : TEXT("Vane"));
+		(*Part)->SetupAttachment(Root);
+		(*Part)->SetMobility(EComponentMobility::Movable);
+		(*Part)->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void ALedgerSettlement::SurfaceFrame(
@@ -150,6 +170,181 @@ int32 ALedgerSettlement::DescribeTree(FLedgerMeshBuilder& Builder, bool bAltCano
 }
 
 
+FVector ALedgerSettlement::VaneLocation() const
+{
+	return VaneTop;
+}
+
+void ALedgerSettlement::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	const UWorld* World = GetWorld();
+	const ULedgerWind* Wind = World != nullptr ? World->GetSubsystem<ULedgerWind>() : nullptr;
+	if (Wind == nullptr || Vane == nullptr || Vane->GetStaticMesh() == nullptr)
+	{
+		return;
+	}
+
+	// **Every tick, from the one wind.** The vane reads the field where it
+	// stands, twelve metres up, and keeps nothing of its own -- so it cannot
+	// lag behind a change or disagree with anything else about what the air
+	// is doing.
+	LastVaneWind = Wind->WindAtMetres(VaneTop);
+	const FVector3d Across = LastVaneWind - VaneUp * FVector3d::DotProduct(LastVaneWind, VaneUp);
+	if (Across.Length() < 0.1)
+	{
+		// Calm: a vane in still air points wherever it last pointed.
+		return;
+	}
+	const FVector3d Downwind = Across.GetSafeNormal();
+	VaneBearing = FMath::Fmod(FMath::RadiansToDegrees(FMath::Atan2(
+		FVector3d::DotProduct(Downwind, VaneEast),
+		FVector3d::DotProduct(Downwind, VaneNorth))) + 360.0, 360.0);
+
+	// The streamer's long axis along the wind, hung off the pole's top so it
+	// trails downwind of it rather than being skewered through the middle.
+	const FQuat Heading = FRotationMatrix::MakeFromXZ(
+		FVector(Downwind), FVector(VaneUp)).ToQuat();
+	Vane->SetWorldTransform(FTransform(Heading,
+		VaneTop + FVector(Downwind) * 150.0 - FVector(VaneUp) * 30.0,
+		FVector(3.0, 0.08, 0.6)));
+}
+
+int32 ALedgerSettlement::DescribeBuilding(FLedgerMeshBuilder& Builder)
+{
+	// White: the colour is the material's tint, one component per wall colour.
+	// Per-vertex colour would not survive the trip onto an instanced component,
+	// which three hundred and forty-two black trees already established.
+	Builder.AddBox(FTransform(FVector(0.0, 0.0, 50.0)),
+		FVector(50.0, 50.0, 50.0), FColor::White);
+
+	const int32 RoofStartsAt = Builder.Triangles.Num() / 3;
+
+	// The cap the procedural town had: eight per cent wider than the walls.
+	// Its thickness now scales with the building, four per cent of the height
+	// -- thirty-six centimetres on the lowest and a metre and a quarter on the
+	// tallest, where it was a fixed metre and twenty before.
+	Builder.AddBox(FTransform(FVector(0.0, 0.0, 102.0)),
+		FVector(54.0, 54.0, 2.0), FColor::White);
+	return RoofStartsAt;
+}
+
+int32 ALedgerSettlement::DescribePad(FLedgerMeshBuilder& Builder)
+{
+	constexpr double PadHalf = 2600.0;   // 52 m square
+	constexpr double PadThickness = 120.0;
+
+	// Sunk slightly, so uneven ground under it does not show a gap at the rim.
+	Builder.AddBox(FTransform(FVector(0.0, 0.0, -PadThickness * 0.4)),
+		FVector(PadHalf, PadHalf, PadThickness), FColor::White);
+
+	const int32 StripesStartAt = Builder.Triangles.Num() / 3;
+
+	// Two stripes, so it reads as a pad rather than a slab.
+	for (int32 Stripe = -1; Stripe <= 1; Stripe += 2)
+	{
+		Builder.AddBox(
+			FTransform(FVector(0.0, Stripe * PadHalf * 0.55, PadThickness * 0.62)),
+			FVector(PadHalf * 0.78, 90.0, 16.0), FColor::White);
+	}
+	return StripesStartAt;
+}
+
+namespace
+{
+	/// Straight 0-1, not through FLinearColor(FColor).
+	///
+	/// These colours were authored for the procedural mesh, whose vertex
+	/// colours reach the shader undecoded. FLinearColor(FColor) applies the
+	/// sRGB decode and would darken every wall by a factor of three or more,
+	/// so the town that came out of the bake would not be the town that went
+	/// in.
+	FLinearColor SettlementTint(const FColor& Colour)
+	{
+		return FLinearColor(Colour.R / 255.0f, Colour.G / 255.0f,
+			Colour.B / 255.0f, 1.0f);
+	}
+
+	UStaticMesh* SettlementMesh(const TCHAR* Name)
+	{
+		const FString Path = FString::Printf(TEXT("%s%s.%s"),
+			LedgerMesh::MeshPackageRoot, Name, Name);
+		UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, *Path);
+		if (Mesh == nullptr)
+		{
+			UE_LOG(LogLedger, Error,
+				TEXT("no baked mesh at %s. Run: UnrealEditor.exe <project> -game -bakemeshes"),
+				*Path);
+		}
+		return Mesh;
+	}
+}
+
+void ALedgerSettlement::PlaceBuildings(const FTransform& PadTransform)
+{
+	UStaticMesh* Building = SettlementMesh(TEXT("SM_Building"));
+	UStaticMesh* PadMesh = SettlementMesh(TEXT("SM_Pad"));
+
+	UMaterialInterface* Roof = LedgerSurface::CreateFlatMaterial(
+		this, SettlementTint(RoofColour), 0.82f);
+	int32 Count = 0;
+	for (int32 Variant = 0; Variant < WallVariants; ++Variant)
+	{
+		UHierarchicalInstancedStaticMeshComponent* Component = Buildings[Variant];
+		if (Component == nullptr)
+		{
+			continue;
+		}
+		Component->ClearInstances();
+		if (Building == nullptr)
+		{
+			continue;
+		}
+		Component->SetStaticMesh(Building);
+		Component->SetMaterial(0, LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(WallColours[Variant]), 0.82f));
+		Component->SetMaterial(1, Roof);
+		Component->AddInstances(BuildingTransforms[Variant],
+			/*bShouldReturnIndices*/ false, /*bWorldSpace*/ true);
+		Count += Component->GetInstanceCount();
+	}
+
+	if (Pad != nullptr && PadMesh != nullptr)
+	{
+		Pad->SetStaticMesh(PadMesh);
+		Pad->SetWorldTransform(PadTransform);
+		Pad->SetMaterial(0, LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(PadColour), 0.82f));
+		Pad->SetMaterial(1, LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(PadStripe), 0.82f));
+	}
+
+	// The vane: a twelve-metre pole just off the pad's corner and a
+	// three-metre streamer at its top, both the unit building box scaled.
+	if (Building != nullptr && VanePole != nullptr && Vane != nullptr)
+	{
+		const FVector Base = VaneTop - FVector(VaneUp) * 1200.0;
+		VanePole->SetStaticMesh(Building);
+		VanePole->SetWorldTransform(FTransform(
+			FRotationMatrix::MakeFromZX(FVector(VaneUp), FVector(VaneNorth)).ToQuat(),
+			Base, FVector(0.25, 0.25, 12.0)));
+		VanePole->SetMaterial(0, LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(RoofColour), 0.6f));
+		VanePole->SetMaterial(1, LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(RoofColour), 0.6f));
+		Vane->SetStaticMesh(Building);
+		UMaterialInterface* Streamer = LedgerSurface::CreateFlatMaterial(
+			this, SettlementTint(PadStripe), 0.7f);
+		Vane->SetMaterial(0, Streamer);
+		Vane->SetMaterial(1, Streamer);
+	}
+
+	UE_LOG(LogLedger, Log, TEXT("buildings: %d instances of %s across %d colours, pad %s"),
+		Count, Building != nullptr ? *Building->GetName() : TEXT("<none>"),
+		WallVariants, PadMesh != nullptr ? *PadMesh->GetName() : TEXT("<none>"));
+}
+
 // The instances, into two hierarchical instanced components.
 //
 // Hierarchical rather than plain instanced: it builds a cluster tree, so three
@@ -224,37 +419,33 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 	const FVector3d North = FVector3d::CrossProduct(East, SiteDirection).GetSafeNormal();
 
 	FScatterRandom Random(InSeed ^ 0x70770000u);
-	FLedgerMeshBuilder Town;
 	const double BuildStarted = FPlatformTime::Seconds();
 	TreeTransforms[0].Reset();
 	TreeTransforms[1].Reset();
+	for (TArray<FTransform>& Transforms : BuildingTransforms)
+	{
+		Transforms.Reset();
+	}
 
 	// ---- landing pad ----------------------------------------------------
 	FVector PadCentre;
 	FVector PadUp;
 	SurfaceFrame(SiteDirection, East, North, 0.0, 0.0, PadCentre, PadUp);
 
+	// Where the vane stands: just off the pad's north-east corner.
 	{
-		const FQuat PadRotation = FRotationMatrix::MakeFromZX(PadUp, FVector(North)).ToQuat();
-		constexpr double PadHalf = 2600.0;   // 52 m square
-		constexpr double PadThickness = 120.0;
-
-		// Sunk slightly, so uneven ground under it does not show a gap at the rim.
-		Town.AddBox(
-			FTransform(PadRotation, PadCentre - PadUp * (PadThickness * 0.4)),
-			FVector(PadHalf, PadHalf, PadThickness),
-			PadColour);
-
-		// Two stripes, so it reads as a pad rather than a slab.
-		for (int32 Stripe = -1; Stripe <= 1; Stripe += 2)
-		{
-			Town.AddBox(
-				FTransform(PadRotation, PadCentre + PadUp * (PadThickness * 0.62)
-					+ FVector(East) * (Stripe * PadHalf * 0.55)),
-				FVector(PadHalf * 0.78, 90.0, 16.0),
-				PadStripe);
-		}
+		FVector VaneGround;
+		FVector VaneSurfaceUp;
+		SurfaceFrame(SiteDirection, East, North, 3400.0, 3400.0, VaneGround, VaneSurfaceUp);
+		VaneUp = FVector3d(VaneSurfaceUp);
+		VaneEast = East;
+		VaneNorth = North;
+		VaneTop = VaneGround + VaneSurfaceUp * 1200.0;
 	}
+
+	// A transform, not geometry: the shape is the baked SM_Pad.
+	const FTransform PadTransform(
+		FRotationMatrix::MakeFromZX(PadUp, FVector(North)).ToQuat(), PadCentre);
 	PadLocation = PadCentre + PadUp * 400.0;
 
 	// ---- buildings ------------------------------------------------------
@@ -302,16 +493,13 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 				// daylight under a wall.
 				const FVector Base = Location - Up * 260.0;
 
-				Town.AddBox(
-					FTransform(Rotation, Base + Up * (Height * 0.5)),
-					FVector(Depth, Width, Height * 0.5),
-					WallColours[Random.Below(5)]);
-
-				// A flat roof cap, slightly overhanging.
-				Town.AddBox(
-					FTransform(Rotation, Base + Up * (Height + 60.0)),
-					FVector(Depth * 1.08, Width * 1.08, 60.0),
-					RoofColour);
+				// SM_Building is a hundred centimetres a side standing on its
+				// origin, so the scale is the size over a hundred. The colour is
+				// drawn here, in the same place in the sequence it always was,
+				// so the town is laid out exactly as before.
+				BuildingTransforms[Random.Below(WallVariants)].Add(FTransform(
+					Rotation, Base,
+					FVector(Depth * 2.0 / 100.0, Width * 2.0 / 100.0, Height / 100.0)));
 
 				++Placed;
 			}
@@ -380,7 +568,7 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 	}
 
 	SetActorLocation(FVector::ZeroVector);
-	Town.Upload(Structures, 0, /*bCreateCollision*/ true);
+	PlaceBuildings(PadTransform);
 	PlaceTrees();
 
 	// What building the settlement costs the game thread. Measured because the
@@ -391,13 +579,8 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 		Placed, Grown, TreeTransforms[0].Num() + TreeTransforms[1].Num(),
 		(FPlatformTime::Seconds() - BuildStarted) * 1000.0);
 
-	if (UMaterialInterface* Material = LedgerSurface::CreateFlatMaterial(this, FLinearColor::White, 0.82f))
 	{
-		// White base colour: the per-vertex colours carry the variation, and a
-		// tinted base would fight them.
-		Structures->SetMaterial(0, Material);
-
-		// And the instanced foliage, which needs it just as much. Dropping this
+		// The instanced foliage, which needs it just as much. Dropping this
 		// when the merged foliage mesh was removed left three hundred and
 		// forty-two trees rendering as black cut-outs -- correctly placed,
 		// correctly instanced, and lit by nothing.
@@ -418,7 +601,10 @@ FVector ALedgerSettlement::Build(ALedgerPlanet* InPlanet, const FVector3d& SiteD
 			{
 				Component->SetMaterial(0, Bark);
 			}
-			if (UMaterialInterface* Leaf = LedgerSurface::CreateFlatMaterial(
+			// The canopy leans with the wind; the trunk does not, because a
+			// trunk's deflection is the base of the cantilever and a wood
+			// whose trunks sway reads as rubber.
+			if (UMaterialInterface* Leaf = LedgerSurface::CreateFoliageMaterial(
 				this, FLinearColor(Component == TreeInstances[1] ? CanopyColourAlt : CanopyColour),
 				0.88f))
 			{

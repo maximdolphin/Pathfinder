@@ -227,8 +227,8 @@ TStatId ULedgerWorldBuilder::GetStatId() const
 
 void ULedgerWorldBuilder::Tick(float DeltaSeconds)
 {
-	// The second half of a switch: last frame's world is gone and its render
-	// resources have been released, so this frame can build the next one.
+	// The second half of a switch, a frame after it was asked for: the placed
+	// actors are reconfigured for the new body here.
 	if (PendingBody != INDEX_NONE)
 	{
 		const int32 Body = PendingBody;
@@ -442,20 +442,12 @@ void ULedgerWorldBuilder::SwitchToBody(int32 BodyIndex)
 		HomeBody(), *System.Bodies[HomeBody()].Name,
 		BodyIndex, *System.Bodies[BodyIndex].Name);
 
-	// **Everything the old body owned goes.** The terrain, its sky and its town
-	// are all functions of which body this is; keeping any of them would be
-	// keeping one world's ground under another world's sky.
-	for (AActor* Actor : { static_cast<AActor*>(Planet),
-		static_cast<AActor*>(Atmosphere), static_cast<AActor*>(Settlement) })
-	{
-		if (Actor != nullptr)
-		{
-			Actor->Destroy();
-		}
-	}
-	Planet = nullptr;
-	Atmosphere = nullptr;
-	Settlement = nullptr;
+	// **Nothing is destroyed.** The planet, the atmosphere and the town are
+	// actors in the level, and a crossing is those same actors told about a
+	// different body: BuildWorldFor reconfigures each of them and the planet
+	// grows its terrain again in place. Destroying them would be deleting part
+	// of the map at runtime -- which is what this used to do, when they were
+	// spawned rather than placed.
 
 	// Built on the next tick, not this one. See PendingBody.
 	PendingBody = BodyIndex;
@@ -479,9 +471,26 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 	//
 	// Deferred spawning is the idiom for exactly this. FinishSpawning is below,
 	// after the last thing that has to be true before the planet starts.
-	Planet = InWorld.SpawnActorDeferred<ALedgerPlanet>(
-		ALedgerPlanet::StaticClass(), FTransform::Identity, nullptr, nullptr,
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	//
+	// **The planet in the level, when there is one.** ADR-0006: the world's
+	// fixed actors are placed, so a person can open the map and select them,
+	// and this code says how they behave. Spawning stays as the fallback for a
+	// world with no level -- a test, or a map not yet rebuilt -- and that path
+	// is still deferred, for the reason above.
+	Planet = nullptr;
+	bool bPlacedPlanet = false;
+	for (TActorIterator<ALedgerPlanet> It(&InWorld); It; ++It)
+	{
+		Planet = *It;
+		bPlacedPlanet = true;
+		break;
+	}
+	if (Planet == nullptr)
+	{
+		Planet = InWorld.SpawnActorDeferred<ALedgerPlanet>(
+			ALedgerPlanet::StaticClass(), FTransform::Identity, nullptr, nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	}
 
 	if (Planet != nullptr)
 	{
@@ -625,9 +634,22 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 	}
 
 	// Everything the planet needs to know is known. It may start.
+	//
+	// Three cases. Spawned here: finish spawning, which runs BeginPlay now.
+	// Placed and not yet started -- the first build, which happens in the
+	// world's own begin play before any actor's: nothing to do, its BeginPlay
+	// comes next and finds everything set. Placed and already running -- a
+	// crossing to another body: grow the terrain again in place.
 	if (Planet != nullptr)
 	{
-		Planet->FinishSpawning(FTransform::Identity);
+		if (!bPlacedPlanet)
+		{
+			Planet->FinishSpawning(FTransform::Identity);
+		}
+		else if (Planet->HasActorBegunPlay())
+		{
+			Planet->Rebuild();
+		}
 	}
 
 	// Only where there is air to draw. A sky on an airless moon is the single
@@ -635,10 +657,17 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 	// `if` is the profile's own answer rather than a second opinion about it.
 	const FLedgerAirProfile Air = LedgerAir::For(System, HomeBody(), WhenSeconds);
 	const bool bAtmosphere = Air.HasAir();
+	//
+	// The actor is placed in the level and stays there on every body. On an
+	// airless one ConfigureForAir hides the sky and the clouds -- the air is
+	// what goes, not the part of the map that would draw it.
+	Atmosphere = Placed<ALedgerAtmosphere>(InWorld, Params);
+	if (Atmosphere != nullptr && !bAtmosphere)
+	{
+		Atmosphere->ConfigureForAir(Planet->Radius, Planet->MaxElevation, Air);
+	}
 	if (bAtmosphere)
 	{
-		Atmosphere = InWorld.SpawnActor<ALedgerAtmosphere>(
-			ALedgerAtmosphere::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
 		if (Atmosphere != nullptr)
 		{
 			Atmosphere->ConfigureForAir(Planet->Radius, Planet->MaxElevation, Air);
@@ -704,6 +733,23 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 
 			Component->SetAtmosphereSunLight(true);
 			Component->SetDynamicShadowDistanceMovableLight(600000.0f);
+
+			// **The planet is what makes it night, so the planet has to stop the
+			// light.** Shadows reach six kilometres; the body is thirteen
+			// thousand across. With the sun forty-two degrees below the horizon
+			// the full hundred thousand lux was still arriving -- from beneath,
+			// through the planet, on every surface further than six kilometres
+			// from the nearest shadow caster -- and a building face glowed
+			// white at what the ephemeris called the middle of the night.
+			//
+			// Not a switch on the site's clock, because a camera in orbit over
+			// the dark side still sees the day side lit. The atmosphere already
+			// knows the answer for every point: its transmittance along a ray
+			// that goes through the ground is zero. Asking it per pixel rather
+			// than once for the whole light is what makes the terminator a
+			// place on the planet instead of a moment in the frame.
+			Component->bPerPixelAtmosphereTransmittance = true;
+			Component->MarkRenderStateDirty();
 		}
 	}
 
@@ -829,8 +875,9 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 		FMath::RadiansToDegrees(LedgerSky::SolarAltitude(
 			System, HomeBody(), SiteDirection.GetSafeNormal(), WhenSeconds)));
 
-	Settlement = InWorld.SpawnActor<ALedgerSettlement>(
-		ALedgerSettlement::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, Params);
+	// Placed, like the planet; Build lays it out again for whichever body this
+	// is, clearing what the last one had.
+	Settlement = Placed<ALedgerSettlement>(InWorld, Params);
 	if (Settlement != nullptr)
 	{
 		Settlement->Build(Planet, SiteDirection, static_cast<uint32>(Planet->Seed));
@@ -947,7 +994,37 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 			Body += Line + TEXT("\n");
 		}
 
-		constexpr int32 Expected = 3 + LedgerRock::Variants;
+		// The town. Two meshes where there was one procedural buffer rebuilt
+		// every launch: a unit building every instance scales, and the pad at
+		// its real size. No Nanite -- twenty-four triangles each -- but a
+		// distance field and collision, which the procedural buffer had half
+		// of and Lumen none.
+		{
+			FLedgerMeshBuilder Builder;
+			const int32 RoofStartsAt = ALedgerSettlement::DescribeBuilding(Builder);
+			FString Line;
+			if (LedgerMesh::Bake(Builder,
+				FString(LedgerMesh::MeshPackageRoot) + TEXT("SM_Building"),
+				TEXT("SM_Building"), Line, /*bNanite*/ false, RoofStartsAt) != nullptr)
+			{
+				++Saved;
+			}
+			Body += Line + TEXT("\n");
+		}
+		{
+			FLedgerMeshBuilder Builder;
+			const int32 StripesStartAt = ALedgerSettlement::DescribePad(Builder);
+			FString Line;
+			if (LedgerMesh::Bake(Builder,
+				FString(LedgerMesh::MeshPackageRoot) + TEXT("SM_Pad"),
+				TEXT("SM_Pad"), Line, /*bNanite*/ false, StripesStartAt) != nullptr)
+			{
+				++Saved;
+			}
+			Body += Line + TEXT("\n");
+		}
+
+		constexpr int32 Expected = 5 + LedgerRock::Variants;
 		Body += FString::Printf(TEXT("\n  %d of %d saved\n\n"), Saved, Expected);
 		Body += FString::Printf(TEXT("VERDICT: %s\n"),
 			Saved == Expected ? TEXT("PASS") : TEXT("FAIL"));

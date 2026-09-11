@@ -40,6 +40,11 @@ public:
 	/// the honest answer rather than a hidden emitter.
 	int32 DrawnCount() const { return Drawn; }
 
+	/// The wind the particles were last moved by, metres per second in world
+	/// space. Read every tick whether or not anything is falling, so the
+	/// consumer is live in fair weather too.
+	FVector3d LastWindMetres() const { return LastWind; }
+
 private:
 	void Rebuild(int32 Wanted);
 
@@ -56,5 +61,6 @@ private:
 	FLedgerPrecipitation Last;
 	ELedgerPrecipitation DrawnKind = ELedgerPrecipitation::None;
 	int32 Drawn = 0;
+	FVector3d LastWind = FVector3d::ZeroVector;
 	double SinceLog = 0.0;
 };

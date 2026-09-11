@@ -187,6 +187,19 @@ namespace LedgerMesh
 			Body->CollisionTraceFlag = CTF_UseSimpleAndComplex;
 		}
 
+		// **The normals that were authored, not recomputed ones.** Build() re-runs
+		// the source model through its build settings, and those default to
+		// recomputing normals from the triangle winding. This builder emits its
+		// winding the opposite way round to the normals it writes -- both are
+		// deliberate and they agree on the procedural path -- so a recompute
+		// turned every face of every baked box inside out for lighting: the
+		// sunlit walls and roofs of the whole town came back black, and the
+		// auto-exposure blew the sky white trying to see them. Describe() says
+		// the normals come across; this is what makes that true.
+		for (int32 Lod = 0; Lod < Mesh->GetNumSourceModels(); ++Lod)
+		{
+			Mesh->GetSourceModel(Lod).BuildSettings.bRecomputeNormals = false;
+		}
 		Mesh->Build(/*bInSilent*/ true);
 		Mesh->PostEditChange();
 
