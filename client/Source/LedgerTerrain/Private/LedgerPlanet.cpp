@@ -341,6 +341,32 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	if (DeltaSeconds > KINDA_SMALL_NUMBER)
 	{
 		CameraVelocityLocal = (CameraLocal - LastCameraLocal) / static_cast<double>(DeltaSeconds);
+		// **Detail scaled with speed.** At 900 m/s and 50 m the tree asked for
+		// 38 m patches under the ship, crossed in a few frames and never built
+		// in time: every transect miss had no ground drawn at all. What moves
+		// past that fast cannot be seen at that detail anyway. Above 150 m/s the
+		// split threshold rises with speed; `-nospeedlod` is the control arm.
+		static const bool bSpeedLod = !FParse::Param(FCommandLine::Get(), TEXT("nospeedlod"));
+		// Two bounds, both learned from one crash. A camera placed somewhere new
+		// reads as a speed for one frame -- the near-field harness's startup came
+		// in at 58,000 km/s, the threshold went up 387,179 times, most of the tree
+		// was marked to collapse, and the terrain never settled again until the
+		// process ran out of memory. So a speed past anything that flies is a
+		// placement, not a speed; and nothing that does fly coarsens by more
+		// than thirty-two times, five levels.
+		// `-speedfulldetail=N` (m/s) moves where coarsening starts, for the
+		// transect to measure rather than for anyone to ship.
+		static const double SpeedForFullDetailCm = []()
+		{
+			double MetresPerSecond = 150.0;
+			FParse::Value(FCommandLine::Get(), TEXT("speedfulldetail="), MetresPerSecond);
+			return FMath::Max(MetresPerSecond, 1.0) * 100.0;
+		}();
+		constexpr double TeleportCm = 3000000.0;
+		constexpr double MostCoarsening = 32.0;
+		const double Speed = CameraVelocityLocal.Size();
+		SpeedCoarsening = bSpeedLod && Speed < TeleportCm
+			? FMath::Clamp(Speed / SpeedForFullDetailCm, 1.0, MostCoarsening) : 1.0;
 	}
 	LastCameraLocal = CameraLocal;
 

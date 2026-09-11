@@ -64,6 +64,7 @@ void ALedgerPlanet::LogStats() const
 	UE_LOG(LogLedger, Log, TEXT("  water sections     %d uploaded"), Stats.WaterSections);
 	UE_LOG(LogLedger, Log, TEXT("  re-stitched       %d patches (a neighbour changed depth after they were built)"), Stats.Restitches);
 	UE_LOG(LogLedger, Log, TEXT("  collision upgrades %d sections gained collision in place"), Stats.CollisionUpgrades);
+	UE_LOG(LogLedger, Log, TEXT("  speed detail      split threshold x%.1f"), SpeedCoarsening);
 	UE_LOG(LogLedger, Log, TEXT("  patch cache        %lld hit / %lld generated (%.0f%% reused)"),
 		Stats.CacheHits, Stats.CacheMisses,
 		(Stats.CacheHits + Stats.CacheMisses) > 0

@@ -798,6 +798,9 @@ private:
 	/// back to the configured value as soon as there is room, so nothing is
 	/// permanently degraded by one bad second.
 	double EffectiveErrorPixels = 0.0;
+	/// Detail coarsened with camera speed: the split threshold times this.
+	/// One below SpeedForFullDetail. See UpdateTree.
+	double SpeedCoarsening = 1.0;
 
 	TMap<uint64, FPatchScatter> LiveScatter;
 

@@ -193,7 +193,7 @@ void ALedgerPlanet::UpdateTree(
 	// collision and gameplay read -- a third off the frame time is not worth
 	// shipping a terrain API that answers from the whole planet. The lead is
 	// written down for T436, which is where the milestone's cost is priced.
-	const double Threshold = EffectiveErrorPixels;
+	const double Threshold = EffectiveErrorPixels * SpeedCoarsening;
 
 	// ---- a region at a depth distance did not choose. T049 ----------------
 	//
@@ -253,6 +253,13 @@ void ALedgerPlanet::UpdateTree(
 
 	if (!bForceCollapse && Error > Threshold && Node.Depth < MaxDepth)
 	{
+		// A node that wants splitting no longer wants collapsing. A flag left
+		// set from some earlier frame made it a collapse front that asked for
+		// its own geometry while the rule below released that geometry again
+		// the moment its children were ready -- a load and a release every
+		// frame, forever, with the settle gate waiting on it.
+		Node.bWantsCollapse = false;
+		Node.CollapseWaitFrames = 0;
 		if (!Node.bHasChildren)
 		{
 			Split(Node);
