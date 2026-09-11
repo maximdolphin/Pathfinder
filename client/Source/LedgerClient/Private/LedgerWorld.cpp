@@ -630,9 +630,39 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 				// 0.16 linear is rock. Per-stone variation has to come back
 				// some other way -- per-instance custom data, or one material
 				// per variant the way the settlement's two trees do it.
-				Planet->SetScatterMeshes(ScatterMeshes,
-					LedgerSurface::CreateFlatMaterial(
-						Planet, FLinearColor(0.16f, 0.15f, 0.13f), 0.86f));
+				//
+				// **Scanned stone when it is there.** Three photogrammetry rocks
+				// (Poly Haven, CC0; imported into /Game/Nature, not in version
+				// control -- see tools) replace the baked lumps, with their own
+				// scanned materials rather than one flat tint, and each is scaled
+				// to the one-metre stone by SetScatterMeshes. `-flatrocks` keeps
+				// the baked stones and the tint, as the control.
+				static const TCHAR* const Scanned[] = {
+					TEXT("/Game/Nature/boulder_01/boulder_01_2k/StaticMeshes/boulder_01_2k.boulder_01_2k"),
+					TEXT("/Game/Nature/namaqualand_boulder_02/namaqualand_boulder_02_2k/StaticMeshes/namaqualand_boulder_02_2k.namaqualand_boulder_02_2k"),
+					TEXT("/Game/Nature/namaqualand_rocks_01/namaqualand_rocks_01_2k/StaticMeshes/namaqualand_rocks_02_a.namaqualand_rocks_02_a") };
+				TArray<UStaticMesh*> ScannedMeshes;
+				if (!FParse::Param(FCommandLine::Get(), TEXT("flatrocks")))
+				{
+					for (const TCHAR* Path : Scanned)
+					{
+						if (UStaticMesh* Mesh = LoadObject<UStaticMesh>(nullptr, Path))
+						{
+							ScannedMeshes.Add(Mesh);
+						}
+					}
+				}
+				if (ScannedMeshes.Num() == UE_ARRAY_COUNT(Scanned))
+				{
+					UE_LOG(LogLedger, Log, TEXT("scatter: %d scanned stones"), ScannedMeshes.Num());
+					Planet->SetScatterMeshes(ScannedMeshes, nullptr);
+				}
+				else
+				{
+					Planet->SetScatterMeshes(ScatterMeshes,
+						LedgerSurface::CreateFlatMaterial(
+							Planet, FLinearColor(0.16f, 0.15f, 0.13f), 0.86f));
+				}
 				// T053: no palette instances. Every ground biome has its own vertex
 				// channel and the one material samples all of them, so every patch is
 				// drawn with the same instance -- which is what removes the line where

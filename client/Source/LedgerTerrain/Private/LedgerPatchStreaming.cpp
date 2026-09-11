@@ -498,6 +498,8 @@ void ALedgerPlanet::SetScatterMeshes(
 	}
 	ScatterComponents.Reset();
 	ScatterVariants = 0;
+	ScatterVariantScale.Reset();
+	ScatterVariantOffset.Reset();
 
 	for (int32 Variant = 0; Variant < Meshes.Num(); ++Variant)
 	{
@@ -535,6 +537,19 @@ void ALedgerPlanet::SetScatterMeshes(
 			Component->RegisterComponent();
 			ScatterComponents.Add(Component);
 		}
+		// Every variant to the one-metre stone the scatter's sizes are written
+		// for (LedgerScatter: none over a metre, half under 36 cm). The baked
+		// stones are about that already; a scanned boulder is whatever size it
+		// was photographed at.
+		const float Largest = static_cast<float>(Meshes[Variant]->GetBoundingBox().GetSize().GetMax());
+		ScatterVariantScale.Add(Largest > 1.0f ? 100.0f / Largest : 1.0f);
+		// And stood on its base. A scan's origin is wherever the photogrammetry
+		// left it -- one rock of a set sits well off it -- and scaled four times
+		// that was a stone metres in the air. The bottom-centre of its bounds goes
+		// to the instance point, sunk a sixth of its height into the ground.
+		const FBox Bounds = Meshes[Variant]->GetBoundingBox();
+		ScatterVariantOffset.Add(-FVector(Bounds.GetCenter().X, Bounds.GetCenter().Y,
+			Bounds.Min.Z + Bounds.GetSize().Z / 6.0));
 		++ScatterVariants;
 	}
 
@@ -612,10 +627,14 @@ void ALedgerPlanet::RebuildScatter()
 					continue;
 				}
 				const int32 Variant = Instance.Variant % ByVariant.Num();
-				ByVariant[Variant].Add(FTransform(
-					FQuat(Instance.Rotation),
-					Base + FVector(Instance.Position),
-					FVector(Instance.Scale)));
+				const float StoneScale = Instance.Scale
+					* (ScatterVariantScale.IsValidIndex(Variant) ? ScatterVariantScale[Variant] : 1.0f);
+				const FQuat StoneRotation(Instance.Rotation);
+				const FVector StoneOffset = ScatterVariantOffset.IsValidIndex(Variant)
+					? ScatterVariantOffset[Variant] : FVector::ZeroVector;
+				ByVariant[Variant].Add(FTransform(StoneRotation,
+					Base + FVector(Instance.Position) + StoneRotation.RotateVector(StoneOffset * StoneScale),
+					FVector(StoneScale)));
 			}
 		}
 

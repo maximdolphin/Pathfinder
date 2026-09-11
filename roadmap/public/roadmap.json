@@ -4312,6 +4312,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Two fixes measured by photograph, neither enough: (1) stones are now kept off any grid quad the land lost a triangle from (the land is cut per triangle at its centroid; testing the cave field at the stone's own point left stones on rim triangles), and (2) each cave brick samples the union of its own altitude range and those of the three neighbours whose seams it joins (bricks hang from the ground at their own centres, so a seam was drawn over one brick's range only). The walk still passes (0 blocked, 0 floorless, 456 m, 481 climbed), but the slits of light down the shadowed wall and the pale shards and stones along the rims are still in the photographs -- so the slits are not (only) the range mismatch; the next suspect is bricks of different patch depth meeting, whose lattices do not share vertices. Not accepted."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The walk passes again after three regressions of this session's making were fixed -- skirts hanging into the passage (now left off cave patches), cave sections losing collision to the per-frame allowance (the in-place upgrade now covers section 2), and a stack overflow in HomeAir: 456 of 456 m, 0 blocked, 0 without a floor. Tried against the slits of light down the shadowed wall, each measured by photograph and none of them moving it: bricks given the union of their neighbours' altitude ranges; bricks joining their own first edge so seams overlap; the land cut by triangle corners instead of centroids (the rim is now a lip over the opening, not a sawtooth). The slits are none of those. Enlarged, they are narrow windows through the wall with the grass of the hillside behind: the passage runs close under a slope, the rock between is a fin thinner than one cell of the cave lattice (BrickAcross 32 across a patch, several metres a cell), and surface nets do not mesh what the samples miss. Two fixes, both design: a finer lattice on cave patches (about 3x the samples, and a thinner fin still fails), or a minimum wall and roof thickness near the ground surface in the cave field (changes the passages the walk and survey were built on). Also on the rim: stones on the land lip over the opening, which from the floor show their shadowed undersides. Not accepted."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The thin-fin theory is wrong. At 64 cells across (from 32) the walk still passes (456 of 456 m, 0 blocked, 0 without a floor) but the windows in the shadowed wall multiplied and came out evenly spaced along its top: they scale with the lattice, so they are a join the surface-nets mesher misses between cell columns, not rock the samples cannot see. Reverted to 32 (four times the samples for nothing). They were in the first walk photographs too, before any of this session's cave changes, so they are the mesher's, not a regression. Next: dump the cave mesh of the brick holding the wall and find which edge's quads are absent -- the four-cell join around each crossed edge requires all four cells to have vertices, and a cell whose sign changes only along an axis the join loop does not visit would leave exactly a column-wide hole. Not accepted."
     }
    ],
    "evidence": [
@@ -4338,6 +4348,18 @@
      "caption": "90% of the way: the passage here is open to the sky, walls lit on one side and in shadow on the other. The thin slits of light down the shadowed wall are seams between cave bricks of different depth, still open.",
      "source": "../out/cave-walk-3.png",
      "addedAt": "2026-09-11T15:50:50.162Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T18-06-34-802.png",
+     "caption": "90% of the way, after every fix: the walk clean, the clouds now three decks. The slits down the shadowed wall are holes in a rock fin thinner than the cave lattice's cell -- the passage and the hillside beyond it nearly meet.",
+     "source": "../out/cave-walk-3.png",
+     "addedAt": "2026-09-11T18:06:34.811Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T18-23-40-379.png",
+     "caption": "The same frame at 64 cells across: more windows, evenly spaced along the wall top -- they follow the lattice, not the rock.",
+     "source": "../out/cave-walk-3.png",
+     "addedAt": "2026-09-11T18:23:40.386Z"
     }
    ],
    "plannedStartDay": 109.5,
@@ -7052,6 +7074,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "A shape per deck (committed): cumulus its own noise at 0.4x the frequency (separate masses, seen from above the middle deck), cirrus noise compressed along one axis (long streaks, seen from below it). The climb now shows three different kinds of cloud. From 400 km at the limb the decks are still one speckled veil: structure a few kilometres across is averaged away along the long slant path, and the cloud is as dim as the sand. What the orbit half needs is a look-development pass on the clouds rather than another single-variable test -- coherent structure an order of magnitude larger, clear gaps, and the brightness from above (framing, the global sun transmittance and the shadow map are ruled out; optical thickness and the phase are what remain). Left there."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] WHY NOTHING MOVED THE ORBIT VIEW: by default the clouds were the engine's own one-deck material (LedgerAtmosphere SetDecks), and the project's three-deck material ran only under -threedecks -- a switch from when that material drew nothing, left in after its density was put on the right pin. So every look-development change to LedgerCloudMaterial (range fade of the fine fields, weather amplitude 1.0, three octaves of multiple scattering, sharper edges with range) had been invisible: re-baking it moved 0.7% of the limb frame's pixels, and a probe built live moved none. With -noclouds the limb is the ground (40% of pixels change), so the veil was cloud -- the one-deck one. With -threedecks the 400 km limb shows coherent systems with clear air between, bright from above, and the climb shows three kinds of cloud. Now: the three-deck material is the default (-onedeck keeps the engine's as the control), and its fields move from texture-gradient noise, whose lattice makes the puffs box-shaped and the system edges stepped, to texture simplex. Queued: re-bake, then the climb and the limb."
     }
    ],
    "evidence": [
@@ -7114,6 +7141,18 @@
      "caption": "From 400 km at the limb: still one speckled veil -- the orbit half is not met.",
      "source": "../out/airshow-1-low-orbit-morph.png",
      "addedAt": "2026-09-11T10:01:22.906Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T18-00-36-417.png",
+     "caption": "400 km at the limb with the three-deck material: weather systems hundreds of kilometres across with clear air between -- the speckled sepia veil was the engine's one-deck material, which every earlier orbit frame had been drawn with.",
+     "source": "../out/airshow-1-low-orbit-3decks.png",
+     "addedAt": "2026-09-11T18:00:36.437Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T18-00-36-570.png",
+     "caption": "Inside the middle deck: cirrus drawn out in streaks overhead, cumulus below -- the decks are different kinds of cloud. The puffs are box-shaped: the texture-gradient noise's lattice.",
+     "source": "../out/airshow-1-in-middle-3decks.png",
+     "addedAt": "2026-09-11T18:00:36.573Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -15116,5 +15155,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T17:43:04.808Z"
+ "updatedAt": "2026-09-11T18:23:40.499Z"
 }

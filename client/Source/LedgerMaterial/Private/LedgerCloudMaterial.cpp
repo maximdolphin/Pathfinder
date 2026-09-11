@@ -310,7 +310,7 @@ namespace LedgerSurface
 			Parameter(Graph, TEXT("NoiseScale"), 0.000012f);
 		UMaterialExpressionNoise* Noise = Graph.Make<UMaterialExpressionNoise>();
 		Noise->Position.Expression = Graph.Multiply(Flattened, Scale);
-		Noise->NoiseFunction = NOISEFUNCTION_GradientTex;
+		Noise->NoiseFunction = NOISEFUNCTION_SimplexTex;
 		Noise->Scale = 1.0f;
 		Noise->Levels = 4;
 		Noise->OutputMin = 0.0f;
@@ -335,7 +335,7 @@ namespace LedgerSurface
 		UMaterialExpressionNoise* Weather = Graph.Make<UMaterialExpressionNoise>();
 		Weather->Position.Expression = Graph.Multiply(Flattened,
 			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f));
-		Weather->NoiseFunction = NOISEFUNCTION_GradientTex;
+		Weather->NoiseFunction = NOISEFUNCTION_SimplexTex;
 		Weather->Scale = 1.0f;
 		Weather->Levels = 3;
 		Weather->OutputMin = 0.0f;
@@ -386,7 +386,7 @@ namespace LedgerSurface
 		{
 			UMaterialExpressionNoise* Field = Graph.Make<UMaterialExpressionNoise>();
 			Field->Position.Expression = Position;
-			Field->NoiseFunction = NOISEFUNCTION_GradientTex;
+			Field->NoiseFunction = NOISEFUNCTION_SimplexTex;
 			Field->Scale = 1.0f;
 			Field->Levels = Levels;
 			Field->OutputMin = 0.0f;
@@ -395,7 +395,7 @@ namespace LedgerSurface
 			return Field;
 		};
 		UMaterialExpression* CumulusField = Graph.Add(
-			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3)),
+			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000022f)), 3)),
 			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
 		AlongStreak->A.Expression = Flattened;

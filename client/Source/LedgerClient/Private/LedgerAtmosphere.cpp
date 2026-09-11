@@ -348,19 +348,16 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 
 	// **Which material draws the deck, and why the choice exists.**
 	//
-	// `-threedecks` uses the volume material this project builds, which has a
-	// band per deck and is the only way to get three of them out of one
-	// component. It compiles, it is assigned, its altitude coordinate is the
-	// one the engine says it is -- and it renders nothing yet. Left on by
-	// default that is a sky with the clouds computed, placed, and invisible,
-	// which is worse than one deck drawn correctly.
-	//
-	// So the default is the engine's own cloud material, driven at the
-	// altitude and the coverage this project computes. One deck of three, in
-	// the right place, at the right density. The flag is where the other two
-	// are worked on.
+	// The volume material this project builds has a band per deck and is the
+	// only way to get three of them out of one component, so it is the
+	// default (T094). It used to be behind `-threedecks`, from when it drew
+	// nothing; after its density went on the right pin it drew all three, but
+	// the switch stayed, and for as long as it did every orbit frame was the
+	// engine's one-deck material -- a speckled veil nothing in this project's
+	// material could move. `-onedeck` puts the engine's material back, driven
+	// at the cumulus deck's altitude and coverage, as the control.
 	const bool bThreeDecks =
-		FParse::Param(FCommandLine::Get(), TEXT("threedecks"));
+		!FParse::Param(FCommandLine::Get(), TEXT("onedeck"));
 	if (CloudMaterial == nullptr)
 	{
 		UMaterialInterface* Source = bThreeDecks

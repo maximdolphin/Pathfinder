@@ -826,6 +826,13 @@ private:
 	int32 ScatterBucketCursor = 0;
 	int32 ScatterVariants = 0;
 
+	/// Per variant, what brings its mesh to a one-metre stone (SetScatterMeshes).
+	TArray<float> ScatterVariantScale;
+
+	/// Per variant, mesh space: what puts the bottom-centre of its bounds on the
+	/// instance point, a sixth of its height sunk into the ground.
+	TArray<FVector> ScatterVariantOffset;
+
 	/// What each live patch scattered, kept so the components can be rebuilt.
 	///
 	/// **Rebuilt whole, not edited.** An instanced component has no stable

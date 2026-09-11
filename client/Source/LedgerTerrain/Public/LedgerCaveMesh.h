@@ -27,6 +27,11 @@ namespace LedgerCaves
 	/// 32 across a 300 m patch is about 10 m a cell, against a passage radius of
 	/// 14 m. Coarser than the passage and the tunnel breaks into a chain of
 	/// unconnected bubbles; this is the coarsest that does not.
+	/// 32. 64 was tried against the windows in the walk's shadowed wall (T056),
+	/// on the theory that they were a rock fin thinner than a cell: at 64 there
+	/// were more of them and they were evenly spaced along the wall top, so they
+	/// follow the lattice, not the rock -- a join the mesher misses -- and four
+	/// times the samples bought nothing.
 	constexpr int32 BrickAcross = 32;
 	// 64, not 24: 4.7 m a layer rather than 12.5, against a passage 28 m
 	// across that narrows towards its mouths -- at 12.5 m the narrowing closed
