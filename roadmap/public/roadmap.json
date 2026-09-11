@@ -3907,6 +3907,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Every range without a rain shadow now carries its reason, and the population statistic is unchanged (577 wind-crossing major ranges, 479 shadowed, 83%; every wind-crossing ridge 87% against 75). Of the 98 without one: 17 sit at a wind-band boundary (25-35 or 55-65 degrees, where the prevailing wind turns through zero and the upwind march has no fetch); 20 are dry on both sides (nothing to shadow -- both below 0.03); 38 are wetter on the LEE, which says the air arrives from the other side -- 29 of those 40 lie poleward of 60 degrees, in the polar easterlies, where 'east' turns fast and the march curls round the pole; 23 other. The literal 'every major range' is not met, and at least the first two groups are the physics rather than a fault: a range in air with no moisture cannot cast a shadow, and neither can one the wind does not cross. The lee-wetter polar group is the model's to fix -- the prevailing wind near the poles."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Tried and measured: the moisture march now takes the prevailing wind at every step instead of walking a great circle from the start point -- a band wind blows along the parallel. It is the right march and it moved nothing: 476 of 577 major ranges shadowed (was 479), 41 wetter on the lee (was 38), 10 at wind-band boundaries, 22 dry on both sides, 28 other; every wind-crossing ridge 92% (bar 75). So the polar-curl explanation was wrong. The lee-wetter ranges cluster at 80-88 degrees and 18-26 degrees. The one failing criterion is the literal 'every major range'; 32 of the 101 misses (boundary + dry both sides) cannot have a shadow by construction. Next: take one lee-wetter range apart -- march samples, rise per step, which ocean refills the lee -- before changing anything else."
     }
    ],
    "evidence": [
@@ -14290,5 +14295,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T06:49:58.843Z"
+ "updatedAt": "2026-09-11T06:54:38.031Z"
 }
