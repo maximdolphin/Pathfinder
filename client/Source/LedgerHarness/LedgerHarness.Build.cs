@@ -25,5 +25,13 @@ public class LedgerHarness : ModuleRules
 			"LedgerTerrain",
 			"LedgerClient"
 		});
+
+		// The giant world (T079, T080) draws with procedural meshes and the
+		// flat material.
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"ProceduralMeshComponent",
+			"LedgerMaterial"
+		});
 	}
 }

@@ -33,6 +33,7 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 	++Stats.CacheMisses;
 	Job->SectionIndex = FreeSections.Pop();
 	Job->bWithCollision = bWithCollision;
+	Job->bRestitch = bRestitch;
 	Job->Face = Node.Face;
 	Job->U = Node.U;
 	Job->V = Node.V;
@@ -91,10 +92,17 @@ void ALedgerPlanet::HarvestCompletedPatches()
 	TArray<uint64> Landed;
 	Landed.Reserve(InFlight.Num());
 
+	// **Re-stitches first, and not on the budget.** Holding uploads to 3 ms a
+	// frame held re-stitched patches back with everything else, and the 300 m
+	// transect's shared edges opened again (1.5 m at two samples of ten). A
+	// re-stitch is a patch already on screen with an open edge; a new patch is
+	// detail that can wait a frame.
+	for (int32 Pass = 0; Pass < 2; ++Pass)
 	for (TPair<uint64, FLedgerPatchJobRef>& Entry : InFlight)
 	{
 		FLedgerPatchJob* Job = Entry.Value.Get();
-		if (Job == nullptr || !Job->bComplete.load(std::memory_order_acquire))
+		if (Job == nullptr || !Job->bComplete.load(std::memory_order_acquire)
+			|| Job->bRestitch != (Pass == 0) || Landed.Contains(Entry.Key))
 		{
 			continue;
 		}
@@ -109,6 +117,20 @@ void ALedgerPlanet::HarvestCompletedPatches()
 
 		UMeshComponent* Mesh = MeshPool[Job->SectionIndex];
 		Mesh->SetWorldLocation(GetActorLocation() + FVector(Job->Centre));
+
+		// Collision from the frame's allowance (CollisionBudget); past it the
+		// patch lands without and gains it in place on a later frame.
+		if (Job->bWithCollision)
+		{
+			if (CollisionBudget > 0)
+			{
+				--CollisionBudget;
+			}
+			else
+			{
+				Job->bWithCollision = false;
+			}
+		}
 
 		// Section 1 is the sea. Same component, so it moves and culls with the
 		// land it belongs to and costs no extra transform.
@@ -188,7 +210,7 @@ void ALedgerPlanet::HarvestCompletedPatches()
 		// A finished patch with collision is uploaded whatever the budget says:
 		// the work is already done on the worker and the alternative is ground
 		// the player can fall through.
-		if (!Budget.Allows(ELedgerStreamClass::Detail))
+		if (Pass == 1 && !Budget.Allows(ELedgerStreamClass::Detail))
 		{
 			break;
 		}
@@ -265,6 +287,18 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 		ScatterBucketDirty[ScatterBucketOf(Key)] = true;
 	}
 
+	// Collision from the frame's allowance, as in the harvest.
+	if (bWithCollision)
+	{
+		if (CollisionBudget > 0)
+		{
+			--CollisionBudget;
+		}
+		else
+		{
+			bWithCollision = false;
+		}
+	}
 	Entry.Land.bEnableCollision = bWithCollision;
 	Mesh->SetProcMeshSection(0, Entry.Land);
 	if (SurfaceMaterial != nullptr)
@@ -680,11 +714,21 @@ bool ALedgerPlanet::UpgradeCollision(int32 SectionIndex)
 	{
 		return false;
 	}
-	// ponytail: the land section only; a cave section keeps what it was built
-	// with, and gains collision when the patch is next rebuilt.
 	FProcMeshSection WithCollision = *Land;
 	WithCollision.bEnableCollision = true;
 	Mesh->SetProcMeshSection(0, WithCollision);
+	// And the cave, section 2 (LedgerPatchComponents). Since collision comes from
+	// a per-frame allowance a cave patch can land without it, and left to the
+	// next rebuild the walk through the passage found no floor under 190 m of it.
+	if (const FProcMeshSection* Cave = Mesh->GetProcMeshSection(2))
+	{
+		if (Cave->ProcVertexBuffer.Num() > 0 && !Cave->bEnableCollision)
+		{
+			FProcMeshSection CaveWithCollision = *Cave;
+			CaveWithCollision.bEnableCollision = true;
+			Mesh->SetProcMeshSection(2, CaveWithCollision);
+		}
+	}
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	return true;
 }

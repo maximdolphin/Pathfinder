@@ -74,6 +74,7 @@ namespace LedgerSurface
 	UMaterialInterface* BuildGroundFogMaterial(UObject* Outer);
 	UMaterialInterface* BuildStarMaterial(UObject* Outer);
 	UMaterialInterface* BuildFoliageMaterial(UObject* Outer);
+	UMaterialInterface* BuildAureoleMaterial(UObject* Outer);
 
 	struct FGraph
 	{

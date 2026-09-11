@@ -88,6 +88,10 @@ struct FLedgerAirProfile
 	/// throw more of the light onwards and less of it sideways.
 	double MieAnisotropy = 0.8;
 
+	/// The aerosol's effective radius, metres. What sets how narrow the
+	/// diffraction peak around the sun is, channel by channel. T090.
+	double AerosolRadiusMetres = 0.0;
+
 	/// Ozone, or whatever else absorbs where the gas does not. Zero unless
 	/// there is oxygen to make it out of.
 	double OzoneAbsorptionPerMetre = 0.0;
@@ -173,6 +177,26 @@ namespace LedgerAir
 	/// relative to each other.
 	LEDGERCORE_API FVector3d SkyColour(
 		const FLedgerAirProfile& Air, double AirMasses);
+
+	/// **The aureole: the dust's forward peak, channel by channel.** T090.
+	///
+	/// A particle much bigger than the wavelength scatters about half of
+	/// what it removes by diffraction, into a peak around the sun whose
+	/// width goes as the wavelength over the radius -- two over the size
+	/// parameter 2 pi r / lambda, in radians -- so the blue peak is narrower
+	/// and, holding the same energy, brighter at its centre. That is the blue
+	/// of a Martian sunset, and one Henyey-Greenstein lobe for all three
+	/// channels cannot make it. At 440, 550 and 680 nm.
+	LEDGERCORE_API FVector3d AureoleWidthRadians(const FLedgerAirProfile& Air);
+
+	/// How much of the sky's scattered light belongs in that peak, per
+	/// channel: the diffracted share of what the aerosol scatters (half its
+	/// extinction over its albedo, so an absorbing dust puts more of its blue
+	/// there), times the aerosol's share of the sky's scattering, and only for
+	/// particles well past the wavelength -- faded in between size parameters
+	/// 4 and 10, below which the one lobe already describes them. Earth's
+	/// sub-micron haze gets almost none; Martian dust most of its blue.
+	LEDGERCORE_API FVector3d AureoleFraction(const FLedgerAirProfile& Air);
 
 	/// Single-scattering albedo of the suspended particles: how much of what
 	/// they intercept carries on rather than being absorbed. Per channel.

@@ -99,7 +99,8 @@ namespace LedgerScatter
 		// invisible until the test stopped measuring the function against
 		// itself.
 		const int32 Side = FMath::Max(3, Job.Side | 1);
-		const bool bHasMesh = Job.Vertices.Num() == Side * Side;
+		// At least the grid: the skirts are appended after it.
+		const bool bHasMesh = Job.Vertices.Num() >= Side * Side;
 		auto MeshRadiusAt = [&Job, Side](double LocalU, double LocalV)
 		{
 			const double GridU = FMath::Clamp(LocalU, 0.0, 1.0) * (Side - 1);
@@ -121,6 +122,32 @@ namespace LedgerScatter
 		// The patch's own footprint in metres, for the slope estimate below.
 		const double PatchMetres = Job.WorldSize / 100.0;
 		const double CellMetres = FMath::Max(1.0, PatchMetres / Cells);
+
+		// Where the land was cut for a cave mouth (T056): a grid quad that lost
+		// either of its triangles is open. The land is cut triangle by triangle at
+		// the centroid, so testing the cave field at a stone's own point left
+		// stones on rim triangles cut around it, hanging over the hole. Each
+		// triangle is counted to the quad its centroid is in, whichever way the
+		// quads are split.
+		static const bool bCaveMesh = FParse::Param(FCommandLine::Get(), TEXT("cavemesh"));
+		TArray<uint8> QuadTriangles;
+		if (bCaveMesh && bHasMesh)
+		{
+			QuadTriangles.SetNumZeroed(Side * Side);
+			for (int32 Triangle = 0; Triangle + 2 < Job.Triangles.Num(); Triangle += 3)
+			{
+				const int32 I0 = Job.Triangles[Triangle];
+				const int32 I1 = Job.Triangles[Triangle + 1];
+				const int32 I2 = Job.Triangles[Triangle + 2];
+				if (FMath::Max3(I0, I1, I2) >= Side * Side)
+				{
+					continue;
+				}
+				const int32 QX = FMath::FloorToInt32((I0 % Side + I1 % Side + I2 % Side) / 3.0);
+				const int32 QY = FMath::FloorToInt32((I0 / Side + I1 / Side + I2 / Side) / 3.0);
+				++QuadTriangles[QY * Side + QX];
+			}
+		}
 
 		TArray<double> Weights;
 		for (int32 CellV = 0; CellV < Cells; ++CellV)
@@ -146,12 +173,20 @@ namespace LedgerScatter
 				{
 					continue;
 				}
-				// Not over a cave mouth (T056). The land's triangles are deleted
-				// there when caves are meshed, so a stone placed on the height field
-				// hung in the air over the hole -- the walk's photographs of an open
-				// passage had a sky full of floating rocks.
-				static const bool bCaveMesh = FParse::Param(FCommandLine::Get(), TEXT("cavemesh"));
-				if (bCaveMesh && LedgerCaves::Density(Direction, Elevation / 100.0, Elevation / 100.0, Job.Params) > 0.0)
+				// Not over a cave mouth (T056): not in a quad the land was cut
+				// from. A stone placed on the height field there hung in the air
+				// over the hole -- the walk's photographs of an open passage had a
+				// sky full of floating rocks.
+				if (QuadTriangles.Num() > 0)
+				{
+					const int32 QX = FMath::Clamp(FMath::FloorToInt32(LocalU * (Side - 1)), 0, Side - 2);
+					const int32 QY = FMath::Clamp(FMath::FloorToInt32(LocalV * (Side - 1)), 0, Side - 2);
+					if (QuadTriangles[QY * Side + QX] < 2)
+					{
+						continue;
+					}
+				}
+				else if (bCaveMesh && LedgerCaves::Density(Direction, Elevation / 100.0, Elevation / 100.0, Job.Params) > 0.0)
 				{
 					continue;
 				}

@@ -1,6 +1,7 @@
 #include "LedgerAtmosphere.h"
 
 #include "Components/ExponentialHeightFogComponent.h"
+#include "Components/PostProcessComponent.h"
 #include "Components/SkyAtmosphereComponent.h"
 #include "Components/VolumetricCloudComponent.h"
 #include "Engine/World.h"
@@ -34,6 +35,10 @@ ALedgerAtmosphere::ALedgerAtmosphere()
 
 	Fog = CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("HeightFog"));
 	Fog->SetupAttachment(Root);
+
+	Aureole = CreateDefaultSubobject<UPostProcessComponent>(TEXT("Aureole"));
+	Aureole->SetupAttachment(Root);
+	Aureole->bUnbound = true;
 }
 
 void ALedgerAtmosphere::BeginPlay()
@@ -117,6 +122,36 @@ void ALedgerAtmosphere::ConfigureForAir(
 			}
 			Atmosphere->MieAnisotropy = static_cast<float>(Air.MieAnisotropy);
 
+			// **And the part one lobe cannot do: the aureole.** T090. The dust's
+			// diffraction peak around the sun, narrower in the blue, from the
+			// particle size the composition gives -- a post-process pass on the sky
+			// pixels that trades that share of the engine's lobe for the peak.
+			// `-noaureole` leaves the engine's lobe alone, as the control.
+			if (Aureole != nullptr && !FParse::Param(FCommandLine::Get(), TEXT("noaureole")))
+			{
+				if (AureoleMaterial == nullptr)
+				{
+					if (UMaterialInterface* Base = LedgerSurface::CreateAureoleMaterial(this))
+					{
+						AureoleMaterial = UMaterialInstanceDynamic::Create(Base, this);
+						Aureole->Settings.WeightedBlendables.Array.Add(FWeightedBlendable(1.0f, AureoleMaterial));
+					}
+				}
+				if (AureoleMaterial != nullptr)
+				{
+					// The profile is (440, 550, 680) nm; the colour is (R, G, B).
+					const FVector3d Width = LedgerAir::AureoleWidthRadians(Air);
+					const FVector3d Share = LedgerAir::AureoleFraction(Air);
+					AureoleMaterial->SetVectorParameterValue(TEXT("AureoleWidth"), FLinearColor(
+						static_cast<float>(Width.Z), static_cast<float>(Width.Y), static_cast<float>(Width.X), 0.0f));
+					AureoleMaterial->SetVectorParameterValue(TEXT("AureoleFraction"), FLinearColor(
+						static_cast<float>(Share.Z), static_cast<float>(Share.Y), static_cast<float>(Share.X), 0.0f));
+					AureoleMaterial->SetScalarParameterValue(TEXT("Anisotropy"), static_cast<float>(Air.MieAnisotropy));
+					UE_LOG(LogLedger, Log, TEXT("aureole: width %.3f %.3f %.3f rad, share %.3f %.3f %.3f (R G B)"),
+						Width.Z, Width.Y, Width.X, Share.Z, Share.Y, Share.X);
+				}
+			}
+
 			// Ozone, and only where there is oxygen to make it from. It is why
 			// Earth's zenith is deep blue and why the band above the limb at
 			// twilight is violet rather than grey -- a carbon-dioxide sky has
@@ -156,6 +191,13 @@ void ALedgerAtmosphere::ConfigureForAir(
 			// profile of a machine with something else on it measures that.
 			Clouds->ViewSampleCountScale = 1.2f;
 			Clouds->ShadowViewSampleCountScale = 1.0f;
+			// **The sky light's capture marches the clouds too, into six faces**
+			// (T068). The Insights trace of the 300 m transect had the render thread
+			// 17 ms into SceneRender whenever the capture was retaken, and taking
+			// the terrain out of the capture did not improve it: the clouds are what
+			// is left. An ambient cubemap does not need a fine march through them.
+			Clouds->ReflectionViewSampleCountScaleValue = 0.15f;
+			Clouds->ShadowReflectionViewSampleCountScaleValue = 0.15f;
 			Clouds->PlanetRadius = RadiusKm;
 			Clouds->TracingMaxDistance = 250.0f;
 			bTracingInside = false;
@@ -493,4 +535,22 @@ void ALedgerAtmosphere::SetCloudQuality(float ViewSampleScale, float ShadowSampl
 	Clouds->ViewSampleCountScale = ViewSampleScale;
 	Clouds->ShadowViewSampleCountScale = ShadowSampleScale;
 	Clouds->MarkRenderStateDirty();
+}
+
+void ALedgerAtmosphere::SetAureoleEnabled(bool bOn)
+{
+	if (Aureole != nullptr)
+	{
+		Aureole->bEnabled = bOn;
+	}
+}
+
+void ALedgerAtmosphere::SetSunDirection(const FVector& ToSun)
+{
+	if (AureoleMaterial != nullptr)
+	{
+		const FVector Unit = ToSun.GetSafeNormal();
+		AureoleMaterial->SetVectorParameterValue(TEXT("SunDirection"),
+			FLinearColor(static_cast<float>(Unit.X), static_cast<float>(Unit.Y), static_cast<float>(Unit.Z), 0.0f));
+	}
 }

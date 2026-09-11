@@ -133,6 +133,10 @@ struct FLedgerPatchJob
 	/// first three are the colour's red, green and blue.
 	TArray<FVector2D> GroundWeightsB;
 	TArray<FVector2D> GroundWeightsC;
+
+	/// A drawn patch rebuilt because a neighbour changed depth: its shared edge
+	/// is open until it lands, so it is uploaded first (T068).
+	bool bRestitch = false;
 	TArray<FProcMeshTangent> Tangents;
 
 	/// Which three biomes this patch's vertex colours are weights of. Chosen
@@ -551,6 +555,16 @@ public:
 	/// transect caught shared edges 1.2 to 1.8 m open in one sample in five.
 	int32 RestitchReserve = 32;
 
+	/// Sections that may have collision switched on in one frame -- harvest,
+	/// cache uploads and in-place upgrades together. Creating a section's
+	/// physics state is 3 ms or more on the game thread, and T068's trace had
+	/// 60-117 ms frames while the first ground streamed in with it. Past the
+	/// allowance a patch lands without collision and the in-place upgrade adds
+	/// it on a later frame; the ship's own collision is the proxy's, so
+	/// nothing waits on it.
+	int32 CollisionEnablesPerFrame = 2;
+	int32 CollisionBudget = 0;
+
 	/// Milliseconds per frame the game thread may spend on streaming: cache
 	/// uploads, finished patches and the scatter rebuild, together.
 	///
@@ -559,7 +573,12 @@ public:
 	/// Collision work is exempt and is reported separately, because ground the
 	/// player is standing on is not a thing to be economical about.
 	UPROPERTY(EditAnywhere, Category = "Ledger|LOD")
-	double UploadBudgetMs = 6.0;
+	// 3, not 6: the gate is a 16.7 ms frame, and the terrain tick itself can
+	// take 8 of them (the LOD walk); six more of uploads was half the frames
+	// over budget in the 300 m transect (222 of 441 had uploads over 4 ms).
+	// Collision under the ship no longer depends on uploads keeping up -- the
+	// collision proxy answers there -- so they can wait a frame.
+	double UploadBudgetMs = 3.0;
 
 	/// Cook collision within this distance of the camera.
 	UPROPERTY(EditAnywhere, Category = "Ledger|Collision")

@@ -35,6 +35,9 @@ __pycache__/
 # wires up.
 /client/Content/Materials
 /client/Content/Meshes
+# CC0 photogrammetry models imported from downloads (Poly Haven), like the
+# scanned surfaces above: derived from files anyone can fetch, not source.
+/client/Content/Nature
 
 # Build artefacts the packager rewrites
 client/Build/Windows/FileOpenOrder/

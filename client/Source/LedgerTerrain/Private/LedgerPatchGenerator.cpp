@@ -364,7 +364,20 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 	static const bool bCaveMesh = FParse::Param(FCommandLine::Get(), TEXT("cavemesh"));
 	if (bCaveMesh && LedgerCaves::ShouldMeshCaves(Job))
 	{
-		const double RadiusCm = Job.Params.Radius;
+		// **A triangle goes only when all three corners stand over the mouth**
+		// (T056). Cut at the centroid, the rim was a sawtooth of missing
+		// triangles, and where a notch was deeper than the cave wall's top --
+		// which follows a coarser ground than the land -- the walk's photographs
+		// had a row of slits of sky down the wall. Cut by corners, the land ends
+		// in a lip a triangle wide over the opening instead, and the wall meets
+		// its underside. The field is asked once a corner, on the ground there.
+		TBitArray<> Open(false, Job.Vertices.Num());
+		for (int32 Index = 0; Index < Job.Vertices.Num() && Elevations.IsValidIndex(Index); ++Index)
+		{
+			const FVector3d World = FVector3d(Job.Vertices[Index]) + Job.Centre;
+			const double GroundMetres = Elevations[Index] / 100.0;
+			Open[Index] = LedgerCaves::Density(World.GetSafeNormal(), GroundMetres, GroundMetres, Job.Params) > 0.0;
+		}
 		TArray<int32> Kept;
 		Kept.Reserve(Job.Triangles.Num());
 		for (int32 Triangle = 0; Triangle + 2 < Job.Triangles.Num(); Triangle += 3)
@@ -372,16 +385,7 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			const int32 I0 = Job.Triangles[Triangle];
 			const int32 I1 = Job.Triangles[Triangle + 1];
 			const int32 I2 = Job.Triangles[Triangle + 2];
-
-			const FVector Centroid =
-				(Job.Vertices[I0] + Job.Vertices[I1] + Job.Vertices[I2]) / 3.0;
-			const FVector3d World = FVector3d(Centroid) + Job.Centre;
-			const FVector3d Direction = World.GetSafeNormal();
-			const double GroundMetres =
-				(Elevations[I0] + Elevations[I1] + Elevations[I2]) / 300.0;
-			const double AltitudeMetres = (World.Length() - RadiusCm) / 100.0;
-
-			if (LedgerCaves::Density(Direction, AltitudeMetres, GroundMetres, Job.Params) > 0.0)
+			if (Open[I0] && Open[I1] && Open[I2])
 			{
 				continue;
 			}
@@ -686,6 +690,103 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			Job.GroundWeightsB[Index] = FVector2D(Channel[3], Channel[4]);
 			Job.GroundWeightsC[Index] = FVector2D(Channel[5], Channel[6]);
 		}
+	}
+
+	// ---- skirts -----------------------------------------------------------
+	//
+	// **A strip hanging from every edge, so a crack has ground behind it**
+	// (T068). An edge is stitched to its neighbours as they were when the patch
+	// was built; when a neighbour changes depth the edge is wrong until its
+	// re-stitch lands, and at 900 m/s some do not land in time -- the edge
+	// probe on the 300 m transect found open edges at two to four samples of
+	// ten, 1.2 m to 2.6 km, however the re-stitch queue was budgeted. Each
+	// edge's vertices are copied and dropped towards the planet's centre by 5%
+	// of the patch's width, so a gap up to that deep shows ground-coloured wall
+	// rather than sky. Copies, so the terrain's own normals are not bent by a
+	// vertical face; and each takes its edge vertex's normal, colour, ground
+	// weights and morph, so it shades and moves with the edge. Appended after
+	// the grid: everything that reads the grid by index is unaffected.
+	// Not on a patch with caves under it: there a skirt hangs into the passage,
+	// a wall across it -- the walk was blocked by them, facing exactly sideways.
+	if (!Job.bHasCaves)
+	{
+		// The disk cache stores colours and ground weights as they were written,
+		// skirts and all; a patch read back from it would get a second set here.
+		// From the grid, then, whichever way the patch arrived.
+		for (TArray<FVector2D>* Weights : { &Job.GroundWeightsB, &Job.GroundWeightsC })
+		{
+			if (Weights->Num() > VertexCount)
+			{
+				Weights->SetNum(VertexCount);
+			}
+		}
+		if (Job.Colors.Num() > VertexCount)
+		{
+			Job.Colors.SetNum(VertexCount);
+		}
+		const double SkirtCm = Job.WorldSize * 0.05;
+		const int32 Middle = (Side / 2) * Side + Side / 2;
+		const bool bColours = Job.Colors.Num() >= VertexCount;
+		const bool bWeights = Job.GroundWeightsB.Num() >= VertexCount && Job.GroundWeightsC.Num() >= VertexCount;
+		auto AddSkirt = [&](auto IndexAt)
+		{
+			const FVector Outward = Job.Vertices[IndexAt(Side / 2)] - Job.Vertices[Middle];
+			const int32 Base = Job.Vertices.Num();
+			for (int32 I = 0; I < Side; ++I)
+			{
+				// Copies first: adding an element of an array to the same array
+				// hands it a reference the add may reallocate out from under.
+				const int32 From = IndexAt(I);
+				const FVector Top = Job.Vertices[From];
+				const FVector Down = FVector((FVector3d(Top) + Job.Centre).GetSafeNormal() * SkirtCm);
+				const FVector Normal = Job.Normals[From];
+				const FVector2D UV = Job.UVs[From];
+				const FVector2D Morph = Job.MorphUVs[From];
+				const FProcMeshTangent Tangent = Job.Tangents[From];
+				const FColor Colour = bColours ? Job.Colors[From] : FColor::White;
+				const FVector2D WeightsB = bWeights ? Job.GroundWeightsB[From] : FVector2D::ZeroVector;
+				const FVector2D WeightsC = bWeights ? Job.GroundWeightsC[From] : FVector2D::ZeroVector;
+				for (const FVector& Position : { Top, Top - Down })
+				{
+					Job.Vertices.Add(Position);
+					Job.Normals.Add(Normal);
+					Job.UVs.Add(UV);
+					Job.MorphUVs.Add(Morph);
+					Job.Tangents.Add(Tangent);
+					if (bColours)
+					{
+						Job.Colors.Add(Colour);
+					}
+					if (bWeights)
+					{
+						Job.GroundWeightsB.Add(WeightsB);
+						Job.GroundWeightsC.Add(WeightsC);
+					}
+				}
+			}
+			for (int32 I = 0; I + 1 < Side; ++I)
+			{
+				const int32 T0 = Base + 2 * I;
+				const int32 B0 = T0 + 1;
+				const int32 T1 = T0 + 2;
+				const int32 B1 = T0 + 3;
+				// Facing out of the patch, by this project's front face,
+				// (P2 - P0) x (P1 - P0), for the triangle (T0, T1, B0).
+				const FVector Front = FVector::CrossProduct(Job.Vertices[B0] - Job.Vertices[T0], Job.Vertices[T1] - Job.Vertices[T0]);
+				if (FVector::DotProduct(Front, Outward) >= 0.0)
+				{
+					Job.Triangles.Append({ T0, T1, B0, T1, B1, B0 });
+				}
+				else
+				{
+					Job.Triangles.Append({ T0, B0, T1, T1, B0, B1 });
+				}
+			}
+		};
+		AddSkirt([Side](int32 I) { return I * Side; });
+		AddSkirt([Side](int32 I) { return I * Side + Side - 1; });
+		AddSkirt([](int32 I) { return I; });
+		AddSkirt([Side](int32 I) { return (Side - 1) * Side + I; });
 	}
 
 	// ---- scatter ---------------------------------------------------------

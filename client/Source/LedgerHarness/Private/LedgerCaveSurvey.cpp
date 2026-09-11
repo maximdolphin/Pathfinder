@@ -397,7 +397,11 @@ void ULedgerCaveSurvey::Walk(float DeltaSeconds)
 	// 0.5 of up, sixty degrees -- and a walker lifts a foot over it. Swept again
 	// 60 cm higher; if that clears, it is a climb and counted as one. A wall, a
 	// roof or anything the lift does not clear stays blocked.
-	if (bBlocked && FVector::DotProduct(Hit.ImpactNormal, FVector(Up)) > 0.35)
+	// Anything that is not a roof: a step's riser is vertical, so how steeply the
+	// face points says nothing about whether a foot clears it -- chain122's last
+	// six blocks were ground facing 0.34 of up, just under the 0.35 this asked for.
+	// The lifted sweep is what decides.
+	if (bBlocked && FVector::DotProduct(Hit.ImpactNormal, FVector(Up)) > -0.2)
 	{
 		FHitResult Lifted;
 		const FVector Lift = FVector(Up) * 60.0;
@@ -706,7 +710,13 @@ bool ULedgerCaveSurvey::WriteSurvey()
 				FVector3d Direction;
 				double Altitude = 0.0;
 				BoxPoint(Frame, Params, X, Y, Z - 1, Direction, Altitude);
-				if (Altitude >= ColumnGround[Y * BoxWide + X])
+				// **And the ground there open.** The cell above being outdoors says the
+				// passage reaches the surface; it does not say the surface is holed there --
+				// the land's triangles are deleted only where the ground point itself is in
+				// the cave. Chain119's walk left by a "breach" of the first kind and spent its
+				// last metre inside the ground, with no floor under it.
+				if (Altitude >= ColumnGround[Y * BoxWide + X]
+					&& LedgerCaves::Density(Direction, ColumnGround[Y * BoxWide + X], ColumnGround[Y * BoxWide + X], Params) > 0.0)
 				{
 					++SurfaceTouches;
 					Breaches.Add(Index);

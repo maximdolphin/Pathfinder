@@ -33,8 +33,15 @@ namespace LedgerGiant
 
 	/// The full field: band, turbulence and storms, as a value from 0 to 1
 	/// that a palette maps to colour.
+	///
+	/// `SpacingRadians` is how far apart the caller samples it. Finer turbulence
+	/// is added only where that spacing resolves it -- four samples a
+	/// wavelength -- so a globe drawn at a degree a vertex is the field it
+	/// always was, and a descent sampling every few kilometres sees the eddies
+	/// inside a band. Zero, the default, adds none.
 	LEDGERCORE_API double SurfaceAt(
-		double LatitudeRadians, double LongitudeRadians, uint32 Seed, double Seconds);
+		double LatitudeRadians, double LongitudeRadians, uint32 Seed, double Seconds,
+		double SpacingRadians = 0.0);
 
 	/// How strongly a storm covers a point, 0 to 1.
 	///

@@ -529,6 +529,7 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// One allowance for the whole frame's streaming, opened before anything
 	// spends it. Collision work is exempt and reported separately.
 	Budget.Begin(UploadBudgetMs);
+	CollisionBudget = CollisionEnablesPerFrame;
 
 	HarvestCompletedPatches();
 	Stats.WorstHarvestMs = FMath::Max(Stats.WorstHarvestMs,
@@ -584,8 +585,6 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	int32 WithCollision = 0;
 	// ponytail: a fixed four a frame -- tie it to the streaming budget if the
 	// re-uploads ever show in the frame time.
-	constexpr int32 MaxCollisionUpgradesPerFrame = 4;
-	int32 CollisionUpgradesThisFrame = 0;
 	for (int32 Index = 0; Index < Leaves.Num(); ++Index)
 	{
 		const FLedgerQuadNode* Leaf = Leaves[Index];
@@ -620,10 +619,10 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 		// a render re-upload and an async cook, no job, no queue -- a few a frame.
 		if (const int32* ActiveSection = ActiveSections.Find(Key))
 		{
-			if (bWantsCollision && CollisionUpgradesThisFrame < MaxCollisionUpgradesPerFrame
+			if (bWantsCollision && CollisionBudget > 0
 				&& !InFlight.Contains(Key) && UpgradeCollision(*ActiveSection))
 			{
-				++CollisionUpgradesThisFrame;
+				--CollisionBudget;
 				++Stats.CollisionUpgrades;
 			}
 			continue;

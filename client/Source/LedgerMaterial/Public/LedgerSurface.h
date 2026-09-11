@@ -79,6 +79,10 @@ namespace LedgerSurface
 	/// material there is no reason left for the volume.
 	LEDGERMATERIAL_API UMaterialInterface* CreateUnderwaterMaterial(UObject* Outer);
 
+	/// The aureole: the sky near the sun, channel by channel, as the dust's
+	/// diffraction peak makes it rather than the engine's one lobe. T090.
+	LEDGERMATERIAL_API UMaterialInterface* CreateAureoleMaterial(UObject* Outer);
+
 	/// The canopy seen from inside: water, ice, fog and dust over the view. T101.
 	LEDGERMATERIAL_API UMaterialInterface* CreateVisorMaterial(UObject* Outer);
 

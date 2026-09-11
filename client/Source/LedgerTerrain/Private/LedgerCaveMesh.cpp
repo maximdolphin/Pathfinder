@@ -57,8 +57,16 @@ namespace LedgerCaves
 		// were never joined, and from inside a passage every brick seam was a
 		// slit of sky -- chain114's first photographs inside a cave. The next
 		// brick does not join its own first edge, so nothing is drawn twice.
-		const int32 Across = BrickAcross + 2;
-		const int32 Down = BrickDown + 1;
+		//
+		// **And one before, on -X and -Y, so each brick joins its own first edge
+		// too** (T056). Leaving that edge to the neighbour assumed the neighbour
+		// reached it at the same cell size; where the neighbour is a finer patch
+		// its strip stops half a coarse cell short, and down the walk's shadowed
+		// wall that was a line of slits of sky, still there after the bricks
+		// were given each other's altitude ranges. Both sides now draw the seam,
+		// so a boundary overlaps by a cell rather than depending on its neighbour.
+		// Lattice index X is corner X - 1 of the brick.
+		const int32 Across = BrickAcross + 3;
 		const double RadiusMetres = Job.Params.Radius / 100.0;
 
 		// ---- the ground under the brick, on a coarse grid --------------------
@@ -103,7 +111,34 @@ namespace LedgerCaves
 		const double CellDown = (ShellAboveMetres + BrickDepthMetres) / BrickDown;
 		// On a lattice of altitude shared by every brick, so two neighbours sample
 		// the same levels and meet along the same line rather than a cell apart.
-		const double TopMetres = FMath::CeilToDouble((CentreGround + ShellAboveMetres) / CellDown) * CellDown;
+		//
+		// **And over its neighbours' ranges as well as its own.** Each brick hangs
+		// from the ground at its own centre, so two side by side cover different
+		// altitudes, and the seam between them -- joined only by the brick on the
+		// -X/-Y side -- was drawn over that brick's range alone. Where the
+		// neighbour reached higher or lower, a vertical slit of sky stood on the
+		// boundary as tall as the difference: the slivers down the shadowed wall
+		// in T056's walk photographs. So a brick samples the union of its range
+		// and the ranges of the eight neighbours whose seams it joins, each found
+		// the way that neighbour finds it -- the ground at its centre.
+		auto TopAt = [&Job, CellDown](double U, double V)
+		{
+			const double Ground = LedgerTerrain::Elevation(
+				LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(Job.Face, U, V)), Job.Params) / 100.0;
+			return FMath::CeilToDouble((Ground + ShellAboveMetres) / CellDown) * CellDown;
+		};
+		const double OwnTop = FMath::CeilToDouble((CentreGround + ShellAboveMetres) / CellDown) * CellDown;
+		double TopMetres = OwnTop;
+		double BottomMetres = OwnTop - BrickDown * CellDown;
+		for (const FVector2D Step : { FVector2D(1.0, 0.0), FVector2D(0.0, 1.0), FVector2D(1.0, 1.0),
+			FVector2D(-1.0, 0.0), FVector2D(0.0, -1.0), FVector2D(-1.0, -1.0), FVector2D(1.0, -1.0), FVector2D(-1.0, 1.0) })
+		{
+			const double Top = TopAt(Job.U + (0.5 + Step.X) * Job.Extent, Job.V + (0.5 + Step.Y) * Job.Extent);
+			TopMetres = FMath::Max(TopMetres, Top);
+			BottomMetres = FMath::Min(BottomMetres, Top - BrickDown * CellDown);
+		}
+		const int32 Layers = FMath::RoundToInt32((TopMetres - BottomMetres) / CellDown);
+		const int32 Down = Layers + 1;
 
 		// ---- sample -----------------------------------------------------------
 		TArray<float> Samples;
@@ -116,8 +151,8 @@ namespace LedgerCaves
 
 		auto CornerPoint = [&Job, Across](int32 X, int32 Y)
 		{
-			const double LocalU = X / static_cast<double>(BrickAcross);
-			const double LocalV = Y / static_cast<double>(BrickAcross);
+			const double LocalU = (X - 1) / static_cast<double>(BrickAcross);
+			const double LocalV = (Y - 1) / static_cast<double>(BrickAcross);
 			return LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(
 				Job.Face, Job.U + LocalU * Job.Extent, Job.V + LocalV * Job.Extent));
 		};
@@ -133,8 +168,8 @@ namespace LedgerCaves
 				{
 					const FVector3d Direction = CornerPoint(X, Y);
 					const double LocalGround = GroundAt(
-						X / static_cast<double>(BrickAcross),
-						Y / static_cast<double>(BrickAcross));
+						(X - 1) / static_cast<double>(BrickAcross),
+						(Y - 1) / static_cast<double>(BrickAcross));
 					const float Value = static_cast<float>(
 						RockDensity(Direction, Altitude, LocalGround, Job.Params));
 					Samples[SampleIndex(X, Y, Z)] = Value;
@@ -153,8 +188,8 @@ namespace LedgerCaves
 
 		// ---- one vertex per crossed cell --------------------------------------
 		TArray<int32> CellVertex;
-		constexpr int32 CellsAcross = BrickAcross + 1;
-		CellVertex.Init(INDEX_NONE, CellsAcross * CellsAcross * BrickDown);
+		constexpr int32 CellsAcross = BrickAcross + 2;
+		CellVertex.Init(INDEX_NONE, CellsAcross * CellsAcross * Layers);
 
 		auto CellIndexOf = [](int32 X, int32 Y, int32 Z)
 		{
@@ -178,7 +213,7 @@ namespace LedgerCaves
 			{0,1,0},{1,1,0},{0,1,1},{1,1,1},
 			{0,0,1},{0,1,1},{1,0,1},{1,1,1} };
 
-		for (int32 Z = 0; Z < BrickDown; ++Z)
+		for (int32 Z = 0; Z < Layers; ++Z)
 		{
 			for (int32 Y = 0; Y < CellsAcross; ++Y)
 			{
@@ -265,11 +300,11 @@ namespace LedgerCaves
 			}
 		};
 
-		for (int32 Z = 1; Z < BrickDown; ++Z)
+		for (int32 Z = 1; Z < Layers; ++Z)
 		{
-			for (int32 Y = 1; Y <= BrickAcross; ++Y)
+			for (int32 Y = 1; Y <= BrickAcross + 1; ++Y)
 			{
-				for (int32 X = 1; X <= BrickAcross; ++X)
+				for (int32 X = 1; X <= BrickAcross + 1; ++X)
 				{
 					const float Here = Samples[SampleIndex(X, Y, Z)];
 

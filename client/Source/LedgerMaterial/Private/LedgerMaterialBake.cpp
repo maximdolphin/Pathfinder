@@ -231,6 +231,7 @@ namespace LedgerSurface
 		Record(TEXT("M_Terrain"), [](UObject* Outer) { return BuildTerrainMaterial(Outer, 0u); });
 		Record(TEXT("M_Water"), [](UObject* Outer) { return BuildWaterMaterial(Outer); });
 		Record(TEXT("M_Underwater"), [](UObject* Outer) { return BuildUnderwaterMaterial(Outer); });
+		Record(TEXT("M_Aureole"), [](UObject* Outer) { return BuildAureoleMaterial(Outer); });
 		Record(TEXT("M_Visor"), [](UObject* Outer) { return BuildVisorMaterial(Outer); });
 		Record(TEXT("M_Aurora"), [](UObject* Outer) { return BuildAuroraMaterial(Outer); });
 

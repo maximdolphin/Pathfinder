@@ -86,6 +86,13 @@ public:
 	/// T105: the volumetric budget turns these down before the frame rate goes.
 	void SetCloudQuality(float ViewSampleScale, float ShadowSampleScale);
 
+	/// Where the sun is, world space, for the aureole around it. T090.
+	void SetSunDirection(const FVector& ToSun);
+
+	/// The aureole pass on or off, for a comparison inside one run -- two runs
+	/// of the same world do not share their weather. T090.
+	void SetAureoleEnabled(bool bOn);
+
 private:
 	UPROPERTY()
 	TObjectPtr<USkyAtmosphereComponent> Atmosphere;
@@ -95,6 +102,13 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UExponentialHeightFogComponent> Fog;
+
+	/// The aureole pass: an unbound post-process with one material. T090.
+	UPROPERTY()
+	TObjectPtr<class UPostProcessComponent> Aureole;
+
+	UPROPERTY()
+	TObjectPtr<class UMaterialInstanceDynamic> AureoleMaterial;
 
 	/// An instance of whatever material the cloud component came with, so its
 	/// coverage can be driven without owning a material asset.

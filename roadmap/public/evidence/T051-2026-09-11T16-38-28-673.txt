@@ -1,0 +1,373 @@
+Climate along a meridian, pole to equator. T051.
+
+Sea-level temperature is the latitude band alone and is the
+quantity the acceptance is about. Surface temperature includes
+the lapse rate, so it is NOT monotonic and should not be: a
+mountain at the equator is colder than a beach at forty.
+
+planet radius 6344 km, sea level 0.14, peak 9.0 km
+
+relief survey, 16110 points: lowest -4725 m, highest 2457 m
+land is 31.0% of them; land altitude p50 251 m, p90 692 m, p99 1222 m
+a range here is a local peak 300 m above both neighbours
+
+height terms over land (mountains = ridges * land^1.4 * province):
+  ridges     p50 0.000  p90 0.096  p99 0.599  max 1.000
+  province   p50 0.332  p90 0.773  p99 1.000  max 1.000
+  land       p50 0.111  p90 0.298  p99 0.494  max 0.581
+  mountains  p50 0.000  p90 0.001  p99 0.063  max 0.333
+  ridge field before the clamp, min -1.0000 max 0.4399, deciles:
+    -0.8383 -0.7311 -0.6385 -0.5646 -0.4926 -0.4297 -0.3566 -0.2708 -0.1388 
+
+--- meridian 0 degrees ---
+  lat   alt m   sea T   surf T   moist   wind
+   90     -67   -28.9    -28.9   0.996   westerly
+   89     103   -28.5    -29.2   0.646   easterly
+   88     260   -28.1    -29.7   0.200   easterly
+   86     343   -27.5    -29.8   0.118   easterly
+   85     399   -27.0    -29.5   0.220   easterly
+   84     719   -26.3    -31.0   0.139   easterly
+   82     460   -25.7    -28.6   0.027   easterly
+   81     414   -25.0    -27.7   0.177   easterly
+   80     328   -24.4    -26.6   0.198   easterly
+   79     434   -23.8    -26.7   0.116   easterly
+   78     438   -23.2    -26.1   0.225   easterly
+   76     156   -22.6    -23.6   0.337   easterly
+   75     123   -21.9    -22.7   0.255   easterly
+   74     223   -21.3    -22.7   0.171   easterly
+   72     259   -20.5    -22.2   0.126   easterly
+   71     304   -19.8    -21.8   0.255   easterly
+   70     278   -19.0    -20.8   0.186   easterly
+   69     345   -18.2    -20.4   0.174   easterly
+   68     329   -17.3    -19.4   0.184   easterly
+   66     245   -16.4    -18.0   0.204   easterly
+   65     271   -15.5    -17.2   0.115   easterly
+   64     153   -14.5    -15.5   0.148   easterly
+   62     126   -13.5    -14.3   0.262   easterly
+   61     163   -12.5    -13.5   0.230   easterly
+   60     176   -11.4    -12.6   0.381   westerly
+   59     243   -10.4    -11.9   0.272   westerly
+   58     259    -9.3    -11.0   0.199   westerly
+   56     285    -8.2    -10.0   0.067   westerly
+   55     165    -7.0     -8.1   0.406   westerly
+   54      18    -5.9     -6.0   0.934   westerly
+   52    -130    -4.7     -4.7   0.998   westerly
+   51   -1407    -3.5     -3.5   1.000   westerly
+   50   -1749    -2.3     -2.3   0.911   westerly
+   49   -1245    -1.1     -1.1   1.000   westerly
+   48   -1307     0.1      0.1   1.000   westerly
+   46   -1457     1.3      1.3   1.000   westerly
+   45   -1811     2.5      2.5   0.945   westerly
+   44   -2184     3.7      3.7   0.983   westerly
+   42   -2552     4.9      4.9   1.000   westerly
+   41   -2318     6.1      6.1   1.000   westerly
+   40    -790     7.3      7.3   0.770   westerly
+   39    -870     8.5      8.5   0.984   westerly
+   38   -1167     9.7      9.7   1.000   westerly
+   36   -3215    10.8     10.8   0.997   westerly
+   35   -3589    12.0     12.0   1.000   westerly
+   34   -3644    13.1     13.1   1.000   westerly
+   32   -3666    14.2     14.2   0.998   westerly
+   31   -3654    15.3     15.3   1.000   westerly
+   30   -3616    16.4     16.4   1.000   westerly
+   29   -3629    17.4     17.4   1.000   easterly
+   28   -3653    18.4     18.4   1.000   easterly
+   26   -3748    19.4     19.4   1.000   easterly
+   25   -3741    20.3     20.3   1.000   easterly
+   24   -3726    21.2     21.2   0.998   easterly
+   22   -3787    22.1     22.1   1.000   easterly
+   21   -3861    22.9     22.9   0.988   easterly
+   20   -3855    23.7     23.7   1.000   easterly
+   19   -3951    24.5     24.5   0.989   easterly
+   18   -3952    25.2     25.2   0.997   easterly
+   16   -3766    25.9     25.9   0.999   easterly
+   15   -3518    26.5     26.5   1.000   easterly
+   14   -3109    27.1     27.1   1.000   easterly
+   12   -2095    27.6     27.6   1.000   easterly
+   11   -2944    28.1     28.1   1.000   easterly
+   10   -3476    28.5     28.5   1.000   easterly
+    9   -3589    28.9     28.9   1.000   easterly
+    8   -3580    29.2     29.2   0.984   easterly
+    6   -3505    29.5     29.5   1.000   easterly
+    5   -3531    29.8     29.8   0.993   easterly
+    4   -3553    29.9     29.9   1.000   easterly
+    2   -3572    30.1     30.1   1.000   easterly
+    1   -3472    30.2     30.2   0.990   easterly
+    0   -3403    30.2     30.2   0.959   easterly
+
+--- meridian 90 degrees ---
+  lat   alt m   sea T   surf T   moist   wind
+   90     -67   -28.9    -28.9   0.996   westerly
+   89     -47   -28.5    -28.5   0.991   easterly
+   88      -9   -28.1    -28.1   0.988   easterly
+   86     -34   -27.5    -27.5   0.999   easterly
+   85     -43   -27.0    -27.0   1.000   easterly
+   84      -9   -26.3    -26.3   0.818   easterly
+   82      95   -25.7    -26.3   0.260   easterly
+   81     161   -25.0    -26.1   0.218   easterly
+   80     133   -24.4    -25.3   0.341   easterly
+   79      25   -23.8    -24.0   0.833   easterly
+   78      18   -23.2    -23.3   0.790   easterly
+   76      19   -22.6    -22.7   0.597   easterly
+   75      87   -21.9    -22.5   0.385   easterly
+   74     117   -21.3    -22.0   0.287   easterly
+   72     194   -20.5    -21.8   0.298   easterly
+   71     255   -19.8    -21.4   0.241   easterly
+   70     255   -19.0    -20.6   0.264   easterly
+   69     134   -18.2    -19.0   0.495   easterly
+   68     -34   -17.3    -17.3   1.000   easterly
+   66    -107   -16.4    -16.4   0.967   easterly
+   65   -2362   -15.5    -15.5   1.000   easterly
+   64   -3439   -14.5    -14.5   1.000   easterly
+   62   -3458   -13.5    -13.5   0.991   easterly
+   61   -3408   -12.5    -12.5   1.000   easterly
+   60   -2707   -11.4    -11.4   1.000   westerly
+   59   -3287   -10.4    -10.4   0.746   westerly
+   58   -3532    -9.3     -9.3   0.974   westerly
+   56   -3607    -8.2     -8.2   0.991   westerly
+   55   -3821    -7.0     -7.0   0.978   westerly
+   54   -3758    -5.9     -5.9   1.000   westerly
+   52   -3791    -4.7     -4.7   0.977   westerly
+   51   -3850    -3.5     -3.5   0.986   westerly
+   50   -3879    -2.3     -2.3   0.986   westerly
+   49   -3894    -1.1     -1.1   0.994   westerly
+   48   -3844     0.1      0.1   1.000   westerly
+   46   -3724     1.3      1.3   1.000   westerly
+   45   -3600     2.5      2.5   1.000   westerly
+   44   -3484     3.7      3.7   1.000   westerly
+   42   -3384     4.9      4.9   1.000   westerly
+   41   -3261     6.1      6.1   0.990   westerly
+   40   -3354     7.3      7.3   0.989   westerly
+   39   -2112     8.5      8.5   1.000   westerly
+   38    -132     9.7      9.7   1.000   westerly
+   36     -79    10.8     10.8   1.000   westerly
+   35     -28    12.0     12.0   1.000   westerly
+   34     -63    13.1     13.1   1.000   westerly
+   32     -37    14.2     14.2   1.000   westerly
+   31     -24    15.3     15.3   0.999   westerly
+   30     -22    16.4     16.4   1.000   westerly
+   29     -69    17.4     17.4   0.973   easterly
+   28     -84    18.4     18.4   0.981   easterly
+   26     -60    19.4     19.4   1.000   easterly
+   25    -106    20.3     20.3   1.000   easterly
+   24    -145    21.2     21.2   0.989   easterly
+   22    -175    22.1     22.1   0.989   easterly
+   21    -113    22.9     22.9   1.000   easterly
+   20    -144    23.7     23.7   0.995   easterly
+   19    -160    24.5     24.5   0.977   easterly
+   18    -127    25.2     25.2   0.969   easterly
+   16    -158    25.9     25.9   0.983   easterly
+   15    -217    26.5     26.5   0.937   easterly
+   14   -1199    27.1     27.1   0.835   easterly
+   12    -632    27.6     27.6   0.771   easterly
+   11    -293    28.1     28.1   0.937   easterly
+   10    -397    28.5     28.5   0.968   easterly
+    9    -126    28.9     28.9   0.991   easterly
+    8     -59    29.2     29.2   1.000   easterly
+    6     198    29.5     28.2   0.418   easterly
+    5     262    29.8     28.1   0.255   easterly
+    4     223    29.9     28.5   0.066   easterly
+    2     343    30.1     27.8   0.094   easterly
+    1     412    30.2     27.5   0.197   easterly
+    0     577    30.2     26.4   0.054   easterly
+
+--- meridian 180 degrees ---
+  lat   alt m   sea T   surf T   moist   wind
+   90     -67   -28.9    -28.9   0.996   westerly
+   89     -80   -28.5    -28.5   0.989   easterly
+   88    -406   -28.1    -28.1   1.000   easterly
+   86    -292   -27.5    -27.5   0.947   easterly
+   85     -79   -27.0    -27.0   0.999   easterly
+   84      -9   -26.3    -26.3   1.000   easterly
+   82     267   -25.7    -27.4   0.512   easterly
+   81     505   -25.0    -28.3   0.186   easterly
+   80     632   -24.4    -28.5   0.159   easterly
+   79     716   -23.8    -28.5   0.262   easterly
+   78     777   -23.2    -28.3   0.230   easterly
+   76     704   -22.6    -27.2   0.164   easterly
+   75     707   -21.9    -26.5   0.252   easterly
+   74     614   -21.3    -25.3   0.267   easterly
+   72     538   -20.5    -24.0   0.276   easterly
+   71     466   -19.8    -22.8   0.297   easterly
+   70     438   -19.0    -21.8   0.216   easterly
+   69     409   -18.2    -20.8   0.236   easterly
+   68     408   -17.3    -19.9   0.061   easterly
+   66     472   -16.4    -19.5   0.298   easterly
+   65     291   -15.5    -17.4   0.190   easterly
+   64     219   -14.5    -15.9   0.098   easterly
+   62     156   -13.5    -14.5   0.307   easterly
+   61     160   -12.5    -13.5   0.223   easterly
+   60     124   -11.4    -12.2   0.381   westerly
+   59      92   -10.4    -11.0   0.328   westerly
+   58     256    -9.3    -10.9   0.231   westerly
+   56     199    -8.2     -9.4   0.248   westerly
+   55     241    -7.0     -8.6   0.348   westerly
+   54     122    -5.9     -6.7   0.609   westerly
+   52      10    -4.7     -4.8   0.937   westerly
+   51     -67    -3.5     -3.5   1.000   westerly
+   50     -86    -2.3     -2.3   0.998   westerly
+   49    -100    -1.1     -1.1   1.000   westerly
+   48    -281     0.1      0.1   0.998   westerly
+   46    -225     1.3      1.3   0.980   westerly
+   45    -323     2.5      2.5   0.965   westerly
+   44    -843     3.7      3.7   0.928   westerly
+   42   -1523     4.9      4.9   0.923   westerly
+   41   -2596     6.1      6.1   0.846   westerly
+   40   -3456     7.3      7.3   1.000   westerly
+   39   -3326     8.5      8.5   1.000   westerly
+   38   -3466     9.7      9.7   0.969   westerly
+   36   -3452    10.8     10.8   1.000   westerly
+   35   -3483    12.0     12.0   1.000   westerly
+   34   -3711    13.1     13.1   0.998   westerly
+   32   -3846    14.2     14.2   1.000   westerly
+   31   -3968    15.3     15.3   0.987   westerly
+   30   -4025    16.4     16.4   1.000   westerly
+   29   -4092    17.4     17.4   1.000   easterly
+   28   -4106    18.4     18.4   0.998   easterly
+   26   -4111    19.4     19.4   1.000   easterly
+   25   -4096    20.3     20.3   1.000   easterly
+   24   -4033    21.2     21.2   1.000   easterly
+   22   -4000    22.1     22.1   1.000   easterly
+   21   -3906    22.9     22.9   1.000   easterly
+   20   -3903    23.7     23.7   1.000   easterly
+   19   -3820    24.5     24.5   1.000   easterly
+   18   -3570    25.2     25.2   1.000   easterly
+   16   -3010    25.9     25.9   1.000   easterly
+   15   -1213    26.5     26.5   1.000   easterly
+   14   -1294    27.1     27.1   1.000   easterly
+   12   -2449    27.6     27.6   1.000   easterly
+   11   -2331    28.1     28.1   1.000   easterly
+   10   -2662    28.5     28.5   1.000   easterly
+    9   -2872    28.9     28.9   1.000   easterly
+    8   -1778    29.2     29.2   1.000   easterly
+    6     -83    29.5     29.5   1.000   easterly
+    5     -47    29.8     29.8   1.000   easterly
+    4     -50    29.9     29.9   1.000   easterly
+    2     -69    30.1     30.1   1.000   easterly
+    1    -108    30.2     30.2   1.000   easterly
+    0     -65    30.2     30.2   1.000   easterly
+
+--- meridian 270 degrees ---
+  lat   alt m   sea T   surf T   moist   wind
+   90     -67   -28.9    -28.9   0.996   westerly
+   89     -42   -28.5    -28.5   1.000   easterly
+   88      14   -28.1    -28.1   0.965   easterly
+   86     141   -27.5    -28.4   0.731   easterly
+   85     127   -27.0    -27.8   0.580   easterly
+   84      87   -26.3    -26.9   0.682   easterly
+   82     157   -25.7    -26.7   0.506   easterly
+   81     350   -25.0    -27.3   0.125   easterly
+   80     396   -24.4    -27.0   0.061   easterly
+   79     582   -23.8    -27.6   0.291   easterly
+   78     833   -23.2    -28.6   0.301   easterly
+   76     888   -22.6    -28.4   0.153   easterly
+   75     881   -21.9    -27.7   0.112   easterly
+   74     881   -21.3    -27.0   0.328   easterly
+   72     673   -20.5    -24.9   0.337   easterly
+   71     522   -19.8    -23.2   0.199   easterly
+   70     453   -19.0    -21.9   0.054   easterly
+   69     479   -18.2    -21.3   0.171   easterly
+   68     314   -17.3    -19.3   0.289   easterly
+   66      46   -16.4    -16.7   0.318   easterly
+   65      85   -15.5    -16.0   0.854   easterly
+   64      96   -14.5    -15.1   0.759   easterly
+   62     152   -13.5    -14.5   0.676   easterly
+   61      93   -12.5    -13.1   0.407   easterly
+   60     213   -11.4    -12.8   0.381   westerly
+   59     -36   -10.4    -10.4   1.000   westerly
+   58     -69    -9.3     -9.3   0.985   westerly
+   56     320    -8.2    -10.2   0.238   westerly
+   55     336    -7.0     -9.2   0.280   westerly
+   54     235    -5.9     -7.4   0.518   westerly
+   52     124    -4.7     -5.5   0.602   westerly
+   51      82    -3.5     -4.1   0.842   westerly
+   50     -25    -2.3     -2.3   0.999   westerly
+   49     -17    -1.1     -1.1   0.997   westerly
+   48     -10     0.1      0.1   0.996   westerly
+   46     138     1.3      0.4   0.267   westerly
+   45     206     2.5      1.2   0.171   westerly
+   44     275     3.7      1.9   0.115   westerly
+   42     315     4.9      2.9   0.311   westerly
+   41     243     6.1      4.5   0.329   westerly
+   40     262     7.3      5.6   0.322   westerly
+   39     251     8.5      6.9   0.334   westerly
+   38     197     9.7      8.4   0.317   westerly
+   36     377    10.8      8.4   0.263   westerly
+   35     287    12.0     10.1   0.266   westerly
+   34     373    13.1     10.7   0.174   westerly
+   32     572    14.2     10.5   0.058   westerly
+   31     248    15.3     13.7   0.273   westerly
+   30     254    16.4     14.7   0.381   westerly
+   29     204    17.4     16.1   0.253   easterly
+   28     172    18.4     17.3   0.459   easterly
+   26     -40    19.4     19.4   1.000   easterly
+   25   -1348    20.3     20.3   1.000   easterly
+   24   -2295    21.2     21.2   1.000   easterly
+   22   -3014    22.1     22.1   1.000   easterly
+   21   -3130    22.9     22.9   1.000   easterly
+   20   -3351    23.7     23.7   1.000   easterly
+   19   -3435    24.5     24.5   0.977   easterly
+   18   -3475    25.2     25.2   0.999   easterly
+   16   -3555    25.9     25.9   1.000   easterly
+   15   -3465    26.5     26.5   1.000   easterly
+   14   -3368    27.1     27.1   1.000   easterly
+   12   -3445    27.6     27.6   1.000   easterly
+   11   -3333    28.1     28.1   1.000   easterly
+   10   -2585    28.5     28.5   0.923   easterly
+    9   -2060    28.9     28.9   1.000   easterly
+    8   -1871    29.2     29.2   1.000   easterly
+    6   -2159    29.5     29.5   1.000   easterly
+    5   -2575    29.8     29.8   0.941   easterly
+    4   -3229    29.9     29.9   1.000   easterly
+    2   -2198    30.1     30.1   1.000   easterly
+    1   -2199    30.2     30.2   1.000   easterly
+    0   -2542    30.2     30.2   1.000   easterly
+
+major ranges, searched every degree of longitude:
+    lon    lat    peak   windward     lee
+  (only the ones without a shadow are listed; 144 had one)
+
+  no shadow: 0 at a wind-band boundary (25-35 or 55-65 degrees, where the prevailing wind turns through zero), 0 dry on both sides (nothing to shadow), 0 wetter on the lee, 0 other
+
+every wind-crossing ridge, by how far it stands above its
+neighbours two steps upwind and downwind:
+
+  prominence   ridges   drier on the lee
+       0 m       1058     523  (49%)
+      50 m        225     199  (88%)
+     100 m        154     141  (92%)
+     200 m         85      83  (98%)
+     300 m         52      51  (98%)
+     500 m         17      17  (100%)
+
+every wind-crossing ridge: 83 of 85 drier on the lee side (98%)
+fifty per cent is a coin toss and means there is no shadow.
+
+
+biomes over 19435 land points, 8 loaded:
+  Ice cap                 22.1% of land by area
+  Tundra                  13.1% of land by area
+  Boreal forest            1.6% of land by area
+  Temperate forest         2.0% of land by area
+  Temperate grassland     19.9% of land by area
+  Savanna                 16.8% of land by area
+  Desert                  20.9% of land by area
+  Tropical rainforest      3.7% of land by area
+  in a transition (no biome above 75% weight): 35.6%
+
+snow on land at season 0.686:
+  0-30       0.0% of land with any snow, mean cover 0.00
+  30-60     38.5% of land with any snow, mean cover 0.31
+  60-90    100.0% of land with any snow, mean cover 0.94
+
+land slope at the mesh vertex spacing of 4.8 m, 19435 points:
+  p50 8.8  p90 18.1  p99 32.4  max 62.7 degrees
+  at or above 30 degrees: 1.44%   at or above 60: 0.010%
+sea-level temperature monotonic pole to equator: yes
+major ranges found 144, of which with a rain shadow 144
+major ranges in a calm belt, with no prevailing wind to have a lee side: 105 (not counted above)
+major ranges the wind crosses at under 300 m of climb: 85, and dry on both sides (under 0.03): 24 (neither counted above)
+major ranges that lift the air under 300 m past higher ground it crossed upwind: 219, 214 of them with a shadow anyway (not counted above)
+every wind-crossing ridge shadowed: 98% (needs 75)
+
+VERDICT: PASS

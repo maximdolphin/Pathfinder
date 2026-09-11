@@ -135,6 +135,19 @@ namespace
 		return static_cast<uint32>(Seed);
 	}
 
+	/// The home body's air -- or, with `-marsair`, Mars's: carbon dioxide at
+	/// 610 Pa and 210 K under 3.71 m/s^2, through the same arithmetic as every
+	/// generated world. T090 asks for a thin carbon-dioxide sky, and the only
+	/// carbon-dioxide world the fixtures have used holds 55,666 Pa -- ninety
+	/// Martian atmospheres, whose gas takes half the blue from the dust.
+	FLedgerAirProfile HomeAir(const FLedgerSystem& System, double WhenSeconds)
+	{
+		static const bool bMars = FParse::Param(FCommandLine::Get(), TEXT("marsair"));
+		return bMars
+			? LedgerAir::Describe(ELedgerAir::CarbonDioxide, 610.0, 210.0, 3.711, 3.390e6)
+			: LedgerAir::For(System, HomeBody(), WhenSeconds);
+	}
+
 	/// The sun's direction for this run, from the command line alone.
 	///
 	/// The game mode needs this to put the player start over the lit side, and
@@ -303,6 +316,7 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 		Controller->GetPlayerViewPoint(ViewPoint, ViewRotation);
 		const FVector3d ViewerUp =
 			(FVector3d(ViewPoint) - FVector3d(Planet->GetActorLocation())).GetSafeNormal();
+		Atmosphere->SetSunDirection(FVector(SunFacing.GetSafeNormal()));
 		Atmosphere->SetSunElevationFloorDegrees(FMath::RadiansToDegrees(FMath::Asin(
 			FMath::Clamp(FVector3d::DotProduct(SunFacing.GetSafeNormal(), ViewerUp), -1.0, 1.0))));
 		// Against the same sea-level radius the cloud component is wrapped round.
@@ -332,7 +346,12 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 	const double AltitudeCm = Planet != nullptr
 		? FMath::Max(0.0, FVector3d::Dist(FVector3d(Now), FVector3d(Planet->GetActorLocation())) - Planet->Radius)
 		: 0.0;
-	const double Threshold = FMath::Max(100000.0, AltitudeCm * 0.1);
+	//
+	// **Ten kilometres, not one** (T068): at 900 m/s one kilometre was a cubemap
+	// every 1.1 s, about two hundred on the 300 m transect, each a frame over
+	// budget. What the capture sees changes with altitude and with the sun --
+	// both still tracked -- and hardly at all over ten kilometres of ground.
+	const double Threshold = FMath::Max(1000000.0, AltitudeCm * 0.1);
 	const bool bSunMoved = FVector3d::DotProduct(SunFacing.GetSafeNormal(), LastSkyCaptureSun)
 		< FMath::Cos(FMath::DegreesToRadians(1.0));
 	if (FVector::Distance(Was, LastSkyCapture) > Threshold
@@ -375,7 +394,7 @@ void ULedgerWorldBuilder::SetWhenSeconds(double Seconds)
 	// hanging over every other.
 	if (Atmosphere != nullptr && System.Bodies.IsValidIndex(HomeBody()))
 	{
-		const FLedgerAirProfile Air = LedgerAir::For(System, HomeBody(), WhenSeconds);
+		const FLedgerAirProfile Air = HomeAir(System, WhenSeconds);
 		const double Latitude = FMath::Asin(
 			FMath::Clamp(SiteDirection.GetSafeNormal().Z, -1.0, 1.0));
 		const double Longitude = FMath::Atan2(SiteDirection.Y, SiteDirection.X);
@@ -697,7 +716,7 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 	// Only where there is air to draw. A sky on an airless moon is the single
 	// most visible way to get this wrong, and it is one `if` -- and now the
 	// `if` is the profile's own answer rather than a second opinion about it.
-	const FLedgerAirProfile Air = LedgerAir::For(System, HomeBody(), WhenSeconds);
+	const FLedgerAirProfile Air = HomeAir(System, WhenSeconds);
 	const bool bAtmosphere = Air.HasAir();
 	//
 	// The actor is placed in the level and stays there on every body. On an

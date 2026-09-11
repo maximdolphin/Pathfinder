@@ -23,6 +23,7 @@
 #include "Materials/MaterialExpressionCollectionParameter.h"
 #include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialParameterCollection.h"
+#include "Materials/MaterialExpressionDistance.h"
 #include "Materials/MaterialExpressionNoise.h"
 #include "Materials/MaterialExpressionNormalize.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
@@ -340,9 +341,26 @@ namespace LedgerSurface
 		Weather->OutputMin = 0.0f;
 		Weather->OutputMax = 1.0f;
 		Weather->bTurbulence = false;
-		UMaterialExpression* Clouds = Graph.Add(Noise, Graph.Multiply(
+		// **Averaged away with distance** (T094). From a 400 km orbit a pixel spans
+		// a few hundred metres at the nadir and kilometres towards the limb, and
+		// noise finer than a pixel aliases: that was the speckled sepia veil over
+		// the whole disc. Between 10 and 60 km from the camera the fine fields
+		// fade to their mean, which is what they average to over a pixel, so from
+		// orbit the coverage is the weather systems' -- masses hundreds of
+		// kilometres across with clear air between -- and close in it is
+		// unchanged. The position is camera-relative, so its length is the range.
+		UMaterialExpressionDistance* Range = Graph.Make<UMaterialExpressionDistance>();
+		Range->A.Expression = Position;
+		Range->B.Expression = Graph.Constant3(FLinearColor::Black);
+		UMaterialExpression* Far = Saturate(Graph, Graph.Divide(
+			Graph.Subtract(Range, Graph.Constant(1.0e6f)), Graph.Constant(5.0e6f)));
+		auto Faded = [&Graph, Far](UMaterialExpression* Field)
+		{
+			return Graph.Add(Field, Graph.Multiply(Graph.Subtract(Graph.Constant(0.5f), Field), Far));
+		};
+		UMaterialExpression* Clouds = Graph.Add(Faded(Noise), Graph.Multiply(
 			Graph.Subtract(Weather, Graph.Constant(0.5f)),
-			Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+			Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 
 		// Three decks, with defaults that are Earth's if nobody sets them.
 		// Centres are fractions of the layer: a layer from the cumulus base to
@@ -350,6 +368,11 @@ namespace LedgerSurface
 		// cirrus near the top.
 		UMaterialExpressionScalarParameter* Softness =
 			Parameter(Graph, TEXT("EdgeSoftness"), 0.06f);
+		// Sharper with range (T094): from orbit, a soft edge on a field that varies
+		// over hundreds of kilometres is a haze tens of kilometres wide, and three
+		// decks of it were the overcast veil. A quarter of the softness far off.
+		UMaterialExpression* Edge = Graph.Multiply(Softness,
+			Graph.Subtract(Graph.Constant(1.0f), Graph.Scale(Far, 0.75f)));
 
 		// **A shape for each deck, not one texture for three.** From a 400 km
 		// orbit the decks were a single speckled veil: every one of them was the
@@ -372,16 +395,16 @@ namespace LedgerSurface
 			return Field;
 		};
 		UMaterialExpression* CumulusField = Graph.Add(
-			DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3),
-			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3)),
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
 		AlongStreak->A.Expression = Flattened;
 		AlongStreak->B.Expression = Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f));
 		UMaterialExpression* Stretched = Graph.Subtract(Flattened,
 			Graph.Multiply(Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f)), Graph.Scale(AlongStreak, 0.88f)));
 		UMaterialExpression* CirrusField = Graph.Add(
-			DeckNoise(Graph.Multiply(Stretched, Parameter(Graph, TEXT("CirrusScale"), 0.000008f)), 3),
-			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+			Faded(DeckNoise(Graph.Multiply(Stretched, Parameter(Graph, TEXT("CirrusScale"), 0.000008f)), 3)),
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 
 		UMaterialExpression* StormThick = Graph.Constant(1.0f);
 		// **The storms, where the weather says they are.** T097. The four
@@ -443,11 +466,11 @@ namespace LedgerSurface
 			}
 		}
 
-		const FBand Cumulus = MakeBand(Graph, Altitude, CumulusField, Softness,
+		const FBand Cumulus = MakeBand(Graph, Altitude, CumulusField, Edge,
 			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
-		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Softness,
+		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Edge,
 			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f);
-		const FBand Cirrus = MakeBand(Graph, Altitude, CirrusField, Softness,
+		const FBand Cirrus = MakeBand(Graph, Altitude, CirrusField, Edge,
 			TEXT("Cirrus"), 0.86f, 0.12f, 0.35f, 0.18f);
 
 		UMaterialExpression* Total =
@@ -498,9 +521,13 @@ namespace LedgerSurface
 		Scattering->ConstPhaseG = 0.6f;
 		Scattering->ConstPhaseG2 = -0.3f;
 		Scattering->ConstPhaseBlend = 0.5f;
-		Scattering->MultiScatteringApproximationOctaveCount = 2;
-		Scattering->ConstMultiScatteringContribution = 0.5f;
-		Scattering->ConstMultiScatteringOcclusion = 0.5f;
+		// Three octaves at 0.7, occlusion 0.4 (T094): at two and 0.5 a deck seen from
+		// orbit was as dim as the sand under it, where a thick cloud's albedo is
+		// about 0.8 -- the orders of scattering the approximation leaves out are
+		// most of a thick cloud's brightness.
+		Scattering->MultiScatteringApproximationOctaveCount = 3;
+		Scattering->ConstMultiScatteringContribution = 0.7f;
+		Scattering->ConstMultiScatteringOcclusion = 0.4f;
 		Scattering->ConstMultiScatteringEccentricity = 0.5f;
 		Scattering->bGroundContribution = true;
 		// **`-cloudprobe` makes the material show its own coordinate.**
@@ -534,8 +561,14 @@ namespace LedgerSurface
 			// `-cloudconst` takes the noise out too: a constant thin extinction. A
 			// uniform haze then means the pin reaches the integrator and the noise
 			// is what comes out as zero; nothing means the pin does not.
+			// `-cloudfarprobe` draws the range fade itself (T094): clear sky where
+			// the fine fields are kept, a thin haze where they are averaged away.
+			// From orbit that has to be the whole disc; if it is not, the fade is
+			// not seeing the range it was written against.
 			EditorData->SubsurfaceColor.Expression = FParse::Param(FCommandLine::Get(), TEXT("cloudconst"))
 				? Graph.Constant(3.0e-4f)
+				: FParse::Param(FCommandLine::Get(), TEXT("cloudfarprobe"))
+				? Graph.Scale(Far, 3.0e-4f)
 				: Graph.Scale(Noise, 3.0e-4f);
 			UE_LOG(LogLedger, Log,
 				TEXT("cloud material: probe on, density is the raw noise"));

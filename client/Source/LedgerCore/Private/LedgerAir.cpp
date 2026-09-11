@@ -123,6 +123,58 @@ namespace LedgerAir
 		}
 	}
 
+	// ponytail: one radius per composition, from the missions that measured
+	// them; a size distribution when a sky needs more than one peak.
+	static double AerosolRadius(ELedgerAir Composition)
+	{
+		switch (Composition)
+		{
+		// Sulphate and sea-salt haze, a few tenths of a micron.
+		case ELedgerAir::NitrogenOxygen: return 0.3e-6;
+		// Martian dust: 1.5 microns effective (Pathfinder, the rovers' sky
+		// brightness).
+		case ELedgerAir::CarbonDioxide:  return 1.5e-6;
+		// Titan's tholin aggregates, small in the way that matters here.
+		case ELedgerAir::Nitrogen:       return 0.5e-6;
+		// Ammonia ice.
+		case ELedgerAir::HydrogenHelium: return 1.0e-6;
+		default:                         return 0.0;
+		}
+	}
+
+	static const FVector3d AureoleWavelengths(440.0e-9, 550.0e-9, 680.0e-9);
+
+	FVector3d AureoleWidthRadians(const FLedgerAirProfile& Air)
+	{
+		FVector3d Out(1.0, 1.0, 1.0);
+		for (int32 Channel = 0; Channel < 3 && Air.AerosolRadiusMetres > 0.0; ++Channel)
+		{
+			const double SizeParameter = 2.0 * UE_DOUBLE_PI * Air.AerosolRadiusMetres / AureoleWavelengths[Channel];
+			Out[Channel] = 2.0 / SizeParameter;
+		}
+		return Out;
+	}
+
+	FVector3d AureoleFraction(const FLedgerAirProfile& Air)
+	{
+		FVector3d Out = FVector3d::ZeroVector;
+		if (!Air.HasAir() || Air.AerosolRadiusMetres <= 0.0 || Air.MiePerMetre <= 0.0)
+		{
+			return Out;
+		}
+		for (int32 Channel = 0; Channel < 3; ++Channel)
+		{
+			const double SizeParameter = 2.0 * UE_DOUBLE_PI * Air.AerosolRadiusMetres / AureoleWavelengths[Channel];
+			const double Albedo = FMath::Max(Air.MieScatteringPerMetre[Channel] / Air.MiePerMetre, 0.05);
+			const double Diffracted = FMath::Min(1.0, 0.5 / Albedo) * FMath::SmoothStep(4.0, 10.0, SizeParameter);
+			// Of what the sky scatters, the aerosol's share: each over its own column.
+			const double Aerosol = Air.MieScatteringPerMetre[Channel] * Air.MieScaleHeightMetres;
+			const double Gas = Air.RayleighPerMetre[Channel] * Air.ScaleHeightMetres;
+			Out[Channel] = Aerosol + Gas > 0.0 ? Diffracted * Aerosol / (Aerosol + Gas) : 0.0;
+		}
+		return Out;
+	}
+
 	FVector3d SkyColour(const FLedgerAirProfile& Air, double AirMasses)
 	{
 		FVector3d Out = FVector3d::ZeroVector;
@@ -332,6 +384,7 @@ namespace LedgerAir
 		Out.MieAbsorptionPerMetre =
 			(FVector3d(1.0, 1.0, 1.0) - Albedo) * Out.MiePerMetre;
 		Out.MieAnisotropy = AerosolAnisotropy(Composition);
+		Out.AerosolRadiusMetres = AerosolRadius(Composition);
 
 		// **Ozone exists because oxygen does.** No oxygen, no ozone layer, and
 		// no violet twilight band -- which is a visible difference between a

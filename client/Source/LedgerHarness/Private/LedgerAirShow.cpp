@@ -17,6 +17,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
+#include "LedgerAtmosphere.h"
 
 namespace
 {
@@ -48,6 +49,13 @@ namespace
 		// around it is another, and on a dusty world they are supposed to be
 		// opposite ways round from ours.
 		{ TEXT("sunset"), 0.0,  0.05, 40.0f },
+		// **The sun two degrees up, for the aureole.** T090. In the sunset frame
+		// the sun sits on a horizon that eighteen optical depths of dust have
+		// already put out, and the peak around it is multiplied from black. Two
+		// degrees higher it is still setting and the sky round it is lit.
+		{ TEXT("aureole"), 0.0, 0.04, 30.0f },
+		// The same frame with the pass off: the control, in the same weather.
+		{ TEXT("aureole-off"), 0.0, 0.04, 30.0f },
 		{ TEXT("orbit"),  2.0,  0.00, 50.0f },
 	};
 
@@ -112,6 +120,21 @@ void ULedgerAirShow::OnWorldBeginPlay(UWorld& InWorld)
 			}
 			Previous = Now;
 		}
+	}
+
+	// And when it is two degrees up on the way down, for the aureole view: the
+	// altitude falls from the start of the show to sunset, so bisect between.
+	if (SunsetSeconds > 0.0)
+	{
+		const double Target = FMath::DegreesToRadians(2.0);
+		double Low = NoonSeconds;
+		double High = SunsetSeconds;
+		for (int32 Halving = 0; Halving < 60; ++Halving)
+		{
+			const double Middle = (Low + High) * 0.5;
+			(LedgerSky::SolarAltitude(System, Home, Anchor, Middle) > Target ? Low : High) = Middle;
+		}
+		AureoleSeconds = (Low + High) * 0.5;
 	}
 
 	UE_LOG(LogLedger, Log,
@@ -226,11 +249,20 @@ void ULedgerAirShow::Place()
 
 	// The sunset frame is a different moment, not just a different aim.
 	const bool bSunset = FString(View.What) == TEXT("sunset");
+	const bool bAureole = FString(View.What).StartsWith(TEXT("aureole"));
+	if (ALedgerAtmosphere* Sky = Builder->GetAtmosphere())
+	{
+		Sky->SetAureoleEnabled(FString(View.What) != TEXT("aureole-off"));
+	}
 	if (bSunset && SunsetSeconds > 0.0)
 	{
 		Builder->SetWhenSeconds(SunsetSeconds);
 	}
-	else if (!bSunset)
+	else if (bAureole && AureoleSeconds > 0.0)
+	{
+		Builder->SetWhenSeconds(AureoleSeconds);
+	}
+	else if (!bSunset && !bAureole)
 	{
 		Builder->SetWhenSeconds(NoonSeconds);
 	}

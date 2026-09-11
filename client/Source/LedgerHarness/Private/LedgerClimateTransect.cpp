@@ -225,6 +225,8 @@ bool ULedgerClimateTransect::WriteTransect()
 	bool bMonotonic = true;
 	int32 RangesFound = 0;
 	int32 RangesLowAlongWind = 0;
+	int32 RangesLiftedBefore = 0;
+	int32 RangesLiftedBeforeShadowed = 0;
 	int32 RangesDry = 0;
 	int32 RangesInCalmBelt = 0;
 	int32 RangesWithShadow = 0;
@@ -378,6 +380,25 @@ bool ULedgerClimateTransect::WriteTransect()
 				continue;
 			}
 
+			// **And past what the air has already climbed.** The 300 m above is
+			// measured from the ground two steps upwind, but the air arriving there
+			// may have crossed higher ground further back and been wrung out on it:
+			// a 757 m ridge downwind of a 752 m crest lifts the air five metres, and
+			// a 1,294 m range downwind of a 1,563 m one lifts it not at all -- two of
+			// the five ranges the census listed with a lee only a little drier. The
+			// same 300 m bar, measured against the highest ground on the windward
+			// march. Counted and reported below, with how many shadowed anyway.
+			double UpwindHighest = -1.0e9;
+			{
+				TArray<FVector2d> Upwind;
+				LedgerClimate::MoistureAlong(WindwardPoint, Params, &Upwind);
+				for (const FVector2d& Step : Upwind)
+				{
+					UpwindHighest = FMath::Max(UpwindHighest, Step.X);
+				}
+			}
+			const bool bLiftedBefore = Peak - UpwindHighest < MajorRangeMetres;
+
 			// **A calm belt has no lee side.** Within a few degrees of 30 and 60
 			// the prevailing wind turns through zero (the subtropical ridge and the
 			// polar front, where no wind prevails), so a range there has no
@@ -401,6 +422,14 @@ bool ULedgerClimateTransect::WriteTransect()
 				++RangesDry;
 				continue;
 			}
+			// Absolute OR relative -- see the test below.
+			auto IsShadow = [](double W, double L) { return (W - L) > 0.02 || (W > 0.005 && L < W * 0.80); };
+			if (bLiftedBefore)
+			{
+				++RangesLiftedBefore;
+				RangesLiftedBeforeShadowed += IsShadow(Windward, Lee) ? 1 : 0;
+				continue;
+			}
 			++RangesFound;
 
 			// The claim is specifically that the LEE side is the dry one. A
@@ -419,8 +448,7 @@ bool ULedgerClimateTransect::WriteTransect()
 			// Both are kept because both are real. In a wet region 0.90 to
 			// 0.80 is a shadow the absolute test catches and the relative one
 			// does not; in a dry one 0.041 to 0.021 is the reverse.
-			const bool bShadow =
-				(Windward - Lee) > 0.02 || (Windward > 0.005 && Lee < Windward * 0.80);
+			const bool bShadow = IsShadow(Windward, Lee);
 			if (bShadow)
 			{
 				++RangesWithShadow;
@@ -759,6 +787,9 @@ bool ULedgerClimateTransect::WriteTransect()
 	Body += FString::Printf(
 		TEXT("major ranges the wind crosses at under 300 m of climb: %d, and dry on both sides (under 0.03): %d (neither counted above)\n"),
 		RangesLowAlongWind, RangesDry);
+	Body += FString::Printf(
+		TEXT("major ranges that lift the air under 300 m past higher ground it crossed upwind: %d, %d of them with a shadow anyway (not counted above)\n"),
+		RangesLiftedBefore, RangesLiftedBeforeShadowed);
 	Body += FString::Printf(
 		TEXT("every wind-crossing ridge shadowed: %.0f%% (needs 75)\n"),
 		RidgeShadowFraction * 100.0);

@@ -101,6 +101,20 @@ namespace LedgerSurface
 #endif
 	}
 
+	UMaterialInterface* CreateAureoleMaterial(UObject* Outer)
+	{
+		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Aureole")))
+		{
+			return Baked;
+		}
+#if WITH_EDITOR
+		UE_LOG(LogLedger, Warning, TEXT("aureole material built in memory: no baked asset."));
+		return BuildAureoleMaterial(Outer);
+#else
+		return Fallback(TEXT("M_Aureole"));
+#endif
+	}
+
 	UMaterialInterface* CreateVisorMaterial(UObject* Outer)
 	{
 		if (UMaterialInterface* Baked = LoadBaked(TEXT("M_Visor")))

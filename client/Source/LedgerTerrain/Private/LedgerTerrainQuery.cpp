@@ -124,7 +124,8 @@ bool ALedgerPlanet::SampleTerrain(
 	Out.bCollision = Mesh->GetCollisionEnabled() != ECollisionEnabled::NoCollision;
 
 	const int32 Side = FMath::Max(3, GridResolution | 1);
-	if (Section->ProcVertexBuffer.Num() != Side * Side)
+	// At least the grid; the skirts follow it in the buffer.
+	if (Section->ProcVertexBuffer.Num() < Side * Side)
 	{
 		// A patch built at a different grid resolution than this planet's --
 		// which cannot happen today and would be silently wrong if it ever did.

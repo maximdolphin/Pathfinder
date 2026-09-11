@@ -77,7 +77,8 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 		}
 		UProceduralMeshComponent* Mesh = PooledProcedural(*Section);
 		FProcMeshSection* Land = Mesh != nullptr ? Mesh->GetProcMeshSection(0) : nullptr;
-		if (Land == nullptr || Land->ProcVertexBuffer.Num() != Side * Side)
+		// At least the grid; the skirts follow it in the buffer.
+		if (Land == nullptr || Land->ProcVertexBuffer.Num() < Side * Side)
 		{
 			++Irregular;
 			continue;
@@ -116,6 +117,7 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 	int32 Overlapping = 0;
 	int32 OverOneCm = 0;
 	int32 OverOneCmSameDepth = 0;
+	int32 BeyondSkirt = 0;
 	const FLedgerQuadNode* WorstNode = nullptr;
 	const FLedgerQuadNode* WorstAcross = nullptr;
 	double WorstRadialMetres = 0.0;
@@ -193,6 +195,9 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 				MeasuredAcrossLevels += Levels > 0 ? 1 : 0;
 				DeepestGapLevels = FMath::Max(DeepestGapLevels, Levels);
 				OverOneCmSameDepth += (Nearest > 1.0 && Levels == 0) ? 1 : 0;
+				// Deeper than the skirts hanging there (5% of the wider patch's width,
+				// LedgerPatchGenerator): the gaps that would still show as a crack.
+				BeyondSkirt += Nearest > 0.05 * FMath::Max(Node.WorldSize, Across->WorldSize) ? 1 : 0;
 				if (Nearest > Worst)
 				{
 					Worst = Nearest;
@@ -229,7 +234,8 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 			 "worst gap %.2f cm, between depth %d and depth %d; %d vertices more than 1 cm off\n"),
 		Drawn.Num(), Measured, MeasuredAcrossLevels, DeepestGapLevels, Skipped,
 		Irregular, Overlapping, Worst, WorstDepth, WorstNeighbourDepth, OverOneCm);
-	OutReport += FString::Printf(TEXT("%d of those between patches of the same depth\n"), OverOneCmSameDepth);
+	OutReport += FString::Printf(TEXT("%d of those between patches of the same depth; %d deeper than the skirt under them\n"),
+		OverOneCmSameDepth, BeyondSkirt);
 	if (WorstNode != nullptr && WorstAcross != nullptr)
 	{
 		OutReport += FString::Printf(

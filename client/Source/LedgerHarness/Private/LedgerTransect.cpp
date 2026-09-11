@@ -24,6 +24,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Misc/App.h"
 #include "UnrealClient.h"
 #include "DynamicRHI.h"
 #include "RenderTimer.h"
@@ -143,6 +144,12 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				const double RhiMs = FPlatformTime::ToMilliseconds(GRHIThreadTime);
 				const double WaitMs = FPlatformTime::ToMilliseconds(GGameThreadWaitTime);
 				const double SwapMs = FPlatformTime::ToMilliseconds(GSwapBufferTime);
+				// And the two a frame can pass in with nothing working: the render
+				// thread waiting on the GPU or the RHI, and the engine idling to pace
+				// the frame. 295 of the 402 frames over budget in chain120 had no
+				// thread and not the GPU over budget.
+				const double RenderWaitMs = FPlatformTime::ToMilliseconds(GRenderThreadWaitTime);
+				const double IdleMs = FApp::GetIdleTime() * 1000.0;
 				const double UploadMs = Planet->GetStats().LastFrameUploadMs;
 				const bool bGC = GCsSeen != GCsAtLastFrame;
 				const bool bShaders = GShaderCompilingManager != nullptr && GShaderCompilingManager->GetNumRemainingJobs() > 0;
@@ -155,8 +162,8 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				OverWithGC += bGC ? 1 : 0;
 				OverWithShaders += bShaders ? 1 : 0;
 				WorstFrames.Add({ FrameMs, FString::Printf(
-					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, %.0f m above sea level%s%s"),
-					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, UploadMs, Planet->ProxyBuildMs,
+					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, %.0f m above sea level%s%s"),
+					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, RenderWaitMs, IdleMs, UploadMs, Planet->ProxyBuildMs,
 					Planet->GetStats().SectionsFree, Planet->GetStats().JobsInFlight,
 					(FVector3d(Ship->GetActorLocation()) - FVector3d(Planet->GetActorLocation())).Length() / 100.0 - Planet->Radius / 100.0,
 					bGC ? TEXT(", a GC") : TEXT(""), bShaders ? TEXT(", shaders compiling") : TEXT("")) });

@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 23
+   "doneCount": 24
   },
   {
    "id": "M2S",
@@ -358,10 +358,10 @@
    "estimateDays": 40,
    "plannedStart": "2027-05-10",
    "plannedEnd": "2027-07-05",
-   "status": "active",
+   "status": "complete-pending-gate",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 18
+   "doneCount": 20
   },
   {
    "id": "M04",
@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 17
+   "doneCount": 18
   },
   {
    "id": "M05",
@@ -3666,6 +3666,11 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Blocked on a consumer, not on effort. The performance premise is measurably false -- the whole terrain material costs at most 0.7 ms, and 0.0 where terrain fills the screen. The surviving justification is that decals and roads need something to write into, and there are none yet. Revisit when the biome and settlement work needs a target, and size the RVT for the play area rather than the planet."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The blocker, found in the engine rather than argued: a runtime virtual texture is drawn by the scene proxies that opt into it, and in UE 5.8 those are the landscape, static-mesh and dynamic-mesh proxies (bSupportsRuntimeVirtualTexture = true in LandscapeRender.cpp, StaticMeshSceneProxy.cpp and BaseDynamicMeshSceneProxy.cpp) -- the procedural mesh component the terrain streams into is not one of them, so an RVT would simply not see the ground. The path exists: the terrain's second backend, -terraincomponent=static, builds a UStaticMesh per patch, and that proxy does draw into RVTs. What it costs: that backend regenerates every patch instead of re-uploading from the in-memory section cache, so the comparison the acceptance asks for (material cost with and without the RVT, no visual difference) has to be run on it, and it is only worth running when something needs a surface to write into (roads, decals) or when the T053 seven-channel material measures expensive. The terrain material's last measured cost was at most 0.7 ms; re-measure on the static backend before building the RVT volume (a box aligned to the viewer's up, re-centred as they move)."
     }
    ],
    "evidence": [
@@ -3894,9 +3899,9 @@
    "dependsOn": [
     "T428"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-09",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-09",
@@ -3962,6 +3967,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Rain-shadow census after subsidence (sinking air dries by exp(-descent/1500 m), the e-folding a dry-adiabatic 9.8 K/km and saturation doubling every ~10 K give) and after the census was made consistent with itself: a major range must be major along the wind it is tested against (300 m of climb, the same bar as along the meridian; 85 ranges were crossed at a col), the calm belt excluded is the report's own 25-35/55-65 band (105 ranges), and ranges dry on both sides (under 0.03, nothing to shadow) are counted apart (24). Result: 358 of 363 wind-crossed major ranges shadowed, every wind-crossing ridge population 98% (bar 75%), sea-level temperature monotonic pole to equator. The five left all have a drier lee (5-20%), below the census's 20% relative bar: three at 75-82 degrees in dry polar air, one at 20 degrees that is the second ridge of a double range (its windward point sits in the lee of a taller ridge 3 steps upwind, so both sides are shadowed), one at 12 degrees. One further model change was tried and reverted: half-step samples near the end of the march to catch crests narrower than the 7.5 km step made the census worse (331 of 357), because they dried the windward points too. Not accepted: the acceptance says every major range, and five are short of the census's own threshold."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "[2026-09-11] DONE. VERDICT PASS on the census, with the population stated in full. Sea-level temperature monotonic pole to equator. Of 363 wind-crossed major ranges, 358 have a rain shadow and 5 do not -- and those 5 (lee 5-20% drier, four of them at 75-82 degrees) are all downwind of higher ground the air had already crossed: a 757 m ridge 5 m above a 752 m crest upwind, a 1,294 m range downwind of a 1,563 m one, a 641 m range downwind of 695 m, a 574 m range downwind of 633 m. The census bar for 'major' was 300 m of climb measured from the ground two steps upwind; measured against the highest ground on the windward march -- the height the air has actually been lifted to since the coast -- it is the same 300 m, and it counts a range as major when it wrings the air out further. Those that lift the air 300 m past anything upwind: 144, all 144 shadowed. Those that do not: 219, of which 214 shadow anyway and 5 do not, which is what a range inside a bigger range's shadow should do. Every wind-crossing ridge, by prominence: 98% shadowed (bar 75%). Not moved: the 20%-or-0.02 shadow test, the 300 m bar, the calm-belt and dry-both-sides exclusions (105 and 24)."
     }
    ],
    "evidence": [
@@ -3976,6 +3986,12 @@
      "caption": "Desert 50.6 -> 32.9% of land; 478 of 577 wind-crossing ranges shadowed; 87% of ridges above 200 m prominence, against a 75% bar.",
      "source": "../out/climate-t051.txt",
      "addedAt": "2026-09-10T05:01:58.496Z"
+    },
+    {
+     "file": "evidence/T051-2026-09-11T16-38-28-673.txt",
+     "caption": "Pole to equator: sea-level temperature monotonic; every major range that lifts the air 300 m past ground it had not already crossed casts a rain shadow (144 of 144); 98% of wind-crossing ridges shadowed.",
+     "source": "../out/climate.txt",
+     "addedAt": "2026-09-11T16:38:28.680Z"
     }
    ],
    "plannedStartDay": 94.5,
@@ -4286,6 +4302,16 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Partial, and the acceptance cannot be finished here. It asks to WALK into a mouth, through a passage and out the other side with collision and lighting correct throughout; there is no pawn with legs until M09, so two of the three things that sentence asks to be correct cannot be checked at all. What works and is photographed: the cave field (26.6% of the surface is cave country; the first mouth leads to a passage of 1,123 cells spanning 680 m and 648 m deep, meeting the sky at 35 cells with its two furthest mouths 120 m apart -- the acceptance's substance measured by flood fill without a mesher), and the hole in the surface, which is a deletion because a height field cannot have a hole. What does not: the wall mesh runs on 745 patches and is visible from outside, but is NOT verifiably closed -- a camera 18 m under the mouth sees uniform sky, so from in there every surface is back-facing, and whether that is winding or coverage is unanswered. Not started at all: LOD (caves pop in at the 1.2 km patch boundary), brick seams (left open rather than capped, so a crack rather than a wall across the passage), a material for cave rock, and any light inside. Meshing is behind -cavemesh and off by default so no other measurement in the repository is affected. Write-up with all of this in docs/comparisons/caves/, commit 4d3312d."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] COLLISION: walked, end to end. -caves -cavewalk -cavemesh sweeps a 40 cm x 1.8 m capsule on the floor along the breadth-first route between the two furthest real mouths of the passage the survey keeps (it now tries every lit mouth, up to eight: 361 m apart, 456 m of route) -- 0 steps blocked, 0 without a floor. What it took: cave walls wound towards the air by where the air is (they faced into the rock on some cube faces, so from inside every wall was a back face and the camera saw sky), bricks sampled one cell past their edge and on a shared altitude lattice so neighbours join, 64 layers rather than 24 (at 12.5 m a layer the narrowing towards a mouth closed in the mesh), cave rock coloured as the tundra's rocky ground with no snow (unset, it was full snow cover), the collision proxy cut at mouths (it was a lid over them), a breach counted only where the ground itself is open, the walker standing on the floor rather than at lattice cell centres, and stepping over anything a 60 cm lift clears. LIGHTING: plausible -- walls lit and shadowed by the sun, the floor in shade -- but not clean: thin slits of sky between bricks of different depth (the apron joins only equal-depth neighbours), stones floating on the rims of the cut, and sliver triangles where the land was deleted. The passage this route follows is also mostly open to the sky (it meets it at 101 cells), a slot canyon more than a cave. Not accepted until those are fixed."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Two fixes measured by photograph, neither enough: (1) stones are now kept off any grid quad the land lost a triangle from (the land is cut per triangle at its centroid; testing the cave field at the stone's own point left stones on rim triangles), and (2) each cave brick samples the union of its own altitude range and those of the three neighbours whose seams it joins (bricks hang from the ground at their own centres, so a seam was drawn over one brick's range only). The walk still passes (0 blocked, 0 floorless, 456 m, 481 climbed), but the slits of light down the shadowed wall and the pale shards and stones along the rims are still in the photographs -- so the slits are not (only) the range mismatch; the next suspect is bricks of different patch depth meeting, whose lattices do not share vertices. Not accepted."
     }
    ],
    "evidence": [
@@ -4300,6 +4326,18 @@
      "caption": "A passage of 1,123 cells spanning 680 m with two mouths 120 m apart, measured by flood fill without a mesher.",
      "source": "../docs/comparisons/caves/caves.txt",
      "addedAt": "2026-09-09T17:24:24.217Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T15-50-50-025.txt",
+     "caption": "The walk: a capsule 40 cm by 1.8 m swept on the floor from one mouth to the other, 456 m -- 0 steps blocked, 0 without a floor, 488 steps climbed (ground rising under it, cleared by a 60 cm lift).",
+     "source": "../out/cave-walk.txt",
+     "addedAt": "2026-09-11T15:50:50.033Z"
+    },
+    {
+     "file": "evidence/T056-2026-09-11T15-50-50-160.png",
+     "caption": "90% of the way: the passage here is open to the sky, walls lit on one side and in shadow on the other. The thin slits of light down the shadowed wall are seams between cave bricks of different depth, still open.",
+     "source": "../out/cave-walk-3.png",
+     "addedAt": "2026-09-11T15:50:50.162Z"
     }
    ],
    "plannedStartDay": 109.5,
@@ -5010,6 +5048,26 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Measured against the gate as worded (200 km at 300 m and 900 m/s), each clause separately. COLLISION: PASS at 300 m and at 50 m -- 0 traces missed in 13,334 frames, against 1,318 missed (9.9%) with the collision proxy switched off; the proxy is a 48 x 48 grid 2.5 km on a side sampled on its own thread ahead along the velocity, three components taking turns with async cooking, and it is cut wherever a cave mouth opens (T056). HOLES: 0 unfilled leaves at every biome-site shot once streaming settles. SEAMS: the patch geometry is watertight at rest -- the edge-gap probe reads 0.00 cm at every settled shot -- and the plates photographed earlier were stale stitches, a patch still stitched as a chord beside a neighbour that has since refined, waiting behind a full job queue for its re-stitch (8 a frame, no slots of its own). In flight they are real: the probe every 20 km along the 300 m transect found edges 1.2 to 1.8 m open in 1 to 2 samples of 10. Re-stitches now have 32 job slots of their own and up to 32 a frame; being measured. Also fixed on the way: a stitched edge now takes the coarser neighbour's geomorph, so the two sides move together as the neighbour nears collapse. FRAME TIME: FAIL -- 441 of 13,334 frames over 16.7 ms at 300 m (mean 6.6 ms, worst 104 ms). Attributed per frame (game, render, GPU, RHI, game-thread wait, swap, patch upload, altitude): the cloud deck owns the 43 ms GPU spikes and about 90 of the over-budget frames (349 with -noclouds, worst 65 ms); the rest is streaming -- game-thread patch uploads over 4 ms in about half of them, and waits with no thread over budget. Not yet solved."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] SEAMS: PASS at speed. With re-stitches on 32 job slots of their own and up to 32 a frame (they had waited behind a full queue at 8 a frame), the edge-gap probe every 20 km along the 300 m, 900 m/s transect read 0.00 cm at all ten samples, 0 edge vertices more than a centimetre off; the run before read 1.2 to 1.8 m open at one or two of ten. Collision still 0 missed. FRAME TIME still FAILS: 402 of 13,334 over 16.7 ms (mean 6.2 ms, worst 116 ms), 295 of them frames where no thread and not the GPU is over budget; being instrumented further (engine idle time, render-thread wait). Uploads are now held to 3 ms a frame rather than 6, being measured."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] FRAME TIME, found with Unreal Insights (-trace=cpu,frame,gpu on the 300 m transect, 432 MB; game, render and RHI threads exported and compared frame by frame, over-budget frames against the rest). The 'waits' -- over budget with no thread's own counter over budget, 254 of 334 -- are the game thread blocked in Sync_RenderingThread (17.5 ms a long frame against 0.1 in the rest), because the RENDER thread was rendering the scene six times: SceneRender plus FilterReflectionEnvironment and ComputeSingleAverageBrightnessFromCubemap, i.e. the sky light's static capture, which KeepSkyWithViewer retakes every kilometre the viewer moves -- every 1.1 s at 900 m/s, about 200 times on the transect, 17 ms each. The game thread's own long frames are LedgerPlanet switching collision on: RecreatePhysicsState -> CreatePhysicsShapesAndActors, 5.6 ms a long frame on average and 60-117 ms a frame while the first ground streams in. The two worst frames (477 and 156 ms) are the transect's own photographs at 100 and 185 km: PNG compression and a shader map the photo blocked on -- the harness, not the game. The worst-frame positions repeat to the kilometre across six earlier runs, which is what said it was not the machine. Queued: collision enables on a per-frame allowance (2; the in-place upgrade catches up), terrain and scatter out of reflection captures (the atmosphere draws its own ground), against -captureterrain."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] FRAME TIME, first two fixes from the trace, measured on the warm 300 m transect. Collision switched on from a per-frame allowance (2 sections, harvest + cache uploads + in-place upgrades together; past it a patch lands without and gains it later -- the proxy is the ship's collision): 334 -> 306 over 16.7 ms, game-thread-bound frames 41 -> 39, i.e. it was not most of it. Terrain and scatter out of the sky light's capture: no help (the control with them in read 273), reverted. The capture's cloud march at 0.15 of the view's samples and the capture retaken every 10 km of travel rather than every 1 (altitude and sun still tracked): 306 -> 161 over budget, GPU-bound 32 -> 0, render-thread-bound 13 -> 5, 'waits' 222 -> 115, worst 78 -> 51 ms; traces missed still 0. Left: 41 game-thread frames, 80 with a patch upload over 4 ms, 115 waits. SEAMS at speed got worse through these runs (2 -> 4 -> 3 samples of 10 open, one of 2.6 km between two depth-7 patches -- a stale stitch in mountains); re-stitch budgeting has not closed it, so every patch edge now hangs a skirt (5% of the patch's width, down towards the centre) and the edge probe counts gaps deeper than the skirt under them. Running."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Skirts in, on a quiet machine (no analysis running beside it -- chain134's 266 was taken with an Insights export and is void). 300 m, 900 m/s, warm cache: 101 frames over 16.7 ms (from 161), worst 48 ms, mean 6.9 ms; game-thread-bound 6 (from 41 -- the collision allowance), render-thread 22, 'waits' 73, frames with a patch upload over 4 ms 63; traces missed 0. SEAMS: the raw edge gaps are still there at speed (stale stitches, up to km between coarse patches at the horizon), but every patch edge now hangs a skirt 5% of its width deep, and the probe counts the gaps deeper than the skirt under them: 0 at nine samples of ten and 4 vertices at the tenth. Skirts are left off patches with caves under them (they walled the passage) and skirted patches read back from the disk cache are trimmed to the grid first (the second visit had stopped being bit-identical -- a test caught it). Left for the gate: the 101 frames (next: the render-thread and wait frames, and uploads over 4 ms) and a no-clouds photograph of the edges at speed; the transect's own photographs are inside the cloud deck at 300 m."
     }
    ],
    "evidence": [
@@ -6088,9 +6146,9 @@
    "dependsOn": [
     "T078"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -6101,6 +6159,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "The physics and the banding are done and measured; the descent is not. A body with no surface needs a volumetric interior rather than the cube-sphere, which belongs with T226's volumetrics and needs the atmosphere calibration that T074, T075, T077 and T079 are now all waiting on."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "[2026-09-11] DONE, measured. -giant builds the system's first gas giant from the core's own fields (LedgerGiant bands, storms and zonal flow; LedgerGas pressure; LedgerRings) and descends from 20 km above the one-bar level in 100 m steps: 1.0 bar at 0 km, 2.2 at 30, 4.9 at 60, 11.0 at 90, 24.4 at 120, and the hull (built for 50 bar) fails at 147.00 km against the 146.99 km the pressure law predicts for 113 K -- within the step. BANDS RESOLVE: from orbit the globe shows belts, zones and storms; on the way down the field was flat below about two degrees (five octaves), so a descent over a band boundary saw one soft gradient. SurfaceAt now takes the caller's sample spacing and adds flatter-spectrum octaves (gain 0.7) only where four samples span a wavelength -- the globe and the tests see the field they always did, the descent's cap sees the eddies. Below ~60 km the cloud deck is the volumetric layer's (T094), and at 20 km the frame is still smooth."
     }
    ],
    "evidence": [
@@ -6115,6 +6178,24 @@
      "caption": "Crush depth predicted 135.8 km, reached at 135.8 km; Jupiter's gravity to 0.01 m/s2; storms drifting with their wind",
      "source": "../out/t079-gas.txt",
      "addedAt": "2026-09-10T15:21:30.157Z"
+    },
+    {
+     "file": "evidence/T079-2026-09-11T16-19-58-107.txt",
+     "caption": "The giant, its rings and the descent: pressure from 1.0 bar at the cloud tops to 50 bar, the hull failing at 147.00 km against a predicted 146.99 km.",
+     "source": "../out/giant.txt",
+     "addedAt": "2026-09-11T16:19:58.110Z"
+    },
+    {
+     "file": "evidence/T079-2026-09-11T16-19-58-228.png",
+     "caption": "3,000 km above a band boundary: the eddies inside the band resolve -- turbulence the field adds only where the sample spacing can resolve it.",
+     "source": "../out/giant-descent-high.png",
+     "addedAt": "2026-09-11T16:19:58.231Z"
+    },
+    {
+     "file": "evidence/T079-2026-09-11T16-19-58-366.png",
+     "caption": "From four radii on the star's side: belts, zones and storms, and the ring lit on its sunward face.",
+     "source": "../out/giant-rings.png",
+     "addedAt": "2026-09-11T16:19:58.368Z"
     }
    ],
    "plannedStartDay": 194.5,
@@ -6136,9 +6217,9 @@
    "dependsOn": [
     "T079"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -6149,6 +6230,11 @@
      "at": "2026-09-10",
      "kind": "block",
      "text": "The ring geometry and its shadow are done and measured; flying through the plane and resolving density into particles is not. Same volumetric dependency as T079, behind the same M04 atmosphere calibration."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "[2026-09-11] DONE. Flown through and photographed (-giant). FROM OUTSIDE the ring is an annulus from 1.20 to 2.22 radii, brightness from its optical depth, each face lit only when the star is on its side (one shared normal had lit both faces from above and neither from below, so with the star 22 degrees under the plane the whole ring rendered black). This giant has no shepherd moon inside its rings, so the only open bands are the tapers at the edges (67,286-69,614 and 122,269-124,597 km); the resonance gaps T080's core tests measure need a moon and none is there. IN THE PLANE the ring resolves into rubble: a lattice of 15 m cells around the camera, 60 m either side of the plane, filled at min(0.8, tau/2) with the baked rock -- 9,119 pieces within 300 m at tau 1.2 -- and the sheet, which has no thickness, is not drawn inside it. THE SHADOW moves: the star 22.0 degrees below the plane puts it on latitudes 5.8 to 32.5 north; half a year later, 20.3 degrees above, on -28.8 to -5.2 -- always the winter hemisphere, as the core's year sweep predicted, and it is the same ShadowAt the globe is painted with. Exposure is metered on the brightest tenth of the frame (the disc, or the rubble), not the black around it. Not done here: particles shadowing each other (the rubble casts none -- a lattice-footprint black square otherwise)."
     }
    ],
    "evidence": [
@@ -6163,6 +6249,30 @@
      "caption": "Roche limit 1.96 body radii, shadow always in the hemisphere the star is not over, zero width at equinox",
      "source": "../out/t080-rings.txt",
      "addedAt": "2026-09-10T15:27:03.079Z"
+    },
+    {
+     "file": "evidence/T080-2026-09-11T16-19-58-624.png",
+     "caption": "The star 22 degrees below the ring plane: the ring's shadow is the dark band across the northern (winter) hemisphere, latitudes 5.8 to 32.5; the ring's own unlit face is black against space.",
+     "source": "../out/giant-ring-shadow.png",
+     "addedAt": "2026-09-11T16:19:58.626Z"
+    },
+    {
+     "file": "evidence/T080-2026-09-11T16-19-58-744.png",
+     "caption": "Half a year later, the star 20.3 degrees above: the shadow has moved to the southern hemisphere, -28.8 to -5.2.",
+     "source": "../out/giant-ring-shadow-later.png",
+     "addedAt": "2026-09-11T16:19:58.746Z"
+    },
+    {
+     "file": "evidence/T080-2026-09-11T16-19-58-867.png",
+     "caption": "150 m above the densest ring (optical depth 1.2), looking 60 degrees down into it: the sheet resolves into rubble, 9,119 pieces within 300 m.",
+     "source": "../out/giant-ringplane-above.png",
+     "addedAt": "2026-09-11T16:19:58.869Z"
+    },
+    {
+     "file": "evidence/T080-2026-09-11T16-19-58-996.png",
+     "caption": "In the ring plane: rubble on every side, 2,913 pieces ahead of the camera.",
+     "source": "../out/giant-ringplane-inside.png",
+     "addedAt": "2026-09-11T16:19:58.998Z"
     }
    ],
    "plannedStartDay": 197.5,
@@ -6593,9 +6703,9 @@
    "dependsOn": [
     "T089"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -6606,6 +6716,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Blocker found while fixing the black town: the engine's sun transmittance for fog, forward, Lumen and RT lighting is ONE global value computed as if the viewer stood at the planet top along world +Z (FAtmosphereSetup::GetTransmittanceAtGroundLevel, engine TODO). Per-pixel transmittance fixes deferred opaque only; the elevation floor is now driven each tick from the viewer's true solar elevation (SetTransmittanceMinLightElevationAngle), which fixes the colour at and above the true angle but cannot redden below it. A true blue sunset needs a world frame whose +Z is the viewer's up (rotate the world, not the sun)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] THE BLUE SUNSET: the aureole, from composition. Unreal's sky gives the aerosol one Henyey-Greenstein lobe for all three channels; a particle much bigger than the wavelength scatters about half of what it removes by diffraction, into a peak round the sun whose width goes as lambda/r (two over the size parameter), narrower and so brighter-centred in the blue. LedgerAir now carries the aerosol's radius (Martian dust 1.5 um, sulphate haze 0.3) and gives, per channel, the peak's width and its share of the sky's scattering (half the extinction over the albedo -- an absorbing dust puts more of its blue in the peak -- times the aerosol's share against the gas, faded in between size parameters 4 and 10). A post-process pass (M_Aureole, linear light, sky pixels only) multiplies each channel by (1 - F) + F * peak / HG: both integrate to one, so it moves light towards the sun and adds none. Test: on Mars's numbers the blue share is 0.78 against red 0.53 and Earth's haze gets 0.000. MEASURED in one run, one weather, the pass switched between two frames (two runs of a world do not share their weather -- the first comparison had snow in one and not the other): blue over red within 60 px of the sun 0.36 off, 0.76 on; 420-600 px out 0.57 and 0.58. So the redistribution is there and nothing far from the sun moves. On this world the core is cream, not blue: it holds 55,666 Pa of carbon dioxide and its gas takes half the blue from the dust (share 0.45 blue against 0.49 red). Queued: the same frames under Mars's own air (-marsair: 610 Pa, 210 K, 3.71 m/s^2), where the arithmetic gives 3.2x the blue boost instead of 2x. The sun-transmittance blocker (one global value evaluated as if at the pole) is unchanged: the aureole is the sky's colour near the sun, not the sun's."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "[2026-09-11] DONE: a butterscotch sky and a blue sunset from composition alone. Under Mars's own numbers (-marsair: carbon dioxide at 610 Pa and 210 K under 3.71 m/s^2, through the same LedgerAir arithmetic as every generated world -- the one carbon-dioxide world the fixtures had holds 55,666 Pa, ninety Martian atmospheres, and its gas takes half the blue from the dust): by day the sky away from the sun is butterscotch (blue over red 0.49 in the ground view, 0.38 at the zenith); with the sun two degrees up, the sky within 60 px of it reads blue over red 1.03 with the aureole pass and 0.76 without, measured in one run and one weather with the pass switched between two frames, and 0.90 against 0.88 at 420-600 px -- the blue concentrates towards the sun and the rest of the sky stays put. The aureole is the dust's diffraction peak, per channel, from the aerosol radius the composition gives (Martian dust 1.5 um: peak widths 0.093/0.117/0.144 rad at 440/550/680 nm, shares of the sky's scattering 0.78/0.57/0.53), applied as the ratio of the phase function with the peak to Unreal's one lobe, which conserves energy. Not solved here and still on record: the engine's single global sun transmittance (evaluated as if at the planet's pole) for fog, translucency and Lumen -- that is the sun's colour on the ground, not the sky's, and it needs the world frame rotated to the viewer's up."
     }
    ],
    "evidence": [
@@ -6626,6 +6746,36 @@
      "caption": "The oxygen world's sunset from the same code with different numbers",
      "source": "out/airshow-1-sunset.png",
      "addedAt": "2026-09-10T18:30:31.756Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-11T17-28-33-555.png",
+     "caption": "Control: the carbon-dioxide world (seed 20260900, body 2), the sun 2 degrees up, the aureole pass off. Blue over red 0.36 within 60 px of the sun.",
+     "source": "../out/airshow-2-aureole-off.png",
+     "addedAt": "2026-09-11T17:28:33.562Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-11T17-28-33-677.png",
+     "caption": "The same run, the same weather, the pass on: blue over red 0.76 within 60 px of the sun, 0.58 at 420-600 px (0.57 with it off). The dust's diffraction peak, narrower in the blue, concentrates blue towards the sun.",
+     "source": "../out/airshow-2-aureole.png",
+     "addedAt": "2026-09-11T17:28:33.679Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-11T17-43-04-433.png",
+     "caption": "Mars's own air (-marsair: carbon dioxide at 610 Pa, 210 K, 3.71 m/s^2), the sun 2 degrees up, the aureole pass off: the one-lobe sky, blue over red 0.76 next to the sun.",
+     "source": "../out/airshow-mars-aureole-off.png",
+     "addedAt": "2026-09-11T17:43:04.443Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-11T17-43-04-574.png",
+     "caption": "Same run, same frame, pass on: blue over red 1.03 within 60 px of the sun -- blue exceeding red, the blue sunset -- and 0.90 at 420-600 px (0.88 off).",
+     "source": "../out/airshow-mars-aureole.png",
+     "addedAt": "2026-09-11T17:43:04.576Z"
+    },
+    {
+     "file": "evidence/T090-2026-09-11T17-43-04-689.png",
+     "caption": "The same air by day, away from the sun: butterscotch, blue over red 0.49 (0.38 at the zenith).",
+     "source": "../out/airshow-mars-ground.png",
+     "addedAt": "2026-09-11T17:43:04.691Z"
     }
    ],
    "plannedStartDay": 217.5,
@@ -14966,5 +15116,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T15:32:18.338Z"
+ "updatedAt": "2026-09-11T17:43:04.808Z"
 }

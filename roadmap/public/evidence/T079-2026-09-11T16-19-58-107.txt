@@ -1,0 +1,19 @@
+The gas giant and its rings (T079, T080).
+
+giant: body 5 (Giant 2), radius 56071 km, 10.89 m/s^2 at one bar, 113 K, scale height 37.6 km
+rings: 67286 to 124597 km (1.20 to 2.22 radii), peak optical depth 1.20; 26 of 320 radial bands in gaps or clear
+rings: open (km from the centre) 67286-69614 122269-124597
+ring plane, giant-ringplane-above.png: 9119 pieces of rubble within 300 m, 4659 in front of the camera
+ring plane, giant-ringplane-inside.png: 9119 pieces of rubble within 300 m, 2913 in front of the camera
+ring plane, giant-ringplane-below.png: 9119 pieces of rubble within 300 m, 4690 in front of the camera
+descent: predicted crush depth 146.99 km below one bar (50 bar, 113 K)
+descent: 0 km down, 1.0 bar
+descent: 30 km down, 2.2 bar
+descent: 60 km down, 4.9 bar
+descent: 90 km down, 11.0 bar
+descent: 120 km down, 24.4 bar
+descent: the hull failed at 147.00 km, 50.0 bar; hull integrity now 0%
+shadow: now the star is -22.0 degrees out of the ring plane and the shadow covers latitudes 5.8 to 32.5; half a year later 20.3 degrees and -28.8 to -5.2
+
+T080 rings: rubble in the plane yes, shadow on the winter side now yes and half a year later yes, moved yes -> PASS
+T079 descent: hull failed at 147.00 km against a prediction of 146.99 km (within the 100 m step: yes) -> PASS

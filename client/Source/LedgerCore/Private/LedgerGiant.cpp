@@ -107,7 +107,8 @@ namespace LedgerGiant
 	}
 
 	double SurfaceAt(
-		double LatitudeRadians, double LongitudeRadians, uint32 Seed, double Seconds)
+		double LatitudeRadians, double LongitudeRadians, uint32 Seed, double Seconds,
+		double SpacingRadians)
 	{
 		const double Band = BandAt(LatitudeRadians, Seed);
 
@@ -126,6 +127,28 @@ namespace LedgerGiant
 			LatitudeRadians * 3.4);
 		const double Turbulence = LedgerNoise::Fractal(Sample, Seed ^ 0x51ED2701u, 5);
 
+		// **Finer eddies where the caller can see them.** The five octaves above
+		// end at about two degrees, and below that the field was flat: a descent
+		// over a band boundary, 3,000 km up, saw one soft gradient. Each further
+		// octave halves the wavelength and keeps 0.7 of the amplitude -- a
+		// flatter spectrum than the bands', because the small eddies on a giant
+		// are not proportionally weaker -- and they stop once four samples no
+		// longer span a wavelength, so nothing is added that would alias.
+		double Detail = 0.0;
+		if (SpacingRadians > 0.0)
+		{
+			double Scale = FMath::Pow(2.02, 5.0);
+			double Amplitude = 1.0;
+			// Latitude is the finer axis of the sample (3.4 a radian against 1.7).
+			for (int32 Octave = 0; Octave < 12 && 1.0 / (3.4 * Scale) > 4.0 * SpacingRadians; ++Octave)
+			{
+				Detail += LedgerNoise::Gradient(Sample * Scale,
+					(Seed ^ 0x2D1E7A11u) + static_cast<uint32>(Octave) * 7919u) * Amplitude;
+				Amplitude *= 0.7;
+				Scale *= 2.02;
+			}
+		}
+
 		// The turbulence bends the band boundaries rather than being laid on
 		// top of them, which is why it is added to the latitude's argument in
 		// effect: a band edge that wobbles reads as fluid, one that is straight
@@ -135,7 +158,7 @@ namespace LedgerGiant
 
 		const double Storm = StormAt(LatitudeRadians, LongitudeRadians, Seed, Seconds);
 		return FMath::Clamp(
-			FMath::Lerp(Bent, 1.0, Storm * 0.85) + Turbulence * 0.05 + Band * 0.0,
+			FMath::Lerp(Bent, 1.0, Storm * 0.85) + Turbulence * 0.05 + Detail * 0.2 + Band * 0.0,
 			0.0, 1.0);
 	}
 }

@@ -28,7 +28,11 @@ namespace LedgerCaves
 	/// 14 m. Coarser than the passage and the tunnel breaks into a chain of
 	/// unconnected bubbles; this is the coarsest that does not.
 	constexpr int32 BrickAcross = 32;
-	constexpr int32 BrickDown = 24;
+	// 64, not 24: 4.7 m a layer rather than 12.5, against a passage 28 m
+	// across that narrows towards its mouths -- at 12.5 m the narrowing closed
+	// in the mesh where the field says it is open, and the cave walk ended
+	// inside the ground a few metres short of the exit.
+	constexpr int32 BrickDown = 64;
 
 	/// How far below the local ground the brick reaches, in metres. Not the
 	/// whole shell: the deep half has no mouth in it and cannot be seen from

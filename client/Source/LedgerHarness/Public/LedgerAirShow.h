@@ -48,6 +48,9 @@ private:
 	double SunsetSeconds = -1.0;
 	double NoonSeconds = 0.0;
 
+	/// When the sun is two degrees up on its way down: the aureole view. T090.
+	double AureoleSeconds = -1.0;
+
 	int32 Step = 0;
 	bool bAimed = false;
 	bool bRunning = false;

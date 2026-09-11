@@ -124,6 +124,9 @@ public:
 	int32 StrikesTaken() const { return Strikes; }
 	void RepairHull() { Integrity = 1.0; Strikes = 0; }
 
+	/// The hull gives: what the pressure past its limit does (T079).
+	void CrushHull() { Integrity = 0.0; }
+
 	/// The skin through an entry, T100: the flux, the temperature, the heat
 	/// taken in and radiated, and what it has cost the hull.
 	const FLedgerHeatState& EntryHeat() const { return Heat; }
