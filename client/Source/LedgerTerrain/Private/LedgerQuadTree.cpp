@@ -10,6 +10,8 @@
 // Extracting it into a type would mean handing that type the streaming state,
 // which is the same coupling with more indirection in front of it.
 
+#include "PhysicsEngine/BodySetup.h"
+#include "ProceduralMeshComponent.h"
 #include "LedgerPlanet.h"
 
 #include "Misc/CommandLine.h"
@@ -277,6 +279,10 @@ void ALedgerPlanet::UpdateTree(
 		// the pool or the job queue was saturated — a starved budget should cost
 		// detail, not holes.
 		bool bAllChildrenReady = true;
+		const int32* ParentSection = ActiveSections.Find(NodeKey(Node));
+		const UProceduralMeshComponent* ParentMesh = ParentSection != nullptr ? PooledProcedural(*ParentSection) : nullptr;
+		const bool ParentHasCollision = ParentMesh != nullptr
+			&& ParentMesh->GetCollisionEnabled() != ECollisionEnabled::NoCollision;
 		for (int32 Index = 0; Index < 4; ++Index)
 		{
 			const FLedgerQuadNode* Child = Node.Children[Index].Get();
@@ -284,10 +290,29 @@ void ALedgerPlanet::UpdateTree(
 			{
 				continue;
 			}
-			if (Child->IsLeaf() && !ActiveSections.Contains(NodeKey(*Child)))
+			const int32* ChildSection = ActiveSections.Find(NodeKey(*Child));
+			if (Child->IsLeaf() && ChildSection == nullptr)
 			{
 				bAllChildrenReady = false;
 				break;
+			}
+			// **And, if the parent is what a ship stands on, cooked.** A child is
+			// drawn the frame its section lands and its collision cooks some frames
+			// after; releasing the parent between the two left the ground under a
+			// 900 m/s ship with collision asked for and not there -- 593 of 958
+			// transect misses at 300 m. The parent holds until the child's has cooked.
+			if (ChildSection != nullptr && ParentHasCollision)
+			{
+				const UProceduralMeshComponent* ChildMesh = PooledProcedural(*ChildSection);
+				if (ChildMesh != nullptr && ChildMesh->GetCollisionEnabled() != ECollisionEnabled::NoCollision)
+				{
+					const UBodySetup* Setup = const_cast<UProceduralMeshComponent*>(ChildMesh)->GetBodySetup();
+					if (Setup == nullptr || Setup->TriMeshGeometries.Num() == 0)
+					{
+						bAllChildrenReady = false;
+						break;
+					}
+				}
 			}
 		}
 		// The resident shell keeps its geometry even once its children have
