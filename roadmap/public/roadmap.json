@@ -481,10 +481,10 @@
    "estimateDays": 48.5,
    "plannedStart": "2027-08-30",
    "plannedEnd": "2027-11-05",
-   "status": "active",
+   "status": "complete-pending-gate",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 23
+   "doneCount": 24
   },
   {
    "id": "M06",
@@ -7998,10 +7998,16 @@
    "dependsOn": [
     "T130"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "-couplingproof, courier on the ground, shields up: a shot destroys coupling_aft. The thrusters on that bus go dead at once (main and manoeuvring 0.00); the radiator pump, main engine and rcs lose power at +8 s, the shield at +1014 s once the loop cannot carry its heat; the reactor climbs from 293 K to 427 K; flames and a smoke column stand over the coupling and the alarm sounds. The workshop replaces the coupling and mends the shield, and the ship comes back: full thrust, reactor cooling to 397 K, every load powered again. Two faults found on the way: a sampling window that a long frame at 20x stepped over, and a shield on no coolant loop that cooked in fourteen minutes whatever happened to the coupling. PASS."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 302.5,
    "plannedEndDay": 304,
@@ -14831,5 +14837,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T13:00:03.972Z"
+ "updatedAt": "2026-09-11T13:07:59.334Z"
 }
