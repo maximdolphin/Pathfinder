@@ -4914,6 +4914,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The per-pixel march is in: 16 steps through the scan's height field along the view ray, three triplanar samples each at mip 0, inside the 15 m parallax fade, interpolated between the last two samples -- a Custom node over the same camera-relative coordinate the triplanar sampling uses, with -nopom (and -livematerials) as the control. Measured the way the acceptance asks, by differencing captures a metre apart, against a control build with parallax off so perspective and relief cancel (tools/parallax_spread.py): the march moves the ground 28.6 px RMS more than the control, the one-step offset 12.3 px. The first pair was aimed at a point on the height function and looked at the horizon on this relief; it is re-aimed by direction, 45 degrees down, and the raking-light half of the acceptance is still to be framed."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The raking-light pair was unmeasurable, not unconvincing: a 1 m step 2 m over the ground moved it ~570 px, the tool searched +-48 px, and the 17-24 px 'differences' were noise. Fixed both ends: the tool matches coarse to fine (self-test recovers a known 130/-310 px shift exactly), the pair steps 25 cm, and exposure adapts instantly (the old frames were still climbing toward the bias, means 9 and 12). Re-shoot pending."
     }
    ],
    "evidence": [
@@ -5259,6 +5264,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Two of the three defects fixed and one narrowed. Faceted rocks: normals blended 45/55 between the face and the direction to the face centre, baked, and the stones now read as rounded boulders. White patches: the terrain material's blend depth 0.2 -> 0.5, and scree/rock exposures now meet the ground with a gritty edge instead of a cut-out. The savanna boulder column is still in frame, but it is not floating: ALedgerPlanet::MeasureScatterFootings traced every stone within 400 m of all four cameras against the drawn ground -- 59,489 + 5,175 + 52,631 + 41,003 stones, none more than 1.5 m off it. So the column stands on real ground, most likely a face steeper than the placement's slope limit, which is measured on the height function a cell away rather than on the surface the stone lands on. The next run records the drawn slope under every stone out to 1.5 km."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Savanna column isolated (b7f4848): hiding every scatter component removes it, and taking every instance out and putting it back leaves it pixel-identical -- so it is scatter, and the renderer draws what the components hold. But 3,074 stones project into the column rectangle, all traced onto live, drawn terrain within centimetres, and none projects above y 459 while the drawn column climbs to 415. Next: every instance at any range by where its mesh is drawn, plus the mesh bounds."
     }
    ],
    "evidence": [
@@ -14222,5 +14232,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T05:11:06.736Z"
+ "updatedAt": "2026-09-11T05:29:09.269Z"
 }
