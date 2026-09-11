@@ -371,12 +371,17 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 		// had a row of slits of sky down the wall. Cut by corners, the land ends
 		// in a lip a triangle wide over the opening instead, and the wall meets
 		// its underside. The field is asked once a corner, on the ground there.
+		// `-cavenoland` drops the whole land surface of a cave patch, so what is
+		// left is the cave mesh alone: a control arm for holes that could be in
+		// either (T056's windows along the wall top).
+		static const bool bNoLand = FParse::Param(FCommandLine::Get(), TEXT("cavenoland"));
 		TBitArray<> Open(false, Job.Vertices.Num());
 		for (int32 Index = 0; Index < Job.Vertices.Num() && Elevations.IsValidIndex(Index); ++Index)
 		{
 			const FVector3d World = FVector3d(Job.Vertices[Index]) + Job.Centre;
 			const double GroundMetres = Elevations[Index] / 100.0;
-			Open[Index] = LedgerCaves::Density(World.GetSafeNormal(), GroundMetres, GroundMetres, Job.Params) > 0.0;
+			Open[Index] = bNoLand
+				|| LedgerCaves::Density(World.GetSafeNormal(), GroundMetres, GroundMetres, Job.Params) > 0.0;
 		}
 		TArray<int32> Kept;
 		Kept.Reserve(Job.Triangles.Num());

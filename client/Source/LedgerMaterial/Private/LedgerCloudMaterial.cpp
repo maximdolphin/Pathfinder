@@ -96,7 +96,7 @@ namespace LedgerSurface
 		FBand MakeBand(
 			FGraph& Graph, UMaterialExpression* Altitude, UMaterialExpression* Noise,
 			UMaterialExpression* Softness, const TCHAR* Prefix, float Centre,
-			float Width, float Coverage, float Density)
+			float Width, float Coverage, float Density, float Dome = 0.0f)
 		{
 			FBand Band;
 			Band.Centre = Parameter(Graph,
@@ -136,9 +136,15 @@ namespace LedgerSurface
 			// sky.
 			UMaterialExpression* Threshold =
 				Graph.Subtract(Graph.Constant(1.0f), Band.Coverage);
+			// **Domed** (T094): the threshold rises by Dome towards the band's top
+			// and bottom, so a column of noise rounds off inside the band instead
+			// of being cut flat at both ends -- which drew every cumulus as a box.
+			// Zero keeps the flat cut.
+			UMaterialExpression* Raised = Graph.Add(Threshold,
+				Graph.Multiply(Graph.Subtract(Graph.Constant(1.0f), Inside), Graph.Constant(Dome)));
 			UMaterialExpression* Shaped = Saturate(Graph,
 				Graph.Divide(
-					Graph.Subtract(Noise, Threshold), Softness));
+					Graph.Subtract(Noise, Raised), Softness));
 
 			Band.Mask = Graph.Multiply(
 				Graph.Multiply(Inside, Shaped), Band.Density);
@@ -310,7 +316,7 @@ namespace LedgerSurface
 			Parameter(Graph, TEXT("NoiseScale"), 0.000012f);
 		UMaterialExpressionNoise* Noise = Graph.Make<UMaterialExpressionNoise>();
 		Noise->Position.Expression = Graph.Multiply(Flattened, Scale);
-		Noise->NoiseFunction = NOISEFUNCTION_SimplexTex;
+		Noise->NoiseFunction = NOISEFUNCTION_GradientTex;
 		Noise->Scale = 1.0f;
 		Noise->Levels = 4;
 		Noise->OutputMin = 0.0f;
@@ -335,7 +341,11 @@ namespace LedgerSurface
 		UMaterialExpressionNoise* Weather = Graph.Make<UMaterialExpressionNoise>();
 		Weather->Position.Expression = Graph.Multiply(Flattened,
 			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f));
-		Weather->NoiseFunction = NOISEFUNCTION_SimplexTex;
+		// Gradient, not simplex: the swap was for the puffs' shape, and at this
+		// scale a shape is a thousand kilometres -- all it did here was move every
+		// weather system, and the cloud climb's site came out in clear air with
+		// all three decks computed and none of them overhead.
+		Weather->NoiseFunction = NOISEFUNCTION_GradientTex;
 		Weather->Scale = 1.0f;
 		Weather->Levels = 3;
 		Weather->OutputMin = 0.0f;
@@ -386,7 +396,7 @@ namespace LedgerSurface
 		{
 			UMaterialExpressionNoise* Field = Graph.Make<UMaterialExpressionNoise>();
 			Field->Position.Expression = Position;
-			Field->NoiseFunction = NOISEFUNCTION_SimplexTex;
+			Field->NoiseFunction = NOISEFUNCTION_GradientTex;
 			Field->Scale = 1.0f;
 			Field->Levels = Levels;
 			Field->OutputMin = 0.0f;
@@ -395,7 +405,7 @@ namespace LedgerSurface
 			return Field;
 		};
 		UMaterialExpression* CumulusField = Graph.Add(
-			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000022f)), 3)),
+			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3)),
 			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
 		AlongStreak->A.Expression = Flattened;
@@ -467,9 +477,9 @@ namespace LedgerSurface
 		}
 
 		const FBand Cumulus = MakeBand(Graph, Altitude, CumulusField, Edge,
-			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
+			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f, 0.35f);
 		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Edge,
-			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f);
+			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f, 0.2f);
 		const FBand Cirrus = MakeBand(Graph, Altitude, CirrusField, Edge,
 			TEXT("Cirrus"), 0.86f, 0.12f, 0.35f, 0.18f);
 

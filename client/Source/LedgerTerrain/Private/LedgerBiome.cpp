@@ -1,4 +1,5 @@
 #include "LedgerBiome.h"
+#include "LedgerScatter.h"
 
 #include "Dom/JsonObject.h"
 #include "HAL/FileManager.h"
@@ -76,6 +77,26 @@ namespace LedgerBiomes
 
 		OptionalNumber(Root, TEXT("maxSlopeDegrees"), Biome.MaxSlopeDegrees);
 		OptionalNumber(Root, TEXT("scatterDensity"), Biome.ScatterDensity);
+		OptionalNumber(Root, TEXT("plantDensity"), Biome.PlantDensity);
+		const TArray<TSharedPtr<FJsonValue>>* Plants = nullptr;
+		if (Root->TryGetArrayField(TEXT("plants"), Plants))
+		{
+			for (const TSharedPtr<FJsonValue>& Plant : *Plants)
+			{
+				const FString Kind = Plant->AsString();
+				int32 Found = INDEX_NONE;
+				for (int32 Index = 0; Index < LedgerScatter::PlantKindCount; ++Index)
+				{
+					Found = Kind == LedgerScatter::PlantKinds[Index] ? Index : Found;
+				}
+				if (Found == INDEX_NONE)
+				{
+					OutError = FString::Printf(TEXT("'plants' names '%s', which is not a plant kind"), *Kind);
+					return false;
+				}
+				Biome.Plants.Add(static_cast<uint8>(Found + 1));
+			}
+		}
 		Root->TryGetStringField(TEXT("surfaceSet"), Biome.SurfaceSet);
 
 		const TArray<TSharedPtr<FJsonValue>>* Tint = nullptr;

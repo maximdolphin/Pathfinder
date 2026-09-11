@@ -24,6 +24,8 @@
 #include "LedgerBiome.h"
 #include "LedgerBiomeSurfaces.h"
 #include "LedgerPlanet.h"
+#include "LedgerScatter.h"
+#include "Misc/Paths.h"
 #include "LedgerSettlement.h"
 #include "LedgerRock.h"
 #include "LedgerHUD.h"
@@ -351,11 +353,28 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 	// every 1.1 s, about two hundred on the 300 m transect, each a frame over
 	// budget. What the capture sees changes with altitude and with the sun --
 	// both still tracked -- and hardly at all over ten kilometres of ground.
+	//
+	// **And not distance at all, near a planet: the angle up has turned, and
+	// the height** (T068). Ten kilometres was still a 60 ms cubemap every 11 s
+	// on the transect -- twenty frames over budget, each at an exact 10 km mark.
+	// What the sky looks like from here is set by the sun's elevation and the
+	// altitude; ground travel only moves the first, by the angle "up" turns
+	// through, so it gets the same one degree the sun does -- 111 km on an
+	// Earth-sized world.
 	const double Threshold = FMath::Max(1000000.0, AltitudeCm * 0.1);
 	const bool bSunMoved = FVector3d::DotProduct(SunFacing.GetSafeNormal(), LastSkyCaptureSun)
 		< FMath::Cos(FMath::DegreesToRadians(1.0));
-	if (FVector::Distance(Was, LastSkyCapture) > Threshold
-		|| FVector::Distance(Now, LastSkyCapture) > Threshold || bSunMoved)
+	bool bViewMoved = FVector::Distance(Now, LastSkyCapture) > Threshold;
+	if (Planet != nullptr)
+	{
+		const FVector3d Centre(Planet->GetActorLocation());
+		const FVector3d Here = FVector3d(Now) - Centre;
+		const FVector3d Then = FVector3d(LastSkyCapture) - Centre;
+		bViewMoved = FVector3d::DotProduct(Here.GetSafeNormal(), Then.GetSafeNormal())
+				< FMath::Cos(FMath::DegreesToRadians(1.0))
+			|| FMath::Abs(Here.Length() - Then.Length()) > Threshold;
+	}
+	if (bViewMoved || bSunMoved)
 	{
 		if (USkyLightComponent* Component = Sky->GetLightComponent())
 		{
@@ -655,7 +674,43 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 				if (ScannedMeshes.Num() == UE_ARRAY_COUNT(Scanned))
 				{
 					UE_LOG(LogLedger, Log, TEXT("scatter: %d scanned stones"), ScannedMeshes.Num());
-					Planet->SetScatterMeshes(ScannedMeshes, nullptr);
+					// Plants (Poly Haven, CC0; /Game/Nature, not in version control),
+					// one list per LedgerScatter::PlantKinds entry and in its order.
+					// `-noplants` is the control arm.
+					static const TCHAR* const PlantPaths[][4] = {
+						{ TEXT("grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_mid_a_LOD0"), TEXT("grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_mid_b_LOD0"),
+						  TEXT("grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_large_a_LOD0"), TEXT("grass_medium_01/grass_medium_01_2k/StaticMeshes/grass_medium_01_tall_a_LOD0") },
+						{ TEXT("shrub_01/shrub_01_2k/StaticMeshes/shrub_01_2k"), TEXT("shrub_04/shrub_04_2k/StaticMeshes/shrub_04_2k"), nullptr, nullptr },
+						{ TEXT("fern_02/fern_02_2k/StaticMeshes/fern_02_a"), TEXT("fern_02/fern_02_2k/StaticMeshes/fern_02_b"), TEXT("fern_02/fern_02_2k/StaticMeshes/fern_02_c"), nullptr },
+						{ TEXT("fir_sapling_medium/fir_sapling_medium_2k/StaticMeshes/fir_sapling_medium_a_LOD0"), TEXT("fir_sapling_medium/fir_sapling_medium_2k/StaticMeshes/fir_sapling_medium_b_LOD0"),
+						  TEXT("fir_sapling_medium/fir_sapling_medium_2k/StaticMeshes/fir_sapling_medium_c_LOD0"), nullptr },
+						{ TEXT("quiver_tree_01/quiver_tree_01_2k/StaticMeshes/quiver_tree_01_2k"), TEXT("quiver_tree_02/quiver_tree_02_2k/StaticMeshes/quiver_tree_02_2k"), nullptr, nullptr },
+						{ TEXT("dead_tree_trunk/dead_tree_trunk_2k/StaticMeshes/dead_tree_trunk_2k"), nullptr, nullptr, nullptr } };
+					static_assert(UE_ARRAY_COUNT(PlantPaths) == LedgerScatter::PlantKindCount, "one list per plant kind");
+					TArray<TArray<UStaticMesh*>> Plants;
+					int32 PlantMeshCount = 0;
+					if (!FParse::Param(FCommandLine::Get(), TEXT("noplants")))
+					{
+						for (const auto& KindPaths : PlantPaths)
+						{
+							TArray<UStaticMesh*>& KindMeshes = Plants.AddDefaulted_GetRef();
+							for (const TCHAR* PlantPath : KindPaths)
+							{
+								if (PlantPath == nullptr)
+								{
+									continue;
+								}
+								if (UStaticMesh* PlantMesh = LoadObject<UStaticMesh>(nullptr, *FString::Printf(
+									TEXT("/Game/Nature/%s.%s"), PlantPath, *FPaths::GetCleanFilename(PlantPath))))
+								{
+									KindMeshes.Add(PlantMesh);
+									++PlantMeshCount;
+								}
+							}
+						}
+					}
+					UE_LOG(LogLedger, Log, TEXT("scatter: %d plant meshes"), PlantMeshCount);
+					Planet->SetScatterMeshes(ScannedMeshes, nullptr, Plants);
 				}
 				else
 				{

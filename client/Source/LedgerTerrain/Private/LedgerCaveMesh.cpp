@@ -2,6 +2,7 @@
 
 #include "LedgerCaves.h"
 #include "LedgerPlanet.h"
+#include "Misc/CommandLine.h"
 
 namespace
 {
@@ -279,25 +280,31 @@ namespace LedgerCaves
 		// uniform sky. The front face here is the one whose normal is
 		// (P2 - P0) x (P1 - P0), the convention the normals below are
 		// accumulated with and the one every mesh in this project renders by.
-		auto Quad = [&Job](int32 A, int32 B, int32 C, int32 D, const FVector& Air)
+		//
+		// **Per triangle, not per quad.** A surface-nets quad is not planar: its
+		// four vertices are averages of different cells' crossings, and where the
+		// wall folds over into the ground at the rim a quad folds with it, so its
+		// two halves can face opposite ways. Deciding the winding from one half
+		// turned the other into a back face, and down the walk's shadowed wall
+		// that was a row of downward-pointing wedges of sky along the wall top, one
+		// per quad -- evenly spaced because they were the lattice (T056).
+		auto Wind = [&Job](int32 A, int32 B, int32 C, const FVector& Air)
+		{
+			const FVector& PA = Job.CaveVertices[A];
+			const FVector Front = FVector::CrossProduct(Job.CaveVertices[C] - PA, Job.CaveVertices[B] - PA);
+			const bool bFlip = FVector::DotProduct(Front, Air) < 0.0;
+			Job.CaveTriangles.Add(A);
+			Job.CaveTriangles.Add(bFlip ? C : B);
+			Job.CaveTriangles.Add(bFlip ? B : C);
+		};
+		auto Quad = [&Wind](int32 A, int32 B, int32 C, int32 D, const FVector& Air)
 		{
 			if (A == INDEX_NONE || B == INDEX_NONE || C == INDEX_NONE || D == INDEX_NONE)
 			{
 				return;
 			}
-			const FVector& PA = Job.CaveVertices[A];
-			const FVector Front = FVector::CrossProduct(Job.CaveVertices[C] - PA, Job.CaveVertices[B] - PA);
-			const bool bFlip = FVector::DotProduct(Front, Air) < 0.0;
-			if (bFlip)
-			{
-				Job.CaveTriangles.Add(A); Job.CaveTriangles.Add(C); Job.CaveTriangles.Add(B);
-				Job.CaveTriangles.Add(A); Job.CaveTriangles.Add(D); Job.CaveTriangles.Add(C);
-			}
-			else
-			{
-				Job.CaveTriangles.Add(A); Job.CaveTriangles.Add(B); Job.CaveTriangles.Add(C);
-				Job.CaveTriangles.Add(A); Job.CaveTriangles.Add(C); Job.CaveTriangles.Add(D);
-			}
+			Wind(A, B, C, Air);
+			Wind(A, C, D, Air);
 		};
 
 		for (int32 Z = 1; Z < Layers; ++Z)
@@ -371,6 +378,34 @@ namespace LedgerCaves
 			{
 				Normal = LocalUp;
 			}
+		}
+
+		// ---- and the back of every face ----------------------------------------
+		//
+		// **Two-sided, because the walk's wall had windows in it that were back
+		// faces** (T056). Winding towards the air per quad, then per triangle,
+		// left the same row of wedge-shaped slits of sky along the shadowed wall
+		// top; drawing every triangle from both sides removed them, so some faces
+		// the camera sees are wound away from it wherever the fold at the rim
+		// defeats the air test. The back is a second copy of the vertices with
+		// the normals flipped, so it is lit as the side it is.
+		// ponytail: doubles the cave section; orient by the field gradient instead
+		// if cave patches ever show up in the frame budget.
+		const int32 FrontVertices = Job.CaveVertices.Num();
+		const int32 FrontIndices = Job.CaveTriangles.Num();
+		// Appended from copies: adding an array's own element to it trips the
+		// self-reference assert, which is how the first walk of this died.
+		Job.CaveVertices.Append(TArray<FVector>(Job.CaveVertices));
+		Job.CaveUVs.Append(TArray<FVector2D>(Job.CaveUVs));
+		for (int32 Index = 0; Index < FrontVertices; ++Index)
+		{
+			Job.CaveNormals.Add(-FVector(Job.CaveNormals[Index]));
+		}
+		for (int32 Index = 0; Index + 2 < FrontIndices; Index += 3)
+		{
+			Job.CaveTriangles.Add(Job.CaveTriangles[Index] + FrontVertices);
+			Job.CaveTriangles.Add(Job.CaveTriangles[Index + 2] + FrontVertices);
+			Job.CaveTriangles.Add(Job.CaveTriangles[Index + 1] + FrontVertices);
 		}
 	}
 }

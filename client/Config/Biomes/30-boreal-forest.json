@@ -11,5 +11,7 @@
     0.16,
     0.12
   ],
-  "scatterDensity": 0.7
+  "scatterDensity": 0.7,
+  "plantDensity": 0.7,
+  "plants": ["conifer", "conifer", "fern", "grass"]
 }

@@ -31,6 +31,10 @@ struct FLedgerScatterInstance
 
 	/// Which mesh. The planet is handed an array of them and this indexes it.
 	uint8 Variant = 0;
+
+	/// What it is: 0 a stone, otherwise one more than an index into
+	/// LedgerScatter::PlantKinds. The variant picks a mesh within the kind.
+	uint8 Kind = 0;
 };
 
 namespace LedgerScatter
@@ -43,6 +47,24 @@ namespace LedgerScatter
 	/// a forty-degree slope is standing on its own root ball whatever the
 	/// biome says, and this is the cheap guard before the biome is even asked.
 	constexpr double MaxSlopeDegrees = 34.0;
+
+	/// The plants a biome can name in its "plants" list, and how many stems
+	/// each puts down together: grass grows in tufts and ferns in a stand; a
+	/// shrub or a sapling stands alone.
+	inline constexpr const TCHAR* PlantKinds[] = {
+		TEXT("grass"), TEXT("shrub"), TEXT("fern"), TEXT("conifer"), TEXT("succulent"), TEXT("deadwood") };
+	inline constexpr int32 PlantClump[] = { 5, 1, 3, 1, 1, 1 };
+	constexpr int32 PlantKindCount = UE_ARRAY_COUNT(PlantKinds);
+
+	/// Plant sites across one scatter cell, each way: two is a site every ten
+	/// metres on the finest patch. Undergrowth, not a lawn -- a sward is a
+	/// near-field layer of its own, not more of this one.
+	constexpr int32 PlantSites = 2;
+
+	/// Plants are drawn to this distance and no further: past it a shrub is
+	/// under a pixel from any height anybody looks at one from, and nearly
+	/// every instance in the scatter is a plant.
+	constexpr int32 PlantCullMetres = 300;
 
 	/// The finest patch size, in centimetres of world size. Everything is
 	/// measured relative to this.

@@ -8,6 +8,7 @@
 // hundreds of frames later and several systems away.
 
 #include "LedgerPlanet.h"
+#include "LedgerScatter.h"
 
 #include "LedgerQuadNode.h"
 
@@ -487,7 +488,8 @@ void ALedgerPlanet::AbandonJob(uint64 Key)
 
 
 void ALedgerPlanet::SetScatterMeshes(
-	const TArray<UStaticMesh*>& Meshes, UMaterialInterface* Material)
+	const TArray<UStaticMesh*>& Meshes, UMaterialInterface* Material,
+	const TArray<TArray<UStaticMesh*>>& Plants)
 {
 	for (UHierarchicalInstancedStaticMeshComponent* Component : ScatterComponents)
 	{
@@ -501,17 +503,40 @@ void ALedgerPlanet::SetScatterMeshes(
 	ScatterVariantScale.Reset();
 	ScatterVariantOffset.Reset();
 
-	for (int32 Variant = 0; Variant < Meshes.Num(); ++Variant)
+	// Stones first as kind 0, then each plant kind's meshes, contiguous.
+	KindFirst.Init(0, 1 + LedgerScatter::PlantKindCount);
+	KindCount.Init(0, 1 + LedgerScatter::PlantKindCount);
+	TArray<TPair<UStaticMesh*, int32>> All;
+	for (UStaticMesh* Stone : Meshes)
 	{
-		if (Meshes[Variant] == nullptr)
+		if (Stone != nullptr)
 		{
-			continue;
+			All.Emplace(Stone, 0);
+		}
+	}
+	for (int32 PlantKind = 0; PlantKind < FMath::Min(Plants.Num(), static_cast<int32>(LedgerScatter::PlantKindCount)); ++PlantKind)
+	{
+		for (UStaticMesh* PlantMesh : Plants[PlantKind])
+		{
+			if (PlantMesh != nullptr)
+			{
+				All.Emplace(PlantMesh, PlantKind + 1);
+			}
+		}
+	}
+	for (int32 Variant = 0; Variant < All.Num(); ++Variant)
+	{
+		UStaticMesh* const Mesh = All[Variant].Key;
+		const int32 Kind = All[Variant].Value;
+		if (KindCount[Kind]++ == 0)
+		{
+			KindFirst[Kind] = Variant;
 		}
 		for (int32 Bucket = 0; Bucket < ScatterBuckets; ++Bucket)
 		{
 			UHierarchicalInstancedStaticMeshComponent* Component =
 				NewObject<UHierarchicalInstancedStaticMeshComponent>(this);
-			Component->SetStaticMesh(Meshes[Variant]);
+			Component->SetStaticMesh(Mesh);
 			Component->SetupAttachment(GetRootComponent());
 			// No collision on the instances. Tens of thousands of them with
 			// collision is that many more shapes for the physics scene to
@@ -530,9 +555,13 @@ void ALedgerPlanet::SetScatterMeshes(
 			// several times their own size. A 320-triangle stone gains nothing
 			// from a distance field and loses its shape to one.
 			Component->bAffectDistanceFieldLighting = false;
-			if (Material != nullptr)
+			if (Material != nullptr && Kind == 0)
 			{
 				Component->SetMaterial(0, Material);
+			}
+			if (Kind != 0)
+			{
+				Component->SetCullDistances(0, LedgerScatter::PlantCullMetres * 100);
 			}
 			Component->RegisterComponent();
 			ScatterComponents.Add(Component);
@@ -541,15 +570,16 @@ void ALedgerPlanet::SetScatterMeshes(
 		// for (LedgerScatter: none over a metre, half under 36 cm). The baked
 		// stones are about that already; a scanned boulder is whatever size it
 		// was photographed at.
-		const float Largest = static_cast<float>(Meshes[Variant]->GetBoundingBox().GetSize().GetMax());
-		ScatterVariantScale.Add(Largest > 1.0f ? 100.0f / Largest : 1.0f);
+		const float Largest = static_cast<float>(Mesh->GetBoundingBox().GetSize().GetMax());
+		// A plant was scanned at its own size and is kept at it.
+		ScatterVariantScale.Add(Kind == 0 && Largest > 1.0f ? 100.0f / Largest : 1.0f);
 		// And stood on its base. A scan's origin is wherever the photogrammetry
 		// left it -- one rock of a set sits well off it -- and scaled four times
 		// that was a stone metres in the air. The bottom-centre of its bounds goes
 		// to the instance point, sunk a sixth of its height into the ground.
-		const FBox Bounds = Meshes[Variant]->GetBoundingBox();
+		const FBox Bounds = Mesh->GetBoundingBox();
 		ScatterVariantOffset.Add(-FVector(Bounds.GetCenter().X, Bounds.GetCenter().Y,
-			Bounds.Min.Z + Bounds.GetSize().Z / 6.0));
+			Bounds.Min.Z + Bounds.GetSize().Z * (Kind == 0 ? 1.0 / 6.0 : 0.02)));
 		++ScatterVariants;
 	}
 
@@ -626,7 +656,11 @@ void ALedgerPlanet::RebuildScatter()
 				{
 					continue;
 				}
-				const int32 Variant = Instance.Variant % ByVariant.Num();
+				if (!KindCount.IsValidIndex(Instance.Kind) || KindCount[Instance.Kind] == 0)
+				{
+					continue;
+				}
+				const int32 Variant = KindFirst[Instance.Kind] + Instance.Variant % KindCount[Instance.Kind];
 				const float StoneScale = Instance.Scale
 					* (ScatterVariantScale.IsValidIndex(Variant) ? ScatterVariantScale[Variant] : 1.0f);
 				const FQuat StoneRotation(Instance.Rotation);

@@ -4379,6 +4379,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The thin-fin theory is wrong. At 64 cells across (from 32) the walk still passes (456 of 456 m, 0 blocked, 0 without a floor) but the windows in the shadowed wall multiplied and came out evenly spaced along its top: they scale with the lattice, so they are a join the surface-nets mesher misses between cell columns, not rock the samples cannot see. Reverted to 32 (four times the samples for nothing). They were in the first walk photographs too, before any of this session's cave changes, so they are the mesher's, not a regression. Next: dump the cave mesh of the brick holding the wall and find which edge's quads are absent -- the four-cell join around each crossed edge requires all four cells to have vertices, and a cell whose sign changes only along an axis the join loop does not visit would leave exactly a column-wide hole. Not accepted."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The windows are back faces, found by two control arms on the 90% frame (chain151). -cavedoubled (every cave triangle drawn from both sides): the wedges are gone. -cavenoland (the cave patches' whole land surface removed): the wedges are unchanged, so the land plays no part -- everything in that frame is cave mesh. Per-triangle winding (chain149) had not moved them either: the fold at the rim defeats the towards-the-air test for some faces whichever way it is asked. So the cave section is now two-sided, the back a copy of the vertices with the normals flipped so it lights as the side it is; the walk still passes both arms (456 of 456 m, 0 blocked, 0 without a floor). Photographs of the two-sided mesh queued."
     }
    ],
    "evidence": [
@@ -5152,6 +5157,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The periodic spikes were the sky light: chain146's twenty 60-75 ms frames sat on the exact 10 km marks, each with FilterReflectionEnvironment and ComputeSingleAverageBrightnessFromCubemap and ~50 ms of extra scene render on the render thread (Insights, render-thread export). A static sky capture re-renders the scene six times; ground travel barely changes the sky, so it is now asked for again on the angle 'up' has turned (1 degree, the same as the sun) or the height, not on distance. Chain150, warm cache, quiet: 188 over 16.7 ms (from 325), worst 61.3 ms (from 74.5), mean 8.96 ms; traces missed 0. Of the 188: 159 with no thread over budget, 19 game, 10 render; 63 with a patch upload over 4 ms. 332 of chain146's 446 over-budget frames were between 16.7 and 22 ms. What remains in them, game thread: LedgerPlanet's tick 9.5 ms against 2.4 in a normal frame -- procedural-mesh render-state updates (+3.2 ms) and physics-state creation for patch collision (+2.2 ms)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The streaming budgets are not the lever (chain152, three measured arms against chain150's 188 over 16.7 ms): uploads capped at 2 ms instead of 3 -> 187; one collision enable a frame instead of two -> 198; both -> 183. All within run-to-run noise, collision under the ship on every frame in every arm. What the classifier calls 'a wait' (no thread over budget) is counted over game, render and GPU only; the worst frames' RHI column reaches 47 ms and the render-thread trace grows CreateRHIBuffer and vertex-buffer InitRHI in over-budget frames, so the RHI thread is the next thing to look at."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] With plants in the scatter (chain154, format 32 after one warm-up pass, quiet): 248 over 16.7 ms against 188 without them, mean 8.55 ms (8.96 before), worst 63.3 ms, traces missed 0. Of the 248: 211 with no thread over budget, 29 game, 8 render; 93 with a patch upload over 4 ms. The plants add spikes rather than steady cost -- the likely cause is the instanced buckets rebuilding as patches arrive, now that nearly every instance is a plant. Next measurement: a -noplants arm of the same run, and the rebuild cost per bucket."
     }
    ],
    "evidence": [
@@ -7141,6 +7156,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] WHY NOTHING MOVED THE ORBIT VIEW: by default the clouds were the engine's own one-deck material (LedgerAtmosphere SetDecks), and the project's three-deck material ran only under -threedecks -- a switch from when that material drew nothing, left in after its density was put on the right pin. So every look-development change to LedgerCloudMaterial (range fade of the fine fields, weather amplitude 1.0, three octaves of multiple scattering, sharper edges with range) had been invisible: re-baking it moved 0.7% of the limb frame's pixels, and a probe built live moved none. With -noclouds the limb is the ground (40% of pixels change), so the veil was cloud -- the one-deck one. With -threedecks the 400 km limb shows coherent systems with clear air between, bright from above, and the climb shows three kinds of cloud. Now: the three-deck material is the default (-onedeck keeps the engine's as the control), and its fields move from texture-gradient noise, whose lattice makes the puffs box-shaped and the system edges stepped, to texture simplex. Queued: re-bake, then the climb and the limb."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Simplex was a detour and is reverted. On simplex the in-cumulus camera saw clear sky and the upper decks drew as speckled vertical columns; the clear sky was not the noise's distribution (measured: simplex passes more of a 0.6 threshold than gradient, 0.283 against 0.184) but the weather field moving -- switching it to simplex relocated every system and left the climb's site in clear air. Weather and decks are back on gradient noise at cumulus 0.0000048 (chain153). Against the acceptance: the climb half is met again -- in the middle deck, cirrus streaks overhead and cumulus puffs below, each at its profile altitude. Not met: the cumulus are boxes (noise stretched into columns by the 0.6 vertical flattening, cut flat at the band's top and bottom), and from 400 km the systems read as masses with clear air between but not as layers. Next: dome the decks -- raise the coverage threshold towards each band's top and bottom so the columns round off."
     }
    ],
    "evidence": [
@@ -15217,5 +15237,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T18:48:00.579Z"
+ "updatedAt": "2026-09-11T19:27:28.455Z"
 }

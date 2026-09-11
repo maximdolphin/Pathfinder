@@ -259,6 +259,66 @@ namespace LedgerScatter
 				// metre of cover buries the undergrowth this scatters.
 				Density *= 1.0 - 0.8 * LedgerClimate::SnowCover(Climate);
 
+				// **Plants, on sites of their own.** Not the stone's draw: a cell holds
+				// at most one stone, and undergrowth is many things close together. The
+				// dominant biome says what grows and the blend says how much, so a
+				// boundary thins out rather than switching species along a line.
+				double PlantDensity = 0.0;
+				int32 Dominant = 0;
+				for (int32 Index = 0; Index < Weights.Num(); ++Index)
+				{
+					PlantDensity += Weights[Index] * (*Biomes)[Index].PlantDensity;
+					Dominant = Weights[Index] > Weights[Dominant] ? Index : Dominant;
+				}
+				PlantDensity *= 1.0 - 0.8 * LedgerClimate::SnowCover(Climate);
+				const TArray<uint8>& Kinds = (*Biomes)[Dominant].Plants;
+				for (int32 Site = 0; bHasMesh && PlantDensity > 0.0 && Kinds.Num() > 0 && Site < PlantSites * PlantSites; ++Site)
+				{
+					const uint64 SiteHash = CellHash(Job.Key, Cell, 16u + static_cast<uint32>(Site));
+					if (Uniform(SiteHash) >= PlantDensity)
+					{
+						continue;
+					}
+					const uint8 Kind = Kinds[static_cast<int32>(Mix(SiteHash) % static_cast<uint64>(Kinds.Num()))];
+					const double SiteU = (CellU + ((Site % PlantSites) + Uniform(Mix(SiteHash ^ 1ull))) / PlantSites) / Cells;
+					const double SiteV = (CellV + ((Site / PlantSites) + Uniform(Mix(SiteHash ^ 2ull))) / PlantSites) / Cells;
+					for (int32 Stem = 0; Stem < PlantClump[Kind - 1]; ++Stem)
+					{
+						const uint64 StemHash = Mix(SiteHash + 3ull + static_cast<uint64>(Stem));
+						// A tuft is a metre and a half across, not a cell.
+						const double Spread = Stem == 0 ? 0.0 : 150.0 / Job.WorldSize;
+						const double StemU = FMath::Clamp(SiteU + (Uniform(Mix(StemHash ^ 1ull)) - 0.5) * 2.0 * Spread, 0.0, 1.0);
+						const double StemV = FMath::Clamp(SiteV + (Uniform(Mix(StemHash ^ 2ull)) - 0.5) * 2.0 * Spread, 0.0, 1.0);
+						if (QuadTriangles.Num() > 0)
+						{
+							const int32 QX = FMath::Clamp(FMath::FloorToInt32(StemU * (Side - 1)), 0, Side - 2);
+							const int32 QY = FMath::Clamp(FMath::FloorToInt32(StemV * (Side - 1)), 0, Side - 2);
+							if (QuadTriangles[QY * Side + QX] < 2)
+							{
+								continue;
+							}
+						}
+						const double StemRadius = MeshRadiusAt(StemU, StemV);
+						if (StemRadius <= RadiusCm)
+						{
+							continue;
+						}
+						const FVector3d Up = LedgerTerrain::CubeToSphere(LedgerTerrain::FaceToCube(Job.Face,
+							Job.U + StemU * Job.Extent, Job.V + StemV * Job.Extent));
+						const double StemYaw = Uniform(Mix(StemHash ^ 3ull)) * LedgerTwoPi;
+						FLedgerScatterInstance Plant;
+						Plant.Position = FVector3f(Up * StemRadius - Job.Centre);
+						// Upright, not leaning with the slope: a plant grows towards the
+						// light whatever the ground under it does.
+						Plant.Rotation = FQuat4f(FRotationMatrix::MakeFromZX(FVector(Up),
+							FVector(East * FMath::Cos(StemYaw) + North * FMath::Sin(StemYaw))).ToQuat());
+						Plant.Scale = static_cast<float>(0.7 + 0.6 * Uniform(Mix(StemHash ^ 4ull)));
+						Plant.Variant = static_cast<uint8>(Mix(StemHash ^ 5ull) & 0xFFull);
+						Plant.Kind = Kind;
+						Job.Scatter.Add(Plant);
+					}
+				}
+
 				// **Capped below one, and that is what stops the grid.**
 				//
 				// There is jitter inside each cell already, and it is not

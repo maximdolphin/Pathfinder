@@ -86,6 +86,9 @@ void ALedgerPlanet::InvalidateTerrain()
 void ALedgerPlanet::BeginPlay()
 {
 	Super::BeginPlay();
+	// Measurement arms for T068's frame budget, not settings.
+	FParse::Value(FCommandLine::Get(), TEXT("uploadbudget="), UploadBudgetMs);
+	FParse::Value(FCommandLine::Get(), TEXT("collisionperframe="), CollisionEnablesPerFrame);
 	SetUp();
 }
 

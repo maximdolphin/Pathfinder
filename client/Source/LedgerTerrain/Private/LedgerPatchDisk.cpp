@@ -125,6 +125,8 @@ namespace LedgerPatchDisk
 				MixValue(Hash, Biome.MoistureTolerance);
 				MixValue(Hash, Biome.MaxSlopeDegrees);
 				MixValue(Hash, Biome.ScatterDensity);
+				MixValue(Hash, Biome.PlantDensity);
+				Mix(Hash, Biome.Plants.GetData(), Biome.Plants.Num());
 				Mix(Hash, *Biome.SurfaceSet, Biome.SurfaceSet.Len() * sizeof(TCHAR));
 			}
 		}

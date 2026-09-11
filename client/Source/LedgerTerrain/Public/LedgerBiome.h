@@ -54,6 +54,13 @@ struct FLedgerBiome
 	/// Relative scatter density, 0 for bare ground. Consumed by the scatter
 	/// work; carried here because it is a property of the biome.
 	double ScatterDensity = 0.0;
+
+	/// Plants, 0 for none: the chance each plant site in a scatter cell grows
+	/// something, and what it can be -- kinds from LedgerScatter::PlantKinds,
+	/// stored one more than their index; a name listed twice is drawn twice as
+	/// often.
+	double PlantDensity = 0.0;
+	TArray<uint8> Plants;
 };
 
 /// The biomes one patch is painted with.

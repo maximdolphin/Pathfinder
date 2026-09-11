@@ -17,6 +17,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "UnrealClient.h"
+#include "ShaderCompiler.h"
 
 namespace
 {
@@ -81,7 +82,12 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 	Place();
 
 	Settle += DeltaSeconds;
-	if (Settle < FourBiomeSettleSeconds)
+	// And until the shaders are built, up to three minutes: a material seen for
+	// the first time is drawn with the engine's default until its shaders land,
+	// and the first photographs of the plants were grey opaque cards.
+	const bool bShadersPending = GShaderCompilingManager != nullptr
+		&& GShaderCompilingManager->GetNumRemainingJobs() > 0 && Settle < 180.0;
+	if (Settle < FourBiomeSettleSeconds || bShadersPending)
 	{
 		return;
 	}

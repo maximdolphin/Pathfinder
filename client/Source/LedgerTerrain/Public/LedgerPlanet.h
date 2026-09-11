@@ -703,8 +703,12 @@ public:
 	/// The material is passed in rather than built here because LedgerTerrain
 	/// does not depend on LedgerMaterial and should not: the composition root
 	/// is the only place that gets to know about both.
+	///
+	/// Plants come after the stones, one list per LedgerScatter::PlantKinds
+	/// entry, drawn at their own size out to LedgerScatter::PlantCullMetres.
 	void SetScatterMeshes(
-		const TArray<UStaticMesh*>& Meshes, class UMaterialInterface* Material = nullptr);
+		const TArray<UStaticMesh*>& Meshes, class UMaterialInterface* Material = nullptr,
+		const TArray<TArray<UStaticMesh*>>& Plants = TArray<TArray<UStaticMesh*>>());
 
 	/// Throw the terrain away and grow it again from whatever the properties
 	/// now say. ADR-0006 and T088.
@@ -832,6 +836,11 @@ private:
 	/// Per variant, mesh space: what puts the bottom-centre of its bounds on the
 	/// instance point, a sixth of its height sunk into the ground.
 	TArray<FVector> ScatterVariantOffset;
+
+	/// Per kind -- 0 the stones, then LedgerScatter::PlantKinds -- its first
+	/// variant and how many it has. A kind with none loaded draws nothing.
+	TArray<int32> KindFirst;
+	TArray<int32> KindCount;
 
 	/// What each live patch scattered, kept so the components can be rebuilt.
 	///

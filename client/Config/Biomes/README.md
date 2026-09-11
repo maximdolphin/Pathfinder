@@ -12,9 +12,17 @@ One file per biome. Adding a biome is adding a file here; nothing recompiles.
   "maxSlopeDegrees": 8.0,
   "surfaceSet": "rocky_sand_vd4pbdt",
   "tint": [0.90, 0.88, 0.82],
-  "scatterDensity": 0.0
+  "scatterDensity": 0.0,
+  "plantDensity": 0.05,
+  "plants": ["succulent", "deadwood"]
 }
 ```
+
+`plants` names kinds from `LedgerScatter::PlantKinds` (grass, shrub, fern,
+conifer, succulent, deadwood); a name listed twice is drawn twice as often, and
+an unknown name rejects the file. `plantDensity` is the chance each plant site
+grows something. What grows on a slope is the dominant biome's; how much is the
+blend's.
 
 `name` and the four climate fields are required, and a file missing any of them
 is rejected with a message naming the field — a biome that quietly defaulted to
