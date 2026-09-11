@@ -24,7 +24,8 @@
 #include "Engine/World.h"
 
 int32 ALedgerPlanet::MeasureScatterFootings(
-	const FVector& Near, double WithinMetres, FString& OutReport) const
+	const FVector& Near, double WithinMetres, FString& OutReport,
+	TArray<FLedgerFooting>* OutAll) const
 {
 	UWorld* World = GetWorld();
 	if (World == nullptr)
@@ -99,6 +100,17 @@ int32 ALedgerPlanet::MeasureScatterFootings(
 			Footing.Instance = Instance;
 			++SlopeBands[FMath::Clamp(static_cast<int32>(Footing.SlopeDegrees / 15.0), 0, 5)];
 			All.Add(Footing);
+			if (OutAll != nullptr)
+			{
+				FLedgerFooting& Out = OutAll->AddDefaulted_GetRef();
+				Out.Where = FVector(Where);
+				Out.AboveDrawnMetres = Footing.AboveDrawnMetres;
+				Out.AboveFunctionMetres = Footing.AboveFunctionMetres;
+				Out.SlopeDegrees = Footing.SlopeDegrees;
+				Out.RangeMetres = Footing.RangeMetres;
+				Out.Component = Footing.Component;
+				Out.Instance = Footing.Instance;
+			}
 		}
 	}
 

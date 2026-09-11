@@ -67,6 +67,8 @@ bool ALedgerPlanet::LaunchPatch(const FLedgerQuadNode& Node, bool bWithCollision
 	Job->StitchRight = StitchLevelAt(Node, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent);
 	Job->StitchBottom = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent);
 	Job->StitchTop = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent);
+	CornerLevelsFor(Node, Job->StitchLeft, Job->StitchRight, Job->StitchBottom, Job->StitchTop,
+		Job->CornerLevels);
 	}
 
 	InFlight.Add(Job->Key, Job);
@@ -149,6 +151,7 @@ void ALedgerPlanet::HarvestCompletedPatches()
 			Job->Key, Job->Centre,
 			Job->StitchLeft, Job->StitchRight, Job->StitchBottom, Job->StitchTop,
 			Job->Palette };
+		FMemory::Memcpy(SectionMeta[Job->SectionIndex].CornerLevels, Job->CornerLevels, 4);
 
 		Stats.LastPatchGenerationMs = Job->GenerationMs;
 
@@ -231,10 +234,15 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 	// coarser neighbour has subdivided since needs different edge geometry, and
 	// the cached buffers would leave a crack along that edge.
 	FLedgerCachedPatch& Entry = *Found;
-	if (Entry.StitchLeft != StitchLevelAt(Node, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent)
-		|| Entry.StitchRight != StitchLevelAt(Node, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent)
-		|| Entry.StitchBottom != StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent)
-		|| Entry.StitchTop != StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent))
+	const uint8 NowLeft = StitchLevelAt(Node, Node.U - 0.02 * Node.Extent, Node.V + 0.5 * Node.Extent);
+	const uint8 NowRight = StitchLevelAt(Node, Node.U + 1.02 * Node.Extent, Node.V + 0.5 * Node.Extent);
+	const uint8 NowBottom = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V - 0.02 * Node.Extent);
+	const uint8 NowTop = StitchLevelAt(Node, Node.U + 0.5 * Node.Extent, Node.V + 1.02 * Node.Extent);
+	uint8 NowCorners[4] = { 0, 0, 0, 0 };
+	CornerLevelsFor(Node, NowLeft, NowRight, NowBottom, NowTop, NowCorners);
+	if (Entry.StitchLeft != NowLeft || Entry.StitchRight != NowRight
+		|| Entry.StitchBottom != NowBottom || Entry.StitchTop != NowTop
+		|| FMemory::Memcmp(Entry.CornerLevels, NowCorners, 4) != 0)
 	{
 		// Counted as well as acted on. The rebuild fixes it; T067 wants to know
 		// how often it happened, because each one was a crack until it landed.
@@ -288,6 +296,7 @@ bool ALedgerPlanet::UploadFromCache(const FLedgerQuadNode& Node, bool bWithColli
 		Key, Entry.Centre,
 		Entry.StitchLeft, Entry.StitchRight, Entry.StitchBottom, Entry.StitchTop,
 		Entry.Palette };
+	FMemory::Memcpy(SectionMeta[SectionIndex].CornerLevels, Entry.CornerLevels, 4);
 
 	// Removed, not kept: the geometry is on screen again and holding a second
 	// copy of it is exactly the waste this cache is shaped to avoid.
@@ -398,6 +407,7 @@ void ALedgerPlanet::ReleaseSection(uint64 Key)
 			Entry->StitchRight = Meta.StitchRight;
 			Entry->StitchBottom = Meta.StitchBottom;
 			Entry->StitchTop = Meta.StitchTop;
+			FMemory::Memcpy(Entry->CornerLevels, Meta.CornerLevels, 4);
 			Entry->Palette = Meta.Palette;
 			if (const FPatchScatter* Scattered = LiveScatter.Find(Key))
 			{
@@ -639,4 +649,18 @@ uint8 ALedgerPlanet::StitchLevelAt(const FLedgerQuadNode& Node, double U, double
 	// Beyond six, one of its quads spans this patch's whole 64-quad edge and
 	// every further level stitches the same way, so the byte is capped there.
 	return static_cast<uint8>(FMath::Clamp(Node.Depth - LeafDepthAtFace(Node.Face, U, V), 0, 6));
+}
+
+void ALedgerPlanet::CornerLevelsFor(const FLedgerQuadNode& Node, uint8 Left, uint8 Right,
+	uint8 Bottom, uint8 Top, uint8 OutCorners[4]) const
+{
+	const double Out = 0.02 * Node.Extent;
+	const double Low = Node.U - Out;
+	const double High = Node.U + Node.Extent + Out;
+	const double Below = Node.V - Out;
+	const double Above = Node.V + Node.Extent + Out;
+	OutCorners[0] = FMath::Max3(Left, Bottom, StitchLevelAt(Node, Low, Below));
+	OutCorners[1] = FMath::Max3(Right, Bottom, StitchLevelAt(Node, High, Below));
+	OutCorners[2] = FMath::Max3(Left, Top, StitchLevelAt(Node, Low, Above));
+	OutCorners[3] = FMath::Max3(Right, Top, StitchLevelAt(Node, High, Above));
 }

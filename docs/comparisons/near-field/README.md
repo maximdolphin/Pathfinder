@@ -247,3 +247,39 @@ current neighbours and relaunches the ones that disagree, eight a frame, the old
 geometry staying on screen until the new lands (the landing releases the section
 it replaces). The count is in the stats as `re-stitched`. `-breakstitching`
 still breaks stitching on purpose, and is left alone by this.
+
+### The neighbour it was stitching against was the resident shell
+
+Making stitch flags into levels made things visibly worse — white sliver walls
+along patch edges on every ridge and across valley floors — and the edge-height
+dump said why. Both sides of the worst edge were perfect straight lines, one
+3,300.8 m to 2,220.1 m, the other 1,261.5 m to 2,220.1 m: each patch had
+straightened its whole edge corner to corner, because each had been told its
+neighbour was many levels coarser than it was.
+
+`LeafDepthAtResolved`, which decides every stitch, walked down the tree and
+stopped at the **first** node with geometry — meant to catch a parent still
+drawn behind children that are streaming in. But the resident shell keeps its
+geometry at every depth down to `ResidentDepth` (3) whether or not its children
+are drawn, so the walk almost always stopped there. Under the old yes/no flags
+that collapsed every edge of every patch — consistent between equal
+neighbours, and a crack at every real LOD boundary, which is the 37,608 the
+probe found first. Under levels, the same wrong answer straightened every edge
+onto a line up to 64 quads long.
+
+It now returns the **deepest** node along the path that has geometry, which is
+what is actually on screen at that point.
+
+| forced-depth near field | edge vertices > 1 cm off | worst |
+|---|---:|---|
+| stitch levels, first drawn node | 60,961 | 1,566 m (depth 10 vs 9) |
+| deepest drawn node | 142 | 38 cm (depth 13 vs 13, at a corner) |
+
+The fog watch's imbalanced-edge count — edges where drawn neighbours differ by
+more than one level — went from 840 to 22 with the same change, so the
+"multi-level jumps are normal" reading was the same wrong walk.
+
+What is left is at corners. A corner is shared by up to four patches; one that
+borders the coarser patch along an edge samples the corner at that patch's
+spacing, one that touches it only diagonally does not know to. Each corner now
+takes the largest of its two edges and its diagonal neighbour.

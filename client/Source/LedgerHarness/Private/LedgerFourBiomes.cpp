@@ -102,8 +102,42 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 		if (const ALedgerPlanet* Planet = Builder->GetPlanet())
 		{
 			FString Lines;
+			TArray<FLedgerFooting> Stones;
 			const int32 Off = Planet->MeasureScatterFootings(
-				Camera != nullptr ? Camera->GetActorLocation() : FVector::ZeroVector, 1500.0, Lines);
+				Camera != nullptr ? Camera->GetActorLocation() : FVector::ZeroVector, 1500.0, Lines, &Stones);
+
+			// **The stones in one rectangle of the frame, by what the probe knows**
+			// **about each.** The savanna frame has a column of boulders standing
+			// in the sky over a hill (x 950-1180, y 380-500 of 1920x1080), and
+			// every aggregate measure -- footings, drawn slope, morph off, the
+			// stitching fixed -- says every stone is on the ground. So: project
+			// every measured stone into the frame and list the ones that land
+			// there. If none do, what is drawn there is not where its instance
+			// data says it is, which is an answer too.
+			if (APlayerController* Viewer = GetWorld()->GetFirstPlayerController())
+			{
+				int32 InColumn = 0;
+				for (const FLedgerFooting& Stone : Stones)
+				{
+					FVector2D Screen;
+					if (!Viewer->ProjectWorldLocationToScreen(Stone.Where, Screen, false))
+					{
+						continue;
+					}
+					if (Screen.X < 950.0 || Screen.X > 1180.0 || Screen.Y < 380.0 || Screen.Y > 500.0)
+					{
+						continue;
+					}
+					if (++InColumn <= 24)
+					{
+						Lines += FString::Printf(
+							TEXT("  in the column: screen (%.0f, %.0f), %5.0f m away, %+7.2f m above the drawn ground, %+7.2f m above the function, %4.1f deg under it (component %d, instance %d)\n"),
+							Screen.X, Screen.Y, Stone.RangeMetres, Stone.AboveDrawnMetres,
+							Stone.AboveFunctionMetres, Stone.SlopeDegrees, Stone.Component, Stone.Instance);
+					}
+				}
+				Lines += FString::Printf(TEXT("  stones projecting into the column rectangle: %d\n"), InColumn);
+			}
 			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
 			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
 				*Names[Shot], Off) + Lines;

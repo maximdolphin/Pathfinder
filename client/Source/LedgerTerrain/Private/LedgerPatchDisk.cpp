@@ -82,6 +82,10 @@ namespace LedgerPatchDisk
 		MixValue(Hash, Job.StitchRight);
 		MixValue(Hash, Job.StitchBottom);
 		MixValue(Hash, Job.StitchTop);
+		for (const uint8 Corner : Job.CornerLevels)
+		{
+			MixValue(Hash, Corner);
+		}
 
 		// The planet.
 		MixValue(Hash, Job.Params.Seed);

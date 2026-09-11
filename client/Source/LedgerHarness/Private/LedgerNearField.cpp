@@ -8,6 +8,7 @@
 #include "LedgerLog.h"
 #include "LedgerPlanet.h"
 #include "LedgerShip.h"
+#include "LedgerSky.h"
 #include "LedgerTerrainMath.h"
 #include "LedgerTerrainSample.h"
 #include "LedgerWorld.h"
@@ -238,6 +239,37 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 	{
 		if (PomShot < 0)
 		{
+			// **Raking light, as the acceptance says.** The site's own hour puts
+			// the sun sixty degrees up, which lights gravel from above and hides
+			// exactly the occlusion the pair is for. The first moment ahead with
+			// the sun about ten degrees up at this spot; the terrain does not
+			// change with the clock, only the light does.
+			const FVector3d Spot = Standing(Builder->GetSiteDirection().GetSafeNormal(), Planet);
+			const double Start = Builder->GetWhenSeconds();
+			for (double At = Start; At < Start + 400000.0; At += 60.0)
+			{
+				const double Degrees = FMath::RadiansToDegrees(LedgerSky::SolarAltitude(
+					Builder->GetSystem(), Builder->GetHomeBodyIndex(), Spot, At));
+				if (Degrees > 8.0 && Degrees < 12.0)
+				{
+					const_cast<ULedgerWorldBuilder*>(Builder)->SetWhenSeconds(At);
+					UE_LOG(LogLedger, Log,
+						TEXT("near field: parallax pair under a %.1f degree sun, %.0f s ahead"),
+						Degrees, At - Start);
+					break;
+				}
+			}
+			// Three stops brighter for the pair. Under a ten-degree sun auto
+			// exposure left the gravel at a mean of 10 of 255 -- a photograph
+			// of the dark, and too little contrast to match tiles in.
+			if (Camera != nullptr)
+			{
+				if (UCameraComponent* Lens = Camera->GetCameraComponent())
+				{
+					Lens->PostProcessSettings.bOverride_AutoExposureBias = true;
+					Lens->PostProcessSettings.AutoExposureBias = 3.0f;
+				}
+			}
 			PomShot = 0;
 			PomFrames = 0;
 			return;
@@ -319,8 +351,6 @@ void ULedgerNearField::Park()
 	const bool bPom = NearFieldPomProbe() && bLookedDown && PomShot >= 0 && PomShot < 2;
 	const FVector3d PomEye3d =
 		(Eye3d + Ahead * (FMath::Max(PomShot, 0) * 100.0 / Planet->Radius)).GetSafeNormal();
-	const FVector3d PomAim = (PomEye3d + Ahead * (238.0 / Planet->Radius)).GetSafeNormal();
-	const FVector PomTarget = FVector(Origin + PomAim * Planet->SurfaceRadiusAt(PomAim));
 	// **Eight metres, as the comment above says and the code did not.** This
 	// was `800.0 * 100.0` -- eight hundred metres, a frame a kilometre and a
 	// half across, in which a two-metre tile repeat is under a pixel.
@@ -329,8 +359,15 @@ void ULedgerNearField::Park()
 		: bDown
 		? FVector(Origin + Eye3d * (Ground + 800.0))
 		: FVector(Origin + Eye3d * (Ground + EyeMetres * 100.0));
+	// By direction, not by a target on the height function: aimed at a point
+	// the function put 2.4 m ahead, on this relief the first pair came back
+	// looking at the horizon. Forty-five degrees below the local level, along
+	// the profile, whatever the ground does.
+	// Straight down, after the forty-five-degree version stood on a hilltop and
+	// photographed the far side of a valley: looking down, the frame is the two
+	// metres of ground under the camera wherever the camera is.
 	const FRotator Look = bPom
-		? FRotationMatrix::MakeFromXZ(PomTarget - Eye, FVector(PomEye3d)).Rotator()
+		? FRotationMatrix::MakeFromXZ(FVector(-PomEye3d), FVector(Ahead)).Rotator()
 		: bDown
 		? FRotationMatrix::MakeFromXZ(
 			FVector(-Eye3d), FVector(ProfileDirection(Eye3d))).Rotator()

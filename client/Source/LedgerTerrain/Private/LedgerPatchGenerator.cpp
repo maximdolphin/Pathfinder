@@ -180,6 +180,12 @@ void LedgerGeneratePatch(FLedgerPatchJob& Job)
 			if (X == Side - 1) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchRight); }
 			if (Y == 0) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchBottom); }
 			if (Y == Side - 1) { EdgeLevel = FMath::Max(EdgeLevel, Job.StitchTop); }
+			// A corner takes its own level: the larger of its two edges and the
+			// diagonal neighbour, decided at launch (see CornerLevelsFor).
+			if ((X == 0 || X == Side - 1) && (Y == 0 || Y == Side - 1))
+			{
+				EdgeLevel = Job.CornerLevels[(X == 0 ? 0 : 1) + (Y == 0 ? 0 : 2)];
+			}
 			const double VertexSpacing = SpacingMetres * static_cast<double>(1 << FMath::Min<int32>(EdgeLevel, 16));
 
 			// The one line the whole disk cache exists for.

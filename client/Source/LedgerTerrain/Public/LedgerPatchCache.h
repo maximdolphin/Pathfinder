@@ -37,6 +37,7 @@ struct FLedgerCachedPatch
 	uint8 StitchRight = 0;
 	uint8 StitchBottom = 0;
 	uint8 StitchTop = 0;
+	uint8 CornerLevels[4] = { 0, 0, 0, 0 };
 
 	FProcMeshSection Land;
 	FProcMeshSection Water;

@@ -639,8 +639,11 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 			const uint8 RightLevel = StitchLevelAt(*Leaf, Leaf->U + 1.02 * Leaf->Extent, Leaf->V + 0.5 * Leaf->Extent);
 			const uint8 BottomLevel = StitchLevelAt(*Leaf, Leaf->U + 0.5 * Leaf->Extent, Leaf->V - 0.02 * Leaf->Extent);
 			const uint8 TopLevel = StitchLevelAt(*Leaf, Leaf->U + 0.5 * Leaf->Extent, Leaf->V + 1.02 * Leaf->Extent);
+			uint8 CornerNow[4] = { 0, 0, 0, 0 };
+			CornerLevelsFor(*Leaf, LeftLevel, RightLevel, BottomLevel, TopLevel, CornerNow);
 			if (LeftLevel != Meta.StitchLeft || RightLevel != Meta.StitchRight
-				|| BottomLevel != Meta.StitchBottom || TopLevel != Meta.StitchTop)
+				|| BottomLevel != Meta.StitchBottom || TopLevel != Meta.StitchTop
+				|| FMemory::Memcmp(CornerNow, Meta.CornerLevels, 4) != 0)
 			{
 				const bool bCollision = MeshPool.IsValidIndex(Section) && MeshPool[Section] != nullptr
 					&& MeshPool[Section]->GetCollisionEnabled() != ECollisionEnabled::NoCollision;

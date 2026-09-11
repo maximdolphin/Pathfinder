@@ -93,6 +93,11 @@ struct FLedgerPatchJob
 	uint8 StitchRight = 0;
 	uint8 StitchBottom = 0;
 	uint8 StitchTop = 0;
+	/// Levels coarser the finest drawn patch touching each corner is: bottom-
+	/// left, bottom-right, top-left, top-right. The larger of the two edges and
+	/// the diagonal, because a corner is shared by up to four patches and the
+	/// one that only touches a coarser neighbour diagonally has no edge to say so.
+	uint8 CornerLevels[4] = { 0, 0, 0, 0 };
 
 	// ---- outputs --------------------------------------------------------
 	TArray<FVector> Vertices;
@@ -179,6 +184,18 @@ using FLedgerPatchJobRef = TSharedPtr<FLedgerPatchJob, ESPMode::ThreadSafe>;
 /// The stitch flags cannot be recovered from the mesh and cannot be recomputed
 /// at release either â€” a collapse destroys the node before its section goes
 /// back to the pool. They are recorded on the way in.
+/// One scatter instance as MeasureScatterFootings found it.
+struct FLedgerFooting
+{
+	FVector Where = FVector::ZeroVector;
+	double AboveDrawnMetres = 0.0;
+	double AboveFunctionMetres = 0.0;
+	double SlopeDegrees = 0.0;
+	double RangeMetres = 0.0;
+	int32 Component = 0;
+	int32 Instance = 0;
+};
+
 struct FLedgerSectionMeta
 {
 	uint64 Key = 0;
@@ -191,6 +208,8 @@ struct FLedgerSectionMeta
 	/// Carried so the geometry can be put back in the cache with the palette
 	/// its vertex colours were written against.
 	FLedgerBiomePalette Palette;
+
+	uint8 CornerLevels[4] = { 0, 0, 0, 0 };
 };
 
 /// What the terrain is doing, for the Â§15.1 build/buy decision.
@@ -667,7 +686,8 @@ public:
 
 	/// How far each scatter instance within a range of a point sits from the
 	/// ground a trace hits under it. Returns how many are more than 1.5 m off.
-	int32 MeasureScatterFootings(const FVector& Near, double WithinMetres, FString& OutReport) const;
+	int32 MeasureScatterFootings(const FVector& Near, double WithinMetres, FString& OutReport,
+		TArray<FLedgerFooting>* OutAll = nullptr) const;
 
 private:
 	UPROPERTY()
@@ -845,6 +865,10 @@ private:
 
 	/// Levels coarser than Node the drawn neighbour at (U, V) is, 0 to 6.
 	uint8 StitchLevelAt(const FLedgerQuadNode& Node, double U, double V) const;
+
+	/// The four corner levels for a patch with these edge levels.
+	void CornerLevelsFor(const FLedgerQuadNode& Node, uint8 Left, uint8 Right,
+		uint8 Bottom, uint8 Top, uint8 OutCorners[4]) const;
 
 	/// The tree descent both entry points share, on coordinates already known
 	/// to belong to this face.
