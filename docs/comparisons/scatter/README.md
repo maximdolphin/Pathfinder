@@ -117,3 +117,28 @@ The meshes are the two trees the settlement plants, borrowed. The biome files
 already have somewhere to name their own rocks and shrubs; until those meshes
 exist, borrowing these is honest about what is being placed and lets the
 placement itself be measured.
+
+## Stones on ground steeper than the limit (T437)
+
+The savanna capture showed two lines of boulders climbing a hillside. They were
+not floating. `ALedgerPlanet::MeasureScatterFootings` traces straight down
+through every stone near the camera and compares it with what it hits; out to
+1.5 km of each of the four biome cameras, 339,000 stones, not one is more than
+1.5 m off the drawn ground.
+
+What they stand on is too steep. The same trace reads the slope of the drawn
+surface under each stone from the hit normal:
+
+| biome | stones | 0-15° | 15-30° | 30-45° | 45-60° | 60°+ |
+|---|---:|---:|---:|---:|---:|---:|
+| tropical rainforest | 125,669 | 56,193 | 57,471 | 11,676 | 328 | 1 |
+| desert | 9,378 | 3,514 | 4,405 | 1,391 | 68 | 0 |
+| temperate grassland | 115,200 | 52,216 | 52,130 | 10,524 | 330 | 0 |
+| savanna | 88,607 | 41,392 | 39,517 | 7,492 | 206 | 0 |
+
+The placement's limit is 34°, and it was being tested against the height
+*function* sampled a whole scatter cell away — a slope smoothed over several
+metres — while the stone lands on the *mesh*, whose quads can be much steeper
+than that average. Seen side-on across a hillside, stones on faces of 45-60°
+stack up in the frame as a column. Placement now rejects on the steeper of the
+two: the function a cell away, and the drawn mesh a quad away.

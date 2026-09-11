@@ -16,7 +16,6 @@
 #include "Materials/MaterialExpressionCollectionParameter.h"
 #include "Materials/MaterialExpressionLocalPosition.h"
 #include "Materials/MaterialExpressionTime.h"
-#include "Materials/MaterialExpressionVertexColor.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
 #include "Materials/MaterialParameterCollection.h"
 
@@ -41,8 +40,6 @@ namespace LedgerSurface
 		// it did before this material existed.
 		UMaterialExpression* Tint =
 			Graph.VectorParameter(TEXT("Tint"), FLinearColor::White);
-		UMaterialExpressionVertexColor* VertexColour =
-			Graph.Make<UMaterialExpressionVertexColor>();
 		UMaterialExpression* Roughness = Graph.ScalarParameter(TEXT("Roughness"), 0.88f);
 
 		UMaterialEditorOnlyData* EditorData = Material->GetEditorOnlyData();
@@ -50,7 +47,11 @@ namespace LedgerSurface
 		{
 			return nullptr;
 		}
-		EditorData->BaseColor.Expression = Graph.Multiply(Tint, VertexColour);
+		// The tint alone. The settlement gives each slot its own colour, and the
+		// bake also writes that colour into the vertices, so tint times vertex
+		// colour was the colour squared: an albedo of about 0.01, a canopy that
+		// read as a black cut-out under anything but direct sun.
+		EditorData->BaseColor.Expression = Tint;
 		EditorData->Roughness.Expression = Roughness;
 		EditorData->Specular.Expression = Graph.Constant(0.4f);
 

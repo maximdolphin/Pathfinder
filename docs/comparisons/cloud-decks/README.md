@@ -201,3 +201,22 @@ sample in every column read the same coordinate. It now uses
 density from the raw noise proved" a precision problem was reading a pin the
 renderer ignored; the precision reasoning for the anchor still holds, but that
 run proved nothing.
+
+## And it did not compile
+
+`WPT_CameraRelative` changed nothing either: probe and decks still an empty
+sky, while a constant thin extinction (`-cloudconst`) drew a uniform haze and a
+uniform shell from orbit — so the pin reached the integrator, and whatever
+used the noise did not. The log had the answer, under the map's name rather
+than the material's, as before:
+
+    Failed to compile Material for platform PCD3D_SM6, Default Material will be used in game.
+    (Node Subtract) Arithmetic between types float3 and float4 are undefined
+
+Vector parameters are four wide and positions three. The anchor, the wind
+direction and the up vector are all vector parameters, and while the noise
+chain fed the Opacity pin nobody compiled it; the moment it fed Extinction the
+material failed and the engine substituted its default, which draws nothing.
+`-cloudconst` compiled because a constant does not touch that chain. The three
+parameters are now masked to RGB, and the chains print "Failed to compile" when
+they see it.

@@ -92,3 +92,26 @@ It is not, however, why the ground looked bad. That was 4.77 m triangles
 |---|---|
 | `client/Source/LedgerClient/Private/LedgerWorld.cpp` | `KeepSkyWithViewer`, and the tick that calls it |
 | `client/Source/LedgerClient/Public/LedgerWorld.h` | the builder became tickable for this one thing |
+
+## The real-time capture lit nothing
+
+Moving the sky light to the viewer and asking for a recapture every kilometre
+was not the end of it. Every face the sun does not reach still rendered
+**exactly (0,0,0)** — building walls, the shaded side of every canopy, the
+terrain in its own shadow (1,1,2). Three controls, one run each, same frame:
+
+| arm | shaded wall | what it rules out |
+|---|---|---|
+| as shipped | (0, 0, 0) | — |
+| `r.DynamicGlobalIlluminationMethod 0` (Lumen off) | (0, 0, 0) | Lumen's occlusion: the lit pixels were identical too, so indirect light contributed nothing with or without it |
+| `-skyprobe` (lower hemisphere magenta) | (0, 0, 0) | a black capture with the light still applied: a magenta wall would have meant that, and there was none |
+| `-skystatic` (bRealTimeCapture off) | (138, 127, 114) | — the light works; the real-time capture is what delivers nothing |
+
+The light reported itself affecting the world, visible, registered, at
+intensity 3.2, throughout. So the default is now a static capture, retaken by
+`KeepSkyWithViewer` when the viewer has moved more than a kilometre or a tenth
+of its altitude, or the sun more than a degree; `-skyrealtime` restores the
+real-time capture as the control. The intensity is back to 1 — 3.2 was
+compensating for a capture that delivered nothing — and the lower hemisphere
+comes from the capture, because "lower" is world −Z, which on a sphere is down
+at one pole only.

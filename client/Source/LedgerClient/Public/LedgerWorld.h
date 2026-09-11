@@ -58,6 +58,7 @@ private:
 	/// Where the sky was last captured from, so it is re-captured when the
 	/// viewer has actually gone somewhere.
 	FVector LastSkyCapture = FVector(TNumericLimits<double>::Max());
+	FVector3d LastSkyCaptureSun = FVector3d::ZeroVector;
 
 public:
 	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const override;

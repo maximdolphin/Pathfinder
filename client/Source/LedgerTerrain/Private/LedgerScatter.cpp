@@ -153,7 +153,24 @@ namespace LedgerScatter
 
 				const double SlopeDegrees = FMath::RadiansToDegrees(FMath::Atan2(
 					FVector2d(RiseEast, RiseNorth).Length() / 100.0, CellMetres));
-				if (SlopeDegrees > MaxSlopeDegrees)
+				// **And on the drawn surface, a quad away.** The function a cell away
+				// is smoother than the mesh it is drawn as, and the stone stands on the
+				// mesh: traced from above, 11,676 of 125,669 rainforest stones stood on
+				// drawn ground of 30 to 45 degrees and 329 on steeper -- which, seen
+				// side-on across a hillside, is a column of boulders climbing it.
+				double DrawnSlopeDegrees = 0.0;
+				if (bHasMesh)
+				{
+					const double Du = 1.0 / (Side - 1);
+					const double StepU = LocalU + Du <= 1.0 ? Du : -Du;
+					const double StepV = LocalV + Du <= 1.0 ? Du : -Du;
+					const double Here = MeshRadiusAt(LocalU, LocalV);
+					const double AlongU = MeshRadiusAt(LocalU + StepU, LocalV) - Here;
+					const double AlongV = MeshRadiusAt(LocalU, LocalV + StepV) - Here;
+					DrawnSlopeDegrees = FMath::RadiansToDegrees(FMath::Atan2(
+						FVector2d(AlongU, AlongV).Length() / 100.0, PatchMetres / (Side - 1)));
+				}
+				if (FMath::Max(SlopeDegrees, DrawnSlopeDegrees) > MaxSlopeDegrees)
 				{
 					continue;
 				}

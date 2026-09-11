@@ -61,6 +61,23 @@ namespace LedgerSurface
 			return Node;
 		}
 
+
+		/// The colour channels of a vector parameter. Vector parameters are four
+		/// wide and positions three, and a float3 minus a float4 does not compile
+		/// -- which in a volume material silently swaps in the default material,
+		/// and the default draws nothing. That was the empty sky after the
+		/// density moved to the Extinction pin: the log said "(Node Subtract)
+		/// Arithmetic between types float3 and float4 are undefined".
+		UMaterialExpression* CloudRGB(FGraph& Graph, UMaterialExpression* Input)
+		{
+			UMaterialExpressionComponentMask* Mask = Graph.Make<UMaterialExpressionComponentMask>();
+			Mask->Input.Expression = Input;
+			Mask->R = true;
+			Mask->G = true;
+			Mask->B = true;
+			Mask->A = false;
+			return Mask;
+		}
 		UMaterialExpressionScalarParameter* Parameter(
 			FGraph& Graph, const TCHAR* Name, float Default)
 		{
@@ -228,7 +245,7 @@ namespace LedgerSurface
 		Anchor->DefaultValue = FLinearColor::Black;
 		UMaterialExpressionTime* Time = Graph.Make<UMaterialExpressionTime>();
 
-		UMaterialExpression* Drift = Graph.Add(Position, Anchor);
+		UMaterialExpression* Drift = Graph.Add(Position, CloudRGB(Graph, Anchor));
 		if (UMaterialParameterCollection* Collection =
 			LoadObject<UMaterialParameterCollection>(
 				nullptr, TEXT("/Game/Materials/MPC_LedgerWind")))
@@ -236,7 +253,7 @@ namespace LedgerSurface
 			// Same fault as the foliage had, never seen here only because
 			// until the collection was baked this branch never ran.
 			UMaterialExpression* WindDirection =
-				Graph.CollectionParameter(Collection, TEXT("WindDirection"));
+				CloudRGB(Graph, Graph.CollectionParameter(Collection, TEXT("WindDirection")));
 			UMaterialExpression* WindSpeed =
 				Graph.CollectionParameter(Collection, TEXT("WindSpeed"));
 
@@ -271,13 +288,14 @@ namespace LedgerSurface
 			Graph.Make<UMaterialExpressionVectorParameter>();
 		Up->ParameterName = TEXT("NoiseUp");
 		Up->DefaultValue = FLinearColor(0.0f, 0.0f, 1.0f, 0.0f);
+		UMaterialExpression* UpRGB = CloudRGB(Graph, Up);
 
 		UMaterialExpressionDotProduct* Along =
 			Graph.Make<UMaterialExpressionDotProduct>();
 		Along->A.Expression = Drift;
-		Along->B.Expression = Up;
+		Along->B.Expression = UpRGB;
 		UMaterialExpression* Flattened = Graph.Subtract(Drift,
-			Graph.Multiply(Up, Graph.Scale(Along, 0.92f)));
+			Graph.Multiply(UpRGB, Graph.Scale(Along, 0.92f)));
 
 		// **Cloud-sized, not gravel-sized.** A quarter-kilometre feature reads
 		// as noise; a cumulus field is spaced in kilometres.

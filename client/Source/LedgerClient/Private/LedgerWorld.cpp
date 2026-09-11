@@ -318,14 +318,26 @@ void ULedgerWorldBuilder::KeepSkyWithViewer()
 	// A kilometre of hysteresis. The capture is not free and the sky does not
 	// meaningfully change over less than that; without a threshold this is a
 	// cubemap render every frame.
-	if (FVector::Distance(Was, LastSkyCapture) > 100000.0
-		|| FVector::Distance(Now, LastSkyCapture) > 100000.0)
+	//
+	// **Scaled with altitude, and the sun counts too.** A static capture sees
+	// what the sky looked like when it was taken, so a sun that has moved is as
+	// much a reason as a viewer that has; and a tenth of the altitude keeps a
+	// descent from orbit from asking for a cubemap every frame.
+	const double AltitudeCm = Planet != nullptr
+		? FMath::Max(0.0, FVector3d::Dist(FVector3d(Now), FVector3d(Planet->GetActorLocation())) - Planet->Radius)
+		: 0.0;
+	const double Threshold = FMath::Max(100000.0, AltitudeCm * 0.1);
+	const bool bSunMoved = FVector3d::DotProduct(SunFacing.GetSafeNormal(), LastSkyCaptureSun)
+		< FMath::Cos(FMath::DegreesToRadians(1.0));
+	if (FVector::Distance(Was, LastSkyCapture) > Threshold
+		|| FVector::Distance(Now, LastSkyCapture) > Threshold || bSunMoved)
 	{
 		if (USkyLightComponent* Component = Sky->GetLightComponent())
 		{
 			Component->RecaptureSky();
 		}
 		LastSkyCapture = Now;
+		LastSkyCaptureSun = SunFacing.GetSafeNormal();
 	}
 
 	// Once, so the log says whether this ever ran and where it put it. The
@@ -793,7 +805,20 @@ void ULedgerWorldBuilder::BuildWorldFor(UWorld& InWorld)
 			// direct lighting off rendered the entire world -- terrain, town,
 			// trees -- as a pure black silhouette against a blue sky, which is
 			// what found it. Tick moves it to the viewer; see KeepSkyWithViewer.
-			Component->bRealTimeCapture = !FParse::Param(FCommandLine::Get(), TEXT("skystatic"));
+			// **A static capture, retaken as the viewer and the sun move.** The
+			// real-time capture comes back black on this planet: every face the
+			// sun did not reach rendered (0,0,0), with Lumen on and with it off,
+			// and a magenta lower hemisphere did not show either -- while the
+			// same light with bRealTimeCapture off lit every wall. So the
+			// capture is taken the old way and KeepSkyWithViewer asks for it
+			// again when the viewer or the sun has moved enough to matter.
+			// `-skyrealtime` puts the real-time capture back, as the control.
+			Component->bRealTimeCapture = FParse::Param(FCommandLine::Get(), TEXT("skyrealtime"));
+			// The lower hemisphere from the capture rather than black: "lower"
+			// is world -Z, which on a sphere is only down at one pole.
+			Component->bLowerHemisphereIsBlack = false;
+			// Physical. 3.2 was compensating for a capture that delivered nothing.
+			Component->SetIntensity(1.0f);
 
 			// **Control arms for a sky light that lights nothing.** Every face
 			// the sun does not reach renders (0,0,0), with Lumen on and with it

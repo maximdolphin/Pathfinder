@@ -38,7 +38,12 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 	{
 		const FLedgerQuadNode* Node = nullptr;
 		const TArray<FProcMeshVertex>* Vertices = nullptr;
-		FVector3d Origin = FVector3d::ZeroVector;
+		// The whole transform, not just the location. The planet turns, so every
+		// patch component is rotated, and a vertex added to the origin without
+		// that rotation lands off its true place by the rotation times its
+		// distance from the patch's centre -- a kilometre at depth 8, where the
+		// second run reported 29,420 "cracks" between patches of the SAME depth.
+		FTransform Transform;
 	};
 
 	// What is drawn: a node with a section that is also what DrawnNodeAt
@@ -77,12 +82,12 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 			++Irregular;
 			continue;
 		}
-		Drawn.Add(Node, FDrawn{ Node, &Land->ProcVertexBuffer, FVector3d(Mesh->GetComponentLocation()) });
+		Drawn.Add(Node, FDrawn{ Node, &Land->ProcVertexBuffer, Mesh->GetComponentTransform() });
 	}
 
 	auto World = [Side](const FDrawn& Patch, int32 X, int32 Y)
 	{
-		return Patch.Origin + FVector3d((*Patch.Vertices)[Y * Side + X].Position);
+		return FVector3d(Patch.Transform.TransformPosition(FVector((*Patch.Vertices)[Y * Side + X].Position)));
 	};
 
 	// The four edges, as (X, Y) of the k-th vertex along each, the outward step
@@ -110,6 +115,10 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 	int32 Skipped = 0;
 	int32 Overlapping = 0;
 	int32 OverOneCm = 0;
+	int32 OverOneCmSameDepth = 0;
+	const FLedgerQuadNode* WorstNode = nullptr;
+	const FLedgerQuadNode* WorstAcross = nullptr;
+	double WorstRadialMetres = 0.0;
 	int32 DeepestGapLevels = 0;
 	int32 MeasuredAcrossLevels = 0;
 
@@ -182,11 +191,29 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 				const int32 Levels = FMath::Abs(Node.Depth - Across->Depth);
 				MeasuredAcrossLevels += Levels > 0 ? 1 : 0;
 				DeepestGapLevels = FMath::Max(DeepestGapLevels, Levels);
+				OverOneCmSameDepth += (Nearest > 1.0 && Levels == 0) ? 1 : 0;
 				if (Nearest > Worst)
 				{
 					Worst = Nearest;
 					WorstDepth = Node.Depth;
 					WorstNeighbourDepth = Across->Depth;
+					WorstNode = &Node;
+					WorstAcross = Across;
+					// Up or sideways? A height mismatch is one kind of fault and a
+					// patch in the wrong place is another.
+					const FVector3d Centre = FVector3d(GetActorLocation());
+					double NearestVertex = TNumericLimits<double>::Max();
+					for (int32 J = 0; J < Side; ++J)
+					{
+						int32 QX = 0, QY = 0;
+						EdgeVertex(Facing, J, QX, QY);
+						const FVector3d Q = World(*Neighbour, QX, QY);
+						if ((Q - P).SizeSquared() < NearestVertex)
+						{
+							NearestVertex = (Q - P).SizeSquared();
+							WorstRadialMetres = ((P - Centre).Length() - (Q - Centre).Length()) / 100.0;
+						}
+					}
 				}
 			}
 		}
@@ -200,5 +227,15 @@ double ALedgerPlanet::MeasureEdgeGaps(FString& OutReport) const
 			 "worst gap %.2f cm, between depth %d and depth %d; %d vertices more than 1 cm off\n"),
 		Drawn.Num(), Measured, MeasuredAcrossLevels, DeepestGapLevels, Skipped,
 		Irregular, Overlapping, Worst, WorstDepth, WorstNeighbourDepth, OverOneCm);
+	OutReport += FString::Printf(TEXT("%d of those between patches of the same depth\n"), OverOneCmSameDepth);
+	if (WorstNode != nullptr && WorstAcross != nullptr)
+	{
+		OutReport += FString::Printf(
+			TEXT("worst: face %d (%.6f, %.6f) x %.6f depth %d against face %d (%.6f, %.6f) x %.6f depth %d; "
+				 "%.2f m of it is height\n"),
+			static_cast<int32>(WorstNode->Face), WorstNode->U, WorstNode->V, WorstNode->Extent, WorstNode->Depth,
+			static_cast<int32>(WorstAcross->Face), WorstAcross->U, WorstAcross->V, WorstAcross->Extent,
+			WorstAcross->Depth, WorstRadialMetres);
+	}
 	return Worst;
 }
