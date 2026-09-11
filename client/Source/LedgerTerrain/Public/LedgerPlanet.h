@@ -813,6 +813,11 @@ private:
 	/// be brought up to date without waiting for the next one.
 	double MorphScale = 0.0;
 
+	/// The camera's world position modulo the terrain material's texture
+	/// wrap, in centimetres. The material adds it to its camera-relative
+	/// position so textures stay on the ground rather than on the camera.
+	FVector CameraWrapCm = FVector::ZeroVector;
+
 	UPROPERTY()
 	TObjectPtr<UMaterialInterface> WaterMaterial;
 

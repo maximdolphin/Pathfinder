@@ -371,6 +371,9 @@ void ALedgerPlanet::UpdateMorphParameters(double ViewportWidth, double FovRadian
 void ALedgerPlanet::ApplyMorphParameters(UMaterialInstanceDynamic& Instance) const
 {
 	Instance.SetScalarParameterValue(TEXT("MorphScale"), static_cast<float>(MorphScale));
+	Instance.SetVectorParameterValue(TEXT("CameraWrap"), FLinearColor(
+		static_cast<float>(CameraWrapCm.X), static_cast<float>(CameraWrapCm.Y),
+		static_cast<float>(CameraWrapCm.Z), 0.0f));
 	Instance.SetVectorParameterValue(TEXT("PlanetCentre"), FLinearColor(
 		static_cast<float>(GetActorLocation().X),
 		static_cast<float>(GetActorLocation().Y),

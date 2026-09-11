@@ -222,8 +222,21 @@ namespace LedgerSurface
 		// planet spends all of its float precision on the exponent, and the
 		// projection degenerates into banding. Camera-relative keeps full
 		// precision exactly where the detail is visible.
-		UMaterialExpressionWorldPosition* WorldPosition = Graph.Make<UMaterialExpressionWorldPosition>();
-		WorldPosition->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
+		UMaterialExpressionWorldPosition* CameraRelative = Graph.Make<UMaterialExpressionWorldPosition>();
+		CameraRelative->WorldPositionShaderOffset = WPT_CameraRelativeNoOffsets;
+
+		// **And the camera put back, modulo 3.6 km.** Camera-relative alone is a
+		// coordinate that travels with the camera, so every texture sampled from
+		// it slid with the view: stepping the parallax pair 25 cm moved a stone
+		// 110 px and the gravel around it about 5. The planet sets CameraWrap to
+		// the camera's world position modulo 3.6 km each frame, in doubles; 3.6 km
+		// is a whole number of every tiling here (0.5, 1 and 2 m scans, the 90 m
+		// and 1.2 km macros), so the wrap is seamless, and the sum stays small
+		// enough near the camera -- under 3.6e5 cm -- to keep a 0.03 cm float step.
+		UMaterialExpressionVectorParameter* CameraWrap = Graph.Make<UMaterialExpressionVectorParameter>();
+		CameraWrap->ParameterName = TEXT("CameraWrap");
+		CameraWrap->DefaultValue = FLinearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		UMaterialExpression* WorldPosition = Graph.Add(CameraRelative, Graph.Mask(CameraWrap, true, true, true));
 
 		UMaterialExpressionWorldPosition* AbsolutePosition =
 			Graph.Make<UMaterialExpressionWorldPosition>();
@@ -534,14 +547,16 @@ namespace LedgerSurface
 		// is already sampled by a function of altitude costs none.
 		//
 		// Two frequencies, forty metres and nine, so the beds group into
-		// courses instead of reading as corduroy.
+		// courses instead of reading as corduroy. Wavelengths, so 2 pi over them:
+		// without it the beds were 251 m and 57 m apart, and from above a cliff
+		// read as topographic contour rings rather than as strata.
 		UMaterialExpression* AltitudeAbove = Graph.Distance(
 			AbsolutePosition, Graph.Mask(PlanetCentre, true, true, true));
 		UMaterialExpression* Bedding = Graph.Add(
 			Graph.Multiply(Graph.Sine(Graph.Multiply(AltitudeAbove,
-				Graph.Constant(1.0f / 4000.0f))), Graph.Constant(0.10f)),
+				Graph.Constant(UE_TWO_PI / 4000.0f))), Graph.Constant(0.10f)),
 			Graph.Multiply(Graph.Sine(Graph.Multiply(AltitudeAbove,
-				Graph.Constant(1.0f / 900.0f))), Graph.Constant(0.05f)));
+				Graph.Constant(UE_TWO_PI / 900.0f))), Graph.Constant(0.05f)));
 
 		// Only where the rock is bare. Bedding through a meadow is a bug.
 		UMaterialExpression* BeddedRock = Graph.Multiply(Rock.Albedo,

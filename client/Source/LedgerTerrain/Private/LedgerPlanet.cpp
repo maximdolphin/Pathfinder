@@ -375,6 +375,13 @@ void ALedgerPlanet::Tick(float DeltaSeconds)
 	// Before the tree walks: the blend has to be told the same thing the LOD
 	// decision is about to be told, in the same frame.
 	const double TickStarted = FPlatformTime::Seconds();
+	// The texture wrap, from the camera actually rendering (not the held one).
+	// 3.6 km: see CameraWrap in LedgerTerrainMaterial.cpp.
+	constexpr double TextureWrapCm = 360000.0;
+	CameraWrapCm = FVector(
+		FMath::Fmod(CameraWorld.X, TextureWrapCm),
+		FMath::Fmod(CameraWorld.Y, TextureWrapCm),
+		FMath::Fmod(CameraWorld.Z, TextureWrapCm));
 	UpdateMorphParameters(ViewportWidth, Fov);
 
 	// After streaming, so a patch that arrived this frame is scattered this

@@ -72,7 +72,7 @@ STEPS = [
         why="Generated geometry saved as static meshes, which is where Nanite, "
             "collision and mesh distance fields come from.",
         command=lambda: [
-            EDITOR, PROJECT, "-game", "-windowed", "-ResX=800", "-ResY=450",
+            EDITOR, PROJECT, "-game", "-RenderOffScreen", "-windowed", "-ResX=800", "-ResY=450",
             "-bakemeshes", "-livematerials"],
     ),
     dict(
@@ -89,7 +89,7 @@ STEPS = [
         why="The C++ graph builders, run once and saved, so a packaged build "
             "has a look at all.",
         command=lambda: [
-            EDITOR, PROJECT, "-game", "-windowed", "-ResX=800", "-ResY=450",
+            EDITOR, PROJECT, "-game", "-RenderOffScreen", "-windowed", "-ResX=800", "-ResY=450",
             "-bakematerials", "-livematerials"],
     ),
 ]
