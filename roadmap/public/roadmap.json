@@ -4924,6 +4924,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Pair re-shot with the terrain held and exposure settled (all six frames 20-27 of 255, consistent). The stone moves (78, -82) px between shots, and the tool, seeded there, recovers (72, -70) on the ground -- but only ~40 tiles pass, and march-minus-flat (median 1.44 px) and onestep-minus-flat (1.26 px) are indistinguishable, at the noise floor. The framing is the problem: straight down is where parallax is smallest by construction (the offset goes as tan of the view angle). Same-view march-vs-flat displacement straight down is 0.5-0.9 px, about 2 mm at 2 m. Next: the acceptance's raking view -- 40-45 degrees down from 2 m -- where the 3 cm depth should move texture several pixels."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Found and fixed a defect the pair was hiding (1752b82): the terrain material sampled every texture at the camera-relative position, so the ground's texture travelled with the camera. After a high-pass, 27 of 40 ground tiles in the old pair matched best within 25 px of zero shift while the stone moved 110 px -- the gravel was stuck to the screen, which no parallax measure could survive. The planet now hands the material the camera's world position modulo 3.6 km (a whole number of every tiling), and after a re-bake 0 of 40 tiles stick to the screen. Remaining for this task: the raking 40-45 degree view, where the 3 cm depth should move texture several pixels."
     }
    ],
    "evidence": [
@@ -14253,5 +14258,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T05:59:25.787Z"
+ "updatedAt": "2026-09-11T06:07:19.341Z"
 }
