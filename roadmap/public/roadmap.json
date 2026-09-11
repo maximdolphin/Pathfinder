@@ -4275,9 +4275,27 @@
      "at": "2026-09-09",
      "kind": "block",
      "text": "Blocked on two things that do not exist, and the acceptance names both. It asks that vegetation respond to a wind speed change 'at every LOD including the impostor'. There is no wind field: the task's own detail says 'the wind field M04 will provide', and that is T093 (Wind field queryable by everything), sixty tasks away and not started. LedgerClimate::PrevailingWind is a fixed banded direction for the moisture march, not a field with a speed that changes. And there is no impostor: that is T059, the very next task. The mechanism could be built against a stand-in -- a material with world position offset driven by a wind weight painted into the tree meshes, plus a global speed and direction parameter -- but it would be responding to a parameter nothing sets, at an LOD tier that does not exist, and the acceptance could not be run either way. Recorded rather than half-built so the shape of it is on the record: the work is a wind weight in tools/generate_assets.py's tree meshes and a foliage material, and it wants doing after T059 and T093."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Delivered against the trees that exist; the impostor clause cannot be met because there is no impostor. M_Foliage leans the canopy by world position offset from MPC_LedgerWind (the one wind T093 publishes), lean = dir * saturate(v^2/900) * (z/18m)^2 * 150 cm plus gust. Measured: the wind probe changes the wind and all five consumers (ship, precipitation, audio, vane, materials) follow within a second. Photographed fairly for the first time: Ledger.Wind.Scale changes the wind at a fixed clock -- the earlier pair had jumped 72 hours and compared two suns -- and the crown moves ~115 px downwind with the base fixed. Two lighting faults found on the way and fixed: the sky light's real-time capture delivered nothing (every shaded face (0,0,0), Lumen on or off; a static capture fixes it), and M_Foliage multiplied the tint by a vertex colour that already carried it, an albedo near 0.01. STILL OPEN: the acceptance says 'at every LOD including the impostor'. The trees have one LOD (46 triangles) and T059 did not build impostors (its own note: 'NOT BUILT'). Either the acceptance is amended to the LODs that exist or an impostor tier is built first; that is a scope decision, not a technical blocker."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T058-2026-09-11T04-16-20-333.png",
+     "caption": "Canopy at 12 m/s, same sun as the next frame (the wind changed, not the clock)",
+     "source": "../out/wind-tree-before5.png",
+     "addedAt": "2026-09-11T04:16:20.336Z"
+    },
+    {
+     "file": "evidence/T058-2026-09-11T04-16-20-415.png",
+     "caption": "Thirty frames after the wind was tripled to 37 m/s: the crown leans ~115 px downwind, base fixed",
+     "source": "../out/wind-tree-after5.png",
+     "addedAt": "2026-09-11T04:16:20.418Z"
+    }
+   ],
    "plannedStartDay": 118,
    "plannedEndDay": 120.5,
    "plannedStart": "2027-02-18",
@@ -14155,5 +14173,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T04:15:18.252Z"
+ "updatedAt": "2026-09-11T04:16:20.497Z"
 }
