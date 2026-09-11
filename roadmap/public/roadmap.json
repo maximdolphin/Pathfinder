@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 18
+   "doneCount": 19
   },
   {
    "id": "M2S",
@@ -3732,9 +3732,9 @@
    "dependsOn": [
     "T048"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-08",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-08",
@@ -3760,6 +3760,16 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "UNBLOCKED, and the measurement it was waiting for exists. -forcedepth=N pins every node within 2 km of the camera to depth N whatever the error says, which is the case pure-distance LOD cannot produce (depth falls off smoothly, so no edge differs by more than one level and the finer side always collapses). With it on the tree reports 5,176 imbalanced edges and a worst depth gap of 15. A 2.6 km profile crosses the boundary and steps by 2.16 m. A CLEAN build steps by 2.07 m at the same place, so this is normal play and not synthetic. What is NOT established: whether that step is a gap at the shared edge or two patches at different depths describing the same ground differently. Sampling either side of a boundary cannot tell those apart; a real crack test samples AT the shared edge from both sides, which needs the two sections' vertices rather than SampleTerrain. That is the next step and the task stays blocked on it, not on the question of whether a balancing pass is needed -- which is still open and should be answered by the crack test, not before it. Found on the way, and fixed: DrawnNodeAt stopped at the SHALLOWEST ancestor holding a section, so with the resident shell never releasing its own, SampleTerrain answered from a 10,007 km patch whenever the tree was shaped by anything but distance."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Edge-gap probe after corner levels (84b30c4): 0 gaps over 503,979 edge vertices, 62,687 of them across depths up to 6 levels apart (out/T049-edge-gaps.txt). Fixes: LeafDepthAtResolved returns the deepest drawn node (a0d36a3), stitch levels per edge (f5e5e67), per-corner levels (84b30c4)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "0 gaps; corner levels in 84b30c4"
     }
    ],
    "evidence": [
@@ -3768,6 +3778,12 @@
      "caption": "2.6 km profile on a clean build: 2.07 m step at 2,318 m, where the LOD boundary is.",
      "source": "../out/near-field-2600m.txt",
      "addedAt": "2026-09-10T04:43:28.887Z"
+    },
+    {
+     "file": "evidence/T049-2026-09-11T05-11-06-595.png",
+     "caption": "ridge at depth 18: no white slivers, no cracks",
+     "source": "../out/fogwatch-ridge-deepest.png",
+     "addedAt": "2026-09-11T05:11:06.598Z"
     }
    ],
    "plannedStartDay": 89,
@@ -14206,5 +14222,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T04:50:22.056Z"
+ "updatedAt": "2026-09-11T05:11:06.736Z"
 }
