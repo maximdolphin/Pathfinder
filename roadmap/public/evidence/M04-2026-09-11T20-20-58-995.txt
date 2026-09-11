@@ -1,0 +1,8 @@
+A steep entry and a shallow one, flown (T100).
+
+steep   -8 deg: peak 1.35 MW/m2 at 54.7 km, skin 2294 K, took in 56 MJ/m2 and radiated 54, hull lost 0.32 to heat (hull now 0.68), 286 s
+shallow -1 deg: peak 0.60 MW/m2 at 64.1 km, skin 1879 K, took in 117 MJ/m2 and radiated 116, hull lost 0.00 to heat (hull now 1.00), 702 s
+
+the steep entry burns: yes
+the shallow entry does not: yes
+VERDICT: PASS

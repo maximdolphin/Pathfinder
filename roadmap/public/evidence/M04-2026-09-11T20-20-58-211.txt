@@ -1,0 +1,13 @@
+A severe storm (T097).
+
+storm: a low 3971 Pa deep, 1277 km across, centre 32.79,-13.09 at t=18000 s (0.2 days on)
+at the centre: severity 0.99, 7.8 flashes a minute, gusts 17.8 m/s rms
+calm air at 32.79,56.91: severity 0.00, anomaly 0 Pa
+the clouds draw it: published low 0, 0.000 degrees from the centre
+inside the cloud for 45 s: 10 flashes drawn, 4 thunderclaps heard
+through the storm: 40 s at 3000 m and 120 m/s, hull 0.61, 0 strikes, gusts 17.0 m/s rms, cross-track up to 0.3 m/s
+through calm air : 40 s at 3000 m and 120 m/s, hull 1.00, 0 strikes, gusts 0.1 m/s rms, cross-track up to 0.0 m/s
+
+dangerous to fly through, and calm air is not: yes
+drawn from orbit in the same place: yes
+VERDICT: PASS

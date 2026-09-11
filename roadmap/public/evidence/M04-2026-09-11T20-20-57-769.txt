@@ -1,0 +1,37 @@
+1. Flying into a storm front changes visibility, wind loading and audio together.
+     stormfront.txt  visibility, wind loading and audio all change on entry: yes
+     stormfront.txt  and together, within seconds of it: yes
+     stormfront.txt  VERDICT: PASS
+2. The same storm is visible from orbit at the position the weather model gives it.
+     Success  Ledger.Weather.TheSameSeedIsTheSameWeatherAndTheSkyShowsTheStorm
+     stormfront.txt  the same storm is in the same place from orbit: yes
+     storm.txt       drawn from orbit in the same place: yes
+     storm.txt       VERDICT: PASS
+3. A storm tracked over a simulated week follows a coherent path and reproduces from its seed.
+     Success  Ledger.Weather.AStormTrackedForAWeekFollowsACoherentPath
+     Success  Ledger.Weather.TheSameSeedIsTheSameWeatherAndTheSkyShowsTheStorm
+     Success  Ledger.Weather.StormsAreTheDeepestLowsAndTheirGustsRepeat
+4. Three cloud decks resolve at the altitudes the atmosphere profile predicts.
+     Success  Ledger.Cloud.TheDecksSitWhereTheThermometerPutsThem
+     airshow-1.txt   cumulus  1237 to 1732 m, cover 0.39
+     airshow-1.txt   middle   1732 to 3733 m, cover 0.07
+     airshow-1.txt   cirrus   6058 to 8538 m, cover 0.43
+5. Rain falls below the freezing level and snow above it, at the boundary the lapse rate puts it.
+     Success  Ledger.Precipitation.TheBoundaryIsWhereTheLapseRatePutsIt
+     Success  Ledger.Precipitation.ItRainsInTheLowAndNotBesideIt
+6. Fog fills a valley at dawn, is absent on the ridge above, and is invisible from orbit.
+     Success  Ledger.Fog.AClearNightMakesFogAndACloudyOneDoesNot
+     Success  Ledger.Fog.TheSunBurnsItOffAndSomeWorldsNeverHaveIt
+7. A steep re-entry heats and a shallow one does not, from the density-velocity integral.
+     entry.txt       the steep entry burns: yes
+     entry.txt       the shallow entry does not: yes
+     entry.txt       VERDICT: PASS
+8. Worst-case weather costs no more than 4 ms of GPU time.
+     volume.txt      the worst weather costs 0.11 ms at full detail and 0.19 ms as budgeted
+     volume.txt      within four milliseconds: yes
+     volume.txt      VERDICT: PASS
+9. Wind speed changes and all five consumers respond within one second.
+     Success  Ledger.Wind.ItSlowsAndTurnsOnTheWayDown
+     wind-probe.txt  all five followed the change within a second: yes
+
+165 tests in the run; every test and report line the gate names: passed

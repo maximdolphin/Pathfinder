@@ -1,0 +1,16 @@
+The volumetric budget in the worst weather there is (T105).
+
+inside a low 3971 Pa deep at 1.5 km, in its cloud and its rain
+
+volumetrics off        GPU   2.90 ms median over 1162 frames, volumetrics +0.00 ms
+level 0 (full)         GPU   3.01 ms median over 1174 frames, volumetrics +0.11 ms
+level 1                GPU   3.05 ms median over 784 frames, volumetrics +0.15 ms
+level 2                GPU   3.03 ms median over 866 frames, volumetrics +0.13 ms
+level 3                GPU   3.00 ms median over 932 frames, volumetrics +0.10 ms
+budget, 4 ms allowed   GPU   3.09 ms median over 692 frames, volumetrics +0.19 ms, the budget chose level 0 against 6.90 ms
+budget, squeezed       GPU   3.00 ms median over 920 frames, volumetrics +0.10 ms, the budget chose level 3 against 2.96 ms
+
+the worst weather costs 0.11 ms at full detail and 0.19 ms as budgeted
+within four milliseconds: yes
+squeezed, it gives up detail (level 3, 0.10 ms) rather than the frame: yes
+VERDICT: PASS

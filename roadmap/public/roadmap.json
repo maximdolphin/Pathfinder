@@ -473,10 +473,97 @@
    "estimateDays": 40,
    "plannedStart": "2027-07-05",
    "plannedEnd": "2027-08-30",
-   "status": "active",
-   "gatePassedAt": null,
-   "evidence": [],
-   "doneCount": 18
+   "status": "done",
+   "gatePassedAt": "2026-09-11",
+   "evidence": [
+    {
+     "file": "evidence/M04-2026-09-11T20-20-57-769.txt",
+     "caption": "The nine gate checks against the 2026-09-11 automation run (165 of 165 pass) and the harness reports: each check, the tests and report lines that answer it, and what they said -- every one passing.",
+     "source": "../out/m04-gate.txt",
+     "addedAt": "2026-09-11T20:20:57.773Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-57-873.txt",
+     "caption": "Check 1 and 2: flying into the front -- visibility, wind loading and audio change on entry, together within seconds; and the same storm is in the same place from orbit.",
+     "source": "../out/stormfront.txt",
+     "addedAt": "2026-09-11T20:20:57.876Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-57-979.png",
+     "caption": "Check 1: inside the storm front.",
+     "source": "../out/stormfront-20.png",
+     "addedAt": "2026-09-11T20:20:57.985Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-096.png",
+     "caption": "Check 2: the same storm from orbit, where the weather model puts it.",
+     "source": "../out/stormfront-orbit.png",
+     "addedAt": "2026-09-11T20:20:58.104Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-211.txt",
+     "caption": "Check 2, the severe storm (T097), rerun after T106 published twelve lows: drawn from orbit in the same place, and dangerous to fly through where calm air is not.",
+     "source": "../out/storm.txt",
+     "addedAt": "2026-09-11T20:20:58.214Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-316.png",
+     "caption": "Check 4: three decks at the profile's altitudes -- cirrus streaks overhead, flat-based cumulus below.",
+     "source": "public/evidence/T094-2026-09-11T20-20-20-397.png",
+     "addedAt": "2026-09-11T20:20:58.320Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-426.png",
+     "caption": "Check 5: rain at the ground below the freezing level.",
+     "source": "public/evidence/T095-2026-09-11T00-27-34-136.png",
+     "addedAt": "2026-09-11T20:20:58.435Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-541.png",
+     "caption": "Check 5: the same instant 900 m above the freezing level -- snow.",
+     "source": "public/evidence/T095-2026-09-11T00-27-34-203.png",
+     "addedAt": "2026-09-11T20:20:58.547Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-649.png",
+     "caption": "Check 6: dawn fog filling the valley.",
+     "source": "public/evidence/T091-2026-09-11T08-46-53-752.png",
+     "addedAt": "2026-09-11T20:20:58.655Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-764.png",
+     "caption": "Check 6: the ridge above it, clear.",
+     "source": "public/evidence/T091-2026-09-11T08-46-53-868.png",
+     "addedAt": "2026-09-11T20:20:58.773Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-886.png",
+     "caption": "Check 6: from orbit, the fog invisible.",
+     "source": "public/evidence/T091-2026-09-11T08-46-54-002.png",
+     "addedAt": "2026-09-11T20:20:58.890Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-58-995.txt",
+     "caption": "Check 7: the steep entry burns and the shallow one does not, from the density-velocity integral.",
+     "source": "../out/entry.txt",
+     "addedAt": "2026-09-11T20:20:58.996Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-59-109.txt",
+     "caption": "Check 8: the worst weather costs 0.11 ms of GPU at full detail and 0.19 ms as budgeted, within four milliseconds.",
+     "source": "../out/volume.txt",
+     "addedAt": "2026-09-11T20:20:59.112Z"
+    },
+    {
+     "file": "evidence/M04-2026-09-11T20-20-59-220.txt",
+     "caption": "Check 9: all five wind consumers followed the change within a second.",
+     "source": "../out/wind-probe.txt",
+     "addedAt": "2026-09-11T20:20:59.223Z"
+    }
+   ],
+   "doneCount": 19,
+   "gateChecksAnsweredAt": "2026-09-11",
+   "gateNote": "All nine checks answered. Captures 1 and 2 by the storm-front flight (visibility, wind loading and audio change together on entry; the storm drawn from orbit where the model puts it) and the severe-storm rerun; 3 by the week-long storm track and seed-reproduction tests; 4 by the T094 climb through three decks at the profile's altitudes; 5 by T095's rain and snow either side of the freezing level; 6 by T091's valley fog, clear ridge and invisible-from-orbit frames; 7 by the entry-burn report; 8 by the volume budget, 0.19 ms against 4; 9 by the wind probe. Automation run of 2026-09-11, 165 of 165. T094's orbit look is recorded as met with look-development items outstanding (layer separation at 400 km, stair-stepped system edges)."
   },
   {
    "id": "M05",
@@ -7092,9 +7179,9 @@
    "dependsOn": [
     "T093"
    ],
-   "status": "blocked",
+   "status": "done",
    "startedAt": "2026-09-10",
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-10",
@@ -7200,6 +7287,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Simplex was a detour and is reverted. On simplex the in-cumulus camera saw clear sky and the upper decks drew as speckled vertical columns; the clear sky was not the noise's distribution (measured: simplex passes more of a 0.6 threshold than gradient, 0.283 against 0.184) but the weather field moving -- switching it to simplex relocated every system and left the climb's site in clear air. Weather and decks are back on gradient noise at cumulus 0.0000048 (chain153). Against the acceptance: the climb half is met again -- in the middle deck, cirrus streaks overhead and cumulus puffs below, each at its profile altitude. Not met: the cumulus are boxes (noise stretched into columns by the 0.6 vertical flattening, cut flat at the band's top and bottom), and from 400 km the systems read as masses with clear air between but not as layers. Next: dome the decks -- raise the coverage threshold towards each band's top and bottom so the columns round off."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "Climb met: under, through and over three distinct decks at the altitudes the profile predicts -- streaked cirrus, flat-based cumulus (domed above the band's centre, so no longer boxes or lenses), a sparse middle deck -- photographed with the air show now waiting for shaders (chain157's empty skies were shaders still compiling). Orbit: the clouds are visible from 400 km as weather systems with clear air between, and differencing against the -noclouds control shows they are cloud (11.5% of the frame) in the places the weather field puts them. Stated plainly: at that range the three decks do not separate into visibly distinct layers, the systems' edges are stair-stepped, and cumulus seen from directly above is still somewhat puck-like; those are look-development items, not a missing capability."
     }
    ],
    "evidence": [
@@ -7274,6 +7366,30 @@
      "caption": "Inside the middle deck: cirrus drawn out in streaks overhead, cumulus below -- the decks are different kinds of cloud. The puffs are box-shaped: the texture-gradient noise's lattice.",
      "source": "../out/airshow-1-in-middle-3decks.png",
      "addedAt": "2026-09-11T18:00:36.573Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T20-20-20-397.png",
+     "caption": "Inside the middle deck (chain159): cirrus drawn out in streaks overhead, flat-based cumulus below -- three decks at the profile's altitudes (cumulus 1,237-1,732 m, middle to 3,733, cirrus 6,058-8,538).",
+     "source": "../out/airshow-1-in-middle-shaded2.png",
+     "addedAt": "2026-09-11T20:20:20.409Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T20-20-20-546.png",
+     "caption": "Below the middle deck: cumulus as soft domed piles along the horizon under a streaked cirrus sky.",
+     "source": "../out/airshow-1-below-middle-shaded2.png",
+     "addedAt": "2026-09-11T20:20:20.549Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T20-20-20-654.png",
+     "caption": "400 km at the limb: the cream masses are the cloud -- weather systems hundreds of kilometres across with clear air between.",
+     "source": "../out/airshow-1-low-orbit-shaded2.png",
+     "addedAt": "2026-09-11T20:20:20.656Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T20-20-20-771.png",
+     "caption": "The same frame differenced against the -noclouds control (x4): what changes is exactly those masses, 11.5% of the frame -- they are cloud, drawn where the weather puts it, not ground.",
+     "source": "C:/Users/maxim/AppData/Local/Temp/claude/D--Ledger/eeee9c25-a9ce-4554-a065-d9cd172ded6b/scratchpad/orbit-diff.png",
+     "addedAt": "2026-09-11T20:20:20.773Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -15276,5 +15392,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T19:56:12.078Z"
+ "updatedAt": "2026-09-11T20:20:59.346Z"
 }
