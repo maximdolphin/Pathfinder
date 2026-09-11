@@ -268,6 +268,13 @@ void ULedgerNearField::Tick(float DeltaSeconds)
 				{
 					Lens->PostProcessSettings.bOverride_AutoExposureBias = true;
 					Lens->PostProcessSettings.AutoExposureBias = 3.0f;
+					// And adapted now, not over the next few seconds: the pair came back
+					// at means of 9 and 12 thirty ticks apart, still climbing toward the
+					// bias when each shutter went.
+					Lens->PostProcessSettings.bOverride_AutoExposureSpeedUp = true;
+					Lens->PostProcessSettings.AutoExposureSpeedUp = 1000.0f;
+					Lens->PostProcessSettings.bOverride_AutoExposureSpeedDown = true;
+					Lens->PostProcessSettings.AutoExposureSpeedDown = 1000.0f;
 				}
 			}
 			PomShot = 0;
@@ -347,10 +354,10 @@ void ULedgerNearField::Park()
 	// ground at 90 degrees -- eight tile repeats of a 2 m scan.
 	const bool bDown = bCaptured && !bLookedDown;
 	// The T430 pair: two metres up, forty degrees down along the profile, the
-	// second a metre further along it.
+	// second a quarter metre further along it (a metre moved the ground half the frame).
 	const bool bPom = NearFieldPomProbe() && bLookedDown && PomShot >= 0 && PomShot < 2;
 	const FVector3d PomEye3d =
-		(Eye3d + Ahead * (FMath::Max(PomShot, 0) * 100.0 / Planet->Radius)).GetSafeNormal();
+		(Eye3d + Ahead * (FMath::Max(PomShot, 0) * 25.0 / Planet->Radius)).GetSafeNormal();
 	// **Eight metres, as the comment above says and the code did not.** This
 	// was `800.0 * 100.0` -- eight hundred metres, a frame a kilometre and a
 	// half across, in which a two-metre tile repeat is under a pixel.

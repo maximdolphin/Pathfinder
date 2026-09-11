@@ -194,6 +194,14 @@ struct FLedgerFooting
 	double RangeMetres = 0.0;
 	int32 Component = 0;
 	int32 Instance = 0;
+
+	/// The pool section the trace hit, whether it is a live patch, whether
+	/// the renderer drew it last frame, and whether its bounds hold the hit.
+	/// Collision answers for geometry the renderer may have culled.
+	int32 GroundSection = INDEX_NONE;
+	bool bGroundActive = false;
+	bool bGroundRendered = false;
+	bool bGroundBoundsHold = false;
 };
 
 struct FLedgerSectionMeta

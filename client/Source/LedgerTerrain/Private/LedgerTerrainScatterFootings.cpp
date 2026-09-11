@@ -110,6 +110,13 @@ int32 ALedgerPlanet::MeasureScatterFootings(
 				Out.RangeMetres = Footing.RangeMetres;
 				Out.Component = Footing.Component;
 				Out.Instance = Footing.Instance;
+				const UPrimitiveComponent* Ground = Hit.GetComponent();
+				Out.GroundSection = MeshPool.IndexOfByPredicate(
+					[Ground](const auto& Pooled) { return Pooled.Get() == Ground; });
+				Out.bGroundActive = ActiveSections.FindKey(Out.GroundSection) != nullptr;
+				Out.bGroundRendered = Ground != nullptr && Ground->WasRecentlyRendered(0.5f);
+				Out.bGroundBoundsHold = Ground != nullptr
+					&& Ground->Bounds.GetBox().ExpandBy(100.0).IsInside(Hit.ImpactPoint);
 			}
 		}
 	}

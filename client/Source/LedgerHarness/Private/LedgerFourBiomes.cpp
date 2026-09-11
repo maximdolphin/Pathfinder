@@ -1,3 +1,4 @@
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "LedgerFourBiomes.h"
 
 #include "Camera/CameraActor.h"
@@ -94,6 +95,68 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// **Then the same view twice more: with no scatter drawn, and with every**
+	// **instance taken out of its component and put back.** The savanna column
+	// is drawn where no measured instance projects -- the topmost of 3,074 in
+	// that rectangle lands at y 459 and the column climbs to 415. Hidden, the
+	// frame says whether the column is scatter at all; put back, it says
+	// whether what is drawn is what the components hold.
+	TArray<UHierarchicalInstancedStaticMeshComponent*> Scatter;
+	if (const ULedgerWorldBuilder* Builder = GetWorld()->GetSubsystem<ULedgerWorldBuilder>())
+	{
+		if (const ALedgerPlanet* Planet = Builder->GetPlanet())
+		{
+			Planet->GetComponents(Scatter);
+		}
+	}
+	if (Stage == 1 || Stage == 3)
+	{
+		if (++StageFrames < 30)
+		{
+			return;
+		}
+		const FString Path = FPaths::ConvertRelativePathToFull(
+			FPaths::Combine(FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
+				FString::Printf(TEXT("four-biomes-%d-%s-%s.png"), Shot + 1, *Names[Shot],
+					Stage == 1 ? TEXT("noscatter") : TEXT("rebuilt"))));
+		FScreenshotRequest::RequestScreenshot(Path, false, false);
+		++Stage;
+		return;
+	}
+	if (Stage == 2)
+	{
+		int32 Instances = 0;
+		for (UHierarchicalInstancedStaticMeshComponent* Component : Scatter)
+		{
+			TArray<FTransform> All;
+			All.Reserve(Component->GetInstanceCount());
+			for (int32 Index = 0; Index < Component->GetInstanceCount(); ++Index)
+			{
+				FTransform Transform;
+				Component->GetInstanceTransform(Index, Transform, true);
+				All.Add(Transform);
+			}
+			Component->ClearInstances();
+			Component->AddInstances(All, /*bShouldReturnIndices*/ false, /*bWorldSpace*/ true);
+			Component->SetVisibility(true);
+			Instances += All.Num();
+		}
+		UE_LOG(LogLedger, Log,
+			TEXT("four biomes: %s scatter shown again, %d instances in %d components taken out and put back"),
+			*Names[Shot], Instances, Scatter.Num());
+		Stage = 3;
+		StageFrames = 0;
+		return;
+	}
+	if (Stage == 4)
+	{
+		Stage = 0;
+		++Shot;
+		Settle = 0.0;
+		bCaptured = false;
+		return;
+	}
+
 	// **Whether the stones in this frame are on the ground.** The savanna
 	// capture had two lines of boulders climbing a hillside into the sky, and
 	// a photograph cannot say which surface they were placed on.
@@ -116,27 +179,39 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 			// data says it is, which is an answer too.
 			if (APlayerController* Viewer = GetWorld()->GetFirstPlayerController())
 			{
-				int32 InColumn = 0;
+				// Topmost first: the stones drawn against the sky are the ones in
+				// question, and in instance order the first 24 were all at its foot.
+				TArray<TPair<FVector2D, const FLedgerFooting*>> InColumn;
 				for (const FLedgerFooting& Stone : Stones)
 				{
 					FVector2D Screen;
-					if (!Viewer->ProjectWorldLocationToScreen(Stone.Where, Screen, false))
+					if (Viewer->ProjectWorldLocationToScreen(Stone.Where, Screen, false)
+						&& Screen.X >= 950.0 && Screen.X <= 1180.0 && Screen.Y >= 380.0 && Screen.Y <= 500.0)
 					{
-						continue;
-					}
-					if (Screen.X < 950.0 || Screen.X > 1180.0 || Screen.Y < 380.0 || Screen.Y > 500.0)
-					{
-						continue;
-					}
-					if (++InColumn <= 24)
-					{
-						Lines += FString::Printf(
-							TEXT("  in the column: screen (%.0f, %.0f), %5.0f m away, %+7.2f m above the drawn ground, %+7.2f m above the function, %4.1f deg under it (component %d, instance %d)\n"),
-							Screen.X, Screen.Y, Stone.RangeMetres, Stone.AboveDrawnMetres,
-							Stone.AboveFunctionMetres, Stone.SlopeDegrees, Stone.Component, Stone.Instance);
+						InColumn.Emplace(Screen, &Stone);
 					}
 				}
-				Lines += FString::Printf(TEXT("  stones projecting into the column rectangle: %d\n"), InColumn);
+				InColumn.Sort([](const auto& A, const auto& B) { return A.Key.Y < B.Key.Y; });
+				int32 Undrawn = 0;
+				for (int32 Index = 0; Index < InColumn.Num(); ++Index)
+				{
+					const FVector2D& Screen = InColumn[Index].Key;
+					const FLedgerFooting& Stone = *InColumn[Index].Value;
+					Undrawn += Stone.bGroundRendered ? 0 : 1;
+					if (Index < 24)
+					{
+						Lines += FString::Printf(
+							TEXT("  in the column: screen (%.0f, %.0f), %5.0f m away, %+7.2f m above the drawn ground, %+7.2f m above the function, %4.1f deg; ground section %d %s, %s, bounds %s\n"),
+							Screen.X, Screen.Y, Stone.RangeMetres, Stone.AboveDrawnMetres,
+							Stone.AboveFunctionMetres, Stone.SlopeDegrees, Stone.GroundSection,
+							Stone.bGroundActive ? TEXT("live") : TEXT("RELEASED"),
+							Stone.bGroundRendered ? TEXT("drawn") : TEXT("NOT DRAWN"),
+							Stone.bGroundBoundsHold ? TEXT("hold") : TEXT("MISS"));
+					}
+				}
+				Lines += FString::Printf(
+					TEXT("  stones projecting into the column rectangle: %d, %d of them on ground not drawn last frame\n"),
+					InColumn.Num(), Undrawn);
 			}
 			UE_LOG(LogLedger, Log, TEXT("four biomes: %s\n%s"), *Names[Shot], *Lines);
 			Footings += FString::Printf(TEXT("\n---- %s: %d stones off the ground ----\n"),
@@ -144,9 +219,14 @@ void ULedgerFourBiomes::Tick(float DeltaSeconds)
 		}
 	}
 
-	++Shot;
-	Settle = 0.0;
-	bCaptured = false;
+	for (UHierarchicalInstancedStaticMeshComponent* Component : Scatter)
+	{
+		Component->SetVisibility(false);
+	}
+	UE_LOG(LogLedger, Log, TEXT("four biomes: %s scatter hidden, %d components"),
+		*Names[Shot], Scatter.Num());
+	Stage = 1;
+	StageFrames = 0;
 }
 
 bool ULedgerFourBiomes::FindSites()

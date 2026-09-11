@@ -48,6 +48,11 @@ private:
 	int32 Shot = 0;
 	double Settle = 0.0;
 
+	/// After each shot: 1 scatter hidden, 2 shot taken, 3 instances put back,
+	/// 4 that shot taken too. StageFrames counts the settle inside a stage.
+	int32 Stage = 0;
+	int32 StageFrames = 0;
+
 	/// Where the stones stand, per site, for the report.
 	FString Footings;
 };
