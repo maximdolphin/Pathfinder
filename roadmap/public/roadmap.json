@@ -683,7 +683,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 4
+   "doneCount": 5
   },
   {
    "id": "M06",
@@ -5291,6 +5291,16 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Criterion agreed with the owner for M02's frame-time check: the 300 m / 900 m/s transect passes with at least 99.9% of frames under 16.7 ms and none over 33 ms (at ~13,300 frames: no more than 13 over budget, worst under 33 ms), rather than literally zero. Best clean run so far: chain150, 188 over, worst 61.3 ms -- the streaming spikes still have to come down."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] RHI RULED OUT, and the transect now attributes it (chain162, warm cache, quiet machine, 300 m / 900 m/s, 13,334 frames): 118 frames over 16.7 ms (mean 7.91, worst 54.24) -- game thread 21, render thread 5, GPU 0, RHI thread 2, none of those (a wait) 90; 67 with a patch upload over 4 ms, 3 a GC, 3 shaders compiling. So the standing next lead was wrong: the RHI thread is 2 frames, not the 159 waits it was expected to explain. 118 over is also the best clean number yet (188 in chain150), most likely helped by r.RayTracing.UseReferenceBasedResidency=0 from T440 -- no BLAS eviction and rebuild churn while patches stream. Collision PASSES on this run: 0 traces missed in 13,334 frames, longest gap 0. Seams hold: nine of ten probes 0.00 cm, the tenth a 68.57 cm gap at 120 km with 0 vertices deeper than the skirt under them. What the worst twelve frames say: five of them are at 0.0-0.4 km -- the cold-start burst, game thread 25-34 ms, render waiting 16-32 ms, a SINGLE patch upload of 9-23 ms, 141-156 jobs in flight -- even though the upload budget is 3 ms a frame, which says the budget cannot split one patch's CreateMeshSection. The worst frame of all (54.24 ms at 110.7 km) has every counter low (game 3.4, render 4.4, GPU 6.7, RHI 6.3, game waiting 6.6, idle 0.0, no upload, 0 jobs in flight): 54 ms of wall clock that no thread accounts for, which is either time outside the engine's counters or an off-by-one between the wall-clock interval and GGameThreadTime, which reports the PREVIOUS frame. Against the agreed criterion (<=13 over 16.7 ms, none over 33 ms) this still fails: 118 over, six frames over 33 ms. Next: whether the 3 ms upload budget admits one oversized patch, and whether the wait class is an attribution artefact."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Weighing a patch before uploading it: NEGATIVE, reverted (chain163, same warm cache and flags as chain162's 118). A new detail patch was weighed against the frame's remaining allowance at what uploads had actually cost per vertex so far (a running mean, not a constant), and left in flight if it did not fit -- re-stitches and collision patches exempt, and one patch always landing so nothing starves. Result: 121 over 16.7 ms against 118, worst 60.99 ms against 54.24, frames with an upload over 4 ms 66 against 67, game-thread-bound 36 against 21. Traces missed stayed 0, so nothing starved -- it simply bought nothing. WHY, from the worst frames: the guarantee-progress rule admits exactly the patch that blows the budget. The worst frame still carries a single 31.6 ms patch upload (chain162's worst was 22.9), and deferring the smaller patches queued behind it spreads the same burst over more frames. A budget cannot help here because it can only choose BETWEEN patches, and the cost is inside one CreateMeshSection. What would: fewer vertices in the patches that land near the camera at speed, or an upload path that can be split across frames -- neither is a tuning change. ALSO FOUND, and useful: the 53.7 ms frame at 110.7 km recurs at the SAME kilometre in both runs, so it is deterministic content, not machine noise; in chain162 every counter on it was low (the 'wait' class) and in chain163 the render thread owns it at 51.5 ms. The waits are worth attributing at a known, repeatable location rather than hunting them across a run."
     }
    ],
    "evidence": [
@@ -5459,6 +5469,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The checker fixture, measured three ways. Frames (attached): the march draws coherent raised squares with hatched side walls where the ray meets a block -- a near block hiding the ground behind it -- and the one-step offset tears the same squares into slivers at every step edge. That is the mechanism, evidenced. No scalar separates them robustly: the shown-height fraction with an Otsu threshold is flat 59.2%, one-step 56.7%, march 54.7% (the channel is unlit, hazed and graded, not two-tone); fragment counts are flat ~160 pieces (median 180 px), one-step ~310 (40 px), march ~310 (5 px, the wall hatching). The acceptance asks for gravel occluding gravel, and the gravel scan's own relief is too smooth and shallow to occlude anything at 3 or at 8 cm -- the march on it reads the same as the offset. What would meet it: a gravel height map with sharp relief (a different free scan with real pebble heights; ADR-0005 rules out purchased ones). That is a content choice and is left open."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] The content T430's last note asks for is already downloaded and CC0, and it is measurably deeper than what the shader samples now. incoming/polyhaven holds two Poly Haven sets (CC0 1.0, Amal Kumar), both already described in client/Config/surfaces.json since ba3fd53. Their displacement maps, read at their true 16-bit depth: gravel_stones std 0.088, p1-p99 range 0.416, Laplacian sharpness 0.0182; dry_river_pebbles std 0.138, range 0.630, sharpness 0.0061; against the height the shader samples today (out/channel-height.png) std 0.044, range 0.161, sharpness 0.0106. So gravel_stones is the candidate -- 2.6x the depth AND 1.7x the high-frequency sharpness, which is what 'gravel occluding gravel' needs; dry_river_pebbles is deeper still but smoother (big rounded stones). Indicative, not conclusive: the comparison frame is a render capture of the sampled height, not the raw texture, so the render measure (tools/occlusion_fb.py, flat vs one-step vs march) remains the test. TWO OBSTACLES, both in tools/import_surfaces.py, neither fixed yet: (1) it cannot see these sets -- classify() anchors on the LAST underscore-separated piece of the stem (deliberately, after an asset id ending in 'ao' broke it), and Poly Haven names are dry_river_pebbles_diff_2k.png, whose last piece is '2k', so is_a_texture_set finds no base colour and the run reports 'no texture sets found'. (2) A LATENT BUG that would silently ruin exactly this task: import_one packs the height channel with Image.open(...).convert('L'), and Poly Haven displacement is 16-bit (mode I;16), which that call saturates to white -- the same clipping that made my first measurement read std 0.3, p1-p99 255-255. Imported through that path the height would be FLAT, and the POM march would measure nothing, looking like another negative result. Megascans maps are 8-bit JPG, so this has never shown. Also: import_one requires Megascans metadata for an asset id and hard-codes the Fab licence and 'Quixel Megascans via Fab' as the source, so a rename-into-Megascans-names shortcut would stamp CC0 assets with the wrong licence -- which is the one thing the manifest exists to prevent. What a fix looks like: a Poly Haven path (id from the folder, CC0 licence/source, their suffixes in classify with its self-check extended) plus a 16-bit-safe greyscale conversion; then point a biome's surfaceSet at gravel_stones_polyhaven and re-shoot -nearfield -pomprobe. Left for after M02, on the owner's stated order."
     }
    ],
    "evidence": [
@@ -8715,9 +8730,9 @@
    "dependsOn": [
     "T440"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
+   "completedAt": "2026-09-11",
    "notes": [
     {
      "at": "2026-09-11",
@@ -8733,9 +8748,26 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The blocky clouds at 300 m/s are NOT temporal reprojection smear. A/B offscreen, same scripted legs, same simulated moment: baseline against -dpcvars=r.VolumetricRenderTarget.ReprojectionBoxConstraint=1 (which holds reprojected cloud history to the neighbourhood of the fresh samples, the usual cure for history blocks under fast camera motion). The two cruise captures are the same picture -- the same angular parallelograms in the same places -- so the shapes are the cloud material's own noise, not history. Not adding the CVar. Where to look next: LedgerCloudMaterial.cpp, the domed threshold and the noise that cuts the band (T094's shaping), which stretches cloud fragments into slanted parallelograms; the same diagonal streaks show at hover, where the camera is still, which is the giveaway. Cosmetic, below the playability work."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] FIRST CLAUSE MET. The acceptance wants the playtest's captures within 10% of a static control frame from the same place, and there was no control arm, so -novisor was added: the canopy left out of the camera's post chain, same flight, same legs, same framing, so the difference is the canopy's and not the weather's or the hour's. Edge contrast (mean Sobel below the HUD), canopy against control: hover 16.96 v 17.29 (-1.9%), forward 20.26 v 19.84 (+2.1%), cruise 12.76 v 13.60 (-6.2%), pitch-down 20.17 v 21.58 (-6.5%). All inside 10%. Caveat kept: two separate runs stream slightly differently, so some of that spread is the run and not the canopy; the sign is not consistent, which is what run variance looks like. SECOND CLAUSE, space is black: not met on the evidence so far, and being re-measured on the current build. The fixture's own orbit captures ARE black -- T091-orbit and its fogoff control read mean 0.00 with stars to 64 -- but the scripted flight's terrain-orbit.png (16:43 today) reads a FLAT 123 of 255 in every region away from the HUD (bottom corners, right edge, top right; min 123, max 128), with the planet's disc washed toward the same grey. A uniform constant in every view direction is not exposure lifting a dark sky, which would leave gradient and stars. Fog is not obviously the cause: T091's fog-on and fog-off orbit pairs are both black. Re-shooting the scripted flight on the current build (chain165) before naming a cause. Method note: the first attempt at this measurement was WRONG and looked convincing -- sampling the top corners caught the HUD panel, and two different captures returned identical statistics, which is what gave it away. The measure now samples regions that are certainly sky."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "[2026-09-11] Both clauses measured. EDGE CONTRAST, within 10% of a static control frame from the same place: -novisor was added for it (the canopy left out of the camera's post chain, same flight and framing, so the difference is the canopy's), and the playtest's captures read hover -1.9%, forward +2.1%, cruise -6.2%, pitch-down -6.5% against that control -- all inside 10%, and the inconsistent sign says some of the spread is run-to-run streaming rather than the canopy. SPACE IS BLACK: the orbit capture on the current build reads mean 0.00-0.03 of 255 in every region away from the HUD, brightest pixel 63, which is a star. What the owner saw as blurry and grey is fixed at the source: the canopy fogged because the glass started cold, and it now starts warm with the heater on (fog and ice are 0.00 through every leg of every playtest since), which took edge contrast from 5.2 to 15-33. TWO MEASUREMENT TRAPS, recorded because both looked convincing: (1) sampling the frame's top corners for 'space' caught the HUD panel, and two different captures returned identical statistics, which is what gave it away; the measure now samples regions that are certainly sky. (2) terrain-space.png is NOT a space frame despite the name -- the ship is at 72.7 kPa, a few kilometres up, and its deep blue sky with stars is correct physics; the frame that answers this clause is terrain-orbit.png. An earlier terrain-orbit.png from 16:43 read a flat 123 grey in every direction; the same capture on the current build is black, so that was stale and not a live defect."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T441-2026-09-11T22-46-43-518.png",
+     "caption": "Space at orbit on the current build, through the ship's camera with the canopy in the post chain: black with stars (sky regions mean 0.00-0.03 of 255, brightest star 63).",
+     "source": "../out/terrain-orbit.png",
+     "addedAt": "2026-09-11T22:46:43.520Z"
+    }
+   ],
    "plannedStartDay": 312,
    "plannedEndDay": 314.5,
    "plannedStart": "2027-11-17",
@@ -15705,5 +15737,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-11T22:21:08.167Z"
+ "updatedAt": "2026-09-11T22:46:43.603Z"
 }
