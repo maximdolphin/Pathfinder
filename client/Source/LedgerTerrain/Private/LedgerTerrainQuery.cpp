@@ -121,6 +121,8 @@ bool ALedgerPlanet::SampleTerrain(
 		return false;
 	}
 
+	Out.bCollision = Mesh->GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+
 	const int32 Side = FMath::Max(3, GridResolution | 1);
 	if (Section->ProcVertexBuffer.Num() != Side * Side)
 	{

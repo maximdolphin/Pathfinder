@@ -114,10 +114,25 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 	if (bHit)
 	{
 		CurrentMiss = 0;
+		FLedgerTerrainSample Under;
+		HitsSampled += Planet->SampleTerrain(FVector3d(From), Under) ? 1 : 0;
 	}
 	else
 	{
 		++Misses;
+		// Which kind of miss. Only a drawn section can be asked about
+		// collision; no drawn section at all is a streaming failure, not a
+		// collision one, and the two want different fixes.
+		FLedgerTerrainSample Under;
+		if (!Planet->SampleTerrain(FVector3d(From), Under))
+		{
+			++MissesNoGround;
+		}
+		else
+		{
+			MissPatchSizeSum += Under.PatchWorldSize;
+			++(Under.bCollision ? MissesUncooked : MissesNoCollision);
+		}
 		++CurrentMiss;
 		LongestMiss = FMath::Max(LongestMiss, CurrentMiss);
 	}
@@ -182,6 +197,9 @@ void ULedgerTransect::Finish()
 	Body += FString::Printf(TEXT("  altitude      %.0f m\n"), TransectAltitude / 100.0);
 	Body += FString::Printf(TEXT("  frames        %d\n"), Frames);
 	Body += FString::Printf(TEXT("  traces missed %d  (%.3f%%)\n"), Misses, MissFraction);
+	Body += FString::Printf(TEXT("    no ground drawn under the ship    %d\n"), MissesNoGround);
+	Body += FString::Printf(TEXT("    drawn, never asked for collision  %d\n"), MissesNoCollision);
+	Body += FString::Printf(TEXT("    drawn with collision, not cooked  %d\n"), MissesUncooked);
 	Body += FString::Printf(TEXT("  longest gap   %d consecutive frames\n\n"), LongestMiss);
 	Body += FString::Printf(TEXT("VERDICT: %s\n"), bPassed
 		? TEXT("PASS — collision present under the ship on every frame")
@@ -194,6 +212,11 @@ void ULedgerTransect::Finish()
 	UE_LOG(LogLedger, Log, TEXT("transect -> %s"), *Path);
 	UE_LOG(LogLedger, Log, TEXT("  %d frames, %d missed (%.3f%%), longest gap %d, %s"),
 		Frames, Misses, MissFraction, LongestMiss, bPassed ? TEXT("PASS") : TEXT("FAIL"));
+	const int32 DrawnMisses = MissesNoCollision + MissesUncooked;
+	UE_LOG(LogLedger, Log, TEXT("  misses: %d with no ground drawn, %d drawn without collision, %d drawn with it but not cooked; the drawn ones %.0f m across on average"),
+		MissesNoGround, MissesNoCollision, MissesUncooked,
+		DrawnMisses > 0 ? MissPatchSizeSum / DrawnMisses / 100.0 : 0.0);
+	UE_LOG(LogLedger, Log, TEXT("  hits: %d, of which the terrain query found drawn ground under %d"), Frames - Misses, HitsSampled);
 
 	if (GEngine != nullptr && GetWorld() != nullptr)
 	{

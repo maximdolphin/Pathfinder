@@ -54,4 +54,6 @@ struct FLedgerTerrainSample
 	/// how precise the answer is should look at this: the mesh resolves about
 	/// a sixty-fourth of it.
 	double PatchWorldSize = 0.0;
+	/// Whether the drawn section answering has collision enabled.
+	bool bCollision = false;
 };
