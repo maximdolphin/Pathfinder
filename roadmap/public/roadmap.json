@@ -4920,6 +4920,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The gate as written, 200 km at 300 m and 900 m/s (-transectaltitude=300, committed): warm-up 9.3% missed, then on the warm cache 7.2%, the longest gap 46 frames (0.77 s). Of 958 misses: 593 over drawn ground whose collision was asked for and had not cooked, 344 over the resident shell alone, 21 with nothing drawn. The largest group is a release rule: a parent is dropped the frame its children are drawn, and a child's collision cooks some frames later. Now the parent, if it has collision, holds until every child with collision has cooked it (the body setup's triangle mesh exists); queued with the footing guard."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Parent held until its children's collision has cooked (the body setup's triangle mesh): at 300 m on the warm cache 6.6% missed (from 7.2%), longest gap 46; 'drawn with collision, not cooked' 550 (from 593). So that was not most of it. Two readings of those 550: a pooled component keeps the previous patch's body setup until the new cook swaps in, so the check can pass on stale geometry; or the collision is there and the trace cannot reach it -- the drawn patch on those frames averages ~3,000 km across, its surface can sit hundreds of metres off the exact one the ship is held above, and the trace stopped 100 m below the exact ground. The trace now reaches 5 km and each hit reports how far the collision was from the exact surface, so 'present' and 'accurate' are measured apart; queued."
     }
    ],
    "evidence": [
@@ -14557,5 +14562,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T09:48:45.101Z"
+ "updatedAt": "2026-09-11T09:54:39.677Z"
 }
