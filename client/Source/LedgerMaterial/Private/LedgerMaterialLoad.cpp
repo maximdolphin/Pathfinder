@@ -274,13 +274,17 @@ namespace LedgerSurface
 
 		UMaterialInterface* Parent = LoadBaked(TEXT("M_Scatter"));
 #if WITH_EDITOR
-		if (Parent == nullptr)
+		// Built once, not once per mesh slot: every scanned mesh asks, and the
+		// first unbaked run built the whole graph twenty times over.
+		static TWeakObjectPtr<UMaterialInterface> Built;
+		if (Parent == nullptr && !Built.IsValid())
 		{
 			UE_LOG(LogLedger, Warning,
 				TEXT("scatter material built in memory: no baked asset. It will "
 				     "not exist in a packaged build until the bake is run."));
-			Parent = BuildScatterMaterial(Outer);
+			Built = BuildScatterMaterial(Outer);
 		}
+		Parent = Parent != nullptr ? Parent : Built.Get();
 #endif
 		if (Parent == nullptr)
 		{

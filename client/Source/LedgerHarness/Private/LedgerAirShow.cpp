@@ -1,4 +1,5 @@
 #include "LedgerAirShow.h"
+#include "ShaderCompiler.h"
 #include "LedgerCloud.h"
 
 #include "Camera/CameraActor.h"
@@ -368,7 +369,12 @@ void ULedgerAirShow::Tick(float DeltaSeconds)
 	// The first frame gets a long settle because auto-exposure is an
 	// *adaptation*: photographing before it has finished photographs the
 	// adaptation, which has cost this project two wrong conclusions already.
-	if (Settle < (Step == 0 && !bAimed ? AirShowFirstSettle : AirShowStepSettle))
+	// And until the shaders are built, up to five minutes: a rebaked cloud
+	// material is drawn as nothing until its shaders land, and chain157's climb
+	// photographed seven empty skies while they compiled.
+	const bool bShadersPending = GShaderCompilingManager != nullptr
+		&& GShaderCompilingManager->GetNumRemainingJobs() > 0 && Settle < 300.0;
+	if (Settle < (Step == 0 && !bAimed ? AirShowFirstSettle : AirShowStepSettle) || bShadersPending)
 	{
 		return;
 	}
