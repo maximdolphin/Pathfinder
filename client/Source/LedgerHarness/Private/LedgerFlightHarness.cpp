@@ -62,6 +62,41 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 
+	// **`-play`: nothing scripted.** The default launch flies the scripted
+	// reentry below, from a start two planet radii out, which is a test and not
+	// a game: the first playtest could barely move the ship because the harness
+	// was flying it. Here the ship is put in the air over the town once the town
+	// exists -- level, coupled, the sun behind it -- and left to the keyboard.
+	if (FParse::Param(FCommandLine::Get(), TEXT("play")))
+	{
+		UE_LOG(LogLedger, Log, TEXT("flight harness standing down: -play, the ship goes over the town"));
+		FTimerHandle PlayTimer;
+		InWorld.GetTimerManager().SetTimer(PlayTimer, FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			ALedgerShip* Ship = GetShip();
+			ALedgerSettlement* Settlement = Town();
+			if (Ship == nullptr || Settlement == nullptr)
+			{
+				UE_LOG(LogLedger, Warning, TEXT("play: no ship or no town to put it over"));
+				return;
+			}
+			const FVector3d Up = Site();
+			FVector3d SunHorizontal = Sun() - Up * FVector3d::DotProduct(Sun(), Up);
+			if (!SunHorizontal.Normalize())
+			{
+				SunHorizontal = FVector3d::CrossProduct(Up, FVector3d::UnitX()).GetSafeNormal();
+			}
+			// Forty metres over the pad, facing away from the sun so the town is lit.
+			Ship->SetFlightEnabled(true);
+			Ship->SetVelocity(FVector::ZeroVector);
+			Ship->SetActorLocation(Settlement->GetPadLocation() + FVector(Up) * 4000.0);
+			Ship->SetActorRotation(FRotationMatrix::MakeFromXZ(FVector(-SunHorizontal), FVector(Up)).Rotator());
+			Ship->SetFlightMode(ELedgerFlightMode::Coupled);
+			UE_LOG(LogLedger, Log, TEXT("play: the ship is 40 m over the pad, coupled"));
+		}), 2.0f, false);
+		return;
+	}
+
 	// Whichever fixture is running owns the ship. Two of them placing the same
 	// pawn is two fixtures measuring neither.
 	for (const TCHAR* Fixture :
