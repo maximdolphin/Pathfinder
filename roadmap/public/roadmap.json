@@ -6375,6 +6375,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Correction: the fog is not visible from the ridge either. The grey sheet over the valley in the ridge frame is there with -fogoff too -- it is shadowed low ground -- and the ridge frame differs from its control by 35% of pixels for other reasons. Diagnosed with switches on the one volume: a hundredfold height density (visibility 4 m by the model) changes nothing in any view (valley 1.0 of 255 from the control); the radial term at 100 per unit radius changes every pixel in the valley and ridge frames (72 and 65 of 255) and nothing from orbit. So the volume draws and the tile culling assigns it everywhere (r.LocalFogVolume.TileDebug), and it is the height term alone that contributes nothing. Also found: the engine scales HeightFogFalloff by 0.01 before packing, so 400 was 4 in the shader and the sharp top this was designed around never existed. Running: the engine's own height defaults with and without the rotation, to say whether the height term renders at all here and whether the rotation breaks it."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "State after a day on the engine side (fog code uncommitted, diagnostics in LedgerGroundFog.cpp). Established from LocalFogVolumeCommon.ush / LocalFogVolumeRendering.cpp and measured: (1) radial and height coverage multiply, so the radial term must be on -- with it at 0 nothing ever drew; (2) densities are per metre (the unit-sphere optical depth is scaled by the radius in metres); (3) HeightFogFalloff is scaled by 0.01 before packing; (4) the volume is placed exactly as intended (centre 11,360 m above the fill level on the axis, radius 14,200 m), both cameras inside; (5) with a flat falloff the pool renders as sensible graded haze, near ground clear and distance fading; (6) any steep falloff (engine value >= 20) turns every view into a uniform saturated wall, identical at 1x, 0.01x and 0.001x density and at offsets -0.8 and -0.95 -- which the shader's own formula does not predict; (7) the same volume turned upside down (-fogflip) draws almost nothing. Unexplained: (6). Next: reproduce it in a minimal scene (small sphere, camera inside, engine-default falloff) to separate engine behaviour from this setup; or give the pool its top another way (two volumes, or a flat falloff inside a sphere sized to the pool)."
     }
    ],
    "evidence": [
@@ -14285,5 +14290,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T06:46:05.195Z"
+ "updatedAt": "2026-09-11T06:49:58.843Z"
 }
