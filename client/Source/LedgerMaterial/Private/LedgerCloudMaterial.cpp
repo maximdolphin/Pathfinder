@@ -350,11 +350,43 @@ namespace LedgerSurface
 		UMaterialExpressionScalarParameter* Softness =
 			Parameter(Graph, TEXT("EdgeSoftness"), 0.06f);
 
-		const FBand Cumulus = MakeBand(Graph, Altitude, Clouds, Softness,
+		// **A shape for each deck, not one texture for three.** From a 400 km
+		// orbit the decks were a single speckled veil: every one of them was the
+		// same fine noise cut at a coverage threshold, so they superimposed into
+		// one texture. Cumulus gathers into larger separate masses; cirrus is
+		// drawn out into streaks; the middle deck keeps the field it had.
+		// ponytail: the streaks run along a fixed world axis, not the wind at
+		// their height -- the wind vector is not in scope here; pass it when the
+		// streaks need to turn with the jet.
+		auto DeckNoise = [&Graph](UMaterialExpression* Position, int32 Levels)
+		{
+			UMaterialExpressionNoise* Field = Graph.Make<UMaterialExpressionNoise>();
+			Field->Position.Expression = Position;
+			Field->NoiseFunction = NOISEFUNCTION_GradientTex;
+			Field->Scale = 1.0f;
+			Field->Levels = Levels;
+			Field->OutputMin = 0.0f;
+			Field->OutputMax = 1.0f;
+			Field->bTurbulence = false;
+			return Field;
+		};
+		UMaterialExpression* CumulusField = Graph.Add(
+			DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3),
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
+		AlongStreak->A.Expression = Flattened;
+		AlongStreak->B.Expression = Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f));
+		UMaterialExpression* Stretched = Graph.Subtract(Flattened,
+			Graph.Multiply(Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f)), Graph.Scale(AlongStreak, 0.88f)));
+		UMaterialExpression* CirrusField = Graph.Add(
+			DeckNoise(Graph.Multiply(Stretched, Parameter(Graph, TEXT("CirrusScale"), 0.000008f)), 3),
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 0.6f)));
+
+		const FBand Cumulus = MakeBand(Graph, Altitude, CumulusField, Softness,
 			TEXT("Cumulus"), 0.12f, 0.16f, 0.40f, 1.0f);
 		const FBand Middle = MakeBand(Graph, Altitude, Clouds, Softness,
 			TEXT("Middle"), 0.45f, 0.14f, 0.20f, 0.55f);
-		const FBand Cirrus = MakeBand(Graph, Altitude, Clouds, Softness,
+		const FBand Cirrus = MakeBand(Graph, Altitude, CirrusField, Softness,
 			TEXT("Cirrus"), 0.86f, 0.12f, 0.35f, 0.18f);
 
 		UMaterialExpression* Total =
