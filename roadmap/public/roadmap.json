@@ -6396,9 +6396,27 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Re-examined after the sun-transmittance fix (d65cfcc and the elevation floor), because a deck lit only by ambient sky would also read as a uniform fog. It was not that. With the sun genuinely reaching the scene, -airshow -threedecks still shows the zenith as a uniform lit haze with no cloud shapes and no sky between them, and nothing of the decks from orbit. The remaining fault is exactly what was recorded: the coverage threshold is not cutting holes in the density, which is a shaping problem in BuildCloudMaterial, not lighting. Still blocked on its render."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The render is unblocked. Three faults, each hiding the next. (1) The density was wired to Opacity, which a volume material does not read -- Extinction is the SubsurfaceColor property -- so extinction sat at the pin's default of 1/m everywhere: every uniform sky this task produced, and every change that 'changed no pixel'. (2) The noise read WorldPosition_NoOffsets_CamRelative, which the cloud pass leaves as a literal TODO, so it never varied with the sample. (3) Once the density fed Extinction, the material failed to compile -- '(Node Subtract) Arithmetic between types float3 and float4', the anchor, wind direction and up being four-wide vector parameters -- and the engine substituted its default, which draws nothing; the log said so under the map's name. -cloudconst (constant extinction) was the control that separated the pin from the noise. Also: clouds now trace from orbit (TracingStartMaxDistance 350 -> 30,000 km). With all three fixed the decks draw broken cloud with sky between and read from orbit. Remaining: the noise flattening made each cloud a column through its band (radial streaks at the zenith), now 0.6 rather than 0.92; and the acceptance's climb through the three decks needs its capture. docs/comparisons/cloud-decks/"
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T094-2026-09-11T04-15-18-029.png",
+     "caption": "First frame with the deck density on the right pin: broken cloud with sky between (the streaks are the columns the noise flattening makes)",
+     "source": "../out/clouds-decks5-zenith.png",
+     "addedAt": "2026-09-11T04:15:18.037Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T04-15-18-160.png",
+     "caption": "From orbit, for the first time: cloud with gaps over the continents",
+     "source": "../out/clouds-decks5-orbit.png",
+     "addedAt": "2026-09-11T04:15:18.162Z"
+    }
+   ],
    "plannedStartDay": 227.5,
    "plannedEndDay": 230.5,
    "plannedStart": "2027-07-21",
@@ -14137,5 +14155,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T03:53:28.327Z"
+ "updatedAt": "2026-09-11T04:15:18.252Z"
 }
