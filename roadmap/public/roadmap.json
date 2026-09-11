@@ -3912,6 +3912,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Tried and measured: the moisture march now takes the prevailing wind at every step instead of walking a great circle from the start point -- a band wind blows along the parallel. It is the right march and it moved nothing: 476 of 577 major ranges shadowed (was 479), 41 wetter on the lee (was 38), 10 at wind-band boundaries, 22 dry on both sides, 28 other; every wind-crossing ridge 92% (bar 75). So the polar-curl explanation was wrong. The lee-wetter ranges cluster at 80-88 degrees and 18-26 degrees. The one failing criterion is the literal 'every major range'; 32 of the 101 misses (boundary + dry both sides) cannot have a shadow by construction. Next: take one lee-wetter range apart -- march samples, rise per step, which ocean refills the lee -- before changing anything else."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Found why the lee read wetter: the moisture march walked out against the wind and came back WITH it, re-reading the wind each step, so wherever the wind turns the walk back ended somewhere else and the moisture reported for a point belonged to another (273915e). It now retraces its recorded path. Census: 521 of 577 major ranges shadowed (was 476), 17 wetter on the lee (was 41), 7 at a wind-band boundary, 21 dry on both sides, 11 other; every wind-crossing ridge 94% (bar 75). The remaining lee-wetter ranges have no latitude cluster any more (18-24, 40-48, 66-72 degrees) and most differ by thousandths; the few large ones are the next to take apart (a sea within 15 km of the lee refills the air)."
     }
    ],
    "evidence": [
@@ -6431,6 +6436,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Finding (6) explained from LocalFogVolumeCommon.ush, and it is this setup, not the engine. The height density is Extinction * exp(-Falloff * (z - Offset)) EVERYWHERE in the sphere, and with the offset at the fill level it grows by e every 36 m below the top -- not only over the sampled valley but over all ground inside the sphere's lower cap, 2.84 km deep and 8.5 km across: the four unsampled segments outside the 6x6 grid, gorges narrower than its 2 km spacing, lower valleys, the sea bed under translucent water. Ground 260 m below the fill level meets the fog at e^7 its top density, which is opaque at 0.001x. The terms then combine as T = 1 - (1-TR)(1-TH) in unit space, so wherever the height term saturates the pixel's opacity is the radial term's -- a saturating mask here -- which is why density scaling moved nothing. Why the local fog volume cannot hold this pool at all: the three terms are packed R11G11B10F (radial capped near 65,000); a low top in a big sphere gives the exploding cap; a top near the rim of a huge sphere puts the pool where the radial density (1-d^2) goes to zero. A wide, shallow, flat-topped pool is not a shape it can express. Next: a volume-domain material on a box, voxelised into volumetric fog (a flat, bounded top; absent from orbit beyond the volumetric fog distance), with the global height fog kept at zero density."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The pool, as a box of volume material in volumetric fog, measured against a -fogoff control on the same build: the valley frame differs in 84% of pixels (a fog of ~360 m visibility, the model's), the ridge frame in 24% -- the shadowed lowland that shows dunes and stones in the control is a flat pale sheet with the ridge clear above it, the top level because the box's density stops at 1,379 m. Orbit is wrong: turning on the height fog that volumetric fog needs makes the view from orbit a white disc under an orange sky (mean 115 against 24), and zeroing its own volumetric extinction did not change that. Now volumetric fog is on only while the camera is within 60 km of the pool; queued with its control."
     }
    ],
    "evidence": [
@@ -6595,6 +6605,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The in-deck arches found and fixed. Same camera, one cvar per arm: aerial perspective off -- arches stay; volumetric render target off -- arches stay, smooth instead of stair-stepped; ViewRaySampleMaxCount 4096 -- arches stay, noisier; DistanceToSampleMaxCount 1 (from 15) -- gone, an even in-cloud murk. The engine ramps a ray's sample count with its traced length up to that distance, so inside a 500 m deck neighbouring rays leave the layer after different lengths with different integer sample counts, and each step in the count draws as a shell. Set to 1 km in DefaultEngine.ini."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Orbit, measured against a cloud-free control from the same air show: with clouds the disc's mean luminance moves 116.4 -> 117.8, 29.6% of it brighter by more than 20 and 30.4% darker, and the brightest 1% DIMMER (157 against 170). Clouds seen from above are a grey veil that lifts the ocean and dulls the land -- sunlit cloud tops should be the brightest thing on the disc. With the in-deck frames' sepia, that reads as clouds not receiving direct sun rather than a coverage problem; the weather-scale noise (clusters hundreds of km across) is in and visible from the above-middle view, but cannot read from orbit while the cloud is grey."
     }
    ],
    "evidence": [
@@ -14385,5 +14400,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T08:02:17.162Z"
+ "updatedAt": "2026-09-11T08:31:47.780Z"
 }
