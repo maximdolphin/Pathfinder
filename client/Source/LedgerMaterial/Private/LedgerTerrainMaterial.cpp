@@ -299,6 +299,32 @@ namespace LedgerSurface
 			Graph.TriplanarParameter(*SlotParameter(0, TEXT("Packed")),
 				Flat.Packed, ProbePosition, WeightX, WeightY, WeightZ, SAMPLERTYPE_Masks),
 			false, false, true);
+		// `-pomchecker` (with -livematerials): the relief is a checker of sharp
+		// steps, eight to a tile, instead of the scan -- a controlled fixture for
+		// T430, where a pixel behind a step is something the march must hide and
+		// the one-step offset cannot. The texture seen is still the scan.
+		static const bool bPomChecker = FParse::Param(FCommandLine::Get(), TEXT("pomchecker"));
+		static const FString CheckerAt = TEXT("((frac((UV).x * 8.0) < 0.5) != (frac((UV).y * 8.0) < 0.5) ? 1.0 : 0.0)");
+		auto Checker = [](const TCHAR* UV) { return CheckerAt.Replace(TEXT("UV"), UV); };
+		if (bPomChecker)
+		{
+			UMaterialExpressionCustom* Steps = Graph.Make<UMaterialExpressionCustom>();
+			Steps->OutputType = CMOT_Float1;
+			Steps->Description = TEXT("LedgerParallaxChecker");
+			Steps->Code = FString(TEXT("return WX * ")) + Checker(TEXT("P.yz")) + TEXT(" + WY * ")
+				+ Checker(TEXT("P.xz")) + TEXT(" + WZ * ") + Checker(TEXT("P.xy")) + TEXT(";");
+			Steps->Inputs.Reset();
+			for (const TPair<const TCHAR*, UMaterialExpression*>& In : { TPair<const TCHAR*, UMaterialExpression*>(TEXT("P"), ProbePosition),
+				TPair<const TCHAR*, UMaterialExpression*>(TEXT("WX"), WeightX), TPair<const TCHAR*, UMaterialExpression*>(TEXT("WY"), WeightY),
+				TPair<const TCHAR*, UMaterialExpression*>(TEXT("WZ"), WeightZ) })
+			{
+				FCustomInput& Input = Steps->Inputs.AddDefaulted_GetRef();
+				Input.InputName = In.Key;
+				Input.Input.Expression = In.Value;
+			}
+			ProbeHeight = Steps;
+			UE_LOG(LogLedger, Log, TEXT("terrain material: parallax relief is a checker (-pomchecker)"));
+		}
 
 		// From the surface towards the eye.
 		UMaterialExpressionCameraVectorWS* EyeDirection =
@@ -404,6 +430,13 @@ namespace LedgerSurface
 				TEXT("float b = h - r;\n")
 				TEXT("float t = saturate(a / (a - b - 1e-5));\n")
 				TEXT("return -(lerp(rPrev, r, t) - 0.5);\n"));
+			if (bPomChecker)
+			{
+				const FString ScanHeight = TEXT("W.x * Tex.SampleLevel(TexSampler, q.yz, 0).b + W.y * Tex.SampleLevel(TexSampler, q.xz, 0).b + W.z * Tex.SampleLevel(TexSampler, q.xy, 0).b");
+				const FString CheckerHeight = FString(TEXT("W.x * ")) + Checker(TEXT("q.yz")) + TEXT(" + W.y * ")
+					+ Checker(TEXT("q.xz")) + TEXT(" + W.z * ") + Checker(TEXT("q.xy"));
+				March->Code.ReplaceInline(*ScanHeight, *CheckerHeight);
+			}
 			March->Inputs.Reset();
 			auto AddInput = [March](const TCHAR* Name, UMaterialExpression* Expression)
 			{
@@ -597,21 +630,16 @@ namespace LedgerSurface
 		// approximately, the arithmetic cannot do anything else. Everything
 		// clever about where snow settles happens inside that multiplication,
 		// where it is harmless.
-		// **Off unless `-snow` asks for it, and the reason is measured.**
-		//
-		// The blend below is provably the identity at zero cover -- a lerp
-		// whose alpha is multiplied by cover cannot be anything else -- so
-		// unlike the first attempt, it is not the blend that misbehaves. The
-		// cover does. `-channel=snow` over grassland at season zero reads 0.5,
-		// and the four-biome desert comes back grey and half-snowed.
-		//
-		// So the overlay is right and the field feeding it is not, and the two
-		// have to be separated before either ships. Opt-in keeps the work, the
-		// control arm and the measurement without putting a snowed desert in
-		// front of anybody. See docs/comparisons/snow/.
+		// **On, with `-nosnow` as the control arm.** It was opt-in on two
+		// measurements -- grassland reading 0.5 on the snow channel, a desert
+		// coming back grey and half-snowed -- and both were the engine's default
+		// material standing in for this one, which did not compile. Measured with
+		// it compiling: zero on the ground at every warm site; at an ice-cap site
+		// at -10 C the lit ground 19.9 levels brighter, 56.7% of it by more than
+		// 20; from orbit 0.12% of the disc changes. See docs/comparisons/snow/.
 		UMaterialExpression* SnowWeight = Graph.Constant(0.0f);
 		if (Snowfall.IsValid()
-			&& FParse::Param(FCommandLine::Get(), TEXT("snow")))
+			&& !FParse::Param(FCommandLine::Get(), TEXT("nosnow")))
 		{
 			UMaterialExpressionVertexColor* SnowCover =
 				Graph.Make<UMaterialExpressionVertexColor>();
@@ -928,6 +956,30 @@ namespace LedgerSurface
 			else if (Channel == TEXT("height"))
 			{
 				Isolated = Soil.Height;
+			}
+			else if (Channel == TEXT("pomheight") && bPomChecker)
+			{
+				// Which height each pixel ends up showing on the checker relief: a raised
+				// top (1) or the ground between (0). Seen raking, occlusion makes the tops
+				// hide the ground behind them and cover more than half the screen; an
+				// offset that cannot occlude leaves them at their geometric half. T430.
+				UMaterialExpressionCustom* Shown = Graph.Make<UMaterialExpressionCustom>();
+				Shown->OutputType = CMOT_Float1;
+				Shown->Description = TEXT("LedgerParallaxShownHeight");
+				Shown->Code = FString(TEXT("return WX * ")) + Checker(TEXT("P.yz")) + TEXT(" + WY * ")
+					+ Checker(TEXT("P.xz")) + TEXT(" + WZ * ") + Checker(TEXT("P.xy")) + TEXT(";");
+				Shown->Inputs.Reset();
+				UMaterialExpression* ShownAt = Graph.Multiply(ParallaxPosition, Graph.ScalarParameter(*SlotParameter(0, TEXT("Tiling")),
+					1.0f / static_cast<float>(Flat.TilingMetres * 100.0)));
+				for (const TPair<const TCHAR*, UMaterialExpression*>& In : { TPair<const TCHAR*, UMaterialExpression*>(TEXT("P"), ShownAt),
+					TPair<const TCHAR*, UMaterialExpression*>(TEXT("WX"), WeightX), TPair<const TCHAR*, UMaterialExpression*>(TEXT("WY"), WeightY),
+					TPair<const TCHAR*, UMaterialExpression*>(TEXT("WZ"), WeightZ) })
+				{
+					FCustomInput& Input = Shown->Inputs.AddDefaulted_GetRef();
+					Input.InputName = In.Key;
+					Input.Input.Expression = In.Value;
+				}
+				Isolated = Shown;
 			}
 			else if (Channel == TEXT("snow"))
 			{

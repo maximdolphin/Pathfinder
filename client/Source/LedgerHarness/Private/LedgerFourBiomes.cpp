@@ -343,6 +343,16 @@ bool ULedgerFourBiomes::FindSites()
 	BestWeight.Init(-1.0, Biomes.Num());
 	BestPoint.Init(FVector3d::ZeroVector, Biomes.Num());
 
+	// `-seasonsite` (T060): one site instead of four -- the lit land where
+	// winter lays the most snow and summer none, photographed at whatever
+	// `-season=` the run is given, so a winter and a summer run frame the same
+	// ground. Winter is 0.75 in the north and 0.25 in the south.
+	static const bool bSeasonSite = FParse::Param(FCommandLine::Get(), TEXT("seasonsite"));
+	double BestSeason = -1.0;
+	double SeasonWinter = 0.0;
+	double SeasonSummer = 0.0;
+	FVector3d SeasonPoint = FVector3d::ZeroVector;
+
 	TArray<double> Weights;
 	for (double Latitude = -84.0; Latitude <= 84.0; Latitude += 1.0)
 	{
@@ -360,6 +370,22 @@ bool ULedgerFourBiomes::FindSites()
 				continue;
 			}
 
+			if (bSeasonSite)
+			{
+				const bool bNorth = Latitude > 0.0;
+				const double Winter = LedgerClimate::SnowCover(LedgerClimate::At(Point, Params, bNorth ? 0.75 : 0.25));
+				const double Summer = LedgerClimate::SnowCover(LedgerClimate::At(Point, Params, bNorth ? 0.25 : 0.75));
+				const double Score = Summer > 0.0 ? -Summer : Winter;
+				if (Score > BestSeason)
+				{
+					BestSeason = Score;
+					SeasonPoint = Point;
+					SeasonWinter = Winter;
+					SeasonSummer = Summer;
+				}
+				continue;
+			}
+
 			const FLedgerClimate Climate = LedgerClimate::At(Point, Params);
 			LedgerBiomes::Weigh(Biomes, Climate, 0.0, Weights);
 			for (int32 Index = 0; Index < Weights.Num(); ++Index)
@@ -373,6 +399,15 @@ bool ULedgerFourBiomes::FindSites()
 		}
 	}
 
+	if (bSeasonSite)
+	{
+		Sites.Add(SeasonPoint);
+		Names.Add(TEXT("season"));
+		UE_LOG(LogLedger, Log, TEXT("four biomes: season site at %.1f N, winter snow cover %.2f, summer %.2f; photographed at season %.3f"),
+			FMath::RadiansToDegrees(FMath::Asin(FMath::Clamp(SeasonPoint.Z, -1.0, 1.0))), SeasonWinter, SeasonSummer, Planet->SeasonPhase());
+		return BestSeason > 0.0;
+	}
+
 	// The four most convincingly-itself biomes on the planet.
 	TArray<int32> Order;
 	for (int32 Index = 0; Index < Biomes.Num(); ++Index)
@@ -383,6 +418,23 @@ bool ULedgerFourBiomes::FindSites()
 		}
 	}
 	Order.Sort([&BestWeight](int32 A, int32 B) { return BestWeight[A] > BestWeight[B]; });
+	// `-biomefirst=ice-cap` puts one biome in the four whatever its rank: the
+	// snow overlay (T060) wants a capture of ground the climate lays snow on.
+	FString First;
+	if (FParse::Value(FCommandLine::Get(), TEXT("biomefirst="), First))
+	{
+		const int32 Found = Order.IndexOfByPredicate([&Biomes, &First](int32 Index)
+		{
+			return Biomes[Index].Name.Replace(TEXT(" "), TEXT("-")).Equals(First, ESearchCase::IgnoreCase);
+		});
+		if (Found > 0)
+		{
+			const int32 Moved = Order[Found];
+			Order.RemoveAt(Found);
+			Order.Insert(Moved, 0);
+		}
+		UE_LOG(LogLedger, Log, TEXT("four biomes: %s first (%s)"), *First, Found >= 0 ? TEXT("found") : TEXT("no such biome with a site"));
+	}
 
 	for (int32 Rank = 0; Rank < Order.Num() && Sites.Num() < Wanted; ++Rank)
 	{
