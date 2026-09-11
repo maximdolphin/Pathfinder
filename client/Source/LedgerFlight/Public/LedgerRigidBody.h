@@ -100,6 +100,22 @@ struct LEDGERFLIGHT_API FLedgerCommand
 	FVector3d Torque = FVector3d::ZeroVector;
 };
 
+/// What the air is doing to a ship now, for the panel and the tests. T135.
+struct LEDGERFLIGHT_API FLedgerAeroState
+{
+	/// Radians: the nose above the path through the air, and the path to the right of the nose.
+	double AngleOfAttack = 0.0;
+	double Sideslip = 0.0;
+
+	/// Half rho v squared, pascals.
+	double DynamicPressure = 0.0;
+
+	/// The wing's lift and drag coefficients.
+	double Lift = 0.0;
+	double Drag = 0.0;
+	bool bStalled = false;
+};
+
 namespace LedgerFlight
 {
 	/// The torque about the centre of mass of a force applied at a point, all in
@@ -134,11 +150,23 @@ namespace LedgerFlight
 	/// T134, the controller: a mode reading the stick, as the force and
 	/// torque to ask for.
 	LEDGERFLIGHT_API FLedgerCommand Control(ELedgerFlightMode Mode, const FLedgerStick& Stick, const FLedgerHandling& Handling,
-		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds);
+		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds,
+		const FVector3d& ExternalTorque = FVector3d::ZeroVector);
 
 	/// T134, the physics: the allocator gives what it can of a command, and
 	/// the body turns and speeds up by what that makes. It is not told the
 	/// mode, which is what makes switching modes change nothing below here.
 	LEDGERFLIGHT_API FLedgerAllocation Push(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
-		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds);
+		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds,
+		const FLedgerCommand& External = FLedgerCommand());
+
+	/// T135: the air on a ship, body frame, from its speed through air of a
+	/// density. The body is a flat plate across the flow -- belly-first it is
+	/// the whole of the entry drag the ship file states (BellyAreaM2 is its
+	/// mass over that ballistic coefficient), nose-first it is nothing -- and a
+	/// wing, if it has one, lifts and drags off its angle of attack up to the
+	/// stall, weathercocks, damps its turns, and answers its control surfaces
+	/// (pitch, yaw, roll, as the stick gives them). Nothing at all in vacuum.
+	LEDGERFLIGHT_API FLedgerCommand Aerodynamics(const FLedgerShipAero& Aero, double BellyAreaM2, const FLedgerMotion& Motion,
+		const FVector3d& WindMetresPerSecond, double DensityKgPerM3, const FVector3d& Surfaces, FLedgerAeroState* OutState = nullptr);
 }

@@ -80,6 +80,13 @@ void ALedgerHUD::DrawHUD()
 		Systems->MainThrustShare() * 100.0, Systems->ManoeuvringThrustShare() * 100.0), HudText);
 	const TCHAR* Modes[] = { TEXT("assist off"), TEXT("decoupled"), TEXT("coupled") };
 	Rows.Emplace(FString::Printf(TEXT("flight   %s   (V to change)"), Modes[static_cast<uint8>(Ship->GetFlightMode()) % 3]), HudText);
+	const FLedgerAeroState& AirNow = Ship->Aerodynamic();
+	if (AirNow.DynamicPressure > 1.0)
+	{
+		Rows.Emplace(FString::Printf(TEXT("air   %.1f kPa   angle of attack %.1f deg   lift %.2f%s"), AirNow.DynamicPressure / 1000.0,
+			FMath::RadiansToDegrees(AirNow.AngleOfAttack), AirNow.Lift, AirNow.bStalled ? TEXT("   STALL") : TEXT("")),
+			AirNow.bStalled ? HudWarn : HudText);
+	}
 	int32 HoldIndex = INDEX_NONE;
 	for (int32 Index = 0; Index < Definition.Components.Num(); ++Index)
 	{

@@ -67,7 +67,7 @@ void ULedgerFlightHarness::OnWorldBeginPlay(UWorld& InWorld)
 	for (const TCHAR* Fixture :
 		{ TEXT("transect"), TEXT("surfacestudy"), TEXT("turntable"), TEXT("climate"),
 		  TEXT("daysweep"), TEXT("moonshot"), TEXT("eclipse"), TEXT("passage"), TEXT("airshow"), TEXT("cloudclimb"), TEXT("fogwatch"), TEXT("crossing"),
-		  TEXT("windheard"), TEXT("front"), TEXT("wetwatch"), TEXT("stormwatch"), TEXT("airprobe"), TEXT("ridgeflight"), TEXT("entryburn"), TEXT("visorwatch"), TEXT("aurorawatch"), TEXT("volumebudget"), TEXT("stormfront"), TEXT("shiptrial"), TEXT("couplingproof"), TEXT("shippanel"),
+		  TEXT("windheard"), TEXT("front"), TEXT("wetwatch"), TEXT("stormwatch"), TEXT("airprobe"), TEXT("ridgeflight"), TEXT("entryburn"), TEXT("visorwatch"), TEXT("aurorawatch"), TEXT("volumebudget"), TEXT("stormfront"), TEXT("shiptrial"), TEXT("couplingproof"), TEXT("shippanel"), TEXT("glidetrial"), TEXT("stalltrial"),
 		  TEXT("windprobe"), TEXT("nearfield"), TEXT("descent300") })
 	{
 		if (FParse::Param(FCommandLine::Get(), Fixture))

@@ -161,11 +161,43 @@ struct LEDGERFLIGHT_API FLedgerNozzle
 	double ThrustNewtons = 0.0;
 };
 
+/// Wings and control surfaces, T135. A ship without them has only its body.
+struct LEDGERFLIGHT_API FLedgerShipAero
+{
+	bool bWinged = false;
+	double WingAreaM2 = 0.0;
+	double SpanMetres = 0.0;
+
+	/// Drag at zero lift over the wing area, and the Oswald efficiency.
+	double ZeroLiftDrag = 0.03;
+	double Oswald = 0.8;
+
+	/// Where the wing stalls, degrees.
+	double StallDegrees = 15.0;
+
+	/// Pitching moment coefficient at zero angle of attack, its slope per
+	/// radian (negative is stable), and its damping per unit of q c / 2V.
+	double PitchMoment0 = 0.0;
+	double PitchStability = -0.8;
+	double PitchDamping = -30.0;
+
+	/// Weathercock per radian of sideslip, and yaw and roll damping.
+	double YawStability = 0.12;
+	double YawDamping = -0.3;
+	double RollDamping = -0.45;
+
+	/// Moment coefficients at full deflection: elevator, rudder, ailerons.
+	double Elevator = 0.3;
+	double Rudder = 0.08;
+	double Ailerons = 0.12;
+};
+
 struct LEDGERFLIGHT_API FLedgerShipDefinition
 {
 	FString Name;
 	FLedgerShipHull Hull;
 	FLedgerShipFlight Flight;
+	FLedgerShipAero Aero;
 	TArray<FLedgerComponent> Components;
 	TArray<FLedgerConnection> Connections;
 	TArray<FLedgerCompartment> Compartments;

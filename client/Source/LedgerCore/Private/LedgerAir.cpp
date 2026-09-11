@@ -231,7 +231,13 @@ namespace LedgerAir
 
 		const double Surface =
 			Air.NumberDensityPerCubicMetre * Air.MolecularMassKg;
-		return Surface * FMath::Exp(-AltitudeMetres / Air.ScaleHeightMetres);
+		// T137: faded out over the last scale height rather than stopped, so
+		// the air ends without a step -- at orbital speed the millionth left
+		// at the top is still a push of kilonewtons on a belly, and a ship
+		// coming in would feel it arrive all at once. A smoothstep: the density
+		// and its slope both run on into nothing.
+		const double Left = FMath::Clamp((Air.TopMetres - AltitudeMetres) / Air.ScaleHeightMetres, 0.0, 1.0);
+		return Surface * FMath::Exp(-AltitudeMetres / Air.ScaleHeightMetres) * Left * Left * (3.0 - 2.0 * Left);
 	}
 
 	double DynamicPressure(

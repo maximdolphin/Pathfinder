@@ -109,7 +109,9 @@ void ULedgerEntryBurn::Tick(float DeltaSeconds)
 		const FVector3d East = FVector3d::CrossProduct(FVector3d::UnitZ(), Up).GetSafeNormal();
 		const double Gamma = FMath::DegreesToRadians(Now.GammaDegrees);
 		const FVector3d Heading = East * FMath::Cos(Gamma) + Up * FMath::Sin(Gamma);
-		Ship->SetActorRotation(FRotationMatrix::MakeFromXZ(FVector(Heading), FVector(Up)).Rotator());
+		// Belly-first into the air, as a blunt body enters: the drag T100 was
+		// tuned on, and since T135 what the air model makes of this attitude.
+		Ship->SetActorRotation(FRotationMatrix::MakeFromZX(FVector(-Heading), FVector(Up)).Rotator());
 		Ship->SetVelocity(FVector(Heading * EntrySpeedMetresPerSecond * 100.0));
 		Ship->RepairHull();
 		Ship->ResetEntryHeat();
@@ -117,6 +119,16 @@ void ULedgerEntryBurn::Tick(float DeltaSeconds)
 		UGameplayStatics::SetGlobalTimeDilation(World, EntryDilation);
 	}
 	Clock += DeltaSeconds;
+
+	// Held belly-first to the air all the way down, as the tuning assumed. An
+	// attitude fixed in space drifts off it as the path curves round the
+	// planet, and a belly at an angle to the flow is a wing: the first run of
+	// this with the air model drove the shallow entry down to ten kilometres.
+	{
+		const FVector3d Flow = FVector3d(Ship->GetVelocity()).GetSafeNormal();
+		const FVector3d Overhead = (FVector3d(Ship->GetActorLocation()) - Centre).GetSafeNormal();
+		Ship->SetActorRotation(FRotationMatrix::MakeFromZX(FVector(-Flow), FVector(Overhead)).Rotator());
+	}
 
 	// A chase camera off the ship's quarter, so the glow is on the hull.
 	const FVector3d Position = FVector3d(Ship->GetActorLocation());

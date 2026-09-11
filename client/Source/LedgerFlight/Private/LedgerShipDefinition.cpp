@@ -371,6 +371,32 @@ namespace LedgerShips
 			}
 		}
 
+		// ---- aero: optional; wings and control surfaces. T135.
+		const TSharedPtr<FJsonObject>* AeroObject = nullptr;
+		if (Root->TryGetObjectField(TEXT("aero"), AeroObject))
+		{
+			FLedgerShipAero& Aero = Ship.Aero;
+			Aero.bWinged = true;
+			ShipNumber(*AeroObject, TEXT("wingAreaM2"), Aero.WingAreaM2);
+			ShipNumber(*AeroObject, TEXT("spanM"), Aero.SpanMetres);
+			ShipNumber(*AeroObject, TEXT("cd0"), Aero.ZeroLiftDrag);
+			ShipNumber(*AeroObject, TEXT("oswald"), Aero.Oswald);
+			ShipNumber(*AeroObject, TEXT("stallDeg"), Aero.StallDegrees);
+			ShipNumber(*AeroObject, TEXT("cm0"), Aero.PitchMoment0);
+			ShipNumber(*AeroObject, TEXT("cmAlpha"), Aero.PitchStability);
+			ShipNumber(*AeroObject, TEXT("cmq"), Aero.PitchDamping);
+			ShipNumber(*AeroObject, TEXT("cnBeta"), Aero.YawStability);
+			ShipNumber(*AeroObject, TEXT("cnr"), Aero.YawDamping);
+			ShipNumber(*AeroObject, TEXT("clp"), Aero.RollDamping);
+			ShipNumber(*AeroObject, TEXT("elevator"), Aero.Elevator);
+			ShipNumber(*AeroObject, TEXT("rudder"), Aero.Rudder);
+			ShipNumber(*AeroObject, TEXT("ailerons"), Aero.Ailerons);
+			if (Aero.WingAreaM2 <= 0.0 || Aero.SpanMetres <= 0.0)
+			{
+				OutErrors.Add(TEXT("aero: a wing needs an area and a span"));
+			}
+		}
+
 		// ---- nozzles: optional; what the allocator steers. T133.
 		const TArray<TSharedPtr<FJsonValue>>* Nozzles = nullptr;
 		if (Root->TryGetArrayField(TEXT("nozzles"), Nozzles))
@@ -562,6 +588,14 @@ namespace LedgerShips
 		const FLedgerShipFlight& F = Ship.Flight;
 		Out.Add(FString::Printf(TEXT("\"flight\": { \"mainThrust\": %s, \"manoeuvringThrust\": %s, \"pitchRate\": %s, \"yawRate\": %s, \"rollRate\": %s, \"drag\": %s, \"ballistic\": %s },"),
 			*Num(F.MainThrust), *Num(F.ManoeuvringThrust), *Num(F.PitchRate), *Num(F.YawRate), *Num(F.RollRate), *Num(F.AtmosphericDrag), *Num(F.BallisticKgPerM2)));
+		if (Ship.Aero.bWinged)
+		{
+			const FLedgerShipAero& A = Ship.Aero;
+			Out.Add(FString::Printf(TEXT("\"aero\": { \"wingAreaM2\": %s, \"spanM\": %s, \"cd0\": %s, \"oswald\": %s, \"stallDeg\": %s, \"cm0\": %s, \"cmAlpha\": %s, \"cmq\": %s, \"cnBeta\": %s, \"cnr\": %s, \"clp\": %s, \"elevator\": %s, \"rudder\": %s, \"ailerons\": %s },"),
+				*Num(A.WingAreaM2), *Num(A.SpanMetres), *Num(A.ZeroLiftDrag), *Num(A.Oswald), *Num(A.StallDegrees), *Num(A.PitchMoment0),
+				*Num(A.PitchStability), *Num(A.PitchDamping), *Num(A.YawStability), *Num(A.YawDamping), *Num(A.RollDamping),
+				*Num(A.Elevator), *Num(A.Rudder), *Num(A.Ailerons)));
+		}
 		TArray<FString> Components;
 		for (const FLedgerComponent& C : Ship.Components)
 		{

@@ -345,8 +345,23 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 	FLedgerStick Stick;
 	Stick.Turn = FVector3d(PitchInput + AutoTurn.X, YawInput + AutoTurn.Y, RollInput + AutoTurn.Z);
 	Stick.Push = FVector3d(ThrottleInput + AutoThrottle, StrafeInput + AutoStrafe, LiftInput + AutoLift);
+	// T135: the air first, so the rate hold knows what the wings are already
+	// doing and the nozzles give only the rest. The stick moves the surfaces.
+	FLedgerCommand Air;
+	LastAero = FLedgerAeroState();
+	const UWorld* World = GetWorld();
+	const ULedgerWorldBuilder* Builder = World != nullptr ? World->GetSubsystem<ULedgerWorldBuilder>() : nullptr;
+	if (ShipDefinition.Aero.bWinged && Builder != nullptr && Planet != nullptr)
+	{
+		const FLedgerAirProfile AirProfile = LedgerAir::For(Builder->GetSystem(), Builder->GetHomeBodyIndex(), Builder->GetWhenSeconds());
+		const double AboveDatum = (FVector3d(GetActorLocation()) - FVector3d(Planet->GetActorLocation())).Length() / 100.0
+			- Planet->Radius / 100.0;
+		const double BellyArea = ShipDefinition.Flight.BallisticKgPerM2 > 0.0 ? Mass.MassKg / ShipDefinition.Flight.BallisticKgPerM2 : 0.0;
+		Air = LedgerFlight::Aerodynamics(ShipDefinition.Aero, BellyArea, Flight, FVector3d(LastWind) / 100.0,
+			LedgerAir::DensityAt(AirProfile, AboveDatum), Stick.Turn, &LastAero);
+	}
 	const FLedgerCommand Command = LedgerFlight::Control(FlightMode, Stick, FLedgerHandling::From(ShipDefinition.Flight),
-		Mass, Flight, DeltaSeconds);
+		Mass, Flight, DeltaSeconds, Air.Torque);
 
 	// Each nozzle limited by what its thruster can give -- power, wear, fuel.
 	const int32 MainEngine = ShipDefinition.FindComponent(TEXT("main_engine"));
@@ -356,7 +371,7 @@ void ALedgerShip::ApplyThrust(float DeltaSeconds)
 		Limits.Add(Nozzle.ThrustNewtons * (Nozzle.Component == MainEngine
 			? Systems->MainThrustShare() : Systems->ManoeuvringThrustShare()));
 	}
-	LastAllocation = LedgerFlight::Push(ShipDefinition.Nozzles, Limits, Mass, Command, Flight, DeltaSeconds);
+	LastAllocation = LedgerFlight::Push(ShipDefinition.Nozzles, Limits, Mass, Command, Flight, DeltaSeconds, Air);
 	double MainNewtons = 0.0;
 	double SideNewtons = 0.0;
 	for (int32 Index = 0; Index < ShipDefinition.Nozzles.Num(); ++Index)
@@ -389,6 +404,14 @@ void ALedgerShip::Integrate(float DeltaSeconds)
 	Field.DragScaleHeight = DragScaleHeight;
 	Field.AtmosphericDrag = AtmosphericDrag;
 	Field.BallisticKgPerM2 = BallisticCoefficient;
+	// T135: a winged ship has its drag from the air model, which knows which
+	// way it faces; the prototype's fraction-a-second bleed would not let it
+	// glide, and the entry drag is its belly.
+	if (ShipDefinition.Aero.bWinged && ShipDefinition.Nozzles.Num() > 0 && Systems != nullptr && Systems->IsConfigured())
+	{
+		Field.AtmosphericDrag = 0.0;
+		Field.BallisticKgPerM2 = 0.0;
+	}
 
 	// The terrain's own height function, not a collision trace. A trace would
 	// miss wherever the patch underneath has not cooked yet, which is exactly

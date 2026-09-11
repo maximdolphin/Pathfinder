@@ -153,8 +153,8 @@ void ULedgerShipPanel::Tick(float DeltaSeconds)
 			{
 				FLedgerComponent Big = Definition.Components[Reactor];
 				Big.Id = TEXT("reactor_large");
-				Big.MassKg = 1600.0;
-				Big.Params.Add(TEXT("outputKw"), 700.0);
+				Big.MassKg = Definition.Components[Reactor].MassKg + 700.0;
+				Big.Params.Add(TEXT("outputKw"), Definition.Components[Reactor].Param(TEXT("outputKw")) + 300.0);
 				Big.Params.Add(TEXT("slotClass"), 2.0);
 				const FLedgerOutfitPreview Preview = LedgerShips::PreviewSwap(Definition, Definition.Components[Reactor].Id, Big);
 				Systems->ShowPreview(Preview, FString::Printf(TEXT("reactor_large, 700 kW and 1600 kg, in place of %s"), *Definition.Components[Reactor].Id));

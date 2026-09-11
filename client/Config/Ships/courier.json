@@ -18,6 +18,22 @@
 		"drag": 0.55,
 		"ballistic": 300
 	},
+	"aero": {
+		"wingAreaM2": 14.7,
+		"spanM": 8.6,
+		"cd0": 0.03,
+		"oswald": 0.8,
+		"stallDeg": 15,
+		"cm0": 0.08,
+		"cmAlpha": -0.8,
+		"cmq": -30,
+		"cnBeta": 0.12,
+		"cnr": -0.3,
+		"clp": -0.1,
+		"elevator": 0.3,
+		"rudder": 0.08,
+		"ailerons": 0.05
+	},
 	"components": [
 		{
 			"id": "reactor_fuel",

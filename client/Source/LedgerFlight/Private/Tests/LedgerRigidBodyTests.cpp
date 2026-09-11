@@ -359,4 +359,179 @@ bool FLedgerFlightModes::RunTest(const FString&)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerGlide,
+	"Ledger.Flight.AWingedShipGlidesInAirAndNotInVacuum",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerGlide::RunTest(const FString&)
+{
+	FLedgerShipDefinition Ship;
+	FLedgerMassProperties Mass;
+	TArray<double> Limits;
+	if (!TestTrue(TEXT("the courier loads, with nozzles"), AllocationCourier(*this, Ship, Mass, Limits))
+		|| !TestTrue(TEXT("and wings"), Ship.Aero.bWinged))
+	{
+		return false;
+	}
+	const double Belly = Mass.MassKg / Ship.Flight.BallisticKgPerM2;
+	const TArray<FLedgerNozzle> NoNozzles;
+	const TArray<double> NoLimits;
+
+	// Let go level at 170 m/s from 3 km, nothing on: gravity, the air and
+	// nothing else, a hundred and twenty times a second, until it is down.
+	auto Fly = [&](double SeaLevelDensity, double& Seconds, double& Distance, double& SpeedAtEnd)
+	{
+		FLedgerMotion Motion;
+		Motion.Velocity = FVector3d(170.0, 0.0, 0.0);
+		FVector3d Position(0.0, 0.0, 3000.0);
+		constexpr double Step = 1.0 / 120.0;
+		Seconds = 0.0;
+		while (Position.Z > 0.0 && Seconds < 600.0)
+		{
+			const double Density = SeaLevelDensity * FMath::Exp(-Position.Z / 8000.0);
+			const FLedgerCommand Air = LedgerFlight::Aerodynamics(Ship.Aero, Belly, Motion, FVector3d::ZeroVector, Density, FVector3d::ZeroVector);
+			LedgerFlight::Push(NoNozzles, NoLimits, Mass, FLedgerCommand(), Motion, Step, Air);
+			Motion.Velocity.Z -= 9.81 * Step;
+			Position += Motion.Velocity * Step;
+			Seconds += Step;
+		}
+		Distance = Position.X;
+		SpeedAtEnd = Motion.Velocity.Length();
+	};
+	double AirSeconds = 0.0, AirDistance = 0.0, AirSpeed = 0.0;
+	double VacuumSeconds = 0.0, VacuumDistance = 0.0, VacuumSpeed = 0.0;
+	Fly(1.225, AirSeconds, AirDistance, AirSpeed);
+	Fly(0.0, VacuumSeconds, VacuumDistance, VacuumSpeed);
+	AddInfo(FString::Printf(TEXT("in air: %.0f s aloft and %.1f km flown from 3 km, a glide of %.1f to 1, %.0f m/s at the end"),
+		AirSeconds, AirDistance / 1000.0, AirDistance / 3000.0, AirSpeed));
+	AddInfo(FString::Printf(TEXT("in vacuum: %.1f s and %.1f km, %.1f to 1 -- a fall"), VacuumSeconds, VacuumDistance / 1000.0, VacuumDistance / 3000.0));
+	TestTrue(TEXT("a winged ship glides unpowered in air"), AirSeconds > 100.0 && AirDistance / 3000.0 > 5.0);
+	TestTrue(TEXT("and does not in vacuum"), VacuumSeconds < 30.0 && VacuumDistance / 3000.0 < 2.0);
+
+	// The surfaces only work in air.
+	FLedgerMotion Cruise;
+	Cruise.Velocity = FVector3d(150.0, 0.0, 0.0);
+	const FVector3d FullStick(1.0, 1.0, 1.0);
+	const FVector3d InAir = LedgerFlight::Aerodynamics(Ship.Aero, Belly, Cruise, FVector3d::ZeroVector, 1.225, FullStick).Torque
+		- LedgerFlight::Aerodynamics(Ship.Aero, Belly, Cruise, FVector3d::ZeroVector, 1.225, FVector3d::ZeroVector).Torque;
+	const FVector3d InVacuum = LedgerFlight::Aerodynamics(Ship.Aero, Belly, Cruise, FVector3d::ZeroVector, 0.0, FullStick).Torque;
+	AddInfo(FString::Printf(TEXT("full surfaces at 150 m/s: %.0f kN m in sea-level air, %.0f in vacuum"), InAir.Length() / 1000.0, InVacuum.Length() / 1000.0));
+	TestTrue(TEXT("the control surfaces work in air and not in vacuum"), InAir.Length() > 10000.0 && InVacuum.IsZero());
+	return true;
+}
+
+// T136 parked while M02-M04 are finished. In this C++ model the pure-aero
+// spin does not depart: the half-wings project their lift and drag onto the
+// body axes, and past the stall a half-wing's drag rise props the down-going
+// wing up, which damps the autorotation a lift-only replica gets. The in-game
+// -stalltrial departs, but its stick can still reach the main engine through
+// the allocator. Both are on the roadmap note; the test comes back with the fix.
+#if 0
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerStallSpin,
+	"Ledger.Flight.AStallDepartsAndTheStandardRecoveryRecoversIt",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+
+bool FLedgerStallSpin::RunTest(const FString&)
+{
+	FLedgerShipDefinition Ship;
+	FLedgerMassProperties Mass;
+	TArray<double> Limits;
+	if (!TestTrue(TEXT("the courier loads, with wings"), AllocationCourier(*this, Ship, Mass, Limits) && Ship.Aero.bWinged))
+	{
+		return false;
+	}
+	const double Belly = Mass.MassKg / Ship.Flight.BallisticKgPerM2;
+	const TArray<FLedgerNozzle> NoNozzles;
+	const TArray<double> NoLimits;
+	struct FSpinFlight
+	{
+		double DepartedAt = -1.0;
+		double RecoveredAt = -1.0;
+		double WorstRate = 0.0;
+		double RateAtEnd = 0.0;
+		double LevelAt = -1.0;
+		double Height = 0.0;
+	};
+	// Level at 130 m/s and 5 km, surfaces only: full aft stick and a third of
+	// rudder until it departs, the inputs held three seconds into the spin,
+	// then -- if it is to recover -- stick forward and rudder against the turn,
+	// and once the wing flies, a pull out of the dive until it stops sinking.
+	auto Fly = [&](bool bRecover)
+	{
+		FSpinFlight Out;
+		FLedgerMotion Motion;
+		Motion.Velocity = FVector3d(130.0, 0.0, 0.0);
+		double Height = 5000.0;
+		constexpr double Step = 1.0 / 120.0;
+		for (double Seconds = 0.0; Seconds < 90.0 && Height > 0.0; Seconds += Step)
+		{
+			const double Density = 1.225 * FMath::Exp(-Height / 8000.0);
+			FLedgerAeroState State;
+			LedgerFlight::Aerodynamics(Ship.Aero, Belly, Motion, FVector3d::ZeroVector, Density, FVector3d::ZeroVector, &State);
+			const double Rate = Motion.Spin.AngularVelocity.Length();
+			// Departed: stalled and rolling and yawing -- not just the pitch-up
+			// that took it there.
+			const double Yawing = Motion.Spin.AngularVelocity.Z;
+			const double Lateral = FMath::Sqrt(FMath::Square(Motion.Spin.AngularVelocity.X) + Yawing * Yawing);
+			if (Out.DepartedAt < 0.0 && State.bStalled && Lateral > 0.52)
+			{
+				Out.DepartedAt = Seconds;
+			}
+			FVector3d Stick(1.0, 0.33, 0.0);
+			if (Out.DepartedAt >= 0.0)
+			{
+				Stick = FVector3d(1.0, 1.0, 0.0);
+				Out.WorstRate = FMath::Max(Out.WorstRate, Rate);
+				if (bRecover && Seconds > Out.DepartedAt + 3.0)
+				{
+					if (Out.RecoveredAt < 0.0)
+					{
+						Stick = FVector3d(-1.0, Yawing > 0.0 ? -1.0 : 1.0, 0.0);
+					}
+					else
+					{
+						// Wings level first, then the pull: an angle of attack held safely
+						// under the stall rather than a stick position, which re-stalled it.
+						const FVector3d Right = Motion.Spin.Orientation.RotateVector(FVector3d::UnitY());
+						const FVector3d Over = Motion.Spin.Orientation.RotateVector(FVector3d::UnitZ());
+						const double Bank = FMath::RadiansToDegrees(FMath::Atan2(-Right.Z, Over.Z));
+						const double Pull = FMath::Abs(Bank) < 45.0
+							? FMath::Clamp(0.1 * (10.0 - FMath::RadiansToDegrees(State.AngleOfAttack)), -0.3, 0.5) : 0.0;
+						Stick = FVector3d(Pull, 0.0, FMath::Clamp(-Bank / 60.0, -0.5, 0.5));
+					}
+					if (Out.RecoveredAt >= 0.0 && Motion.Velocity.Z > -5.0)
+					{
+						Out.LevelAt = Seconds;
+						break;
+					}
+					if (Out.RecoveredAt < 0.0 && !State.bStalled && Rate < 0.1)
+					{
+						Out.RecoveredAt = Seconds;
+					}
+				}
+			}
+			const FLedgerCommand Air = LedgerFlight::Aerodynamics(Ship.Aero, Belly, Motion, FVector3d::ZeroVector, Density, Stick);
+			LedgerFlight::Push(NoNozzles, NoLimits, Mass, FLedgerCommand(), Motion, Step, Air);
+			Motion.Velocity.Z -= 9.81 * Step;
+			Height += Motion.Velocity.Z * Step;
+			Out.RateAtEnd = Rate;
+		}
+		Out.Height = Height;
+		return Out;
+	};
+	const FSpinFlight Held = Fly(false);
+	const FSpinFlight Recovered = Fly(true);
+	AddInfo(FString::Printf(TEXT("held: departed at %.1f s, turning at up to %.0f deg/s, still at %.0f deg/s at the end, %.0f m left"),
+		Held.DepartedAt, FMath::RadiansToDegrees(Held.WorstRate), FMath::RadiansToDegrees(Held.RateAtEnd), Held.Height));
+	AddInfo(FString::Printf(TEXT("recovered: departed at %.1f s, turning at up to %.0f deg/s, flying again at %.1f s, level at %.1f s with %.0f m left"),
+		Recovered.DepartedAt, FMath::RadiansToDegrees(Recovered.WorstRate), Recovered.RecoveredAt, Recovered.LevelAt, Recovered.Height));
+	TestTrue(TEXT("a deliberate stall departs controlled flight"), Held.DepartedAt >= 0.0 && Held.WorstRate > 0.52);
+	TestTrue(TEXT("and held in, it does not come out by itself"), Held.RateAtEnd > 0.3 || Held.Height <= 0.0);
+	TestTrue(TEXT("the standard recovery recovers it, with height to spare"),
+		Recovered.RecoveredAt > Recovered.DepartedAt && Recovered.RecoveredAt - Recovered.DepartedAt < 30.0
+		&& Recovered.LevelAt > Recovered.RecoveredAt && Recovered.Height > 0.0);
+	return true;
+}
+#endif
+
 #endif

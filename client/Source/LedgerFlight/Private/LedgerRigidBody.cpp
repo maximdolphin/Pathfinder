@@ -199,7 +199,8 @@ namespace LedgerFlight
 	}
 
 	FLedgerCommand Control(ELedgerFlightMode Mode, const FLedgerStick& Stick, const FLedgerHandling& Handling,
-		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds)
+		const FLedgerMassProperties& Mass, const FLedgerMotion& State, double DeltaSeconds,
+		const FVector3d& ExternalTorque)
 	{
 		FLedgerCommand Out;
 		if (Mass.MassKg <= 0.0 || DeltaSeconds <= 0.0)
@@ -224,8 +225,9 @@ namespace LedgerFlight
 			// The rate held: most of the gap closed each step whatever the
 			// step, plus what the spin needs to keep itself (omega x I omega).
 			const double Close = 1.0 - FMath::Exp(-Handling.RateHoldPerSecond * DeltaSeconds);
+			// Less what the air is already doing, so the nozzles give only the rest.
 			Out.Torque = AngularMomentum(Mass.Inertia, (Rate - Omega) * (Close / DeltaSeconds))
-				+ FVector3d::CrossProduct(Omega, AngularMomentum(Mass.Inertia, Omega));
+				+ FVector3d::CrossProduct(Omega, AngularMomentum(Mass.Inertia, Omega)) - ExternalTorque;
 		}
 		FVector3d Acceleration = Stick.Push
 			* FVector3d(Handling.MainAcceleration, Handling.ManoeuvringAcceleration, Handling.ManoeuvringAcceleration);
@@ -249,14 +251,115 @@ namespace LedgerFlight
 	}
 
 	FLedgerAllocation Push(const TArray<FLedgerNozzle>& Nozzles, const TArray<double>& LimitNewtons,
-		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds)
+		const FLedgerMassProperties& Mass, const FLedgerCommand& Command, FLedgerMotion& State, double DeltaSeconds,
+		const FLedgerCommand& External)
 	{
 		const FLedgerAllocation Given = Allocate(Nozzles, LimitNewtons, Mass.CentreMetres, Command.Force, Command.Torque);
 		if (Mass.MassKg > 0.0 && DeltaSeconds > 0.0)
 		{
-			Rotate(State.Spin, Mass.Inertia, Given.Torque, DeltaSeconds);
-			State.Velocity += State.Spin.Orientation.RotateVector(Given.Force / Mass.MassKg) * DeltaSeconds;
+			Rotate(State.Spin, Mass.Inertia, Given.Torque + External.Torque, DeltaSeconds);
+			State.Velocity += State.Spin.Orientation.RotateVector((Given.Force + External.Force) / Mass.MassKg) * DeltaSeconds;
 		}
 		return Given;
+	}
+
+	FLedgerCommand Aerodynamics(const FLedgerShipAero& Aero, double BellyAreaM2, const FLedgerMotion& Motion,
+		const FVector3d& WindMetresPerSecond, double DensityKgPerM3, const FVector3d& Surfaces, FLedgerAeroState* OutState)
+	{
+		// A sideslip pushes back sideways at this, per radian, on the wing area.
+		constexpr double SideForce = 0.3;
+		// What a stalled half-wing adds to its drag, over its area.
+		constexpr double StallDragRise = 0.3;
+
+		FLedgerCommand Out;
+		FLedgerAeroState State;
+		const FVector3d Air = Motion.Spin.Orientation.UnrotateVector(Motion.Velocity - WindMetresPerSecond);
+		const double Speed = Air.Length();
+		if (DensityKgPerM3 > 0.0 && Speed > 0.1)
+		{
+			const double Q = 0.5 * DensityKgPerM3 * Speed * Speed;
+			const FVector3d Along = Air / Speed;
+			State.DynamicPressure = Q;
+			State.AngleOfAttack = FMath::Atan2(-Air.Z, Air.X);
+			State.Sideslip = FMath::Asin(FMath::Clamp(Along.Y, -1.0, 1.0));
+
+			// The body: a flat plate pushing back on the part of the flow that
+			// meets it square.
+			Out.Force.Z -= 0.5 * DensityKgPerM3 * BellyAreaM2 * Air.Z * FMath::Abs(Air.Z);
+
+			if (Aero.bWinged && Aero.WingAreaM2 > 0.0 && Aero.SpanMetres > 0.0)
+			{
+				const double Area = Aero.WingAreaM2;
+				const double Span = Aero.SpanMetres;
+				const double Chord = Area / Span;
+				const double Ratio = Span * Span / Area;
+				const double Alpha = State.AngleOfAttack;
+
+				// The lift slope of a finite wing (Helmbold), attached up to the
+				// stall and gone five degrees past it: beyond, the belly is all
+				// the lift there is.
+				const double Slope = UE_DOUBLE_TWO_PI * Ratio / (2.0 + FMath::Sqrt(Ratio * Ratio + 4.0));
+				const double Stall = FMath::DegreesToRadians(Aero.StallDegrees);
+				auto Panel = [&](double LocalAlpha, double& OutLift, double& OutDrag)
+				{
+					const double Past = FMath::Clamp((FMath::Abs(LocalAlpha) - Stall) / FMath::DegreesToRadians(5.0), 0.0, 1.0);
+					OutLift = Slope * FMath::Sin(LocalAlpha) * (1.0 - Past);
+					OutDrag = Aero.ZeroLiftDrag + OutLift * OutLift / (UE_DOUBLE_PI * Aero.Oswald * Ratio) + StallDragRise * Past;
+					return Past;
+				};
+
+				// T136: two half-wings, each flying its own air. Rolling, the wing
+				// going down meets the air from further below; yawing, the outer
+				// wing moves faster. Below the stall the down-going wing lifts
+				// more, which is roll damping; past it, it lifts less and drags
+				// more, and the ship rolls and yaws into it by itself -- the spin.
+				const FVector3d PitchUp = FRotator3d(1.0, 0.0, 0.0).Quaternion().ToRotationVector().GetSafeNormal();
+				const FVector3d YawRight = FRotator3d(0.0, 1.0, 0.0).Quaternion().ToRotationVector().GetSafeNormal();
+				const FVector3d RollRight = FRotator3d(0.0, 0.0, 1.0).Quaternion().ToRotationVector().GetSafeNormal();
+				const FVector3d Omega = Motion.Spin.AngularVelocity;
+				// The right half at +y and the left at -y, a quarter-span out: a roll
+				// lifts one into air from above and drops the other into air from
+				// below, a yaw moves one forward and the other back. Straight off the
+				// body rates, and the moments below straight off the forces, so no sign
+				// convention stands between the model and the ship.
+				const double Arm = Span * 0.25;
+				const double AlphaRight = Alpha - Omega.X * Arm / Speed;
+				const double AlphaLeft = Alpha + Omega.X * Arm / Speed;
+				const double SpeedRight = FMath::Max(Speed - Omega.Z * Arm, 0.0);
+				const double SpeedLeft = FMath::Max(Speed + Omega.Z * Arm, 0.0);
+				double LiftRight = 0.0, DragRight = 0.0, LiftLeft = 0.0, DragLeft = 0.0;
+				const double PastRight = Panel(AlphaRight, LiftRight, DragRight);
+				const double PastLeft = Panel(AlphaLeft, LiftLeft, DragLeft);
+				const double HalfRight = 0.5 * DensityKgPerM3 * SpeedRight * SpeedRight * Area * 0.5;
+				const double HalfLeft = 0.5 * DensityKgPerM3 * SpeedLeft * SpeedLeft * Area * 0.5;
+				State.Lift = (LiftRight + LiftLeft) * 0.5;
+				State.Drag = (DragRight + DragLeft) * 0.5;
+				State.bStalled = PastRight > 0.0 || PastLeft > 0.0;
+				const FVector3d Lifting = FVector3d::CrossProduct(Along, FVector3d::UnitY()).GetSafeNormal();
+				const FVector3d RightForce = Lifting * (LiftRight * HalfRight) - Along * (DragRight * HalfRight);
+				const FVector3d LeftForce = Lifting * (LiftLeft * HalfLeft) - Along * (DragLeft * HalfLeft);
+				Out.Force += RightForce + LeftForce;
+				Out.Force.Y -= SideForce * State.Sideslip * Q * Area;
+				const FVector3d WingTorque = FVector3d::CrossProduct(FVector3d(0.0, Arm, 0.0), RightForce)
+					+ FVector3d::CrossProduct(FVector3d(0.0, -Arm, 0.0), LeftForce);
+
+				// Moments about the axes the stick turns the ship on, so the
+				// surfaces and the rate hold agree about which way is which.
+				const double Pitching = Q * Area * Chord * (Aero.PitchMoment0 + Aero.PitchStability * Alpha
+					+ Aero.PitchDamping * FVector3d::DotProduct(Omega, PitchUp) * Chord / (2.0 * Speed)
+					+ Aero.Elevator * Surfaces.X);
+				const double Yawing = Q * Area * Span * (Aero.YawStability * State.Sideslip
+					+ Aero.YawDamping * FVector3d::DotProduct(Omega, YawRight) * Span / (2.0 * Speed)
+					+ Aero.Rudder * Surfaces.Y);
+				const double Rolling = Q * Area * Span * (Aero.RollDamping * FVector3d::DotProduct(Omega, RollRight) * Span / (2.0 * Speed)
+					+ Aero.Ailerons * Surfaces.Z);
+				Out.Torque = PitchUp * Pitching + YawRight * Yawing + RollRight * Rolling + WingTorque;
+			}
+		}
+		if (OutState != nullptr)
+		{
+			*OutState = State;
+		}
+		return Out;
 	}
 }

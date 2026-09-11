@@ -141,6 +141,7 @@ public:
 	/// were last told to do.
 	FVector3d AngularVelocity() const { return Spin.AngularVelocity; }
 	const FLedgerAllocation& Allocation() const { return LastAllocation; }
+	const FLedgerAeroState& Aerodynamic() const { return LastAero; }
 
 	/// Its systems, running. T131.
 	ULedgerShipSystemsComponent* GetSystems() const { return Systems; }
@@ -223,6 +224,7 @@ private:
 	FLedgerShipDefinition ShipDefinition;
 	FLedgerSpin Spin;
 	FLedgerAllocation LastAllocation;
+	FLedgerAeroState LastAero;
 
 	// Input state, sampled each frame.
 	float ThrottleInput = 0.0f;
