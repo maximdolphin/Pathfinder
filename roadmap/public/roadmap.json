@@ -419,7 +419,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 6
+   "doneCount": 7
   },
   {
    "id": "M05",
@@ -5364,6 +5364,11 @@
      "at": "2026-09-10",
      "kind": "note",
      "text": "Sourcing decided 2026-09-10: CC0 / public-domain landscape photography, downloaded by me, with every source and licence recorded in a manifest the way surfaces/manifest.json already does. Keeps ADR-0005 intact -- nothing purchased, and non-commercial personal use is covered. The alternative considered and not taken was the user supplying the photographs; CC0 was chosen so the comparison set can be regenerated from its manifest rather than depending on files only one machine has. This removes the last decision in front of the task; what remains is work."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Render side under way (4385d6f): -surfacestudy -reference renders 2/20/200 m at a chosen -studyat site; sites logged for desert gravel 3.0,123.0, rainforest floor 2.0,154.0, cliff apron scree -2.3968,120.0014, winter snow -52.0,43.0 at season 0.25. First pass was white (exposure pinned) and rolled 90 degrees at the equator; both fixed. Photographs need the user's permission to download."
     }
    ],
    "evidence": [],
@@ -6929,10 +6934,16 @@
    "dependsOn": [
     "T095"
    ],
-   "status": "todo",
+   "status": "done",
    "startedAt": null,
-   "completedAt": null,
-   "notes": [],
+   "completedAt": "2026-09-11",
+   "notes": [
+    {
+     "at": "2026-09-11",
+     "kind": "done",
+     "text": "4385d6f: surface water summed from twelve hours of weather (0.3 mm film, 1.5 mm hold, no drying under rain, drying from saturation vapour pressure: 1.58 mm/h at 10 C, 3.00 at 20 C). Terrain material darkens, glosses and floods the soil height map. -wetwatch PASS at 12.1 C: wetness 1.00 and puddles 1.00 as the rain stops, 0.50 puddles at +20 min, dry at +60 min."
+    }
+   ],
    "evidence": [],
    "plannedStartDay": 233.5,
    "plannedEndDay": 235.5,
@@ -14599,5 +14610,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T10:14:02.794Z"
+ "updatedAt": "2026-09-11T10:45:25.075Z"
 }
