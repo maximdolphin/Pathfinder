@@ -187,6 +187,11 @@ void ULedgerAirShow::BuildClimb(ALedgerPlanet* Planet)
 	Deck(TEXT("cumulus"), Decks.Cumulus);
 	Deck(TEXT("middle"), Decks.Middle);
 	Deck(TEXT("cirrus"), Decks.Cirrus);
+	// From a low orbit, looking at the limb: at 400 km the horizon dips about
+	// 20 degrees, and the decks stand against the edge of the planet at their
+	// heights -- which is where "layered" can be seen, as it cannot from two
+	// radii out where a deck is a fraction of a pixel thick.
+	Add(TEXT("low-orbit"), 400000.0, -0.36);
 	Add(TEXT("orbit"), -1.0, 0.0);
 	UE_LOG(LogLedger, Log, TEXT("cloud climb: %d views%s%s"),
 		ClimbNames.Num(), LINE_TERMINATOR, *ClimbDecks);
