@@ -331,6 +331,12 @@ namespace LedgerSurface
 		// other run is the same build with parallax switched off.
 		Depth3D->DefaultValue =
 			FParse::Param(FCommandLine::Get(), TEXT("noparallax")) ? 0.0f : 3.0f;
+		// `-parallaxdepth=N` (with -livematerials) tries another depth without
+		// making it the look: T430 measures whether the march occludes at all.
+		if (FParse::Value(FCommandLine::Get(), TEXT("parallaxdepth="), Depth3D->DefaultValue))
+		{
+			UE_LOG(LogLedger, Log, TEXT("terrain material: parallax depth %.1f cm"), Depth3D->DefaultValue);
+		}
 
 		// Off beyond fifteen metres. A three-centimetre displacement is under a
 		// pixel by then, and the sample it costs is not.
