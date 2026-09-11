@@ -233,7 +233,7 @@
    ],
    "weekStart": 10,
    "weekEnd": 21,
-   "taskCount": 27,
+   "taskCount": 26,
    "estimateDays": 60.5,
    "plannedStart": "2026-12-28",
    "plannedEnd": "2027-03-23",
@@ -1030,7 +1030,7 @@
    ],
    "weekStart": 102,
    "weekEnd": 112,
-   "taskCount": 17,
+   "taskCount": 18,
    "estimateDays": 55.5,
    "plannedStart": "2028-10-03",
    "plannedEnd": "2028-12-19",
@@ -3785,8 +3785,8 @@
   },
   {
    "id": "T047",
-   "milestone": "M02",
-   "order": 58,
+   "milestone": "M11",
+   "order": 257,
    "title": "Runtime Virtual Texture for surface composition",
    "detail": "Compose the blended surface into an RVT so the expensive blend happens once per texel rather than once per pixel, and so decals and roads have something to write into. Moved up beside the material work: it is what makes layered authored sets affordable at all.",
    "acceptance": "Terrain material cost falls measurably against the direct-blend version with no visual difference.",
@@ -3797,7 +3797,7 @@
    "dependsOn": [
     "T046"
    ],
-   "status": "blocked",
+   "status": "todo",
    "startedAt": "2026-09-09",
    "completedAt": null,
    "notes": [
@@ -3815,6 +3815,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] The blocker, found in the engine rather than argued: a runtime virtual texture is drawn by the scene proxies that opt into it, and in UE 5.8 those are the landscape, static-mesh and dynamic-mesh proxies (bSupportsRuntimeVirtualTexture = true in LandscapeRender.cpp, StaticMeshSceneProxy.cpp and BaseDynamicMeshSceneProxy.cpp) -- the procedural mesh component the terrain streams into is not one of them, so an RVT would simply not see the ground. The path exists: the terrain's second backend, -terraincomponent=static, builds a UStaticMesh per patch, and that proxy does draw into RVTs. What it costs: that backend regenerates every patch instead of re-uploading from the in-memory section cache, so the comparison the acceptance asks for (material cost with and without the RVT, no visual difference) has to be run on it, and it is only worth running when something needs a surface to write into (roads, decals) or when the T053 seven-channel material measures expensive. The terrain material's last measured cost was at most 0.7 ms; re-measure on the static backend before building the RVT volume (a box aligned to the viewer's up, re-centred as they move)."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Moved from M02 to M11 (Rendering fidelity) by the owner's decision. The premise measured false for terrain cost (the whole material is at most 0.7 ms), and the surviving reason -- roads and decals needing something to write into -- belongs with the work that makes them; building it now would also mean moving the terrain off the procedural mesh the streaming, cache, caves and collision are measured on. Status set to todo: parked with its consumer, not blocked."
     }
    ],
    "evidence": [
@@ -3827,8 +3832,8 @@
    ],
    "plannedStartDay": 85,
    "plannedEndDay": 86.5,
-   "plannedStart": "2027-01-04",
-   "plannedEnd": "2027-01-05"
+   "plannedStart": "2028-12-19",
+   "plannedEnd": "2028-12-19"
   },
   {
    "id": "T048",
@@ -5293,6 +5298,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "[2026-09-11] Correction to the entry above: chain156 is void, not a regression. Another game (a UE shipping build) started on this machine at 15:38:40, the minute chain156 began; chain154 finished before it on a quiet machine. Both chain156 arms measured the machine, not the code. Timing chains now wait until no other game is running."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "[2026-09-11] Criterion agreed with the owner for M02's frame-time check: the 300 m / 900 m/s transect passes with at least 99.9% of frames under 16.7 ms and none over 33 ms (at ~13,300 frames: no more than 13 over budget, worst under 33 ms), rather than literally zero. Best clean run so far: chain150, 188 over, worst 61.3 ms -- the streaming spikes still have to come down."
     }
    ],
    "evidence": [
@@ -15392,5 +15402,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T20:20:59.346Z"
+ "updatedAt": "2026-09-11T20:43:51.503Z"
 }
