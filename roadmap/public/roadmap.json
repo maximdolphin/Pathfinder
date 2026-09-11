@@ -481,10 +481,25 @@
    "estimateDays": 48.5,
    "plannedStart": "2027-08-30",
    "plannedEnd": "2027-11-05",
-   "status": "complete-pending-gate",
-   "gatePassedAt": null,
-   "evidence": [],
-   "doneCount": 24
+   "status": "done",
+   "gatePassedAt": "2026-09-11",
+   "evidence": [
+    {
+     "file": "evidence/M05-2026-09-11T13-09-36-938.png",
+     "caption": "M05 gate: the aft coupling shot out, smoke and flame over it, thrust on that bus at zero",
+     "source": "../out/coupling-1-hit.png",
+     "addedAt": "2026-09-11T13:09:36.940Z"
+    },
+    {
+     "file": "evidence/M05-2026-09-11T13-09-37-034.png",
+     "caption": "M05 gate: repaired in the workshop, the ship back",
+     "source": "../out/coupling-3-repaired.png",
+     "addedAt": "2026-09-11T13:09:37.036Z"
+    }
+   ],
+   "doneCount": 24,
+   "gateChecksAnsweredAt": "2026-09-11",
+   "gateNote": "Run and recorded in -couplingproof (T131): the thrusters on that bus dead at once, heat to 427 K, the pump, engines and then the shield losing power in the order the graph gives, the workshop bringing everything back. The other checks are Ledger.Ships tests (coupling downstream, shedding order, cargo handling, fuel against impulse, cold start, breach, gauges, signature) and -shiptrial for a second ship from one data file and the same art."
   },
   {
    "id": "M06",
@@ -14871,5 +14886,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T13:09:19.086Z"
+ "updatedAt": "2026-09-11T13:09:37.155Z"
 }
