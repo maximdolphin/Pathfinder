@@ -4929,6 +4929,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Found and fixed a defect the pair was hiding (1752b82): the terrain material sampled every texture at the camera-relative position, so the ground's texture travelled with the camera. After a high-pass, 27 of 40 ground tiles in the old pair matched best within 25 px of zero shift while the stone moved 110 px -- the gravel was stuck to the screen, which no parallax measure could survive. The planet now hands the material the camera's world position modulo 3.6 km (a whole number of every tiling), and after a re-bake 0 of 40 tiles stick to the screen. Remaining for this task: the raking 40-45 degree view, where the 3 cm depth should move texture several pixels."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Raking view measured (40 degrees down from 2 m, 25 cm step, terrain held, textures world-locked, exposure settled: frames 96-105 of 255, 312 tiles matched). Same camera, march against flat: tiles correlate at a median NCC of 0.956 -- the offset does distort the gravel, about 5% -- but the one-step control correlates at 0.954, so the 16-step march adds nothing measurable. That follows from the code: the march returns the height where the ray goes under, the one-step the height at the pixel, and on a smooth gravel height map at 3 cm depth those agree except where one pebble hides another. Per-texel parallax at this step is ~0.8 px, and tile averages cancel it because the height is centred. Evidenced: offset mapping. Not evidenced: occlusion -- needs a rougher height map or a larger depth, and a per-texel measure rather than tile shifts."
     }
    ],
    "evidence": [
@@ -14258,5 +14263,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T06:07:19.341Z"
+ "updatedAt": "2026-09-11T06:15:42.564Z"
 }
