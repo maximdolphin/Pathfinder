@@ -18,6 +18,7 @@ offset and flat ground: all perspective).
 """
 import sys
 
+import cv2
 import numpy as np
 from PIL import Image
 
@@ -28,49 +29,78 @@ def grey(path, scale):
     return np.asarray(img, dtype=np.float64)
 
 
-def shift(a, b, y, x, size, reach):
-    """The (dy, dx) that best moves tile (y, x) of a onto b, by exhaustive
-    normalised cross-correlation within +-reach pixels, refined to a fraction
-    of a pixel by a parabola through the peak."""
-    tile = a[y:y + size, x:x + size]
-    tile = tile - tile.mean()
-    norm = np.sqrt((tile * tile).sum()) + 1e-9
-    scores = np.full((2 * reach + 1, 2 * reach + 1), -2.0)
-    for dy in range(-reach, reach + 1):
-        for dx in range(-reach, reach + 1):
-            yy, xx = y + dy, x + dx
-            if yy < 0 or xx < 0 or yy + size > b.shape[0] or xx + size > b.shape[1]:
-                continue
-            other = b[yy:yy + size, xx:xx + size]
-            other = other - other.mean()
-            scores[dy + reach, dx + reach] = (tile * other).sum() / (
-                norm * (np.sqrt((other * other).sum()) + 1e-9))
+def shift(a, b, y, x, size, reach, seed=(0, 0)):
+    """The (dy, dx) that best moves tile (y, x) of a onto b, by normalised
+    cross-correlation within +-reach pixels of seed, refined to a fraction of
+    a pixel by a parabola through the peak."""
+    tile = a[y:y + size, x:x + size].astype(np.float32)
+    sy, sx = int(round(seed[0])), int(round(seed[1]))
+    y0, x0 = max(0, y + sy - reach), max(0, x + sx - reach)
+    y1 = min(b.shape[0], y + sy + reach + size)
+    x1 = min(b.shape[1], x + sx + reach + size)
+    if y1 - y0 < size + 2 or x1 - x0 < size + 2 or tile.std() < 1e-6:
+        return (0.0, 0.0), -1.0
+    scores = cv2.matchTemplate(b[y0:y1, x0:x1].astype(np.float32), tile, cv2.TM_CCOEFF_NORMED)
     iy, ix = np.unravel_index(np.argmax(scores), scores.shape)
-    best = scores[iy, ix]
+    best = float(scores[iy, ix])
 
     def refine(m, c, p):
         denom = m - 2 * c + p
         return 0.0 if abs(denom) < 1e-12 else 0.5 * (m - p) / denom
 
-    fy = refine(scores[iy - 1, ix], best, scores[iy + 1, ix]) if 0 < iy < 2 * reach else 0.0
-    fx = refine(scores[iy, ix - 1], best, scores[iy, ix + 1]) if 0 < ix < 2 * reach else 0.0
-    return (iy - reach + fy, ix - reach + fx), best
+    fy = refine(scores[iy - 1, ix], best, scores[iy + 1, ix]) if 0 < iy < scores.shape[0] - 1 else 0.0
+    fx = refine(scores[iy, ix - 1], best, scores[iy, ix + 1]) if 0 < ix < scores.shape[1] - 1 else 0.0
+    return (y0 + iy + fy - y, x0 + ix + fx - x), best
 
 
-def field(path_a, path_b, size=48, step=64, reach=48, scale=2):
+def field(path_a, path_b, size=48, step=64, reach=48, scale=2, coarse=8, far=720):
+    """Per-tile shifts, coarse to fine. A metre's step two metres over the
+    ground moves it half a frame, which no +-48 px search finds: a tile four
+    times the side at 1/8 resolution finds where each one went within +-far
+    pixels, and the fine search looks +-reach around that."""
     a, b = grey(path_a, scale), grey(path_b, scale)
+    ca, cb = grey(path_a, coarse), grey(path_b, coarse)
+    k = coarse // scale
     s, st, r = size // scale, step // scale, reach // scale
+    cs = 4 * size // coarse
     out = {}
     for y in range(st, a.shape[0] - s - st, st):
         for x in range(st, a.shape[1] - s - st, st):
-            (dy, dx), score = shift(a, b, y, x, s, r)
+            cy, cx = (y + s // 2) // k - cs // 2, (x + s // 2) // k - cs // 2
+            if cy < 0 or cx < 0 or cy + cs > ca.shape[0] or cx + cs > ca.shape[1]:
+                continue
+            (gy, gx), rough = shift(ca, cb, cy, cx, cs, far // coarse)
+            if rough < 0.5:
+                continue
+            (dy, dx), score = shift(a, b, y, x, s, r, (gy * k, gx * k))
             if score > 0.6:
                 out[(y, x)] = (dy * scale, dx * scale)
     return out
 
 
+def selftest():
+    """A noise texture moved (130, -310) px must come back as that."""
+    import os
+    import tempfile
+    rng = np.random.default_rng(1)
+    base = cv2.GaussianBlur(rng.random((1400, 2400)).astype(np.float32), (0, 0), 3)
+    base = (255 * (base - base.min()) / (base.max() - base.min())).astype(np.uint8)
+    d = tempfile.mkdtemp()
+    pa, pb = os.path.join(d, 'a.png'), os.path.join(d, 'b.png')
+    Image.fromarray(base[200:1280, 400:2320]).save(pa)
+    Image.fromarray(base[200 - 130:1280 - 130, 400 + 310:2320 + 310]).save(pb)
+    got = np.array(list(field(pa, pb).values()))
+    assert len(got) > 50, len(got)
+    med = np.median(got, axis=0)
+    assert abs(med[0] - 130) < 1 and abs(med[1] + 310) < 1, med
+    print(f'selftest: {len(got)} tiles, median shift {med[0]:.2f}, {med[1]:.2f} px')
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
+    if args == ['--selftest']:
+        selftest()
+        sys.exit(0)
     control = None
     if '--control' in args:
         i = args.index('--control')
