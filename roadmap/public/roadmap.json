@@ -4919,6 +4919,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The raking-light pair was unmeasurable, not unconvincing: a 1 m step 2 m over the ground moved it ~570 px, the tool searched +-48 px, and the 17-24 px 'differences' were noise. Fixed both ends: the tool matches coarse to fine (self-test recovers a known 130/-310 px shift exactly), the pair steps 25 cm, and exposure adapts instantly (the old frames were still climbing toward the bias, means 9 and 12). Re-shoot pending."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Pair re-shot with the terrain held and exposure settled (all six frames 20-27 of 255, consistent). The stone moves (78, -82) px between shots, and the tool, seeded there, recovers (72, -70) on the ground -- but only ~40 tiles pass, and march-minus-flat (median 1.44 px) and onestep-minus-flat (1.26 px) are indistinguishable, at the noise floor. The framing is the problem: straight down is where parallax is smallest by construction (the offset goes as tan of the view angle). Same-view march-vs-flat displacement straight down is 0.5-0.9 px, about 2 mm at 2 m. Next: the acceptance's raking view -- 40-45 degrees down from 2 m -- where the 3 cm depth should move texture several pixels."
     }
    ],
    "evidence": [
@@ -14243,5 +14248,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T05:35:37.741Z"
+ "updatedAt": "2026-09-11T05:49:37.896Z"
 }
