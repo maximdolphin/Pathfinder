@@ -4833,6 +4833,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "Committed (see git log): collision is now wanted from a patch's nearest edge (not the resident shell, whose collision stayed under finer ground and put every four-biome stone metres off it until excluded -- the footing probe caught it), and an active section can gain collision in place. Two fixed-step runs: 95.9% and 96.7% missed (from 99.7/98.8), longest gap 5,390 frames (from 13,205). Still failing, and in-place upgrades fired 0 times on the transect. The diagnostics say why this is not mostly a collision problem: 0-348 sections active against ~3,000 visible leaves and 2,400-2,900 holes -- at 50 m and 900 m/s the ground under the ship is mostly not drawn at all. Next: classify each miss as no ground drawn vs ground drawn without collision, then decide between speed-scaled detail and throughput."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "Every miss is ground not drawn, not ground without collision. The transect now asks the terrain query what is under the ship on each miss: 13,290 of 13,290 had no drawn section at all, 0 drawn without collision, 0 drawn and uncooked (99.7% this run, on a freshly invalidated patch cache). So this is streaming, not collision: at 50 m and 900 m/s the tree wants ~38 m patches under the ship, crossed in a few frames and never built in time. Next, queued with its control: the split threshold scaled with camera speed above 150 m/s (-nospeedlod turns it off), plus a check that the query finds ground on the frames that hit."
     }
    ],
    "evidence": [
@@ -6585,6 +6590,11 @@
      "at": "2026-09-11",
      "kind": "note",
      "text": "The climb half is met: from 1,094 m ground (the lowest within 200 km of the 2,365 m site) the ten views pass under, through and over cumulus (1,237-1,732 m), middle (1,732-3,733) and cirrus (6,058-8,538), each at the profile's altitude, and cirrus is thin now (opacity 0.03). The orbit half is not: from orbit the cloud is a fine speckle over everything -- the oceans read as brown with blue pinholes -- and no deck can be told from another. The noise has no structure at the scale of weather systems; that is next."
+    },
+    {
+     "at": "2026-09-11",
+     "kind": "note",
+     "text": "The in-deck arches found and fixed. Same camera, one cvar per arm: aerial perspective off -- arches stay; volumetric render target off -- arches stay, smooth instead of stair-stepped; ViewRaySampleMaxCount 4096 -- arches stay, noisier; DistanceToSampleMaxCount 1 (from 15) -- gone, an even in-cloud murk. The engine ramps a ray's sample count with its traced length up to that distance, so inside a 500 m deck neighbouring rays leave the layer after different lengths with different integer sample counts, and each step in the count draws as a shell. Set to 1 km in DefaultEngine.ini."
     }
    ],
    "evidence": [
@@ -6623,6 +6633,18 @@
      "caption": "Inside the cirrus deck at 7.3 km after the opacity fix: thin, the ground and a lake visible through it.",
      "source": "../out/airshow-1-in-cirrus.png",
      "addedAt": "2026-09-11T07:49:16.655Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T08-02-16-958.png",
+     "caption": "In-deck camera (1,283 m in a 1,237-1,737 m deck), as it was: nested arches from the cloud sample-count ramp.",
+     "source": "../out/cliff-apron-arm-base.png",
+     "addedAt": "2026-09-11T08:02:16.965Z"
+    },
+    {
+     "file": "evidence/T094-2026-09-11T08-02-17-066.png",
+     "caption": "Same camera, r.VolumetricCloud.DistanceToSampleMaxCount=1: no arches, an even in-cloud murk.",
+     "source": "../out/cliff-apron-arm-near.png",
+     "addedAt": "2026-09-11T08:02:17.068Z"
     }
    ],
    "plannedStartDay": 227.5,
@@ -14363,5 +14385,5 @@
    "plannedEnd": "2031-02-24"
   }
  ],
- "updatedAt": "2026-09-11T07:49:16.795Z"
+ "updatedAt": "2026-09-11T08:02:17.162Z"
 }
