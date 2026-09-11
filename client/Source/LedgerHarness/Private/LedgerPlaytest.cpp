@@ -47,6 +47,14 @@ namespace
 		{ TEXT("hover-end"),   8.0,  0.0f, 0.0f,  0.0f,  0.0f, 0.0f,  0.0f, true },
 	};
 
+	constexpr int32 ScriptedLegs = UE_ARRAY_COUNT(Legs);
+
+	// Then twenty seeded sequences of random stick, each axis held for half a
+	// second to three at a time, often centred (T439): what the script does not
+	// think to try. With them the session runs about ten minutes (T440).
+	constexpr int32 RandomSequences = 20;
+	constexpr double RandomSeconds = 25.0;
+
 	/// Long enough for the world to build and the ground under the town to arrive.
 	constexpr double SettleSeconds = 8.0;
 	constexpr double SampleSeconds = 1.0;
@@ -71,6 +79,8 @@ void ULedgerPlaytest::OnWorldBeginPlay(UWorld& InWorld)
 {
 	Super::OnWorldBeginPlay(InWorld);
 	bRunning = FParse::Param(FCommandLine::Get(), TEXT("playtest"));
+	Randoms = RandomSequences;
+	FParse::Value(FCommandLine::Get(), TEXT("playtestrandom="), Randoms);
 	Lines.Add(TEXT("Playtest: the ship flown through the six axes a player has (M5P)."));
 	Lines.Add(TEXT(""));
 }
@@ -100,7 +110,7 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 		{
 			return;
 		}
-		// Where -play puts it: forty metres over the pad, level, coupled, the
+		// Where a plain launch puts it: forty metres over the pad, level, coupled, the
 		// sun behind, so this flies the start a player gets.
 		const FVector3d Up = Builder->GetSiteDirection().GetSafeNormal();
 		const FVector3d Sun = Builder->GetSunFacing();
@@ -129,7 +139,6 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	++Frames;
 	FramesOver += FrameMs > 16.7 ? 1 : 0;
 	FramesOver33 += FrameMs > 33.0 ? 1 : 0;
-	Hitches += FrameMs > 250.0 && Clock > SettleSeconds + 60.0 ? 1 : 0;
 	WorstFrameMs = FMath::Max(WorstFrameMs, FrameMs);
 
 	const FQuat Attitude = Ship->GetActorQuat();
@@ -145,7 +154,42 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	LowestHeight = FMath::Min(LowestHeight, Height);
 	LowestHull = FMath::Min(LowestHull, Hull);
 
-	const FPlaytestLeg& Now = Legs[Leg];
+	if (Leg >= ScriptedLegs)
+	{
+		SegmentLeft -= DeltaSeconds;
+		if (SegmentLeft <= 0.0)
+		{
+			SegmentLeft = Stream.FRandRange(0.5f, 3.0f);
+			for (float& Axis : RandomAxes)
+			{
+				Axis = Stream.FRand() < 0.4f ? 0.0f : Stream.FRandRange(-1.0f, 1.0f);
+			}
+		}
+	}
+	const FPlaytestLeg Now = Leg < ScriptedLegs ? Legs[Leg] : FPlaytestLeg{ *RandomName, RandomSeconds,
+		RandomAxes[0], RandomAxes[1], RandomAxes[2], RandomAxes[3], RandomAxes[4], RandomAxes[5], false };
+
+	// A hitch, and what it landed on: the count alone said a session stuttered
+	// without saying where, and the harness's own 1920x1080 screenshots stall
+	// the frame after they are asked for -- which is the harness, not the game.
+	if (FrameMs > 250.0 && Clock > SettleSeconds + 60.0)
+	{
+		// The frame after a capture is a 1920x1080 screenshot being written --
+		// the harness stalling itself, which no player ever meets. Counted, named
+		// and kept out of the verdict; anything else is the game stuttering.
+		if (bCaptureAsked)
+		{
+			++CaptureStalls;
+		}
+		else
+		{
+			++Hitches;
+		}
+		HitchNote += FString::Printf(TEXT("%s%.0f ms at %.0f s during %s%s"),
+			HitchNote.IsEmpty() ? TEXT("") : TEXT("; "), FrameMs, Clock - SettleSeconds, Now.Name,
+			bCaptureAsked ? TEXT(" (the frame after a capture, not counted)") : TEXT(""));
+	}
+	bCaptureAsked = false;
 	if (Where.ContainsNaN() || !FMath::IsFinite(Speed) || !FMath::IsFinite(Height))
 	{
 		Divergence = FString::Printf(TEXT("NaN in the ship's state during %s"), Now.Name);
@@ -164,9 +208,21 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	}
 	// Meeting the ground faster than a hard landing is a crash, whatever the hull
 	// says: the third playtest dived into it at 78 m/s and was scored a pass.
+	// In the random sequences it is the pilot's doing and not the model's -- a
+	// stick held 47 degrees nose down at 180 m/s arrives, and a player flying
+	// that arrives too -- so there it is counted and flown on from.
 	else if (Height < 3.0 && LastSpeed > 15.0)
 	{
-		Divergence = FString::Printf(TEXT("hit the ground at %.0f m/s during %s"), LastSpeed, Now.Name);
+		if (Leg < ScriptedLegs)
+		{
+			Divergence = FString::Printf(TEXT("hit the ground at %.0f m/s during %s"), LastSpeed, Now.Name);
+		}
+		else if (Clock - LastHit > 5.0)
+		{
+			++GroundHits;
+			WorstHit = FMath::Max(WorstHit, LastSpeed);
+			LastHit = Clock;
+		}
 	}
 	LastSpeed = Speed;
 
@@ -212,6 +268,7 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 	if (Now.bCapture && !bCaptured && LegClock > Now.Seconds * 0.5)
 	{
 		bCaptured = true;
+		bCaptureAsked = true;
 		FScreenshotRequest::RequestScreenshot(FPaths::ConvertRelativePathToFull(FPaths::Combine(
 			FPaths::ProjectDir(), TEXT(".."), TEXT("out"),
 			FString::Printf(TEXT("playtest-%02d-%s.png"), Leg + 1, Now.Name))), false, false);
@@ -221,9 +278,16 @@ void ULedgerPlaytest::Tick(float DeltaSeconds)
 		++Leg;
 		LegClock = 0.0;
 		bCaptured = false;
-		if (Leg >= static_cast<int32>(UE_ARRAY_COUNT(Legs)))
+		if (Leg >= ScriptedLegs + Randoms)
 		{
 			Finish(TEXT(""));
+		}
+		else if (Leg >= ScriptedLegs)
+		{
+			const int32 Sequence = Leg - ScriptedLegs + 1;
+			Stream.Initialize(Sequence);
+			RandomName = FString::Printf(TEXT("random-%02d"), Sequence);
+			SegmentLeft = 0.0;
 		}
 	}
 }
@@ -243,12 +307,20 @@ void ULedgerPlaytest::Finish(const FString& Why)
 	const bool bFlew = Why.IsEmpty();
 	const bool bFrames = Frames > 0 && FramesOver <= Frames / 1000 && FramesOver33 == 0;
 	Lines.Add(TEXT(""));
-	Lines.Add(FString::Printf(TEXT("legs flown        %d of %d"), FMath::Max(Leg, 0), static_cast<int32>(UE_ARRAY_COUNT(Legs))));
+	Lines.Add(FString::Printf(TEXT("legs flown        %d of %d"), FMath::Max(Leg, 0), ScriptedLegs + Randoms));
 	Lines.Add(FString::Printf(TEXT("worst spin        %.1f deg/s (limit %.0f)"), WorstSpin, MaxSpinDegPerSecond));
 	Lines.Add(FString::Printf(TEXT("worst speed       %.1f m/s"), WorstSpeed));
 	Lines.Add(FString::Printf(TEXT("lowest height     %.1f m"), LowestHeight));
 	Lines.Add(FString::Printf(TEXT("lowest hull       %.2f"), LowestHull));
 	Lines.Add(FString::Printf(TEXT("pulled up         %.1f s"), PulledSeconds));
+	Lines.Add(FString::Printf(TEXT("ground hits       %d, worst %.0f m/s (random sequences; in the script one is a failure)"),
+		GroundHits, WorstHit));
+	if (!HitchNote.IsEmpty())
+	{
+		Lines.Add(FString::Printf(TEXT("over 250 ms       %s"), *HitchNote));
+	}
+	Lines.Add(FString::Printf(TEXT("hitches           %d after the first minute, and %d capture stalls not counted"),
+		Hitches, CaptureStalls));
 	Lines.Add(FString::Printf(TEXT("frames            %d, %d over 16.7 ms, %d over 33 ms, worst %.1f ms, %d hitches over 250 ms after the first minute"),
 		Frames, FramesOver, FramesOver33, WorstFrameMs, Hitches));
 	Lines.Add(TEXT(""));
