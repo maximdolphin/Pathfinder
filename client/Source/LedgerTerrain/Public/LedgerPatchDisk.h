@@ -82,7 +82,10 @@ namespace LedgerPatchDisk
 	/// slope-survivors up to one however poor their climate match, and the ice
 	/// cap (90 degrees) survived every cliff -- snow on a 62-degree face at
 	/// +10 C. The key does not cover the biome weighting, so this is a bump.
-	constexpr uint32 FormatVersion = 15;
+	/// 16: the scatter's cell hash is a full mixer; every cached patch's stones move.
+	/// 17: the moisture march follows the local wind at every step; climate,
+	/// biome weights and vertex colours move with it.
+	constexpr uint32 FormatVersion = 17;
 
 	/// Where the cache lives. Under Saved, because it is derived from the
 	/// project rather than part of it, and because it is per machine.

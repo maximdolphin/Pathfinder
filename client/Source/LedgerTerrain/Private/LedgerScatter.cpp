@@ -16,15 +16,23 @@ namespace
 	/// a patch is generated in is exactly what must not matter. This is a pure
 	/// function of where the cell is, so two runs agree without having to agree
 	/// about anything else.
+	/// SplitMix64's finaliser: every input bit reaches every output bit.
+	uint64 Mix(uint64 Z)
+	{
+		Z = (Z ^ (Z >> 30)) * 0xBF58476D1CE4E5B9ull;
+		Z = (Z ^ (Z >> 27)) * 0x94D049BB133111EBull;
+		return Z ^ (Z >> 31);
+	}
+
+	/// **Mixed, not stirred.** This used to add the cell index in and run one
+	/// multiply, so two neighbouring cells differed by a fixed multiple of the
+	/// constant and their draws by a near-constant amount, about 0.999 mod
+	/// one: the jitter, the keep-or-skip and the size all marched in step
+	/// along each row of cells. That is the dotted lines of stones in every
+	/// capture, and why capping the density below one never removed them.
 	uint64 CellHash(uint64 Key, int32 Cell, uint32 Salt)
 	{
-		uint64 Hash = Key * 0x9E3779B97F4A7C15ull;
-		Hash ^= static_cast<uint64>(Cell) + 0x165667B19E3779F9ull + (Hash << 6) + (Hash >> 2);
-		Hash ^= static_cast<uint64>(Salt) * 0xD6E8FEB86659FD93ull;
-		Hash ^= Hash >> 33;
-		Hash *= 0xFF51AFD7ED558CCDull;
-		Hash ^= Hash >> 29;
-		return Hash;
+		return Mix(Mix(Key) ^ Mix((static_cast<uint64>(static_cast<uint32>(Cell)) << 8) ^ Salt));
 	}
 
 	/// A uniform in [0,1) from a hash.
@@ -36,6 +44,13 @@ namespace
 
 namespace LedgerScatter
 {
+	/// The draw a cell makes, for the test that neighbouring cells draw
+	/// independently. Same module, so no export.
+	double CellUniform(uint64 Key, int32 Cell, uint32 Salt)
+	{
+		return Uniform(CellHash(Key, Cell, Salt));
+	}
+
 	void ScatterPatch(FLedgerPatchJob& Job)
 	{
 		Job.Scatter.Reset();

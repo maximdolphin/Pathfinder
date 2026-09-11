@@ -237,18 +237,33 @@ bool FLedgerScatterNothingFloats::RunTest(const FString&)
 
 	double WorstCorrection = 0.0;
 	int32 Paired = 0;
+	// Paired with the NEAREST by direction, and only if that is under a
+	// centimetre along the ground: the same cell's stone agrees to float
+	// rounding, since only its height differs. The first match inside
+	// 1 - 1e-12 was an angle of 1.4e-6 rad, nine metres on this radius, and
+	// once the cell hash stopped marching neighbours in step two cells' stones
+	// could stand that close -- it paired them across cells and read the gap
+	// between two stones, 9.9 m, as a correction.
 	for (const FLedgerScatterInstance& OnMesh : Job.Scatter)
 	{
 		const FVector3d MeshAt = FVector3d(OnMesh.Position) + Job.Centre;
+		const FVector3d MeshDirection = MeshAt.GetSafeNormal();
+		double NearestApart = TNumericLimits<double>::Max();
+		FVector3d NearestAt = FVector3d::ZeroVector;
 		for (const FLedgerScatterInstance& OnField : OnFunction.Scatter)
 		{
 			const FVector3d FieldAt = FVector3d(OnField.Position) + OnFunction.Centre;
-			if (FVector3d::DotProduct(MeshAt.GetSafeNormal(), FieldAt.GetSafeNormal()) > 1.0 - 1e-12)
+			const double Apart = (FieldAt.GetSafeNormal() - MeshDirection).Length();
+			if (Apart < NearestApart)
 			{
-				WorstCorrection = FMath::Max(WorstCorrection, (MeshAt - FieldAt).Length() / 100.0);
-				++Paired;
-				break;
+				NearestApart = Apart;
+				NearestAt = FieldAt;
 			}
+		}
+		if (NearestApart * MeshAt.Length() < 1.0)
+		{
+			WorstCorrection = FMath::Max(WorstCorrection, (MeshAt - NearestAt).Length() / 100.0);
+			++Paired;
 		}
 	}
 	TestEqual(TEXT("every cell the mesh kept is one the function kept too"), Paired, Job.Scatter.Num());
@@ -319,6 +334,53 @@ bool FLedgerScatterStaysOffTheSeaAndTheCliffs::RunTest(const FString&)
 		{
 			AddError(FString::Printf(TEXT("an instance leans %.1f degrees"), Tilt));
 			return false;
+		}
+	}
+	return true;
+}
+
+namespace LedgerScatter
+{
+	double CellUniform(uint64 Key, int32 Cell, uint32 Salt);
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FLedgerScatterNeighboursAreIndependent,
+	"Ledger.Scatter.NeighbouringCellsDrawIndependently",
+	EAutomationTestFlags_ApplicationContextMask | EAutomationTestFlags::EngineFilter)
+bool FLedgerScatterNeighboursAreIndependent::RunTest(const FString&)
+{
+	// The dotted lines of stones were neighbouring cells drawing in step. The
+	// old hash put the lag-one correlation of consecutive cells near one.
+	const uint64 Keys[] = { 1ull, 0x1234567ull, 0xFEDCBA9876543210ull };
+	const uint32 Salts[] = { 1u, 3u };
+	constexpr int32 Count = 4096;
+	for (const uint64 Key : Keys)
+	{
+		for (const uint32 Salt : Salts)
+		{
+			TArray<double> Draws;
+			Draws.SetNum(Count);
+			double Mean = 0.0;
+			for (int32 Cell = 0; Cell < Count; ++Cell)
+			{
+				Draws[Cell] = LedgerScatter::CellUniform(Key, Cell, Salt);
+				Mean += Draws[Cell] / Count;
+			}
+			double Variance = 0.0;
+			double Covariance = 0.0;
+			for (int32 Cell = 0; Cell < Count; ++Cell)
+			{
+				Variance += FMath::Square(Draws[Cell] - Mean);
+				if (Cell + 1 < Count)
+				{
+					Covariance += (Draws[Cell] - Mean) * (Draws[Cell + 1] - Mean);
+				}
+			}
+			const double Correlation = Covariance / FMath::Max(Variance, 1e-12);
+			TestTrue(FString::Printf(TEXT("key %llx salt %u: mean %.3f"), Key, Salt, Mean),
+				FMath::Abs(Mean - 0.5) < 0.03);
+			TestTrue(FString::Printf(TEXT("key %llx salt %u: neighbours correlate %.3f"), Key, Salt, Correlation),
+				FMath::Abs(Correlation) < 0.1);
 		}
 	}
 	return true;

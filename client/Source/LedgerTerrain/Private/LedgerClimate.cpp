@@ -187,7 +187,13 @@ namespace LedgerClimate
 		// picking up water over ocean and dropping it wherever the ground
 		// rises. That is what a rain shadow is: the range takes the moisture
 		// out on the way up and there is none left on the far side.
-		const FVector3d Wind = PrevailingWind(UnitSphere);
+		// **The local wind at every step, not the wind at the start.** The
+		// march used to take the direction once and walk a great circle along
+		// it; a band wind blows along the parallel, and at 70 degrees a few
+		// hundred kilometres of great circle leave the parallel far behind --
+		// the air it sampled never passed over the range. 29 of the 40 ranges
+		// wetter on the lee side lay poleward of 60. Where the band wind turns
+		// through zero the march stands still, which is what no fetch means.
 		const double ArcPerStep =
 			(UpwindFetchMetres / static_cast<double>(UpwindSteps)) / (Params.Radius / 100.0);
 
@@ -195,14 +201,14 @@ namespace LedgerClimate
 		FVector3d Sample = UnitSphere;
 		for (int32 Step = 0; Step < UpwindSteps; ++Step)
 		{
-			Sample = StepAlong(Sample, -Wind, ArcPerStep);
+			Sample = StepAlong(Sample, -PrevailingWind(Sample), ArcPerStep);
 		}
 
 		double Moisture = 0.5;
 		double PreviousAltitude = AltitudeMetres(Sample, Params);
 		for (int32 Step = 0; Step < UpwindSteps; ++Step)
 		{
-			Sample = StepAlong(Sample, Wind, ArcPerStep);
+			Sample = StepAlong(Sample, PrevailingWind(Sample), ArcPerStep);
 			const double Altitude = AltitudeMetres(Sample, Params);
 
 			if (Altitude <= 0.0)
