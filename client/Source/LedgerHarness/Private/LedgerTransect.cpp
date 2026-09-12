@@ -227,9 +227,21 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				OverWithGC += bGC ? 1 : 0;
 				OverWithShaders += bShaders ? 1 : 0;
 				WorstFrames.Add({ FrameMs, FString::Printf(
-					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, fixture %.1f, the frame before: game %.1f, render %.1f, GPU %.1f, RHI %.1f, %.0f m above sea level%s%s"),
+					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, planet worsts tree %.1f harvest %.1f collect %.1f sort %.1f, fixture %.1f, the frame before: game %.1f, render %.1f, GPU %.1f, RHI %.1f, %.0f m above sea level%s%s"),
 					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, RenderWaitMs, IdleMs, UploadMs, Planet->ProxyBuildMs,
 					Planet->GetStats().SectionsFree, Planet->GetStats().JobsInFlight,
+					// The planet tick's own phases, which it has measured all
+					// along and nobody printed (T068). A trace of the settled
+					// run showed the worst frame spending 141 ms inside a
+					// single unbroken LedgerPlanet scope -- the terrain module
+					// carries no inner trace scopes, so 74 million events could
+					// not say which phase it was. These four can, on every run,
+					// without a 4.6 GB export or any frame-index arithmetic.
+					// Worsts rather than per-frame: that is what the planet
+					// keeps, and the question here is which phase is capable of
+					// the spike, not which one produced this particular frame.
+					Planet->GetStats().WorstTreeMs, Planet->GetStats().WorstHarvestMs,
+					Planet->GetStats().WorstCollectMs, Planet->GetStats().WorstSortMs,
 					// The previous frame's, because the scope guard writes it as
 					// Tick leaves -- and the previous frame is what this
 					// wall-clock interval spans, which is the point.
