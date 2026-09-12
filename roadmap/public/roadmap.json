@@ -4721,6 +4721,11 @@
      "at": "2026-09-10",
      "kind": "done",
      "text": "Unblocked by T428 and met against its acceptance. The blocker was arithmetic: at 80 km the horizon drop is 502 m, so on the old planet the highest land (1,372 m) stood 870 m proud and subtended 10 px -- a bump, and no impostor work makes a bump read as a range. It is 2,891 m now, standing 2,389 m proud and subtending 29 px, and the photograph shows snow-capped summits with a ragged profile rather than a gradient. NOT BUILT, and named rather than implied: the impostors in the task's title. The acceptance does not ask for them. The design constraint for that work is already measured and stays with it -- a candidate count fixed per patch cannot thin with distance without drawing the patch grid in trees (tried: 97,777 instances at 1.5 ms, visibly worse, reverted); it needs a candidate lattice fixed to the world so density is a function of position."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "[2026-09-11] THE PLANET FROM ORBIT IS NOT COVERED BY THIS TASK, AND NOTHING ELSE COVERS IT EITHER -- recorded here because this is the nearest thing the roadmap has. The owner reported that planets from space look 'awful and like almost low poly/animated, not realistic like Star Citizen', and the orbit capture bears it out. DIAGNOSIS, from the code and the surviving frame: from ~12,000 km the whole planet resolves to about 540 patches at depth 3 to 4, so vertices sit 10 to 20 km apart; the terrain material takes its ground palette straight from VertexColor (LedgerTerrainMaterial, the three slot weights masked off the vertex colour); and the sea is generated on the SAME vertex grid as the land (Job.Side in LedgerPatchGenerator), so both sides of every coastline step together. That is exactly the rectangular coastline in the capture: it is COLOUR RESOLUTION, not polygon count, and adding triangles is the expensive way to fix a shading problem. Two further defects, separate causes: no clouds at all over the disc, because the volumetric layer's TracingMaxDistance is 250 km and the viewer is far outside it; and a limb with no visible scattering halo, which is mostly honest physics -- 60 to 100 km of atmosphere on a 6,344 km radius is about 1% of the disc -- rather than a bug. THE FIX, designed but not yet written: a planet-wide albedo sampled from the same climate and height functions the patch generator already uses, at a resolution independent of the mesh, cross-faded in as patches coarsen. The material already has everything needed -- NodeSize comes from UV1.y, ToCamera from the camera position, and the graph's own comment warns that the blend must be driven by the same quantity the LOD decision uses or the two disagree; SampleParameter() binds a texture into the generated graph. One source fixes land and sea together because they share the grid. WHY THIS TASK DID NOT CATCH IT: T059's acceptance is 'a mountain range 80 km away has a silhouette', which is a horizon problem from the ground. Nobody ever wrote a task for the planet seen from space, which is why it has never been measured. NOT YET PROVEN BY EXPERIMENT: the A/B that would confirm it (default 250 px screen error against 60 px, -terrainerror= added for it) died mid-flight when the disk filled -- both arms lost, captures truncated to zero bytes."
     }
    ],
    "evidence": [
@@ -15820,5 +15825,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T00:57:37.816Z"
+ "updatedAt": "2026-09-12T01:33:05.947Z"
 }
