@@ -342,8 +342,39 @@ namespace LedgerSurface
 		// ponytail: one weather field for all three decks; give cirrus its own
 		// when a front and the cirrus ahead of it need to part company.
 		UMaterialExpressionNoise* Weather = Graph.Make<UMaterialExpressionNoise>();
+
+		// `-weatherscale=N`: this field's scale, as a multiple of the default.
+		//
+		// A measurement arm, because the default below is suspicious and only a
+		// picture can settle it. 2.5e-8 is a feature size near 40,000 km, and
+		// this planet's circumference is 39,900 -- so from orbit the organising
+		// field is one gradient across the whole disc rather than the "systems
+		// hundreds of kilometres across with clear air between" the comment
+		// below asks it for. Measured on the orbit capture, the cumulus masses
+		// come out 40-60 km across with a p90 of 140 km and no size variation
+		// at all (T445), which is what a fine field cut at a threshold gives
+		// when nothing organises it.
+		//
+		// A multiple rather than an absolute, so a chain reads `-weatherscale=10`
+		// instead of an exponent, and so the default stays the one value in the
+		// file. NOT changed here: this governs every sky in the game, from the
+		// ground as much as from orbit, and it is the owner's call on a before
+		// and after rather than mine on a measurement.
+		float WeatherMultiple = 1.0f;
+		FParse::Value(FCommandLine::Get(), TEXT("weatherscale="), WeatherMultiple);
+		if (WeatherMultiple <= 0.0f)
+		{
+			WeatherMultiple = 1.0f;
+		}
+		if (WeatherMultiple != 1.0f)
+		{
+			UE_LOG(LogLedger, Log,
+				TEXT("clouds: weather field at %.1fx the default scale "
+					 "(features about %.0f km rather than 40000)"),
+				WeatherMultiple, 40000.0f / WeatherMultiple);
+		}
 		Weather->Position.Expression = Graph.Multiply(Flattened,
-			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f));
+			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f * WeatherMultiple));
 		// Gradient, not simplex: the swap was for the puffs' shape, and at this
 		// scale a shape is a thousand kilometres -- all it did here was move every
 		// weather system, and the cloud climb's site came out in clear air with
