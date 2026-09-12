@@ -240,7 +240,7 @@
    "status": "active",
    "gatePassedAt": null,
    "evidence": [],
-   "doneCount": 25
+   "doneCount": 24
   },
   {
    "id": "M2S",
@@ -4553,7 +4553,7 @@
    "dependsOn": [
     "T056"
    ],
-   "status": "done",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": "2026-09-09",
    "notes": [
@@ -4561,6 +4561,11 @@
      "at": "2026-09-09",
      "kind": "done",
      "text": "48 shots: 8 yaw x 3 framings (silhouette, standing, close) x 2 rigs (raking key with almost no fill, soft filled), exposure pinned, backdrop plane held square to the camera. out/turntable/, three kept in docs/comparisons/turntable/. Four bugs between writing it and the first usable frame, and each one produced the same symptom -- a black or empty image -- which is why each was mistaken for the last: GetActorBounds(true) counts only COLLIDING components, and the hull's collision is off, so the subject measured 1 m and the camera-outside check passed 48 times against the same empty bounds it was derived from; then bounds measured over the whole actor, which on this pawn includes a 52 m camera boom, so framings were three times too far and the ship was a speck; then the backdrop was an inside-out sphere by negative scale, which does not work and also enclosed the stage in its own shadow; then two stage lights plus the world's sun produced 'multiple directional lights competing for forward shading', resolved by a brightness tie-break. The user spotted that last one from the on-screen warning after I had cleared it by grepping the log, where it does not appear. Determinism: byte-identity was the original gate and is NOT achievable with Lumen -- its probes accumulate over frames and two runs came back 42/48, then 46/48, then 42/48 identical, differing by a mean of 0.06 of a channel and never more than 9. The gate now states a tolerance and the runs pass it at worst-channel 3 against a limit of 16. compare_captures.py --between does the comparison."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "block",
+     "text": "Its acceptance does not hold as the tool judges it: two consecutive turntable runs compared with compare_captures.py --between give a worst single channel difference of 39 against a limit of 16 (48 shots, 2026-09-11). What that failure is, measured: 2 of 48 shots over the limit, median worst-channel 10, and in the worst shot exactly ONE pixel of 2,073,600 exceeds it -- isolated, no differing neighbour, at a backlit silhouette edge -- with a mean channel difference of 0.107 over the whole frame. The renders agree to a tenth of a channel; a single stray sample decides the gate. Blocked on the owner's call rather than fixed quietly: either attempt a fix (the harness settles 64 frames a shot; a longer settle may not touch a stochastic edge sample), or restate whether 'worst single channel' over two megapixels is the right statistic for 'do two runs agree'. Widening the limit to clear the gate is the one thing I will not do unasked."
     }
    ],
    "evidence": [],
@@ -5321,6 +5326,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "[2026-09-11] M02 GATE READINESS, check by check, so the gate can be recorded the moment the frame clause lands. The milestone has 26 tasks, 25 done, T068 the only one open, and gatePassedAt is still None with zero evidence items attached -- M03 and M04 both carry gatePassedAt 2026-09-11, which is the difference between them and this one. (1) and (2) ZERO UNFILLED PATCHES at 300 m and at 900 m/s: NOT ANSWERABLE FROM THIS FIXTURE YET. The transect report never printed holes; the zeros on hand come from other runs (descent-300.txt, a 300 m/s descent for T027: 'frames with an unfilled node 0'; performance.txt: 'holes_worst 0', on a run whose own verdict is FAIL). Recording a gate off a fixture it does not name would be a substitution, so the transect now prints its own holes line from FLedgerTerrainStats (uncommitted, unbuilt -- the owner's machine is in use). (3) A DOWNWARD TRACE HITS TERRAIN ON EVERY FRAME: PASS, and this is new -- traces missed 0 (0.000%), no ground drawn under the ship 0, longest gap 0 consecutive frames, in transect-align.txt (chain168) and transect-sky64.txt (chain169) both. T068's attached evidence still says 99.1% missed, which is nine months of this task ago in effort terms. (4) NO FRAME OVER 16.7 ms: FAIL, and the only real blocker -- 127 and 135 over in those same two runs against the owner-agreed 13, six frames over 33 ms. (5) RIDGE WALK, NO VERTEX MOVEMENT: T048 geomorphing and T049 stitching evidence. (6) THREE BIOMES, NO BLEND BAND: T053, seven items. (7) NO IDENTIFIABLE TEXTURE REPETITION: evidenced and measured -- docs/comparisons/tiling has correlation -0.0151 at the 2.00 m tiling period against a noise floor of mean -0.0063 sd 0.0099, i.e. below the floor, no peak. (8) RIVERS REACH THE SEA: T055. (9) CAVE ENTERED AND TRAVERSED: T056, ten items. (10) ONE COMMAND TO A CONTACT SHEET, CAMERA PROVABLY OUTSIDE, FIXED EXPOSURE: evidenced -- out/turntable.txt reads 48 shots, camera outside 48, inside 0, VERDICT PASS, out/reference-sheet.jpg is the sheet, and LedgerTurntable pins exposure (min = max brightness 1.0, bias 0). (11) TWO CONSECUTIVE TURNTABLE RUNS AGREE WITHIN TOLERANCE: GAP. docs/comparisons/turntable holds three sample frames, no README, no comparison, no worst-channel figure, and T408 is done with zero evidence attached. This is an owed run: two turntable passes and compare_captures.py. (12) TEN THOUSAND SCATTER INSTANCES IN BUDGET, PLACED IDENTICALLY: T057. SO: ten of twelve checks are evidenced or newly passing, one is a small owed run (11), and one is the frame budget. ALSO A TRAP FOR WHOEVER READS NEXT: out/transect.txt currently holds chain170's VOID arm B (179 over, 10,558 ms worst frame) -- that run measured a contended machine and a fixture bug, not the code. Quote transect-sky64.txt or transect-align.txt."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "[2026-09-11] GATE CHECK 11 RUN, AND IT FAILS ON ONE PIXEL. The check asks for two consecutive turntable runs agreeing within tolerance, worst single channel; there was one run on disk and no comparison, so the fixture was run twice and compared with tools/compare_captures.py --between (which exists for this question). Result: 48 shots compared, worst single channel difference 39 against a limit of 16 -- a FAIL as the tool reports it. What the failure actually is, measured per shot: 2 of 48 shots exceed the limit (raking-silhouette-05 at 39, soft-close-00 at 18), the median worst-channel across all 48 is 10, and in the worst shot exactly ONE pixel of 2,073,600 is over the limit, isolated, with no differing neighbour; mean channel difference over that whole frame is 0.107, and 0.505 in the other. So the two renders agree to about a tenth of a channel and the gate is being decided by a single stray sample -- a firefly, most likely a Lumen or TSR sample landing differently, which the project's own repeatability note already describes as not pinned by a fixed time step. I am NOT relaxing the tolerance to make this pass: the criterion's wording is the owner's, and quietly widening a limit to clear a gate is the thing this gate exists to prevent. Two honest routes, for the owner to pick: (a) attempt a fix -- the harness settles 64 frames a shot before capturing, and a longer settle may or may not remove a stochastic single-pixel outlier; (b) decide whether 'worst single channel' over a two-megapixel frame is the right statistic for 'do two runs agree', when a median of 10 and a mean of 0.1 say they plainly do. T408, which owns this acceptance, is marked done with no evidence attached and its acceptance does not currently hold -- it should be reopened or its acceptance restated."
     }
    ],
    "evidence": [
@@ -15777,5 +15787,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T00:16:34.144Z"
+ "updatedAt": "2026-09-12T00:25:39.417Z"
 }
