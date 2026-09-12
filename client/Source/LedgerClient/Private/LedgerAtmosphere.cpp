@@ -439,7 +439,8 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 			*FString::Printf(TEXT("%sCentre"), Prefix), Centre);
 		CloudMaterial->SetScalarParameterValue(
 			*FString::Printf(TEXT("%sWidth"), Prefix), Width);
-		// `-cumuluscover=N`: the cumulus deck's coverage, set directly.
+		// `-cumuluscover=N`, `-middlecover=N`, `-cirruscover=N`: a deck's
+		// coverage, set directly.
 		//
 		// A measurement arm that only makes sense paired with -cumulusscale.
 		// Coverage is a THRESHOLD on the cloud noise, so changing the noise's
@@ -453,15 +454,24 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 		// Cumulus only: it is the deck the defect is in, and leaving the other
 		// two at what the weather says keeps the comparison to one variable.
 		float Cover = Deck.bPresent ? static_cast<float>(Deck.Coverage) : 0.0f;
-		if (Deck.bPresent && FCString::Strcmp(Prefix, TEXT("Cumulus")) == 0)
+		// One arm per deck, built from the prefix: -cumuluscover=, -middlecover=,
+		// -cirruscover=. It was cumulus-only until -cloudmask showed cumulus
+		// ALONE rendering as white cloud over a legible continent, which the
+		// shipping frame is not -- so the flat tan wash comes from a deck I had
+		// dismissed by inference rather than by isolating it. Cirrus is the
+		// candidate: 43% coverage, near-independent of the surface weather, a
+		// thin streaked sheet at 6,058-8,538 m lying over everything else.
+		// Zeroing a deck's coverage removes it without touching the others.
+		if (Deck.bPresent)
 		{
+			const FString Token = FString(Prefix).ToLower() + TEXT("cover=");
 			float Asked = -1.0f;
-			if (FParse::Value(FCommandLine::Get(), TEXT("cumuluscover="), Asked)
+			if (FParse::Value(FCommandLine::Get(), *Token, Asked)
 				&& Asked >= 0.0f && Asked <= 1.0f)
 			{
 				UE_LOG(LogLedger, Log,
-					TEXT("clouds: cumulus coverage forced to %.2f (weather says %.2f)"),
-					Asked, Cover);
+					TEXT("clouds: %s coverage forced to %.2f (weather says %.2f)"),
+					Prefix, Asked, Cover);
 				Cover = Asked;
 			}
 		}

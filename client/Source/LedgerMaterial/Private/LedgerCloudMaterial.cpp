@@ -599,7 +599,32 @@ namespace LedgerSurface
 		// it. So this stays high and the renderer does the greying.
 		EditorData->BaseColor.Expression = Graph.Constant3(
 			FLinearColor(0.98f, 0.98f, 0.99f));
-		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Graph.Multiply(Total, Extinction), StormThick);
+		// `-cloudmask`: the cumulus band alone in the extinction pin.
+		//
+		// An instrument, and T445 needed it badly. Every cloud arm this session
+		// was scored by GUESSING which pixels were cloud, and four such metrics
+		// contradicted each other: a brightness gate called a near-overcast
+		// frame "0.94% cloud" because thick overcast over dark ocean is not
+		// bright, and a difference-from-cloudless mask called the shipping deck
+		// "92.51% cloud" because the deck perturbs nearly every pixel through
+		// shadow and aerial perspective. Neither measured cloud; both measured a
+		// proxy for it.
+		//
+		// With cumulus as the only extinction source the other two decks are not
+		// drawn, so what reaches the camera IS the cumulus field and its shape is
+		// no longer inferred. Density rather than emissive, for the reason the
+		// probe below gives: an additive volume's emissive is not a reliable
+		// readout, and density is the only thing this material is really for.
+		//
+		// Mutually exclusive with -cloudprobe, which overwrites this pin later.
+		UMaterialExpression* Density = Total;
+		if (FParse::Param(FCommandLine::Get(), TEXT("cloudmask")))
+		{
+			Density = Cumulus.Mask;
+			UE_LOG(LogLedger, Log,
+				TEXT("cloud material: -cloudmask, cumulus alone in the extinction pin"));
+		}
+		EditorData->SubsurfaceColor.Expression = Graph.Multiply(Graph.Multiply(Density, Extinction), StormThick);
 		// **Multiple scattering, and a phase with a back lobe.** Without this node
 		// the clouds are single-scattering: seen from orbit they were a grey veil
 		// that dulled the land -- the brightest 1% of the disc went from 170 to
