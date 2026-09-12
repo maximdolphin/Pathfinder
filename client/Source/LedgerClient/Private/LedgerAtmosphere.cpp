@@ -477,9 +477,34 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 		}
 		CloudMaterial->SetScalarParameterValue(
 			*FString::Printf(TEXT("%sCoverage"), Prefix), Cover);
+		// `-cumulusopacity=N`, `-middleopacity=N`, `-cirrusopacity=N`: a deck's
+		// extinction per metre, set directly. Built from the prefix like the
+		// coverage arms above.
+		//
+		// Cirrus is why this exists. LedgerCloud.cpp records the target and the
+		// miss in the same breath: "Ice cloud has an optical depth of about one
+		// through its whole thickness ... 0.03 is about 3 where fully covered."
+		// Optical depth 3 is roughly 95% extinction, which is overcast rather
+		// than cirrus -- and a 43%-coverage sheet of it lying over everything is
+		// what drains the colour from the whole planet seen from orbit (T445:
+		// removing the deck changes 38.18% of the disc against a 0.47% floor).
+		// So this walks the value back toward the physics the comment cites.
+		float Density = static_cast<float>(Deck.Opacity);
+		if (Deck.bPresent)
+		{
+			const FString Token = FString(Prefix).ToLower() + TEXT("opacity=");
+			float Asked = -1.0f;
+			if (FParse::Value(FCommandLine::Get(), *Token, Asked)
+				&& Asked > 0.0f && Asked <= 1.0f)
+			{
+				UE_LOG(LogLedger, Log,
+					TEXT("clouds: %s extinction forced to %.4f per metre (default %.4f)"),
+					Prefix, Asked, Density);
+				Density = Asked;
+			}
+		}
 		CloudMaterial->SetScalarParameterValue(
-			*FString::Printf(TEXT("%sDensity"), Prefix),
-			static_cast<float>(Deck.Opacity));
+			*FString::Printf(TEXT("%sDensity"), Prefix), Density);
 	};
 
 	if (bThreeDecks)
