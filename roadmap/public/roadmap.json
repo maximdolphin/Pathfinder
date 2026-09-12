@@ -11114,7 +11114,7 @@
    "dependsOn": [
     "T215"
    ],
-   "status": "todo",
+   "status": "blocked",
    "startedAt": null,
    "completedAt": null,
    "notes": [
@@ -11282,9 +11282,39 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "SUPERSEDING THIS TASK'S OWN DESCRIPTION -- read this before the text above it. The description states three things that tonight's measurements refute, and a reader hits it first. (1) 'It is colour resolution' from a 10-20 km vertex grid: REFUTED. Refining the tree eightfold (3,614 patches against 474, the flag confirmed applied) moved land fraction by 0.1 points and coast crossings by 0.3 per row -- statistically nothing. Vertex and patch resolution are not the cause. (2) 'No clouds over the disc at all, because TracingMaxDistance is 250 km': REFUTED TWICE. Tracing to 20,000 km changed 256 pixels in 951,000, and isolating the decks shows the disc already carries roughly a quarter to a third cloud. The deck was never missing. (3) The proposed fix -- 'a planet-wide albedo sampled from the same climate and height functions, cross-faded in as patches coarsen' -- would have been built on (1), which is dead, and was never needed. THE ACTUAL CAUSE, MEASURED: a thin cirrus sheet at 43% coverage sitting at 6,058-8,538 m over the whole planet, carrying an optical depth of about 3 where its own comment names about 1. Isolating it (-cirruscover=0) moved 38.18% of the disc against a 0.47% floor; cumulus alone renders as white cloud over a legible continent. Cirrus did not look like cloud in the frame -- it looked like the ground being wrong, which is why it survived five hours of measurement and two dismissals by inference. FIXED AND VERIFIED: Cirrus.Opacity 0.03 -> 0.01 (commit 61dd425), verified live with no flags (commit 791459e). Orbital heavy filtering halved, ground sky barely touched. The remaining lever is coverage, tabulated above, and is the owner's call because it changes this world's weather rather than correcting an error. WHAT THE ACCEPTANCE SHOULD PROBABLY BECOME, for the owner to accept or reject: 'From orbit, land, sea and coastline remain distinguishable in colour, measured against a no-cloud reference' -- which is what was actually wrong, and which the old acceptance (longest run of identically coloured pixels along a coastline) could not detect, as recorded in the retraction above."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "block",
+     "text": "The defect is found, fixed and verified live -- cirrus optical depth 0.03 to 0.01 (61dd425), confirmed shipping with no flags (791459e), orbital heavy filtering halved and the ground sky barely touched. NOT marked done because this task's acceptance cannot judge it: the original criterion is 'longest run of identically coloured pixels along a land-sea boundary', which I retracted after measuring that it reports continent width rather than coastline blockiness and could not detect this defect either way. Marking done against a dead acceptance would be a false claim. Two owner decisions close it: (1) reword the acceptance -- proposed: 'From orbit, land, sea and coastline remain distinguishable in colour, measured against a no-cloud reference', which is what was actually wrong; (2) decide whether to take the coverage trim, which would move the residual wash from 11.00 to 0.80 (95% gone) but permanently gives this world fewer high clouds. Numbers for every option are tabulated in the notes. Neither is mine: rewriting an acceptance and changing a world's weather are both the class of decision these gates exist to keep out of my hands."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T445-2026-09-12T06-44-30-295.png",
+     "caption": "Before: cirrus at optical depth ~3 (0.03 per metre). A 43%-coverage sheet at 6,058-8,538 m draining the colour from the whole disc -- the owner's 'almost low poly, animated'.",
+     "source": "out/cir-030-orbit.png",
+     "addedAt": "2026-09-12T06:44:30.298Z"
+    },
+    {
+     "file": "evidence/T445-2026-09-12T06-44-30-433.png",
+     "caption": "After, verified with NO flags: cirrus at 0.01, the optical depth the code's own comment names. Heavy filtering halved (>32 from 16.4% to 7.7%), mean tint 14.95 to 11.00 against a no-cirrus reference of 0.00.",
+     "source": "out/ship-cirrus-orbit.png",
+     "addedAt": "2026-09-12T06:44:30.435Z"
+    },
+    {
+     "file": "evidence/T445-2026-09-12T06-44-30-555.png",
+     "caption": "The isolation that found it: cirrus removed entirely changes 38.18% of the disc against a 0.47% noise floor, where the middle deck changes 0.49% -- indistinguishable from noise.",
+     "source": "out/deck-nocirrus-orbit.png",
+     "addedAt": "2026-09-12T06:44:30.557Z"
+    },
+    {
+     "file": "evidence/T445-2026-09-12T06-44-30-671.png",
+     "caption": "The ground check that gated the fix: at 0.01 the sky keeps its cirrus streaks (upper-sky disturbance 7.82 mean, 2.9% over 32) against 18.17 / 20.7% for deleting the deck. Thinner still (0.005) cost 11.78 / 17.2% and was rejected.",
+     "source": "out/gnd-cir010-surface.png",
+     "addedAt": "2026-09-12T06:44:30.678Z"
+    }
+   ],
    "plannedStartDay": 554.5,
    "plannedEndDay": 557.5,
    "plannedStart": "2028-10-20",
@@ -16080,5 +16110,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T06:43:03.314Z"
+ "updatedAt": "2026-09-12T06:44:30.680Z"
 }
