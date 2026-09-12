@@ -375,6 +375,29 @@ namespace LedgerSurface
 		}
 		Weather->Position.Expression = Graph.Multiply(Flattened,
 			Parameter(Graph, TEXT("WeatherScale"), 2.5e-8f * WeatherMultiple));
+
+		// `-weatheramp=N`: how hard this field pushes the coverage threshold.
+		//
+		// Scale alone was the wrong read. This term is ADDED to the cloud field,
+		// which is the same as subtracting from the cut, so it already is a
+		// threshold modulation -- the question is whether it moves the cut
+		// DECISIVELY. At 10x scale and amplitude 1 the threshold landed near the
+		// field's median across large areas, so the fine 52 km octaves decided
+		// every edge and the disc came back as single-pixel speckle (T445: p50 1,
+		// p90 3, max 7). Nothing aliased -- 4,000 km features are ~570 px on this
+		// disc -- it simply never committed to overcast or clear. Amplitude is
+		// what commits it. Default 1.0 unchanged; this is an instrument.
+		float WeatherAmp = 1.0f;
+		FParse::Value(FCommandLine::Get(), TEXT("weatheramp="), WeatherAmp);
+		if (WeatherAmp < 0.0f)
+		{
+			WeatherAmp = 1.0f;
+		}
+		if (WeatherAmp != 1.0f)
+		{
+			UE_LOG(LogLedger, Log,
+				TEXT("clouds: weather field pushing the threshold at %.2fx"), WeatherAmp);
+		}
 		// Gradient, not simplex: the swap was for the puffs' shape, and at this
 		// scale a shape is a thousand kilometres -- all it did here was move every
 		// weather system, and the cloud climb's site came out in clear air with
@@ -404,7 +427,7 @@ namespace LedgerSurface
 		};
 		UMaterialExpression* Clouds = Graph.Add(Faded(Noise), Graph.Multiply(
 			Graph.Subtract(Weather, Graph.Constant(0.5f)),
-			Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
+			Parameter(Graph, TEXT("WeatherAmplitude"), WeatherAmp)));
 
 		// Three decks, with defaults that are Earth's if nobody sets them.
 		// Centres are fractions of the layer: a layer from the cumulus base to
@@ -464,7 +487,7 @@ namespace LedgerSurface
 		}
 		UMaterialExpression* CumulusField = Graph.Add(
 			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f * CumulusMultiple)), CumulusOctaves)),
-			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), WeatherAmp)));
 		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
 		AlongStreak->A.Expression = Flattened;
 		AlongStreak->B.Expression = Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f));
@@ -472,7 +495,7 @@ namespace LedgerSurface
 			Graph.Multiply(Graph.Constant3(FLinearColor(1.0f, 0.0f, 0.0f)), Graph.Scale(AlongStreak, 0.88f)));
 		UMaterialExpression* CirrusField = Graph.Add(
 			Faded(DeckNoise(Graph.Multiply(Stretched, Parameter(Graph, TEXT("CirrusScale"), 0.000008f)), 3)),
-			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
+			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), WeatherAmp)));
 
 		UMaterialExpression* StormThick = Graph.Constant(1.0f);
 		// **The storms, where the weather says they are.** T097. The four
