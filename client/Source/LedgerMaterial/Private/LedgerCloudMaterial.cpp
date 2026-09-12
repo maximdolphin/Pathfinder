@@ -355,6 +355,19 @@ namespace LedgerSurface
 		// at all (T445), which is what a fine field cut at a threshold gives
 		// when nothing organises it.
 		//
+		// **That was the wrong deck, and this arm is a dead end.** Raising this
+		// scale shatters the sky into single-pixel speckle rather than
+		// organising it (p50 run length 7 px to 1, max 93 to 7), because the
+		// term is added at full amplitude AFTER the Far fade that averages fine
+		// noise to its mean for orbital pixels -- so finer features re-introduce
+		// exactly the aliasing that fade exists to remove. And the flat tan wash
+		// this was chasing turned out to be CIRRUS, not cumulus: isolating the
+		// decks (-cirruscover=0) moved 38.18% of the disc against a 0.47% floor,
+		// where cumulus alone renders as white cloud over a legible continent.
+		// Cumulus owns the blob shapes; cirrus owned the wash, and it is fixed
+		// at its source in LedgerCloud.cpp. Kept as an instrument with its
+		// negative recorded, not as a lead worth following again.
+		//
 		// A multiple rather than an absolute, so a chain reads `-weatherscale=10`
 		// instead of an exponent, and so the default stays the one value in the
 		// file. NOT changed here: this governs every sky in the game, from the
