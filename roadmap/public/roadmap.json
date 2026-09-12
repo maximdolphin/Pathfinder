@@ -11202,6 +11202,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "A FALSE ALARM I RAISED AND KILLED, recorded so it is not inherited. The ground capture's HUD reads 'air 0.0 kPa, angle of attack 160.7 deg, lift 0.00 STALL' while the ship stands on the pad beside buildings, which looks like an atmosphere reporting no air at the surface of a world that plainly has some -- and it appears in the REFERENCE arm, so no flag of mine caused it. It is not a bug. LedgerHUD.cpp:86 prints AirNow.DynamicPressure, not static pressure, and dynamic pressure is half rho v squared: exactly 0.0 kPa for a parked ship. The same run logs the atmosphere as 'nitrogen-oxygen, 96898 Pa at 272.1 K, scale height 8.01 km, top 96.1 km', so the surface carries 96.9 kPa and the HUD is correctly reporting that a stationary vehicle has no airspeed. The 160.7 degree angle of attack and the STALL flag are the same artefact -- both meaningless without relative wind. Nothing to raise against M04, whose gate is passed. WHY IT IS WORTH A NOTE ANYWAY: this is the fourteenth thing tonight that looked like a finding and dissolved on inspection, and it failed the same way as most of the others -- I read a LABEL ('air ... kPa') and inferred a QUANTITY (static pressure) without checking which quantity the code actually prints. The session's recurring error is not carelessness about measurement, it is confidence about what a measurement means."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "THE GROUND CHECK PASSES: REMOVING CIRRUS DOES NOT EMPTY THE SKY. The override fired in the ground arm (log: 'Cirrus coverage forced to 0.00 (weather says 0.43)') with the reference logging none. From eye height the difference is exactly what the deck is: the high wispy streaks across the upper sky go, and everything that makes the sky read as a sky stays -- the blue zenith-to-horizon gradient, the bank of cumulus sitting on the horizon, the depth between them. It does not come back empty. THAT MATTERED AND COULD HAVE GONE THE OTHER WAY. A thin high sheet is often the thing that stops a sky looking like a painted dome, and had the ground frame come back flat I would have had to tell the owner that fixing the orbital view costs the surface one. It does not, so a cirrus remedy is viable from both viewpoints rather than a trade between them. WHAT IS NOW ESTABLISHED END TO END: cumulus owns the blob shapes from orbit (measured with -noclouds against a 0.47% floor, reproduced across two chains); CIRRUS owns the colour wash that reads as 'low poly / animated' (38.18% of the disc, worst channel 155, against the same floor); the middle deck is innocent (0.49%, indistinguishable from noise); and removing cirrus costs the ground view only its high streaks. STILL NOT A FIX, AND DELIBERATELY. The three options -- lower Cirrus.Coverage from 0.15 + 0.45*seeded (43% here), lower its 0.03 opacity, or change what it does to transmitted light rather than how much of it there is -- are aesthetic decisions about the owner's sky, and they differ in what they cost at the surface. The owner now has both views and should pick; I have shipped nothing and every default is untouched."
     }
    ],
    "evidence": [],
@@ -16000,5 +16005,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T04:44:32.651Z"
+ "updatedAt": "2026-09-12T04:47:20.250Z"
 }
