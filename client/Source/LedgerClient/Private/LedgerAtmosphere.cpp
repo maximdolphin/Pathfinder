@@ -439,9 +439,34 @@ void ALedgerAtmosphere::SetDecks(const FLedgerCloudDecks& Decks)
 			*FString::Printf(TEXT("%sCentre"), Prefix), Centre);
 		CloudMaterial->SetScalarParameterValue(
 			*FString::Printf(TEXT("%sWidth"), Prefix), Width);
+		// `-cumuluscover=N`: the cumulus deck's coverage, set directly.
+		//
+		// A measurement arm that only makes sense paired with -cumulusscale.
+		// Coverage is a THRESHOLD on the cloud noise, so changing the noise's
+		// scale or octave count moves the whole field relative to a fixed cut:
+		// the 832 km arm (T445) did not reorganise the deck, it deleted it --
+		// isolated cloud fell from 17.22% of the disc to 0.10%, 226 fragments of
+		// one or two pixels. Any arm that changes the field must put the cover
+		// back, or it is testing cloud against no cloud rather than organised
+		// against unorganised.
+		//
+		// Cumulus only: it is the deck the defect is in, and leaving the other
+		// two at what the weather says keeps the comparison to one variable.
+		float Cover = Deck.bPresent ? static_cast<float>(Deck.Coverage) : 0.0f;
+		if (Deck.bPresent && FCString::Strcmp(Prefix, TEXT("Cumulus")) == 0)
+		{
+			float Asked = -1.0f;
+			if (FParse::Value(FCommandLine::Get(), TEXT("cumuluscover="), Asked)
+				&& Asked >= 0.0f && Asked <= 1.0f)
+			{
+				UE_LOG(LogLedger, Log,
+					TEXT("clouds: cumulus coverage forced to %.2f (weather says %.2f)"),
+					Asked, Cover);
+				Cover = Asked;
+			}
+		}
 		CloudMaterial->SetScalarParameterValue(
-			*FString::Printf(TEXT("%sCoverage"), Prefix),
-			Deck.bPresent ? static_cast<float>(Deck.Coverage) : 0.0f);
+			*FString::Printf(TEXT("%sCoverage"), Prefix), Cover);
 		CloudMaterial->SetScalarParameterValue(
 			*FString::Printf(TEXT("%sDensity"), Prefix),
 			static_cast<float>(Deck.Opacity));
