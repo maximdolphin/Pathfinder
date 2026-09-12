@@ -11302,6 +11302,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "REGRESSION-CLEAN AFTER THE CIRRUS CHANGE: 168 tests passed, 0 failed -- the same count as tonight's earlier M03/M04 audit, run with the identical invocation both gates used (-nullrhi). So changing Cirrus.Opacity from 0.03 to 0.01 broke nothing the automation suite covers, including M04's own cloud-deck test (Ledger.Cloud.TheDecksSitWhereTheThermometerPutsThem), which is the check its gate cites for 'three cloud decks resolve at the altitudes the atmosphere profile predicts'. That test passes because the change touches OPTICAL DEPTH and leaves altitude and coverage alone: cirrus still sits at 6,058-8,538 m at cover 0.43, exactly as the gate's evidence records it. WHY I RAN IT: I audited M03 and M04 hours ago and found no regression, then modified a value that M04's gate certifies. A milestone I declared sound and then changed deserves the same suite again, and it would have been easy to skip on the reasoning that an opacity change 'obviously' cannot break a test about altitudes. That reasoning is correct and I ran it anyway, because tonight has had sixteen conclusions die on contact with measurement and most of them were obvious first."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "THE COVERAGE OPTION COSTS MORE GROUND SKY THAN DELETING THE DECK. Upper-sky disturbance against the shipping ground frame: SHIPPED (depth ~1) mean 7.82, >12 on 23.3%, >32 on 2.9%. COVERAGE 0.25: mean 19.04, >12 on 25.9%, >32 on 20.4%. Rejected depth ~0.5: 11.78 / 24.9% / 17.2%. Veto case, cirrus removed entirely: 18.17 / 26.1% / 20.7%. So trimming coverage to 0.25 disturbs the ground sky MORE than removing cirrus altogether does (19.04 against 18.17), and nearly three times as much as the fix I shipped. COUNTERINTUITIVE BUT COHERENT: deleting the deck removes the streaks uniformly, while halving coverage leaves the surviving streaks at FULL optical depth and deletes the rest -- a larger per-pixel change across the sky than a uniform thinning produces. The orbital view cannot see that distinction because from 6,400 km the streaks are sub-pixel and only their integrated filtering registers. WHAT IT RETIRES: my framing from an hour ago that coverage is 'the stronger lever'. That is true of the ORBITAL wash (11.00 to 2.72, where depth ~1 alone reaches 11.00) and false of the whole picture, because I had measured strength without measuring cost. Strength and cost are different axes; I ranked on one and called it a recommendation, which is the same error as every single-viewpoint judgement tonight -- the ground pair has now reversed me twice on this task. WHERE THAT LEAVES THE OWNER'S REMAINING DECISION: the coverage trim is no longer a cheap extra win. It buys the last of the orbital wash (11.00 to 2.72, or 1.78 combined with depth ~1) at a ground cost comparable to having no cirrus at all. If the disc still reads wrong after the shipped fix, the honest options are to accept that ground cost knowingly, or to look for a lever that is not coverage -- and I do not currently have one. The second ground arm (coverage 0.25 with depth ~1) is running and will say whether combining them is any gentler."
     }
    ],
    "evidence": [
@@ -16125,5 +16130,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T06:49:22.090Z"
+ "updatedAt": "2026-09-12T06:51:09.613Z"
 }
