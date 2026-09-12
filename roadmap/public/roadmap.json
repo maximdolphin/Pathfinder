@@ -5363,6 +5363,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "[2026-09-11] THE GC FRAMES ARE THE PURGE TIMER, PROVEN BY CHANGING IT. Two arms back to back, same machine, same session (a targeted test, so background load cannot invent or remove a purge on a timer -- the frame COUNTS from these arms are not quoted). Arm A, the engine's inherited default gc.TimeBetweenPurgingPendingKillObjects = 61.1: 'a GC 3', including 32.5 ms at 52.3 km with game 26.7 and render waiting 17.9 -- and 52.3 km is where the previous run's GC frame sat too, which is what a 61.1 s timer at 900 m/s does. Arm B with the interval at 300 s: 'a GC 0', and the log confirms the override took (LogConfig: Set CVar [[gc.TimeBetweenPurgingPendingKillObjects:300]]). Everything else is unchanged between the arms (uploads over 4 ms 152 against 146). So three of the six frames over 33 ms are the engine's blocking purge, established by removing them. WHAT I AM NOT DOING WITH THAT: shipping 300 s. It does not remove collection, it defers it past this fixture's 222-second window -- a player's ten-minute session still purges, and a purge deferred has more to collect, so it may land harder. Setting it to clear a gate would be gaming the measurement, which is the thing this gate exists to prevent. THE REAL DIRECTION, for whoever takes it: incremental or time-sliced reachability so the purge is spread across frames rather than blocking one, or fewer UObject allocations per frame so there is less to collect. Both need a measured before and after on a quiet machine, and both should be judged on a player-length session rather than a 222-second transect, because that is where the deferral argument bites."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "[2026-09-12] INCREMENTAL GC CONFIRMED ACROSS TWO PAIRS, and shipped. Pair one (chain181): blocking 'a GC 3', incremental 'a GC 1'. Pair two (chain184, fresh build, warm cache): blocking 'a GC 3' again, incremental 'a GC 0'. The baseline reproduces exactly both times, which is what makes the arms readable; the cvars are confirmed applied in the log each run (gc.AllowIncrementalReachability=1, gc.IncrementalReachabilityTimeLimit=0.002, gc.AllowIncrementalGather=1, gc.IncrementalBeginDestroyEnabled=1). So three of the six frames over 33 ms -- the ones the gate forbids outright -- are removed by configuration, and removed the right way: the purge still fires on its 61.1 s timer, it just no longer lands as one blocking frame. That is the difference from the 300 s interval arm, which also read 'a GC 0' but only by deferring collection past this fixture's 222-second window; a player's session would still purge, with more to collect. Now in DefaultEngine.ini [SystemSettings] alongside the ray-tracing residency fix, with the measurement in the comment. ONE MORE CAUTION FROM THE SAME RUNS: the 'patch upload over 4 ms' column read 165, then 33, then 123 across arms of the same tree -- that is the patch cache warming after I deleted it, not the code. It is another reason nothing here is judged on the over-budget total and everything on a named frame. WHAT IS LEFT OF THE FRAME CLAUSE: of the six frames over 33 ms, three were GC (now fixed), one is the sky-light cubemap recapture at one degree of arc (56-59 ms on the render thread, resolution-independent -- a smaller cubemap changed nothing), and two are the cold-start burst inside the first kilometre, which is the same boundary question as checks 1 and 2 and belongs to the owner."
     }
    ],
    "evidence": [
@@ -15870,5 +15875,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T02:21:23.681Z"
+ "updatedAt": "2026-09-12T02:27:39.112Z"
 }
