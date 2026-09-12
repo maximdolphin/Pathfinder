@@ -309,12 +309,30 @@ void ALedgerAtmosphere::SetViewerAltitude(double MetresAboveSea)
 	// kilometres off, and thirty makes the step about 30 m.
 	const bool bInside = MetresAboveSea > LayerBottomMetres - 200.0
 		&& MetresAboveSea < LayerTopMetres + 200.0;
-	if (bInside == bTracingInside)
+
+	// **And from orbit the layer is past the trace altogether (T445).** The
+	// reasoning above -- "from outside, a ray only crosses the layer's
+	// thickness" -- is true of a viewer a few hundred kilometres up and false
+	// of one twelve thousand kilometres out: at that range 250 km does not
+	// reach the planet, and the disc comes back with no cloud on it at all,
+	// which is the first thing the owner said looks wrong about it.
+	//
+	// `-orbitclouds=N` sets the kilometres to trace from out there. A flag and
+	// not a default, because the engine spreads at most ~768 samples along a
+	// ray however far it goes: stretched over a planetary distance those
+	// samples may buy cloud, or may buy banding at a cost nobody wants. That is
+	// a measurement, not a thing to reason about.
+	float OrbitTracingKm = 0.0f;
+	FParse::Value(FCommandLine::Get(), TEXT("orbitclouds="), OrbitTracingKm);
+	const bool bFarOutside = OrbitTracingKm > 0.0f
+		&& MetresAboveSea > LayerTopMetres + 10.0 * FMath::Max(LayerTopMetres, 1.0);
+	if (bInside == bTracingInside && bFarOutside == bTracingFar)
 	{
 		return;
 	}
 	bTracingInside = bInside;
-	Clouds->TracingMaxDistance = bInside ? 30.0f : 250.0f;
+	bTracingFar = bFarOutside;
+	Clouds->TracingMaxDistance = bInside ? 30.0f : (bFarOutside ? OrbitTracingKm : 250.0f);
 	Clouds->MarkRenderStateDirty();
 	UE_LOG(LogLedger, Log, TEXT("clouds: viewer %s the layer (%.0f m; layer %.0f-%.0f m), tracing to %.0f km"),
 		bInside ? TEXT("inside") : TEXT("outside"), MetresAboveSea, LayerBottomMetres, LayerTopMetres,

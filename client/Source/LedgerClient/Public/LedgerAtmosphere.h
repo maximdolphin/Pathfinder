@@ -122,6 +122,10 @@ private:
 	double LayerBottomMetres = 0.0;
 	double LayerTopMetres = 0.0;
 	bool bTracingInside = false;
+	/// Whether the viewer is far enough out that the cloud layer is past the
+	/// ordinary trace distance -- from orbit, where the disc comes back with no
+	/// cloud on it at all. Set only under `-orbitclouds=N` (T445).
+	bool bTracingFar = false;
 
 	/// Non-zero once a ground fog has asked for volumetric fog.
 	double VolumetricOnlyMetres = 0.0;
