@@ -89,6 +89,21 @@ void ALedgerPlanet::BeginPlay()
 	// Measurement arms for T068's frame budget, not settings.
 	FParse::Value(FCommandLine::Get(), TEXT("uploadbudget="), UploadBudgetMs);
 	FParse::Value(FCommandLine::Get(), TEXT("collisionperframe="), CollisionEnablesPerFrame);
+	// `-terrainerror=N`: the screen-space error the tree refines against.
+	//
+	// A measurement arm for how the planet reads from space. At the default
+	// 250 px the whole planet resolves to about 540 patches from orbit --
+	// depth 3 to 4, so 10 to 20 km between vertices -- and the terrain material
+	// takes its palette from VertexColor, which puts every coastline on that
+	// grid. The sea is generated on the same grid, so both sides of the
+	// shoreline step together. This is the control that says whether the
+	// blockiness is colour resolution or something else.
+	float ErrorPixels = 0.0f;
+	if (FParse::Value(FCommandLine::Get(), TEXT("terrainerror="), ErrorPixels) && ErrorPixels > 0.0f)
+	{
+		ErrorThresholdPixels = ErrorPixels;
+		UE_LOG(LogLedger, Log, TEXT("terrain: refining against %.0f px of screen error"), ErrorThresholdPixels);
+	}
 	SetUp();
 }
 
