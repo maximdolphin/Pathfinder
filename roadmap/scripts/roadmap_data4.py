@@ -254,6 +254,37 @@ M10 = [
 # ---------------------------------------------------------------------------
 
 M11 = [
+    dict(title="The planet from orbit",
+         detail="The owner's report: planets from space look 'awful and like almost low "
+                "poly/animated', not like Star Citizen. The capture bears it out and the "
+                "cause is not polygon count. From about 12,000 km the whole planet resolves "
+                "to ~540 patches at depth 3 to 4, so vertices sit 10 to 20 km apart; the "
+                "terrain material takes its ground palette straight from VertexColor; and "
+                "the sea is generated on the same vertex grid as the land. Every coastline "
+                "is therefore interpolated across a 10-20 km grid, on both sides at once, "
+                "which is exactly the rectangular shoreline in the frame. It is colour "
+                "resolution, and adding triangles is the expensive way to fix shading.\n\n"
+                "Two further defects, separate causes: no clouds over the disc at all, "
+                "because the volumetric layer's TracingMaxDistance is 250 km and the viewer "
+                "is far outside it; and no scattering halo on the limb, which is mostly "
+                "honest physics -- 60 to 100 km of air on a 6,344 km radius is about 1% of "
+                "the disc -- rather than a bug, though it can be made to read.\n\n"
+                "The shape of the fix: a planet-wide albedo sampled from the same climate "
+                "and height functions the patch generator already uses, at a resolution "
+                "independent of the mesh, cross-faded in as patches coarsen. The material "
+                "already carries what that needs -- NodeSize from UV1.y, ToCamera from the "
+                "camera, and its own comment warning that the blend must be driven by the "
+                "same quantity the LOD decision uses or the two disagree. One source fixes "
+                "land and sea together, because they share the grid.\n\n"
+                "Why nothing caught this: T059's acceptance is a mountain range 80 km away, "
+                "seen from the ground. No task in this roadmap ever asked what the planet "
+                "looks like from space, which is why it has never been measured.",
+         acceptance="From orbit, a coastline shows no step larger than the terrain's own "
+                    "detail at that distance -- measured as the longest run of identically "
+                    "coloured pixels along a land-sea boundary, against the same capture "
+                    "today -- and the disc carries cloud. A person shown the frame without "
+                    "context does not call it low-poly.",
+         days=4, refs=["SS6.8"]),
     dict(title="Material standard and shading model audit",
          detail="One documented PBR standard: what maps, what ranges, what conventions. "
                 "Half the reason a game looks amateur is materials that disagree about "
