@@ -96,6 +96,16 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// **What this fixture costs the frame it is measuring.** Scoped rather than
+	// stopped by hand: Tick leaves by three separate returns, and the frames
+	// worth explaining are as likely to leave by an early one as by the end.
+	struct FFixtureClock
+	{
+		double Started = FPlatformTime::Seconds();
+		double* Out = nullptr;
+		~FFixtureClock() { if (Out != nullptr) { *Out = (FPlatformTime::Seconds() - Started) * 1000.0; } }
+	} FixtureClock{ FPlatformTime::Seconds(), &FixtureMs };
+
 	if (!bRunning || DeltaSeconds <= 0.0f)
 	{
 		return;
@@ -217,9 +227,13 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 				OverWithGC += bGC ? 1 : 0;
 				OverWithShaders += bShaders ? 1 : 0;
 				WorstFrames.Add({ FrameMs, FString::Printf(
-					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, the frame before: game %.1f, render %.1f, GPU %.1f, RHI %.1f, %.0f m above sea level%s%s"),
+					TEXT("%.1f ms at %.1f km: game %.1f, render %.1f, GPU %.1f, RHI %.1f, game waiting %.1f, swap %.1f, render waiting %.1f, idle %.1f, patch upload %.1f, proxy %.2f, sections free %d, jobs in flight %d, fixture %.1f, the frame before: game %.1f, render %.1f, GPU %.1f, RHI %.1f, %.0f m above sea level%s%s"),
 					FrameMs, Travelled / 100000.0, GameMs, RenderMs, GpuMs, RhiMs, WaitMs, SwapMs, RenderWaitMs, IdleMs, UploadMs, Planet->ProxyBuildMs,
 					Planet->GetStats().SectionsFree, Planet->GetStats().JobsInFlight,
+					// The previous frame's, because the scope guard writes it as
+					// Tick leaves -- and the previous frame is what this
+					// wall-clock interval spans, which is the point.
+					FixtureMs,
 					LastGameMs, LastRenderMs, LastGpuMs, LastRhiMs,
 					(FVector3d(Ship->GetActorLocation()) - FVector3d(Planet->GetActorLocation())).Length() / 100.0 - Planet->Radius / 100.0,
 					bGC ? TEXT(", a GC") : TEXT(""), bShaders ? TEXT(", shaders compiling") : TEXT("")) });

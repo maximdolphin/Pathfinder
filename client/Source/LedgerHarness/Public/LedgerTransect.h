@@ -53,6 +53,15 @@ private:
 	/// streamer that cannot keep up at 900 m/s.
 	double LastHoleKm = 0.0;
 	int32 HoleFramesPastFirstKm = 0;
+	/// What this fixture's own Tick cost on the frame just measured.
+	///
+	/// 84 of 127 frames over budget are "waits" -- game, render, GPU, RHI, swap
+	/// and idle all low while the wall clock reads 30 to 50 ms -- and the
+	/// counters are aligned, so the time is outside everything the engine
+	/// reports. The harness traces the ground every frame and probes patch
+	/// edges periodically, and nothing has ever measured that. A rig that
+	/// inflates its own numbers is the first thing to rule out.
+	double FixtureMs = 0.0;
 	double Travelled = 0.0;
 
 	int32 Frames = 0;
