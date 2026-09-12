@@ -11197,6 +11197,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "DECK ATTRIBUTION COMPLETE: MIDDLE IS INNOCENT, CIRRUS OWNS IT ALONE. Both overrides fired and logged ('Middle coverage forced to 0.00 (weather says 0.04)', 'Cirrus coverage forced to 0.00 (weather says 0.43)'), against a reference in the same build that matches the earlier control at 0.48%. Removing the middle deck changes 0.49% of the disc, worst channel 29 -- indistinguishable from the 0.47% floor, i.e. nothing. Removing cirrus changes 38.18%, worst channel 155. So the wash is one deck and one deck only, and no further isolation arms are needed. WHAT REMAINS BEFORE ANY REMEDY IS RECOMMENDED, and it is the reason I am not proposing one yet: every frame in this investigation is from ORBIT. Cirrus at 43% coverage also lies over the ground view, where a thin high sheet is frequently what keeps a sky from reading as empty -- and lowering its coverage, thinning it, or changing what it does to transmitted light would change every sky in the game from eye height as well as from space. Choosing a remedy from orbital frames alone would be precisely the narrow-metric error that cost four parameter sweeps tonight: each of those was judged on a statistic that answered a question I had not asked. chain198 is running the same two arms (shipping decks, and -cirruscover=0) capturing the SURFACE frame rather than the orbital one, so the trade is visible on both sides before the owner is asked to choose. THE OPTIONS, costed but not taken: (a) lower Cirrus.Coverage from its 0.15 + 0.45*random -- currently 43% here -- which keeps the deck but thins its reach; (b) lower its 0.03 opacity further, which keeps its coverage but weakens the filtering; (c) change what it does to transmitted light rather than how much there is. All three are aesthetic decisions about the owner's sky and none should ship off a single orbital frame at two in the morning."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "A FALSE ALARM I RAISED AND KILLED, recorded so it is not inherited. The ground capture's HUD reads 'air 0.0 kPa, angle of attack 160.7 deg, lift 0.00 STALL' while the ship stands on the pad beside buildings, which looks like an atmosphere reporting no air at the surface of a world that plainly has some -- and it appears in the REFERENCE arm, so no flag of mine caused it. It is not a bug. LedgerHUD.cpp:86 prints AirNow.DynamicPressure, not static pressure, and dynamic pressure is half rho v squared: exactly 0.0 kPa for a parked ship. The same run logs the atmosphere as 'nitrogen-oxygen, 96898 Pa at 272.1 K, scale height 8.01 km, top 96.1 km', so the surface carries 96.9 kPa and the HUD is correctly reporting that a stationary vehicle has no airspeed. The 160.7 degree angle of attack and the STALL flag are the same artefact -- both meaningless without relative wind. Nothing to raise against M04, whose gate is passed. WHY IT IS WORTH A NOTE ANYWAY: this is the fourteenth thing tonight that looked like a finding and dissolved on inspection, and it failed the same way as most of the others -- I read a LABEL ('air ... kPa') and inferred a QUANTITY (static pressure) without checking which quantity the code actually prints. The session's recurring error is not carelessness about measurement, it is confidence about what a measurement means."
     }
    ],
    "evidence": [],
@@ -15995,5 +16000,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T04:41:05.504Z"
+ "updatedAt": "2026-09-12T04:44:32.651Z"
 }
