@@ -5353,6 +5353,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "[2026-09-11] THE GC FRAMES ARE REAL, AND THEY ARE THE ENGINE'S PURGE TIMER. The transect's 'a GC' flag is not a proxy: GCsSeen is incremented from FCoreUObjectDelegates::GetPostGarbageCollect(), so it marks a collection that actually completed. The cadence confirms it -- this project sets no garbage collection settings of its own, so it inherits the engine default gc.TimeBetweenPurgingPendingKillObjects = 61.1 (the run log shows it applied), and the three GC-marked worst frames sit at 52, 107 and 162 km, which at 900 m/s is 58, 119 and 180 seconds: about 61 seconds apart. A full blocking purge, three times across a 200 km transect, costing 40-52 ms of game thread each (56.0 ms at 107.3 km with game 52.4 and render waiting 45.1; 51.7 at 162.3 with game 49.9; 41.5 at 52.3 with game 40.7). WHY THIS MATTERS MORE THAN ITS COUNT: three frames out of ~120 over budget is nothing for the 99.9% clause, but the gate also allows NO frame over 33 ms, and these are three of the six that exceed it. The other three are the sky-light capture at 110.7 km and the cold-start burst. So of the six frames over 33 ms, all six now have a name. CANDIDATE LEVERS, none of them taken on reasoning alone: incremental or time-sliced purging, or a longer interval. Both are cvar-level and both need a measured before and after on a quiet machine, which is the one thing this machine has not been all evening. Recording rather than shipping: a GC setting changed on inference is exactly the kind of thing that looks fine until a run three weeks later says otherwise."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "[2026-09-11] THE GC FRAMES ARE THE PURGE TIMER, PROVEN BY CHANGING IT. Two arms back to back, same machine, same session (a targeted test, so background load cannot invent or remove a purge on a timer -- the frame COUNTS from these arms are not quoted). Arm A, the engine's inherited default gc.TimeBetweenPurgingPendingKillObjects = 61.1: 'a GC 3', including 32.5 ms at 52.3 km with game 26.7 and render waiting 17.9 -- and 52.3 km is where the previous run's GC frame sat too, which is what a 61.1 s timer at 900 m/s does. Arm B with the interval at 300 s: 'a GC 0', and the log confirms the override took (LogConfig: Set CVar [[gc.TimeBetweenPurgingPendingKillObjects:300]]). Everything else is unchanged between the arms (uploads over 4 ms 152 against 146). So three of the six frames over 33 ms are the engine's blocking purge, established by removing them. WHAT I AM NOT DOING WITH THAT: shipping 300 s. It does not remove collection, it defers it past this fixture's 222-second window -- a player's ten-minute session still purges, and a purge deferred has more to collect, so it may land harder. Setting it to clear a gate would be gaming the measurement, which is the thing this gate exists to prevent. THE REAL DIRECTION, for whoever takes it: incremental or time-sliced reachability so the purge is spread across frames rather than blocking one, or fewer UObject allocations per frame so there is less to collect. Both need a measured before and after on a quiet machine, and both should be judged on a player-length session rather than a 222-second transect, because that is where the deferral argument bites."
     }
    ],
    "evidence": [
@@ -15815,5 +15820,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T00:50:34.135Z"
+ "updatedAt": "2026-09-12T00:57:37.816Z"
 }
