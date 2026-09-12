@@ -438,8 +438,32 @@ namespace LedgerSurface
 			Field->bTurbulence = false;
 			return Field;
 		};
+		// `-cumulusscale=N` and `-cumulusoctaves=N`: measurement arms for the gap
+		// this field leaves. At the default the cumulus octaves are about 208,
+		// 104 and 52 km and the organising Weather field is 40,000 km, so there
+		// is NOTHING between 208 km and the whole planet -- which is why the
+		// deck arrives from orbit as masses 40-60 km across, all one size, with
+		// no gathering into systems (T445, measured: p50 6 px, p90 20, max 93 on
+		// a 1,804 px disc). A multiple below one makes the base features larger;
+		// more octaves keeps the fine detail while the base grows. Defaults
+		// unchanged: this is an instrument, not a new sky.
+		float CumulusMultiple = 1.0f;
+		FParse::Value(FCommandLine::Get(), TEXT("cumulusscale="), CumulusMultiple);
+		if (CumulusMultiple <= 0.0f)
+		{
+			CumulusMultiple = 1.0f;
+		}
+		int32 CumulusOctaves = 3;
+		FParse::Value(FCommandLine::Get(), TEXT("cumulusoctaves="), CumulusOctaves);
+		CumulusOctaves = FMath::Clamp(CumulusOctaves, 1, 8);
+		if (CumulusMultiple != 1.0f || CumulusOctaves != 3)
+		{
+			UE_LOG(LogLedger, Log,
+				TEXT("clouds: cumulus at %.2fx scale (base about %.0f km) with %d octaves"),
+				CumulusMultiple, 208.0f / CumulusMultiple, CumulusOctaves);
+		}
 		UMaterialExpression* CumulusField = Graph.Add(
-			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f)), 3)),
+			Faded(DeckNoise(Graph.Multiply(Flattened, Parameter(Graph, TEXT("CumulusScale"), 0.0000048f * CumulusMultiple)), CumulusOctaves)),
 			Graph.Multiply(Graph.Subtract(Weather, Graph.Constant(0.5f)), Parameter(Graph, TEXT("WeatherAmplitude"), 1.0f)));
 		UMaterialExpressionDotProduct* AlongStreak = Graph.Make<UMaterialExpressionDotProduct>();
 		AlongStreak->A.Expression = Flattened;
