@@ -133,8 +133,32 @@ namespace LedgerCloud
 			// one through its whole thickness, and this deck is two and a half
 			// kilometres of it: at 0.25 of the material's 0.04 per metre it came to
 			// twenty-five, and the climb photographed the inside of a brown wall and
-			// the underside of an opaque lid. 0.03 is about 3 where fully covered.
-			Out.Cirrus.Opacity = 0.03;
+			// the underside of an opaque lid. 0.03 was about 3 where fully covered.
+			//
+			// **0.01, because 3 was never the target** (T445). The paragraph above
+			// names the physics -- an optical depth of about one -- and then records
+			// landing at three, which is roughly 95% extinction: overcast, not
+			// cirrus. A 43%-coverage sheet of that lying above everything is what
+			// drained the colour out of the planet seen from orbit. Isolating the
+			// deck (-cirruscover=0) changed 38.18% of the disc against a 0.47%
+			// noise floor; the owner's report was that planets looked "almost low
+			// poly, animated", and this is the half of it that reads as the ground
+			// being wrong rather than as weather.
+			//
+			// Measured both ways before changing it, because a sky is not only seen
+			// from space. Orbital wash against a no-cirrus reference: 14.95 mean
+			// tint at 0.03, 11.00 at 0.01 -- the heavy filtering (>32) halves, 16.4%
+			// to 7.7%. From the ground the deck stays plainly a deck: upper-sky
+			// disturbance 7.82 mean with 2.9% of pixels over 32, against 18.17 and
+			// 20.7% for removing cirrus altogether. Thinner still (0.005) reached
+			// 8.16 from orbit but cost 11.78 / 17.2% on the ground -- most of the
+			// way to deleting it -- which is why this stops at the physics value.
+			//
+			// Coverage is the stronger lever and is NOT touched here: trimming it to
+			// 0.25 reaches 2.72. That is a weather change -- fewer high clouds on
+			// this world, always -- and it belongs to the owner, not to a rendering
+			// complaint. Its numbers are in T445 if it is ever wanted.
+			Out.Cirrus.Opacity = 0.01;
 		}
 
 		// **Each deck drifts with the wind at its own height.** That is why a
