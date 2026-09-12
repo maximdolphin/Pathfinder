@@ -4566,6 +4566,11 @@
      "at": "2026-09-12",
      "kind": "block",
      "text": "Its acceptance does not hold as the tool judges it: two consecutive turntable runs compared with compare_captures.py --between give a worst single channel difference of 39 against a limit of 16 (48 shots, 2026-09-11). What that failure is, measured: 2 of 48 shots over the limit, median worst-channel 10, and in the worst shot exactly ONE pixel of 2,073,600 exceeds it -- isolated, no differing neighbour, at a backlit silhouette edge -- with a mean channel difference of 0.107 over the whole frame. The renders agree to a tenth of a channel; a single stray sample decides the gate. Blocked on the owner's call rather than fixed quietly: either attempt a fix (the harness settles 64 frames a shot; a longer settle may not touch a stochastic edge sample), or restate whether 'worst single channel' over two megapixels is the right statistic for 'do two runs agree'. Widening the limit to clear the gate is the one thing I will not do unasked."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "THE DECIDING STATISTIC HAS A WIDER SPREAD THAN THE LIMIT IT IS JUDGED AGAINST -- from records already on this task, no new run needed. Tonight's terrain work established the discipline that a difference means nothing without a floor, and check 11 has never had one. Applying it to the numbers already recorded here: THE SAME FIXTURE, UNCHANGED, HAS PRODUCED WORST-CHANNEL 3 (2026-09-09, this task's first note: 'the runs pass it at worst-channel 3 against a limit of 16'), 9 ('never more than 9' in the byte-identity exploration recorded in the same note), AND 39 (2026-09-11, the evidence attached). Across those same runs the MEAN channel difference stayed between 0.06 and 0.107. So the statistic that decides this gate varies 3 to 39 run-to-run on a fixture nobody changed, while the statistic that is stable says the renders agree to about a tenth of a channel. A limit of 16 sits INSIDE that spread, which means the check currently passes or fails by luck: a real regression could pass at 3, and an unchanged build fails at 39. It cannot discriminate in either direction, and that is a property of the statistic rather than of the renderer. WHAT THIS DOES AND DOES NOT SETTLE: it does not tell the owner what the criterion should be -- that is still theirs, and I am still not widening a limit to clear a gate. It does remove the framing I offered earlier, which treated this as a matter of taste. It is measurable, it has been measured, and the measurement says the current test is not a test. A CONCRETE ALTERNATIVE, offered for the owner to accept or reject: judge two runs on the MEAN (already in the tool as REPEAT_MEAN_TOLERANCE 0.5, and the measured runs pass it at 0.107 with room to spare) PLUS a neighbour-aware worst -- count a pixel only when at least one adjacent pixel also differs beyond the limit. That is standard firefly rejection and it does not weaken the test for real changes, because a real change moves a region and never a single isolated sample. The failing shot's worst pixel is explicitly isolated with no differing neighbour, so it would be rejected; a genuine material or lighting change would not be. ALSO RULED OUT TONIGHT, so nobody spends a run on it: raising FramesToSettle. The constant is 64 and its comment records WHY -- 24 left Lumen's probes reconverging -- and at 64 two runs differed by 'never more than 9'. A reading that jumps from 9 to 39 at unchanged settle is not under-convergence, so more settle frames cannot touch it."
     }
    ],
    "evidence": [
@@ -15920,5 +15925,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T03:24:30.667Z"
+ "updatedAt": "2026-09-12T03:27:43.512Z"
 }
