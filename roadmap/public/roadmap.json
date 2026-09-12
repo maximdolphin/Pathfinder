@@ -11207,6 +11207,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "THE GROUND CHECK PASSES: REMOVING CIRRUS DOES NOT EMPTY THE SKY. The override fired in the ground arm (log: 'Cirrus coverage forced to 0.00 (weather says 0.43)') with the reference logging none. From eye height the difference is exactly what the deck is: the high wispy streaks across the upper sky go, and everything that makes the sky read as a sky stays -- the blue zenith-to-horizon gradient, the bank of cumulus sitting on the horizon, the depth between them. It does not come back empty. THAT MATTERED AND COULD HAVE GONE THE OTHER WAY. A thin high sheet is often the thing that stops a sky looking like a painted dome, and had the ground frame come back flat I would have had to tell the owner that fixing the orbital view costs the surface one. It does not, so a cirrus remedy is viable from both viewpoints rather than a trade between them. WHAT IS NOW ESTABLISHED END TO END: cumulus owns the blob shapes from orbit (measured with -noclouds against a 0.47% floor, reproduced across two chains); CIRRUS owns the colour wash that reads as 'low poly / animated' (38.18% of the disc, worst channel 155, against the same floor); the middle deck is innocent (0.49%, indistinguishable from noise); and removing cirrus costs the ground view only its high streaks. STILL NOT A FIX, AND DELIBERATELY. The three options -- lower Cirrus.Coverage from 0.15 + 0.45*seeded (43% here), lower its 0.03 opacity, or change what it does to transmitted light rather than how much of it there is -- are aesthetic decisions about the owner's sky, and they differ in what they cost at the surface. The owner now has both views and should pick; I have shipped nothing and every default is untouched."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "A TRAP IN THE GROUND NUMBERS, DEFUSED. A plain difference on the ground pair reads 80.99% of pixels changed (95.74% in the upper sky), which looks like removing cirrus wrecks the surface view and flatly contradicts the frames. It does not: >2 is the same 'touched by the deck' threshold that earlier called the shipping planet 92.51% cloud. Graded by magnitude the picture is unambiguous -- UPPER SKY mean change 18.2, >12 on 26.1% of pixels, >32 on 20.7%, >64 on 11.8%; HORIZON BAND mean 4.3, >12 on 4.0%, >32 on 0.3%, >64 on none; GROUND mean 4.0, >12 on 2.5%, >32 on 1.1%. So the real change is concentrated exactly where the cirrus streaks were, and the horizon and ground shift by a mean of about four parts in 255 -- a tint nobody would notice. The frames and the numbers agree once the numbers are asked the right question. WHY THIS IS WORTH A NOTE: anyone re-running a simple diff on that pair will see 81% and conclude the ground view is destroyed. It is not. Quote the graded figures. AND THE ONE PIECE OF GOOD NEWS ABOUT METHOD IN THIS SESSION: this is the first verification tonight that CONFIRMED a reading rather than demolishing it. The difference was not luck -- it was asking for magnitudes instead of a single threshold, which is the specific correction the earlier failures pointed at."
     }
    ],
    "evidence": [],
@@ -16005,5 +16010,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T04:47:20.250Z"
+ "updatedAt": "2026-09-12T04:48:22.435Z"
 }
