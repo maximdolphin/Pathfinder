@@ -39,6 +39,20 @@ private:
 	/// Whether the streaming queue has gone quiet once, for -transectsettle.
 	/// Latched: unlatched it re-entered in flight and measured nothing.
 	bool bSettled = false;
+	/// The most unfilled patches seen during the measured flight. The terrain's
+	/// own worst is a planet-lifetime figure -- 1,689 at t=0, the world loading
+	/// -- and M02's first two checks ask what this transect flew through.
+	int32 WorstUnfilledInFlight = 0;
+	/// How many measured frames had any hole at all, and where the worst was.
+	/// A worst of 1,361 says nothing by itself: confined to the first second it
+	/// is the world still arriving, spread over 200 km it is a streaming fault.
+	int32 FramesWithHoles = 0;
+	double WorstUnfilledAtKm = 0.0;
+	/// The furthest a hole was seen, and how many hole-frames fell past the
+	/// first kilometre: the difference between a world still loading and a
+	/// streamer that cannot keep up at 900 m/s.
+	double LastHoleKm = 0.0;
+	int32 HoleFramesPastFirstKm = 0;
 	double Travelled = 0.0;
 
 	int32 Frames = 0;

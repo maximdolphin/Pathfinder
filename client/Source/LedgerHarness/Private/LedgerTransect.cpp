@@ -141,6 +141,26 @@ void ULedgerTransect::Tick(float DeltaSeconds)
 		return;
 	}
 
+	// Holes the flight actually met. The terrain's own WorstUnfilled is kept
+	// from the planet's first frame, and reads 1,689 at t=0 -- the world
+	// loading, which this fixture does not fly through and the gate does not
+	// ask about.
+	const int32 UnfilledNow = Planet->GetStats().UnfilledNodes;
+	FramesWithHoles += UnfilledNow > 0 ? 1 : 0;
+	if (UnfilledNow > WorstUnfilledInFlight)
+	{
+		WorstUnfilledInFlight = UnfilledNow;
+		WorstUnfilledAtKm = Travelled / 100000.0;
+	}
+	// Where the holes stop is the whole question. 124 frames of 13,334 had one
+	// and the worst was at 0.0 km, which reads as the world still arriving --
+	// but "reads as" is not a measurement, so this says how far in they go.
+	if (UnfilledNow > 0)
+	{
+		LastHoleKm = Travelled / 100000.0;
+		HoleFramesPastFirstKm += Travelled > 100000.0 ? 1 : 0;
+	}
+
 	{
 		const double Now = FPlatformTime::Seconds();
 		++GTicksSincePhoto;
@@ -341,6 +361,16 @@ void ULedgerTransect::Finish()
 		Body += FString::Printf(
 			TEXT("  nodes visible %d, of which with collision %d\n"),
 			Terrain.VisibleNodes, Terrain.NodesWithCollision);
+		// **Holes, from the fixture the gate names.** M02's first two checks ask
+		// for zero unfilled patches on this transect, and this report never said.
+		// The zeros on hand came from other runs -- a 300 m/s descent and a perf
+		// flight -- and a gate recorded off a different fixture's numbers is a
+		// gate recorded off something it did not measure.
+		Body += FString::Printf(
+			TEXT("  holes         %d unfilled now; in flight %d frames of %d had one (%d past the first km), worst %d at %.1f km, last at %.1f km; %d worst since the planet loaded (t=%.0fs)\n"),
+			Terrain.UnfilledNodes, FramesWithHoles, Frames, HoleFramesPastFirstKm,
+			WorstUnfilledInFlight, WorstUnfilledAtKm, LastHoleKm,
+			Terrain.WorstUnfilled, Terrain.WorstUnfilledAt);
 		Body += FString::Printf(
 			TEXT("  worst cook    %.2f ms\n"), Terrain.WorstFrameCollisionMs);
 		// T068: the collision proxy under the ship, and what rebuilding it costs a frame.
