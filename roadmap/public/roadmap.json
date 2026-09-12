@@ -4568,7 +4568,14 @@
      "text": "Its acceptance does not hold as the tool judges it: two consecutive turntable runs compared with compare_captures.py --between give a worst single channel difference of 39 against a limit of 16 (48 shots, 2026-09-11). What that failure is, measured: 2 of 48 shots over the limit, median worst-channel 10, and in the worst shot exactly ONE pixel of 2,073,600 exceeds it -- isolated, no differing neighbour, at a backlit silhouette edge -- with a mean channel difference of 0.107 over the whole frame. The renders agree to a tenth of a channel; a single stray sample decides the gate. Blocked on the owner's call rather than fixed quietly: either attempt a fix (the harness settles 64 frames a shot; a longer settle may not touch a stochastic edge sample), or restate whether 'worst single channel' over two megapixels is the right statistic for 'do two runs agree'. Widening the limit to clear the gate is the one thing I will not do unasked."
     }
    ],
-   "evidence": [],
+   "evidence": [
+    {
+     "file": "evidence/T408-2026-09-12T00-40-22-524.txt",
+     "caption": "Two consecutive turntable runs compared as check 11 asks: worst single channel 39 against a limit of 16, 2 of 48 shots over it, median 10 -- and one isolated pixel in two million decides the worst shot, with a mean frame difference of 0.107.",
+     "source": "../out/turntable-repeat.txt",
+     "addedAt": "2026-09-12T00:40:22.525Z"
+    }
+   ],
    "plannedStartDay": 113,
    "plannedEndDay": 114,
    "plannedStart": "2027-02-11",
@@ -5344,6 +5351,12 @@
      "caption": "The M02 gate's collision half: 99.1% of downward traces find nothing beneath the ship over 200 km at 900 m/s.",
      "source": "../out/transect-t068.txt",
      "addedAt": "2026-09-10T07:25:03.148Z"
+    },
+    {
+     "file": "evidence/T068-2026-09-12T00-40-20-920.txt",
+     "caption": "The gate's own fixture on the current build: collision present on every frame of 13,334 (0 traces missed, longest gap 0), holes confined to the first 1.8 km with the remaining 198.2 km clean, seams within the skirt. Frame time still fails, and this run's count is not comparable -- the machine was not quiet.",
+     "source": "../out/transect-holes4.txt",
+     "addedAt": "2026-09-12T00:40:20.923Z"
     }
    ],
    "plannedStartDay": 138.5,
@@ -15792,5 +15805,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T00:36:02.101Z"
+ "updatedAt": "2026-09-12T00:40:22.527Z"
 }

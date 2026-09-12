@@ -1,0 +1,18 @@
+Turntable repeatability (M02 gate check 11).
+
+  shots compared   48
+  tolerance        16 (worst single channel, REPEAT_WORST_TOLERANCE)
+  worst channel    39
+  shots over it    2
+  median worst     10
+
+  the shots over the limit:
+    raking-silhouette-05.png         39
+    soft-close-00.png                18
+
+  In the worst shot exactly one pixel of 2,073,600 exceeds the limit --
+  isolated, no differing neighbour, at a backlit silhouette edge -- and the
+  mean channel difference over that whole frame is 0.107. The two renders
+  agree to a tenth of a channel; a single stray sample decides the verdict.
+
+VERDICT: FAIL as the tool judges it (worst single channel 39 against 16).
