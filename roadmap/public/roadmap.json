@@ -5348,6 +5348,11 @@
      "at": "2026-09-12",
      "kind": "note",
      "text": "[2026-09-11] THE FIXTURE IS NOT INSIDE THE WAITS -- disproven, and cleanly. 84 of 127 over-budget frames had game, render, GPU, RHI, swap and idle all low while the wall clock read 30-50 ms, and nothing had ever measured what this harness costs the frame it is measuring (it traces the ground every frame and probes patch edges periodically). A scope guard on ULedgerTransect::Tick now reports it, and on every one of the worst frames it reads 0.1 to 0.3 ms. That hypothesis is dead. TWO THINGS THE SAME RUN SHOWS, which are worth more. (1) THE WAIT CLASS SCALES WITH MACHINE LOAD: this pass ran with the owner's game resident and a 10% CPU floor and produced 432 waits of 542 over budget; the quiet baselines (chain162, chain168) produced 81-90 of 118-127 on the same tree. A class that quadruples when the machine gets busier is largely time the OS took away, not time the game spent -- which also explains why nothing in the engine's counters accounts for it, and matches chain170's void run exactly. So the honest reading of T068's third named cause is: mostly contention, with an unknown residue that only a quiet machine can size. (2) GARBAGE COLLECTION IS ON THE WORST FRAMES: three of the six worst carry 'a GC' -- 56.0 ms at 107.3 km (game 52.4, render waiting 45.1), 51.7 ms at 162.3 km (game 49.9, render waiting 41.2), 41.5 ms at 52.3 km (game 40.7). That is a named, real cost on the game thread and it is not the cold start (107 km, 162 km, 52 km). Worth attacking before anything speculative: what this fixture or the terrain allocates per frame. NOT comparable from this run: the counts (542 over, mean 9.59) -- the machine was busy, and I am not quoting them against the 118-135 baseline."
+    },
+    {
+     "at": "2026-09-12",
+     "kind": "note",
+     "text": "[2026-09-11] THE GC FRAMES ARE REAL, AND THEY ARE THE ENGINE'S PURGE TIMER. The transect's 'a GC' flag is not a proxy: GCsSeen is incremented from FCoreUObjectDelegates::GetPostGarbageCollect(), so it marks a collection that actually completed. The cadence confirms it -- this project sets no garbage collection settings of its own, so it inherits the engine default gc.TimeBetweenPurgingPendingKillObjects = 61.1 (the run log shows it applied), and the three GC-marked worst frames sit at 52, 107 and 162 km, which at 900 m/s is 58, 119 and 180 seconds: about 61 seconds apart. A full blocking purge, three times across a 200 km transect, costing 40-52 ms of game thread each (56.0 ms at 107.3 km with game 52.4 and render waiting 45.1; 51.7 at 162.3 with game 49.9; 41.5 at 52.3 with game 40.7). WHY THIS MATTERS MORE THAN ITS COUNT: three frames out of ~120 over budget is nothing for the 99.9% clause, but the gate also allows NO frame over 33 ms, and these are three of the six that exceed it. The other three are the sky-light capture at 110.7 km and the cold-start burst. So of the six frames over 33 ms, all six now have a name. CANDIDATE LEVERS, none of them taken on reasoning alone: incremental or time-sliced purging, or a longer interval. Both are cvar-level and both need a measured before and after on a quiet machine, which is the one thing this machine has not been all evening. Recording rather than shipping: a GC setting changed on inference is exactly the kind of thing that looks fine until a run three weeks later says otherwise."
     }
    ],
    "evidence": [
@@ -15810,5 +15815,5 @@
    "plannedEnd": "2031-03-13"
   }
  ],
- "updatedAt": "2026-09-12T00:49:40.263Z"
+ "updatedAt": "2026-09-12T00:50:34.135Z"
 }
